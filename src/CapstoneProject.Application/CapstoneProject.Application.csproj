@@ -1,0 +1,22 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <Compile Remove="Features\QuestionOption\**" />
+    <Compile Remove="Features\Question\**" />
+    <EmbeddedResource Remove="Features\QuestionOption\**" />
+    <EmbeddedResource Remove="Features\Question\**" />
+    <None Remove="Features\QuestionOption\**" />
+    <None Remove="Features\Question\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\CapstoneProject.Domain\CapstoneProject.Domain.csproj" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+</Project>
