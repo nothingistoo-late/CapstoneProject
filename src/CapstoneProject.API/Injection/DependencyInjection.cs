@@ -1,5 +1,6 @@
 using CapstoneProject.API.Attributes;
 using CapstoneProject.API.Middlewares;
+using CapstoneProject.API.Services;
 using CapstoneProject.Application.Commons.Interfaces;
 
 namespace CapstoneProject.API.Injection;
@@ -26,6 +27,9 @@ public static class DependencyInjection
 
         // Register validation configuration
         services.AddValidationConfiguration();
+        
+        // Register chat broadcast service for SignalR
+        services.AddScoped<IChatBroadcastService, ChatBroadcastService>();
 
 
         return services;

@@ -33,7 +33,15 @@ public class JwtMiddleware
                                   endpoint.Metadata.GetMetadata<AllowAnonymousAttribute>() == null;
         }
         
+        // Get token from Authorization header first
         var token = context.Request.Headers["Authorization"].FirstOrDefault()?.Split(" ").Last();
+        
+        // For SignalR endpoints, also check query string (WebSocket limitation)
+        var path = context.Request.Path;
+        if (string.IsNullOrEmpty(token) && path.StartsWithSegments("/hubs"))
+        {
+            token = context.Request.Query["access_token"].FirstOrDefault();
+        }
         
         if (token != null)
         {

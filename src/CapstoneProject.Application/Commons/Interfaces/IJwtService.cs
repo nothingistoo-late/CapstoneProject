@@ -55,4 +55,15 @@ public interface IJwtService
     /// <param name="token">JWT token</param>
     /// <returns>ClaimsPrincipal or null if token is invalid</returns>
     System.Security.Claims.ClaimsPrincipal? GetPrincipalFromToken(string token);
+    
+    /// <summary>
+    /// Generate JWT token directly from user ID and roles (without requiring AppUser object)
+    /// Used for quick login without creating user in database
+    /// </summary>
+    /// <param name="userId">User ID (Guid as string)</param>
+    /// <param name="email">User email</param>
+    /// <param name="roles">List of user roles</param>
+    /// <param name="requestOrigin">Optional request origin for audience validation</param>
+    /// <returns>Token, roles, expiration time in minutes, and expiration datetime tuple</returns>
+    (string token, List<string> roles, int expiresInMinutes, DateTime expiresAt) GenerateJwtTokenFromClaims(string userId, string email, List<string> roles, string? requestOrigin = null);
 }

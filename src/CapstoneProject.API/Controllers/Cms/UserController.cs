@@ -1,5 +1,7 @@
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
+using CapstoneProject.Application.Common.Enums;
 using CapstoneProject.Application.Common.Models;
 using Swashbuckle.AspNetCore.Annotations;
 using CapstoneProject.Application.Common.Extensions;
@@ -10,6 +12,7 @@ using CapstoneProject.Application.Features.User.Commands.DeleteUser;
 using CapstoneProject.Application.Features.User.Queries.GetPagedUsers;
 using CapstoneProject.Application.Features.User.Queries.GetUserById;
 using CapstoneProject.Application.Commons.DTOs.User;
+using CapstoneProject.Application.Commons.Interfaces;
 using CapstoneProject.Domain.Enums;
 
 namespace CapstoneProject.API.Controllers.Cms;
@@ -25,10 +28,14 @@ namespace CapstoneProject.API.Controllers.Cms;
 public class UserController : ControllerBase
 {
     private readonly IMediator _mediator;
+    private readonly IQuickLoginCleanupService _cleanupService;
+    private readonly ILogger<UserController>? _logger;
 
-    public UserController(IMediator mediator)
+    public UserController(IMediator mediator, IQuickLoginCleanupService cleanupService, ILogger<UserController>? logger = null)
     {
         _mediator = mediator;
+        _cleanupService = cleanupService;
+        _logger = logger;
     }
 
     /// <summary>
@@ -114,5 +121,34 @@ public class UserController : ControllerBase
         var command = new DeleteUserCommand(id);
         var result = await _mediator.Send(command);
         return StatusCode(result.GetHttpStatusCode(), result);
+    }
+
+    /// <summary>
+    /// Cleanup inactive QuickLogin users (manual trigger)
+    /// </summary>
+    /// <param name="daysInactive">Number of days of inactivity before deletion (default: 7)</param>
+    [HttpPost("quicklogin/cleanup")]
+    [AuthorizeRoles(nameof(RoleEnum.Admin))]
+    [ProducesResponseType(typeof(Result<int>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(Result), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(Result), StatusCodes.Status403Forbidden)]
+    [SwaggerOperation(
+        Summary = "Cleanup inactive QuickLogin users",
+        Description = "Deactivates QuickLogin users that haven't logged in for the specified number of days. This job also runs automatically daily via Hangfire.",
+        OperationId = "CleanupQuickLoginUsers",
+        Tags = new[] { "CMS", "CMS_Users" }
+    )]
+    public async Task<IActionResult> CleanupQuickLoginUsers([FromQuery] int daysInactive = 7)
+    {
+        try
+        {
+            var deletedCount = await _cleanupService.CleanupInactiveUsersAsync(daysInactive);
+            return Ok(Result<int>.Success(deletedCount, $"Successfully deactivated {deletedCount} inactive QuickLogin users"));
+        }
+        catch (Exception ex)
+        {
+            _logger?.LogError(ex, "Error during QuickLogin cleanup");
+            return StatusCode(500, Result<int>.Failure("An error occurred during cleanup", ErrorCodeEnum.InternalError));
+        }
     }
 }

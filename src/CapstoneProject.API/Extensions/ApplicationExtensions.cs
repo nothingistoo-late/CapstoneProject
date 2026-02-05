@@ -21,15 +21,11 @@ public static class ApplicationExtensions
             logger.LogInformation("Applying main database migrations...");
             await app.ApplyMigrationsAsync(logger);
             
-            // Step 2: Apply outer database migrations
-            logger.LogInformation("Applying outer database migrations...");
-            await app.ApplyOuterDbMigrationsAsync(logger);
-            
-            // Step 3: Configure Hangfire storage (uses OuterDb)
+            // Step 2: Configure Hangfire storage (uses main database)
             logger.LogInformation("Configuring Hangfire storage...");
             await app.Services.ConfigureHangfireStorageAsync(app.Configuration);
             
-            // Step 4: Initialize Hangfire recurring jobs
+            // Step 3: Initialize Hangfire recurring jobs
             logger.LogInformation("Initializing Hangfire jobs...");
             app.Services.UseHangfireConfiguration(app.Configuration);
             

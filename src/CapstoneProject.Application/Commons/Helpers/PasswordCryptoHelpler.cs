@@ -5,11 +5,25 @@ namespace CapstoneProject.Application.Common.Helpers;
 
 public static class PasswordCryptoHelper
 {
+    /// <summary>
+    /// Derives a 32-byte key from the provided string using SHA256
+    /// </summary>
+    private static byte[] DeriveKey(string key)
+    {
+        using var sha256 = SHA256.Create();
+        return sha256.ComputeHash(Encoding.UTF8.GetBytes(key));
+    }
 
     public static string Encrypt(string plainText, string encryptKey)
     {
+        if (string.IsNullOrEmpty(encryptKey))
+        {
+            throw new ArgumentException("Encryption key cannot be null or empty", nameof(encryptKey));
+        }
+
         using var aes = Aes.Create();
-        aes.Key = Encoding.UTF8.GetBytes(encryptKey);
+        // Derive a 32-byte key from the provided string (AES-256)
+        aes.Key = DeriveKey(encryptKey);
         aes.GenerateIV();
 
         using var encryptor = aes.CreateEncryptor(aes.Key, aes.IV);
@@ -25,9 +39,15 @@ public static class PasswordCryptoHelper
 
     public static string Decrypt(string cipherText, string encryptKey)
     {
+        if (string.IsNullOrEmpty(encryptKey))
+        {
+            throw new ArgumentException("Encryption key cannot be null or empty", nameof(encryptKey));
+        }
+
         var fullCipher = Convert.FromBase64String(cipherText);
         using var aes = Aes.Create();
-        aes.Key = Encoding.UTF8.GetBytes(encryptKey);
+        // Derive a 32-byte key from the provided string (AES-256)
+        aes.Key = DeriveKey(encryptKey);
 
         var iv = new byte[aes.BlockSize / 8];
         var cipher = new byte[fullCipher.Length - iv.Length];

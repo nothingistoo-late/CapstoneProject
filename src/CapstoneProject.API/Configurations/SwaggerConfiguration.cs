@@ -139,7 +139,7 @@ public static class SwaggerConfiguration
             options.RoutePrefix = "swagger";
             options.DocExpansion(Swashbuckle.AspNetCore.SwaggerUI.DocExpansion.List);
             options.EnableDeepLinking();
-            options.DisplayOperationId();
+            // options.DisplayOperationId(); // Commented out to hide operation IDs
             options.EnableFilter();
             
             // Enable tag grouping

@@ -133,6 +133,42 @@ public class JwtService : IJwtService
     }
 
     /// <summary>
+    /// Generate JWT token directly from claims (without requiring AppUser object)
+    /// Used for quick login without creating user in database
+    /// </summary>
+    public (string token, List<string> roles, int expiresInMinutes, DateTime expiresAt) GenerateJwtTokenFromClaims(string userId, string email, List<string> roles, string? requestOrigin = null)
+    {
+        var claims = new List<Claim>
+        {
+            new Claim(JwtRegisteredClaimNames.Sub, userId),
+            new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+            new Claim(JwtRegisteredClaimNames.Email, email),
+            new Claim(ClaimTypes.NameIdentifier, userId),
+            new Claim(ClaimTypes.Name, email)
+        };
+
+        // Add role claims
+        claims.AddRange(roles.Select(role => new Claim(ClaimTypes.Role, role)));
+
+        // Create signing credentials
+        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtSettings.Key));
+        var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+
+        // Create token
+        var expiresAt = DateTime.UtcNow.AddMinutes(_jwtSettings.ExpiresInMinutes);
+        var token = new JwtSecurityToken(
+            issuer: _jwtSettings.Issuer,
+            audience: _jwtSettings.Audience,
+            claims: claims,
+            expires: expiresAt,
+            signingCredentials: creds
+        );
+
+        var tokenString = new JwtSecurityTokenHandler().WriteToken(token);
+        return (tokenString, roles, _jwtSettings.ExpiresInMinutes, expiresAt);
+    }
+
+    /// <summary>
     /// Get principal claims from token
     /// </summary>
     public ClaimsPrincipal? GetPrincipalFromToken(string token)

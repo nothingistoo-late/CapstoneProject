@@ -1,10 +1,10 @@
+using CapstoneProject.API.Hubs;
 using CapstoneProject.API.Injection;
 using CapstoneProject.Application;
 using CapstoneProject.Infrastructure;
 using CapstoneProject.Infrastructure.Configurations;
 using CapstoneProject.Infrastructure.Filters;
 using Hangfire;
-using Microsoft.AspNetCore.OData;
 
 namespace CapstoneProject.API.Configurations;
 
@@ -17,19 +17,11 @@ public static class ServiceConfiguration
     {
         // Core ASP.NET services
         builder.Services.AddControllers()
-        .ConfigureApiBehaviorOptions(options =>
-    {
-        // Disable automatic 400 response for model validation errors
-        options.SuppressModelStateInvalidFilter = true;
-    })
-        .AddOData(options => options
-            .Select()
-            .Filter()
-            .OrderBy()
-            .Expand()
-            .Count()
-            .SetMaxTop(100));
-            // .AddRouteComponents("api", GetEdmModel()));
+            .ConfigureApiBehaviorOptions(options =>
+            {
+                // Disable automatic 400 response for model validation errors
+                options.SuppressModelStateInvalidFilter = true;
+            });
         
         builder.Services.AddEndpointsApiExplorer();        // Custom Swagger configuration with tagging and styling
         builder.Services.AddSwaggerConfiguration();
@@ -50,6 +42,13 @@ public static class ServiceConfiguration
 
         // API layer services (filters, middlewares, validation, etc.)
         builder.Services.AddApiServices(builder.Configuration);
+
+        // SignalR for real-time chat
+        builder.Services.AddSignalR(options =>
+        {
+            options.EnableDetailedErrors = builder.Environment.IsDevelopment();
+            options.MaximumReceiveMessageSize = 1024 * 1024; // 1MB for file uploads
+        });
 
         return builder;
     }
@@ -93,6 +92,9 @@ public static class ServiceConfiguration
         app.UseAuthorization();
 
         app.MapControllers();
+        
+        // Map SignalR Hub
+        app.MapHub<ChatHub>("/hubs/chat");
 
         return app;
     }

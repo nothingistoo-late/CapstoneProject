@@ -15,6 +15,7 @@ using CapstoneProject.Application.Features.Auth.Commands.ResetPassword;
 using CapstoneProject.Application.Features.Auth.Commands.ChangePassword;
 using CapstoneProject.Application.Features.Auth.Commands.UpdateProfile;
 using CapstoneProject.Application.Features.Auth.Commands.RefreshToken;
+using CapstoneProject.Application.Features.Auth.Commands.QuickLogin;
 
 
 namespace CapstoneProject.API.Controllers.Student;
@@ -30,10 +31,12 @@ namespace CapstoneProject.API.Controllers.Student;
 public class AuthController : ControllerBase
 {
     private readonly IMediator _mediator;
+    private readonly ILogger<AuthController> _logger;
 
-    public AuthController(IMediator mediator)
+    public AuthController(IMediator mediator, ILogger<AuthController> logger)
     {
         _mediator = mediator;
+        _logger = logger;
     }
 
     /// <summary>
@@ -72,6 +75,45 @@ public class AuthController : ControllerBase
     {
         var command = new LoginCommand(request);
         var result = await _mediator.Send(command);
+        return StatusCode(result.GetHttpStatusCode(), result);
+    }
+
+    /// <summary>
+    /// Quick login with demo account
+    /// </summary>
+    /// <remarks>
+    /// This API allows quick login using a configured quick code. It will automatically log in with a demo user account.
+    /// 
+    /// Sample request:
+    /// 
+    ///     POST /api/Student/auth/quick-login
+    ///     {
+    ///        "quickCode": "DEMO123"
+    ///     }
+    /// </remarks>
+    [HttpPost("quick-login")]
+    [ProducesResponseType(typeof(Result<AuthResponse>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(Result<AuthResponse>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(Result<AuthResponse>), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(Result<AuthResponse>), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(Result<AuthResponse>), StatusCodes.Status500InternalServerError)]
+    [SwaggerOperation(
+        Summary = "Quick login with demo account",
+        Description = "This API allows quick login using a configured quick code for testing purposes",
+        OperationId = "QuickLogin",
+        Tags = new[] { "Student", "Student_Auth" }
+    )]
+    public async Task<IActionResult> QuickLogin([FromBody] QuickLoginRequest request)
+    {
+        if (request == null)
+        {
+            return BadRequest(Result<AuthResponse>.Failure("Request body is required", Application.Common.Enums.ErrorCodeEnum.ValidationFailed));
+        }
+        
+        _logger.LogInformation("QuickLogin endpoint called with QuickCode: {QuickCode}", request.QuickCode);
+        var command = new QuickLoginCommand(request);
+        var result = await _mediator.Send(command);
+        _logger.LogInformation("QuickLogin result: IsSuccess={IsSuccess}, Message={Message}", result.IsSuccess, result.Message);
         return StatusCode(result.GetHttpStatusCode(), result);
     }
 

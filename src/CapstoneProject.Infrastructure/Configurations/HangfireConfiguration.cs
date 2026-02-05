@@ -14,7 +14,7 @@ public static class HangfireConfiguration
 {
     /// <summary>
     /// Add Hangfire services to the dependency container
-    /// Uses the same OuterDbConnection as token management for consistency
+    /// Uses the main database (DefaultConnection)
     /// </summary>
     public static IServiceCollection AddHangfireServices(this IServiceCollection services, IConfiguration configuration)
     {
@@ -26,18 +26,12 @@ public static class HangfireConfiguration
             builder.AddFilter("Hangfire.Processing", LogLevel.Warning);
         });
 
-        // Get connection string - use OuterDbConnection for consistency with token management
-        var useOuterDatabase = configuration.GetValue("Hangfire:UseOuterDatabase", true);
-        var connectionString = useOuterDatabase 
-            ? configuration.GetConnectionString("OuterDbConnection")
-            : configuration["Hangfire:ConnectionString"];
+        // Get connection string - use main database (DefaultConnection)
+        var connectionString = configuration.GetConnectionString("DefaultConnection");
         
         if (string.IsNullOrEmpty(connectionString))
         {
-            throw new InvalidOperationException(
-                useOuterDatabase 
-                    ? "OuterDbConnection string is required for Hangfire when UseOuterDatabase is true"
-                    : "Hangfire database connection string is required");
+            throw new InvalidOperationException("DefaultConnection string is required for Hangfire");
         }
 
         // Get Hangfire settings from configuration
@@ -98,7 +92,8 @@ public static class HangfireConfiguration
     }
 
     /// <summary>
-    /// Cấu hình Hangfire storage sử dụng Outer Database đã có
+    /// Cấu hình Hangfire storage sử dụng main database
+    /// Database đã được tạo trong bước migration trước đó
     /// </summary>
     public static async Task ConfigureHangfireStorageAsync(this IServiceProvider serviceProvider, IConfiguration configuration)
     {
@@ -107,31 +102,26 @@ public static class HangfireConfiguration
 
         try
         {
-            var useOuterDatabase = configuration.GetValue("Hangfire:UseOuterDatabase", true);
-            var connectionString = useOuterDatabase 
-                ? configuration.GetConnectionString("OuterDbConnection")
-                : configuration["Hangfire:ConnectionString"];
+            var connectionString = configuration.GetConnectionString("DefaultConnection");
 
             if (string.IsNullOrEmpty(connectionString))
             {
                 logger.LogError("No connection string found for Hangfire storage");
-                throw new InvalidOperationException("Hangfire connection string is required");
+                throw new InvalidOperationException("DefaultConnection string is required for Hangfire");
             }
 
             var databaseName = ExtractDatabaseName(connectionString);
             
+            // Database should already exist from migration step, but check anyway
             if (!await CheckHangfireDatabaseExistsAsync(connectionString, databaseName, logger))
             {
-                var errorMessage = useOuterDatabase
-                    ? $"Outer database '{databaseName}' does not exist. Please ensure migrations are applied before Hangfire initialization."
-                    : $"Hangfire database '{databaseName}' does not exist. Please create it manually.";
-                
-                logger.LogError(errorMessage);
-                throw new InvalidOperationException(errorMessage);
+                logger.LogWarning("Main database '{DatabaseName}' does not exist yet. Hangfire will create tables when needed.", databaseName);
+                // Don't throw - Hangfire can work with database that will be created
+                // The PrepareSchemaIfNecessary option will handle table creation
             }
             else
             {
-                logger.LogInformation("Hangfire will use database {DatabaseName} (shared with token management)", databaseName);
+                logger.LogInformation("Hangfire will use main database {DatabaseName}", databaseName);
             }
         }
         catch (Exception ex)
@@ -193,13 +183,31 @@ public static class HangfireConfiguration
         {
             logger.LogInformation("=== HANGFIRE CONFIGURATION ===");
             logger.LogInformation("🔧 DEVELOPMENT MODE: Dashboard accessible without authentication");
-            logger.LogInformation("🗄️ Database: Shared OuterDb");
+            logger.LogInformation("🗄️ Database: Main Database");
             logger.LogInformation("🌐 Dashboard: /hangfire (no auth required)");
             logger.LogInformation("� Email: Using Service Account (no token management needed)");
         }
 
         // All OAuth token management jobs are disabled
         // Using Service Account authentication instead
+        
+        // Setup QuickLogin cleanup job
+        var cleanupDaysInactive = configuration.GetValue("QuickLogin:Cleanup:DaysInactive", 7);
+        var cleanupCronExpression = configuration.GetValue("QuickLogin:Cleanup:CronExpression", "0 2 * * *"); // Daily at 2 AM
+        
+        // Hangfire will automatically resolve QuickLoginCleanupJob instance from DI container
+        // and inject its dependencies (IQuickLoginCleanupService, ILogger)
+        recurringJobManager.AddOrUpdate(
+            "quicklogin-cleanup-inactive",
+            (QuickLoginCleanupJob job) => job.Execute(cleanupDaysInactive),
+            cleanupCronExpression,
+            new RecurringJobOptions
+            {
+                TimeZone = TimeZoneInfo.Utc
+            }
+        );
+        
+        logger.LogInformation("✅ QuickLogin cleanup job scheduled: Daily at 2 AM UTC (inactive for {Days} days)", cleanupDaysInactive);
         
         logger.LogInformation("Hangfire configured successfully (Service Account mode - no token jobs needed)");
     }

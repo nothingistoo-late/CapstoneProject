@@ -10,7 +10,6 @@ using CapstoneProject.Application.Commons.Models;
 using CapstoneProject.Domain.Entities;
 using CapstoneProject.Infrastructure.Context;
 using CapstoneProject.Infrastructure.Repositories;
-using CapstoneProject.Infrastructure.Repositories.Outer;
 using CapstoneProject.Infrastructure.Services;
 using CapstoneProject.Infrastructure.Configurations;
 using CapstoneProject.Infrastructure.Factories;
@@ -49,19 +48,7 @@ public static class InfrastructureDependencyInjection
                 warnings.Ignore(CoreEventId.FirstWithoutOrderByAndFilterWarning));
         });
 
-        // Configure Outer Database Context for external services and Hangfire
-        var outerConnectionString = configuration.GetConnectionString("OuterDbConnection");
-        if (!string.IsNullOrEmpty(outerConnectionString))
-        {
-            services.AddDbContextPool<CapstoneProjectOuterDbContext>(options =>
-            {
-                options.UseSqlServer(outerConnectionString, sql =>
-                {
-                    sql.MigrationsAssembly(typeof(CapstoneProjectOuterDbContext).Assembly.FullName);
-                    sql.CommandTimeout(30);
-                });
-            });
-        }
+        // Outer Database Context removed - using main database only
         // Register contexts as interfaces
         services.AddScoped<ICapstoneProjectDbContext>(provider => provider.GetRequiredService<CapstoneProjectDbContext>());
         // Map DbContext for services that depend on base DbContext (e.g., UnitOfWork)
@@ -109,10 +96,9 @@ public static class InfrastructureDependencyInjection
         // Configure Google settings
         services.Configure<GoogleSettings>(configuration.GetSection("GoogleSettings"));
 
-        // Configure Hangfire - DISABLED vì không cần token management nữa
-        // Service Account hoàn toàn tự động
-        var useHangfire = false; // configuration.GetValue("Hangfire:UseOuterDatabase", true);
-        if (useHangfire && !string.IsNullOrEmpty(outerConnectionString))
+        // Configure Hangfire - using main database
+        var useHangfire = configuration.GetValue("Hangfire:Enabled", true);
+        if (useHangfire)
         {
             services.AddHangfireServices(configuration);
         }
@@ -135,17 +121,18 @@ public static class InfrastructureDependencyInjection
         // Register Unit of Work
         services.AddScoped<IUnitOfWork, UnitOfWork>();
 
-        // Register Outer Unit of Work for external services
-        services.AddScoped<IOuterUnitOfWork, OuterUnitOfWork>();
-        services.AddScoped<OuterUnitOfWork>(); // For direct injection in handlers
+        // Outer Unit of Work removed - using main database only
 
         // Register services
         services.AddScoped<IJwtService, JwtService>();
         services.AddScoped<IIdentityService, IdentityService>();
         services.AddScoped<ICurrentUserService, CurrentUserService>();
         services.AddScoped<IOtpCacheService, OtpCacheService>();
+        services.AddScoped<Application.Commons.Interfaces.IQuickLoginCleanupService, QuickLoginCleanupService>();
+        services.AddScoped<QuickLoginCleanupJob>(); // Register job class for Hangfire DI
         services.AddScoped<IEmailService, EmailService>();
         services.AddScoped<INotificationFactory, NotificationFactory>();
+        services.AddScoped<Application.Commons.Interfaces.IConversationService, Application.Features.Chat.Services.ConversationService>();
         
         // File storage services
         services.AddScoped<LocalFileService>(); // Local storage implementation
