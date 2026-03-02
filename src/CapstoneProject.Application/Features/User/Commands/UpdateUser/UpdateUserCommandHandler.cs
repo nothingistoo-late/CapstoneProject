@@ -80,7 +80,7 @@ public class UpdateUserCommandHandler : IRequestHandler<UpdateUserCommand, Resul
 
             // Get current roles once (reuse for both validation and role update)
             var userRolesResult = await _identityService.GetUserRolesAsync(user);
-            var currentRole = RoleEnum.Student;
+            var currentRole = RoleEnum.Learner;
             var currentRolesList = new List<string>();
             if (userRolesResult.IsSuccess && userRolesResult.Data != null && userRolesResult.Data.Any())
             {

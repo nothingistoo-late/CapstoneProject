@@ -21,7 +21,8 @@ public static class ApplicationDependencyInjection
         // Register FluentValidation validators
         services.AddValidatorsFromAssembly(assembly);
 
-        // Register MediatR pipeline behaviors
+        // Register MediatR pipeline behaviors (UnhandledException runs first = outermost, catches exceptions from handlers)
+        services.AddTransient(typeof(IPipelineBehavior<,>), typeof(UnhandledExceptionBehavior<,>));
         services.AddTransient(typeof(IPipelineBehavior<,>), typeof(ValidationBehavior<,>));
         services.AddTransient(typeof(IPipelineBehavior<,>), typeof(PerformanceBehavior<,>));
         services.AddTransient(typeof(IPipelineBehavior<,>), typeof(AuthorizationBehavior<,>));

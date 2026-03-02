@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using CapstoneProject.Application.Common.Interfaces;
 using CapstoneProject.Domain.Entities;
 using CapstoneProject.Domain.Enums;
+using CapstoneProject.Infrastructure.Context.Configurations;
 
 namespace CapstoneProject.Infrastructure.Context;
 
@@ -18,6 +19,40 @@ public class CapstoneProjectDbContext : IdentityDbContext<AppUser, AppRole, Guid
     public DbSet<ChatRoomMember> ChatRoomMembers { get; set; }
     public DbSet<Message> Messages { get; set; }
     public DbSet<MessageRead> MessageReads { get; set; }
+
+    // QuackOrbit: Challenge Management
+    public DbSet<Map> Maps { get; set; }
+    public DbSet<MapSpec> MapSpecs { get; set; }
+    public DbSet<Hint> Hints { get; set; }
+    public DbSet<MapConstraint> MapConstraints { get; set; }
+    public DbSet<Tag> Tags { get; set; }
+    public DbSet<Concept> Concepts { get; set; }
+    public DbSet<MapTag> MapTags { get; set; }
+    public DbSet<MapConcept> MapConcepts { get; set; }
+
+    // QuackOrbit: Gameplay & Progress
+    public DbSet<Submission> Submissions { get; set; }
+    public DbSet<ExecutionsResult> ExecutionsResults { get; set; }
+    public DbSet<UserMapResult> UserMapResults { get; set; }
+    public DbSet<Achievement> Achievements { get; set; }
+    public DbSet<UserAchievement> UserAchievements { get; set; }
+    public DbSet<XpTransaction> XpTransactions { get; set; }
+
+    // QuackOrbit: Competitive
+    public DbSet<Match> Matches { get; set; }
+    public DbSet<Room> Rooms { get; set; }
+    public DbSet<RoomParticipant> RoomParticipants { get; set; }
+    public DbSet<UserMatchResult> UserMatchResults { get; set; }
+
+    // QuackOrbit: Marketplace
+    public DbSet<Package> Packages { get; set; }
+    public DbSet<UserPackage> UserPackages { get; set; }
+    public DbSet<Payment> Payments { get; set; }
+    public DbSet<PaymentRecord> PaymentRecords { get; set; }
+
+    // QuackOrbit: Community & Safety
+    public DbSet<ChallengeRating> ChallengeRatings { get; set; }
+    public DbSet<ChallengeReport> ChallengeReports { get; set; }
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -125,6 +160,9 @@ public class CapstoneProjectDbContext : IdentityDbContext<AppUser, AppRole, Guid
                 .HasForeignKey(x => x.UserId)
                 .OnDelete(DeleteBehavior.Restrict);
         });
+
+        // QuackOrbit entities
+        QuackOrbitEntityConfiguration.Configure(builder);
 
         // Gọi cấu hình chung cho BaseEntity (if any BaseEntity-derived entities are added later)
         BaseEntityConfigurationHelper.ConfigureBaseEntities(builder);

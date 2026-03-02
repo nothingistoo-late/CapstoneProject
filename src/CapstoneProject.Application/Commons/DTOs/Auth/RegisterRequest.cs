@@ -22,8 +22,8 @@ public class RegisterRequest
     public string FirstName { get; set; } = string.Empty;
     [JsonPropertyName("lastName")]
     public string LastName { get; set; } = string.Empty;
-    [JsonPropertyName("studentCode")]
-    public string? StudentCode { get; set; }
+    [JsonPropertyName("learnerCode")]
+    public string? LearnerCode { get; set; }
 
     [JsonPropertyName("phoneNumber")]
     public string PhoneNumber { get; set; } = string.Empty;

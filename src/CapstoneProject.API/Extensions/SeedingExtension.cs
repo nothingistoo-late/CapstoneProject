@@ -139,21 +139,21 @@ public static class SeedingExtension
                 }
             }
 
-            // Ensure demo user is in Student role
+            // Ensure demo user is in Learner role
             if (existingDemoUser != null)
             {
-                var studentRoleName = RoleEnum.Student.ToString();
-                if (!await userManager.IsInRoleAsync(existingDemoUser, studentRoleName))
+                var learnerRoleName = RoleEnum.Learner.ToString();
+                if (!await userManager.IsInRoleAsync(existingDemoUser, learnerRoleName))
                 {
-                    var addRoleResult = await userManager.AddToRoleAsync(existingDemoUser, studentRoleName);
+                    var addRoleResult = await userManager.AddToRoleAsync(existingDemoUser, learnerRoleName);
                     if (!addRoleResult.Succeeded)
                     {
                         var errors = string.Join(", ", addRoleResult.Errors.Select(e => e.Description));
-                        logger.LogWarning("Failed to add demo user to role {Role}: {Errors}", studentRoleName, errors);
+                        logger.LogWarning("Failed to add demo user to role {Role}: {Errors}", learnerRoleName, errors);
                     }
                     else
                     {
-                        logger.LogInformation("Added demo user to role {Role}", studentRoleName);
+                        logger.LogInformation("Added demo user to role {Role}", learnerRoleName);
                     }
                 }
             }

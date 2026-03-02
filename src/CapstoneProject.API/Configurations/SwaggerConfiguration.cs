@@ -50,9 +50,33 @@ public static class SwaggerConfiguration
                 {
                     mainTag = "CMS";
                 }
-                else if (relativePath?.Contains("/Student/") == true)
+                else if (relativePath?.Contains("/learner/") == true)
                 {
-                    mainTag = "Student";
+                    mainTag = "Learner";
+                }
+                else if (relativePath?.Contains("/chat/") == true)
+                {
+                    mainTag = "Chat";
+                }
+                else if (relativePath?.Contains("/challenge/") == true)
+                {
+                    mainTag = "Challenge";
+                }
+                else if (relativePath?.Contains("/gameplay/") == true)
+                {
+                    mainTag = "Gameplay";
+                }
+                else if (relativePath?.Contains("/competitive/") == true)
+                {
+                    mainTag = "Competitive";
+                }
+                else if (relativePath?.Contains("/marketplace/") == true)
+                {
+                    mainTag = "Marketplace";
+                }
+                else if (relativePath?.Contains("/community/") == true)
+                {
+                    mainTag = "Community";
                 }
                 else if (relativePath?.Contains("/common") == true)
                 {
@@ -65,7 +89,7 @@ public static class SwaggerConfiguration
                 }
                 
                 // Tạo tag kết hợp giữa nhóm chính và tên controller
-                // Ví dụ: "Admin_Auth" hoặc "Student_Auth"
+                // Ví dụ: "Admin_Auth" hoặc "Learner_Auth"
                 var combinedTag = $"{mainTag}_{controllerName}";
                 return new[] { mainTag, combinedTag };
             });

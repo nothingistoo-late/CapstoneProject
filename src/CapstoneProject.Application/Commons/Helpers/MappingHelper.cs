@@ -6,6 +6,20 @@ namespace CapstoneProject.Application.Commons.Helpers;
 public static class MappingHelper
 {
     /// <summary>
+    /// Ignore audit fields (CreatedAt, CreatedBy, UpdatedAt, UpdatedBy) when mapping from Request to Entity.
+    /// BE assigns these from ICurrentUserService and DateTime.UtcNow in handlers via InitializeEntity/UpdateEntity.
+    /// </summary>
+    public static IMappingExpression<TSource, TDestination> IgnoreAuditFields<TSource, TDestination>(
+        this IMappingExpression<TSource, TDestination> mappingExpression)
+        where TDestination : IEntityLike
+    {
+        return mappingExpression
+            .ForMember(dest => dest.CreatedAt, opt => opt.Ignore())
+            .ForMember(dest => dest.CreatedBy, opt => opt.Ignore())
+            .ForMember(dest => dest.UpdatedAt, opt => opt.Ignore())
+            .ForMember(dest => dest.UpdatedBy, opt => opt.Ignore());
+    }
+    /// <summary>
     /// Configures mapping to ignore BaseEntity fields except Status
     /// Used for mapping from DTOs/Requests to Entities (one-way only)
     /// </summary>

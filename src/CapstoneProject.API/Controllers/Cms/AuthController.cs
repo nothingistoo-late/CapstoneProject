@@ -1,15 +1,8 @@
-using MediatR;
-using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using CapstoneProject.Application.Common.DTOs.Auth;
-using CapstoneProject.Application.Common.Models;
-using Swashbuckle.AspNetCore.Annotations;
-using CapstoneProject.Application.Common.Extensions;
-using CapstoneProject.API.Attributes;
 using CapstoneProject.Application.Features.Auth.Commands.Login;
 using CapstoneProject.Application.Features.Auth.Commands.Logout;
-using Microsoft.AspNetCore.Authorization;
 using CapstoneProject.Application.Features.Auth.Queries.GetProfile;
-using CapstoneProject.Domain.Enums;
 using CapstoneProject.Application.Features.Auth.Commands.UpdateProfile;
 using CapstoneProject.Application.Features.Auth.Commands.RefreshToken;
 
@@ -91,7 +84,7 @@ public class AuthController : ControllerBase
     /// <response code="401">Logout failed (not authorized)</response>
     /// <response code="403">No access (user is not a CMS member)</response>
     [HttpPost("logout")]
-    [AuthorizeRoles(nameof(RoleEnum.Admin), nameof(RoleEnum.Teacher))]
+    [AuthorizeRoles(nameof(RoleEnum.Admin), nameof(RoleEnum.Moderator))]
     [ProducesResponseType(typeof(Result), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(Result), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(Result), StatusCodes.Status403Forbidden)]
@@ -128,7 +121,7 @@ public class AuthController : ControllerBase
     /// <response code="403">No access (user is not a CMS member)</response>
     /// <response code="500">Failed to retrieve profile (internal server error)</response>
     [HttpGet("profile")]
-    [AuthorizeRoles(nameof(RoleEnum.Admin), nameof(RoleEnum.Teacher))]
+    [AuthorizeRoles(nameof(RoleEnum.Admin), nameof(RoleEnum.Moderator))]
     [ProducesResponseType(typeof(Result<ProfileResponse>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(Result<ProfileResponse>), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(Result<ProfileResponse>), StatusCodes.Status403Forbidden)]
@@ -174,7 +167,7 @@ public class AuthController : ControllerBase
     /// <response code="403">No access (user is not a CMS member)</response>
     /// <response code="500">Failed to update profile (internal server error)</response>
     [HttpPut("profile")]
-    [AuthorizeRoles(nameof(RoleEnum.Admin), nameof(RoleEnum.Teacher))]
+    [AuthorizeRoles(nameof(RoleEnum.Admin), nameof(RoleEnum.Moderator))]
     [ProducesResponseType(typeof(Result<ProfileResponse>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(Result<ProfileResponse>), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(Result<ProfileResponse>), StatusCodes.Status401Unauthorized)]
@@ -197,7 +190,7 @@ public class AuthController : ControllerBase
     /// Refresh token of the logged-in user in cms system
     /// </summary>
     /// <remarks>
-    /// This API refesh access token of the currently cms authenticated user.
+    /// This API refresh access token of the currently cms authenticated user.
     /// It requires a valid access token in the request header.
     /// 
     /// Sample request:
@@ -213,14 +206,14 @@ public class AuthController : ControllerBase
     /// <response code="403">No access (user is not a CMS member)</response>
     /// <response code="500">Failed to refresh token (internal server error)</response>
     [HttpPost("refresh-token")]
-    [AuthorizeRoles(nameof(RoleEnum.Admin), nameof(RoleEnum.Teacher))]
+    [AuthorizeRoles(nameof(RoleEnum.Admin), nameof(RoleEnum.Moderator))]
     [ProducesResponseType(typeof(Result<ProfileResponse>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(Result<ProfileResponse>), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(Result<ProfileResponse>), StatusCodes.Status403Forbidden)]
     [ProducesResponseType(typeof(Result<ProfileResponse>), StatusCodes.Status500InternalServerError)]
     [SwaggerOperation(
         Summary = "Refresh token for the logged-in user in cms system",
-        Description = "This API refesh access token of the currently authenticated cms user",
+        Description = "This API refresh access token of the currently authenticated cms user",
         OperationId = "RefreshToken",
         Tags = new[] { "CMS" }
     )]

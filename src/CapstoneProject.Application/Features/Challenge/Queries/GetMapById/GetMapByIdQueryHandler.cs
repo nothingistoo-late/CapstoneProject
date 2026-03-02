@@ -1,0 +1,83 @@
+using MediatR;
+using Microsoft.EntityFrameworkCore;
+using CapstoneProject.Application.Common.Enums;
+using CapstoneProject.Application.Common.Interfaces;
+using CapstoneProject.Application.Common.Models;
+using CapstoneProject.Application.Commons.DTOs.Challenge;
+using CapstoneProject.Application.Commons.Interfaces;
+using CapstoneProject.Domain.Entities;
+
+namespace CapstoneProject.Application.Features.Challenge.Queries.GetMapById;
+
+public class GetMapByIdQueryHandler : IRequestHandler<GetMapByIdQuery, Result<MapDetailDto>>
+{
+    private readonly IUnitOfWork _unitOfWork;
+    private readonly ICurrentUserService _currentUserService;
+
+    public GetMapByIdQueryHandler(IUnitOfWork unitOfWork, ICurrentUserService currentUserService)
+    {
+        _unitOfWork = unitOfWork;
+        _currentUserService = currentUserService;
+    }
+
+    public async Task<Result<MapDetailDto>> Handle(GetMapByIdQuery request, CancellationToken cancellationToken)
+    {
+        var mapRepo = _unitOfWork.Repository<Map>();
+        var map = await mapRepo.GetQueryable()
+            .Where(m => m.Id == request.MapId && !m.IsDeleted)
+            .Include(m => m.MapSpecs)
+            .Include(m => m.Hints)
+            .Include(m => m.Constraints)
+            .Include(m => m.MapTags).ThenInclude(mt => mt.Tag)
+            .Include(m => m.MapConcepts).ThenInclude(mc => mc.Concept)
+            .AsNoTracking()
+            .FirstOrDefaultAsync(cancellationToken);
+        if (map == null)
+            return Result<MapDetailDto>.Failure($"Map not found with Id: {request.MapId}. The map may have been deleted or does not exist.", ErrorCodeEnum.NotFound);
+
+        var spec = map.MapSpecs.OrderByDescending(s => s.Version).FirstOrDefault();
+        bool showEditorial = false;
+        if (request.IncludeEditorialForUser)
+        {
+            var (isValid, userIdNullable) = await _currentUserService.IsUserValidAsync();
+            if (isValid && userIdNullable.HasValue)
+            {
+                var umrRepo = _unitOfWork.Repository<UserMapResult>();
+                var umr = await umrRepo.GetQueryable()
+                    .FirstOrDefaultAsync(u => u.UserId == userIdNullable.Value && u.MapId == map.Id, cancellationToken);
+                if (umr != null && umr.BestStars >= map.UnlockEditorialAfterStars)
+                    showEditorial = true;
+            }
+        }
+
+        var dto = new MapDetailDto
+        {
+            Id = map.Id,
+            Title = map.Title,
+            Description = map.Description,
+            Difficulty = map.Difficulty,
+            TimeLimitMs = map.TimeLimitMs,
+            IsPublished = map.IsPublished,
+            MapStatus = map.MapStatus,
+            Price = map.Price,
+            CreatedByUserId = map.CreatedByUserId,
+            EditorialContent = showEditorial ? map.EditorialContent : null,
+            UnlockEditorialAfterStars = map.UnlockEditorialAfterStars,
+            CreatedAt = map.CreatedAt,
+            ActiveSpec = spec == null ? null : new MapSpecDto
+            {
+                Id = spec.Id,
+                GridSpec = spec.GridSpec,
+                InitialStateSpec = spec.InitialStateSpec,
+                WinConditionSpec = spec.WinConditionSpec,
+                FailConditionSpec = spec.FailConditionSpec,
+                Version = spec.Version
+            },
+            Hints = map.Hints.OrderBy(h => h.OrderNo).Select(h => new HintItemDto { OrderNo = h.OrderNo, Content = h.Content }).ToList(),
+            Constraints = map.Constraints.Select(c => new ConstraintItemDto { Type = c.Type, Payload = c.Payload }).ToList(),
+            TagNames = map.MapTags.Select(t => t.Tag.Name).ToList(),
+            ConceptNames = map.MapConcepts.Select(c => c.Concept.Name).ToList()
+        };
+        return Result<MapDetailDto>.Success(dto);
+    }
+}

@@ -103,7 +103,7 @@ public class VerifyOtpCommandHandler : IRequestHandler<VerifyOtpCommand, Result>
                 return Result.Failure("Failed to create user", ErrorCodeEnum.ValidationFailed, errors);
             }
 
-            var roleResult = await _identityService.AddUserToRoleAsync(user, RoleEnum.Student.ToString());
+            var roleResult = await _identityService.AddUserToRoleAsync(user, RoleEnum.Learner.ToString());
             if (!roleResult.Succeeded)
             {
                 var errors = roleResult.Errors.Select(e => e.Description).ToList();

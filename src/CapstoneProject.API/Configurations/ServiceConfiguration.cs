@@ -32,6 +32,7 @@ public static class ServiceConfiguration
         // Security configurations
         builder.Services.AddJwtConfiguration(builder.Configuration);
         builder.Services.AddCorsConfiguration(builder.Configuration);
+        builder.Services.AddHttpClient();
 
         // Application & Infrastructure layers
         builder.Services.AddApplication();
@@ -93,8 +94,9 @@ public static class ServiceConfiguration
 
         app.MapControllers();
         
-        // Map SignalR Hub
+        // Map SignalR Hubs
         app.MapHub<ChatHub>("/hubs/chat");
+        app.MapHub<CompetitiveHub>("/hubs/competitive");
 
         return app;
     }

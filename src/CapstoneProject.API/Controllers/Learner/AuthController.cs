@@ -1,14 +1,7 @@
-using MediatR;
-using Microsoft.AspNetCore.Mvc;
 using CapstoneProject.Application.Common.DTOs.Auth;
-using CapstoneProject.Application.Common.Models;
-using Swashbuckle.AspNetCore.Annotations;
-using CapstoneProject.Application.Common.Extensions;
 using CapstoneProject.Application.Features.Auth.Commands.Login;
 using CapstoneProject.Application.Features.Auth.Commands.Logout;
 using CapstoneProject.Application.Features.Auth.Commands.Register;
-using CapstoneProject.API.Attributes;
-using CapstoneProject.Domain.Enums;
 using CapstoneProject.Application.Features.Auth.Queries.GetProfile;
 using CapstoneProject.Application.Features.Auth.Commands.VerifyOtp;
 using CapstoneProject.Application.Features.Auth.Commands.ResetPassword;
@@ -16,18 +9,18 @@ using CapstoneProject.Application.Features.Auth.Commands.ChangePassword;
 using CapstoneProject.Application.Features.Auth.Commands.UpdateProfile;
 using CapstoneProject.Application.Features.Auth.Commands.RefreshToken;
 using CapstoneProject.Application.Features.Auth.Commands.QuickLogin;
+using CapstoneProject.Application.Features.Auth.Commands.GoogleLogin;
 
-
-namespace CapstoneProject.API.Controllers.Student;
+namespace CapstoneProject.API.Controllers.Learner;
 
 /// <summary>
-/// Controller quản lý xác thực cho website Student
+/// Controller quản lý xác thực cho website Learner
 /// </summary>
 [ApiController]
-[Route("api/student/auth")]
+[Route("api/learner/auth")]
 [ApiExplorerSettings(GroupName = "v1")]
-[Configurations.Tags("Student")]
-[SwaggerTag("This API is used for Authentication for Student website")]
+[Configurations.Tags("Learner")]
+[SwaggerTag("This API is used for Authentication for Learner website")]
 public class AuthController : ControllerBase
 {
     private readonly IMediator _mediator;
@@ -40,12 +33,12 @@ public class AuthController : ControllerBase
     }
 
     /// <summary>
-    /// Login to the Student website
+    /// Login to the Learner website
     /// </summary>
     /// <remarks>
     /// Sample request:
     /// 
-    ///     POST /api/Student/auth/login
+    ///     POST /api/learner/auth/login
     ///     {
     ///        "email": "user@example.com",
     ///        "password": "User@123",
@@ -66,10 +59,10 @@ public class AuthController : ControllerBase
     [ProducesResponseType(typeof(Result<AuthResponse>), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(Result<AuthResponse>), StatusCodes.Status500InternalServerError)]
     [SwaggerOperation(
-        Summary = "Login to the Student website",
-        Description = "This API is used for Authentication for Student website",
+        Summary = "Login to the Learner website",
+        Description = "This API is used for Authentication for Learner website. Returns JWT access token and refresh token.",
         OperationId = "Login",
-        Tags = new[] { "Student" }
+        Tags = new[] { "Learner" }
     )]
     public async Task<IActionResult> Login([FromBody] LoginRequest request)
     {
@@ -82,15 +75,15 @@ public class AuthController : ControllerBase
     /// Quick login with demo account
     /// </summary>
     /// <remarks>
-    /// This API allows quick login using a configured quick code. It will automatically log in with a demo user account.
+    /// Allows quick login using a configured quick code. Used for testing/demo. Automatically logs in with a demo user.
     /// 
-    /// Sample request:
-    /// 
-    ///     POST /api/Student/auth/quick-login
-    ///     {
-    ///        "quickCode": "DEMO123"
-    ///     }
+    ///     POST /api/learner/auth/quick-login
+    ///     { "quickCode": "DEMO123" }
     /// </remarks>
+    /// <response code="200">Login successfully</response>
+    /// <response code="400">Invalid request or quick code</response>
+    /// <response code="401">Quick code not valid</response>
+    /// <response code="404">Demo user not found</response>
     [HttpPost("quick-login")]
     [ProducesResponseType(typeof(Result<AuthResponse>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(Result<AuthResponse>), StatusCodes.Status400BadRequest)]
@@ -101,7 +94,7 @@ public class AuthController : ControllerBase
         Summary = "Quick login with demo account",
         Description = "This API allows quick login using a configured quick code for testing purposes",
         OperationId = "QuickLogin",
-        Tags = new[] { "Student" }
+        Tags = new[] { "Learner" }
     )]
     public async Task<IActionResult> QuickLogin([FromBody] QuickLoginRequest request)
     {
@@ -109,7 +102,6 @@ public class AuthController : ControllerBase
         {
             return BadRequest(Result<AuthResponse>.Failure("Request body is required", Application.Common.Enums.ErrorCodeEnum.ValidationFailed));
         }
-        
         _logger.LogInformation("QuickLogin endpoint called with QuickCode: {QuickCode}", request.QuickCode);
         var command = new QuickLoginCommand(request);
         var result = await _mediator.Send(command);
@@ -118,32 +110,56 @@ public class AuthController : ControllerBase
     }
 
     /// <summary>
-    /// Logout from the Student website
+    /// Đăng nhập bằng Google OAuth2 (gửi id_token từ Google Sign-In).
     /// </summary>
     /// <remarks>
-    /// This API is used for Logging out from the Student website. It will clear the refresh token and refresh token expiry time in the database.
-    /// Need access token in the header.
+    /// Client gửi id_token nhận được từ Google Sign-In. Server xác thực token và tạo/cập nhật user, trả về JWT.
     /// 
-    /// Sample request:
-    /// 
-    ///     POST /api/Student/auth/logout
-    /// 
-    /// Headers:
-    ///     Authorization: Bearer &lt;access_token&gt;
+    ///     POST /api/learner/auth/google
+    ///     { "idToken": "eyJhbGc..." }
     /// </remarks>
-    /// <returns>Logout successfully</returns>
+    /// <response code="200">Login successfully</response>
+    /// <response code="400">Invalid or missing id_token</response>
+    /// <response code="401">Token validation failed</response>
+    [HttpPost("google")]
+    [ProducesResponseType(typeof(Result<AuthResponse>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(Result<AuthResponse>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(Result<AuthResponse>), StatusCodes.Status401Unauthorized)]
+    [SwaggerOperation(
+        Summary = "Login with Google",
+        Description = "Authenticate using Google OAuth2 id_token. Creates or updates user and returns JWT.",
+        OperationId = "GoogleLogin",
+        Tags = new[] { "Learner" }
+    )]
+    public async Task<IActionResult> GoogleLogin([FromBody] GoogleLoginRequest request)
+    {
+        if (request == null)
+            return BadRequest(Result<AuthResponse>.Failure("Request body is required", Application.Common.Enums.ErrorCodeEnum.ValidationFailed));
+        var command = new GoogleLoginCommand(request);
+        var result = await _mediator.Send(command);
+        return StatusCode(result.GetHttpStatusCode(), result);
+    }
+
+    /// <summary>
+    /// Logout from the Learner website
+    /// </summary>
+    /// <remarks>
+    /// Clears refresh token in database. Requires access token in header.
+    /// 
+    ///     POST /api/learner/auth/logout
+    ///     Headers: Authorization: Bearer &lt;access_token&gt;
+    /// </remarks>
     /// <response code="200">Logout successfully</response>
-    /// <response code="401">Logout failed (not authorized)</response>
-    /// <response code="500">Logout failed (internal server error)</response>
+    /// <response code="401">Not authorized</response>
     [HttpPost("logout")]
     [ProducesResponseType(typeof(Result), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(Result), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(Result), StatusCodes.Status500InternalServerError)]
     [SwaggerOperation(
-        Summary = "Logout from the Student website",
-        Description = "This API is used for Logging out from the Student website",
+        Summary = "Logout from the Learner website",
+        Description = "This API is used for Logging out from the Learner website",
         OperationId = "Logout",
-        Tags = new[] { "Student" }
+        Tags = new[] { "Learner" }
     )]
     public async Task<IActionResult> Logout()
     {
@@ -153,42 +169,27 @@ public class AuthController : ControllerBase
     }
 
     /// <summary>
-    /// Register a new Student
+    /// Register a new Learner
     /// </summary>
     /// <remarks>
-    /// This API is used for Registering a new Student. It will cache an OTP code and send it to the user's email or phone number for verification.
+    /// Gửi thông tin đăng ký (multipart/form-data). Hệ thống lưu OTP và gửi qua email/phone. Sau đó gọi Verify OTP để hoàn tất.
     /// 
-    /// Sample request:
-    /// 
-    ///     POST /api/Student/auth/register
-    ///     Content-Type: multipart/form-data
-    ///     
-    /// Form fields (camelCase naming):
-    /// - email (required): Email address
-    /// - password (required): Password (min 6 characters)
-    /// - confirmPassword (required): Password confirmation
-    /// - firstName (required): First name (max 50 characters)
-    /// - lastName (required): Last name (max 50 characters)
-    /// - phoneNumber (required): Phone number (10-11 digits)
-    /// - gender (optional): Gender (0=Male, 1=Female, 2=Other)
-    /// - dateOfBirth (optional): Date of birth (YYYY-MM-DD format)
-    /// - studentCode (optional): Student code
-    /// 
-    /// Note: Use camelCase for form field names to maintain consistency with React client naming conventions.
+    ///     POST /api/learner/auth/register
+    ///     Form: email, password, confirmPassword, firstName, lastName, phoneNumber, learnerCode (optional), gender, dateOfBirth
     /// </remarks>
-    /// <response code="200">Register successfully</response>
-    /// <response code="400">Register failed (validation error)</response>
-    /// <response code="500">Register failed (internal server error)</response>
+    /// <response code="200">OTP sent successfully</response>
+    /// <response code="400">Validation error</response>
+    /// <response code="500">Internal server error</response>
     [HttpPost("register")]
     [SkipModelValidation]
     [ProducesResponseType(typeof(Result), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(Result), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(Result), StatusCodes.Status500InternalServerError)]
     [SwaggerOperation(
-        Summary = "Register a new Student",
-        Description = "This API is used for Registering a new Student",
+        Summary = "Register a new Learner",
+        Description = "This API is used for Registering a new Learner",
         OperationId = "Register",
-        Tags = new[] { "Student" }
+        Tags = new[] { "Learner" }
     )]
     public async Task<IActionResult> Register(
         [FromForm(Name = "email")] string email,
@@ -196,7 +197,7 @@ public class AuthController : ControllerBase
         [FromForm(Name = "confirmPassword")] string confirmPassword,
         [FromForm(Name = "firstName")] string firstName,
         [FromForm(Name = "lastName")] string lastName,
-        [FromForm(Name = "studentCode")] string? studentCode,
+        [FromForm(Name = "learnerCode")] string? learnerCode,
         [FromForm(Name = "phoneNumber")] string phoneNumber,
         [FromForm(Name = "gender")] GenderEnum? gender = null,
         [FromForm(Name = "dateOfBirth")] DateTime? dateOfBirth = null)
@@ -209,7 +210,7 @@ public class AuthController : ControllerBase
             FirstName = firstName,
             LastName = lastName,
             PhoneNumber = phoneNumber,
-            StudentCode = studentCode,
+            LearnerCode = learnerCode,
             Gender = gender,
             DateOfBirth = dateOfBirth,
         };
@@ -223,24 +224,13 @@ public class AuthController : ControllerBase
     /// Reset password
     /// </summary>
     /// <remarks>
-    /// This API is used for Resetting password. It will cache an OTP code and send it to the user's email or phone number for verification.
+    /// Gửi contact (email/phone) và mật khẩu mới. Hệ thống gửi OTP xác thực, sau đó gọi Verify OTP (otpType = PasswordReset) để đổi mật khẩu.
     /// 
-    /// Sample request:
-    /// 
-    ///     POST /api/Student/auth/reset-password
-    ///     {
-    ///        "contact": "user@example.com",
-    ///        "newPassword": "User@123",
-    ///        "otpSentChannel": 1
-    ///     }
-    /// 
-    /// `otpSentChannel` default is 1 (Email), 2 (Phone). 
-    /// `newPassword` is required
-    /// `contact` is required
+    ///     POST /api/learner/auth/reset-password
+    ///     { "contact": "user@example.com", "newPassword": "New@123", "otpSentChannel": 1 }
     /// </remarks>
-    /// <response code="200">Reset password successfully</response>
-    /// <response code="400">Reset password failed (validation error)</response>
-    /// <response code="500">Reset password failed (internal server error)</response>
+    /// <response code="200">OTP sent</response>
+    /// <response code="400">Validation error</response>
     [HttpPost("reset-password")]
     [ProducesResponseType(typeof(Result), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(Result), StatusCodes.Status400BadRequest)]
@@ -249,7 +239,7 @@ public class AuthController : ControllerBase
         Summary = "Reset password",
         Description = "This API is used for Resetting password",
         OperationId = "ResetPassword",
-        Tags = new[] { "Student" }
+        Tags = new[] { "Learner" }
     )]
     public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordRequest request)
     {
@@ -262,22 +252,13 @@ public class AuthController : ControllerBase
     /// Verify OTP for registration or password reset
     /// </summary>
     /// <remarks>
-    /// This API is used for Verifying OTP for registration or password reset. It will verify the OTP code and register the user or reset the password.
-    /// The system automatically handles security tokens internally for enhanced security.
+    /// Sau khi đăng ký hoặc reset password, client gửi OTP nhận được. otpType: 1 = Registration (tự động đăng ký + login), 2 = PasswordReset.
     /// 
-    /// Sample request:
-    /// 
-    ///     POST /api/Student/auth/verify-otp
-    ///     {
-    ///        "contact": "user@example.com",
-    ///        "otp": "123456",
-    ///        "otpType": 1,
-    ///        "otpSentChannel": 1
-    ///     }
-    /// 
-    /// `otpType` default is 1 (Registration), 2 (Password Reset)
-    /// `otpSentChannel` default is 1 (Email), 2 (Phone)
+    ///     POST /api/learner/auth/verify-otp
+    ///     { "contact": "user@example.com", "otp": "123456", "otpType": 1, "otpSentChannel": 1 }
     /// </remarks>
+    /// <response code="200">Verified; with registration returns auth tokens</response>
+    /// <response code="400">Invalid OTP or validation error</response>
     [HttpPost("verify-otp")]
     [ProducesResponseType(typeof(Result), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(Result), StatusCodes.Status400BadRequest)]
@@ -286,7 +267,7 @@ public class AuthController : ControllerBase
         Summary = "Verify OTP for registration",
         Description = "This API is used for Verifying OTP for registration",
         OperationId = "VerifyOtp",
-        Tags = new[] { "Student" }
+        Tags = new[] { "Learner" }
     )]
     public async Task<IActionResult> VerifyOtp([FromBody] VerifyOtpRequest request)
     {
@@ -294,37 +275,31 @@ public class AuthController : ControllerBase
         var result = await _mediator.Send(command);
         return StatusCode(result.GetHttpStatusCode(), result);
     }
-    
+
     /// <summary>
-    /// Get profile of the logged-in user in Student website
+    /// Get profile of the logged-in user in Learner website
     /// </summary>
     /// <remarks>
-    /// This API retrieves the profile information of the currently authenticated user.
-    /// It requires a valid access token in the request header.
+    /// Lấy thông tin profile của user đang đăng nhập. Cần access token.
     /// 
-    /// Sample request:
-    /// 
-    ///     GET /api/Student/auth/profile
-    /// 
-    /// Headers:
-    ///     Authorization: Bearer &lt;access_token&gt;
+    ///     GET /api/learner/auth/profile
+    ///     Headers: Authorization: Bearer &lt;access_token&gt;
     /// </remarks>
-    /// <returns>Student profile information</returns>
+    /// <returns>Learner profile (email, name, phone, avatar, etc.)</returns>
     /// <response code="200">Profile retrieved successfully</response>
-    /// <response code="401">Failed to retrieve profile (not authorized)</response>
-    /// <response code="403">No access (user is not a Student)</response>
-    /// <response code="500">Failed to retrieve profile (internal server error)</response>
+    /// <response code="401">Not authorized</response>
+    /// <response code="403">User is not Learner</response>
     [HttpGet("profile")]
-    [AuthorizeRoles("Student")]
+    [AuthorizeRoles(nameof(RoleEnum.Learner))]
     [ProducesResponseType(typeof(Result<ProfileResponse>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(Result<ProfileResponse>), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(Result<ProfileResponse>), StatusCodes.Status403Forbidden)]
     [ProducesResponseType(typeof(Result<ProfileResponse>), StatusCodes.Status500InternalServerError)]
     [SwaggerOperation(
-        Summary = "Get profile of the logged-in user in Student website",
-        Description = "This API retrieves the profile information of the currently Student authenticated user",
+        Summary = "Get profile of the logged-in user in Learner website",
+        Description = "This API retrieves the profile information of the currently authenticated Learner user",
         OperationId = "GetProfile",
-        Tags = new[] { "Student" }
+        Tags = new[] { "Learner" }
     )]
     public async Task<IActionResult> GetProfile()
     {
@@ -337,27 +312,17 @@ public class AuthController : ControllerBase
     /// Change password
     /// </summary>
     /// <remarks>
-    /// This API is used for Changing password. It will change the password of the currently authenticated user.
+    /// Đổi mật khẩu khi đã đăng nhập. Cần currentPassword, newPassword, confirmPassword.
     /// 
-    /// Sample request:
-    /// 
-    ///     POST /api/Student/auth/change-password
-    ///     {
-    ///        "currentPassword": "User@123",
-    ///        "newPassword": "User@123",
-    ///        "confirmPassword": "User@123"
-    ///     }
+    ///     POST /api/learner/auth/change-password
+    ///     { "currentPassword": "...", "newPassword": "...", "confirmPassword": "..." }
     /// </remarks>
-    /// `currentPassword` is required
-    /// `newPassword` is required
-    /// `confirmPassword` is required
-    /// <response code="200">Change password successfully</response>
-    /// <response code="404">Change password failed (user not found)</response>
-    /// <response code="400">Change password failed (validation error)</response>
-    /// <response code="401">Change password failed (not authorized)</response>
-    /// <response code="500">Change password failed (internal server error)</response>
+    /// <response code="200">Password changed</response>
+    /// <response code="400">Validation or wrong current password</response>
+    /// <response code="401">Not authorized</response>
+    /// <response code="404">User not found</response>
     [HttpPost("change-password")]
-    [AuthorizeRoles("Student")]
+    [AuthorizeRoles(nameof(RoleEnum.Learner))]
     [ProducesResponseType(typeof(Result), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(Result), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(Result), StatusCodes.Status400BadRequest)]
@@ -367,7 +332,7 @@ public class AuthController : ControllerBase
         Summary = "Change password",
         Description = "This API is used for Changing password",
         OperationId = "ChangePassword",
-        Tags = new[] { "Student" }
+        Tags = new[] { "Learner" }
     )]
     public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordRequest request)
     {
@@ -377,46 +342,29 @@ public class AuthController : ControllerBase
     }
 
     /// <summary>
-    /// Update profile of the logged-in student
+    /// Update profile of the logged-in learner
     /// </summary>
     /// <remarks>
-    /// This API updates the profile information of the currently authenticated student.
-    /// It requires a valid access token in the request header.
+    /// Cập nhật firstName, lastName, phoneNumber, avatar (multipart/form-data). Cần access token.
     /// 
-    /// Sample request:
-    /// 
-    ///     PUT /api/Student/auth/profile
-    ///     Content-Type: multipart/form-data
-    /// 
-    /// Form fields (camelCase naming):
-    /// - firstName (optional): First name (max 50 characters)
-    /// - lastName (optional): Last name (max 50 characters)
-    /// - phoneNumber (optional): Phone number (10-11 digits)
-    /// - avatarFile (optional): Avatar image file (max 10MB, .jpg/.jpeg/.png/.gif)
-    /// - studentProfile.studentCode (optional): Student code
-    /// - studentProfile.dateOfBirth (optional): Date of birth (YYYY-MM-DD)
-    /// - studentProfile.gender (optional): Gender (0=Male, 1=Female, 2=Other)
-    /// 
-    /// Headers:
-    ///     Authorization: Bearer &lt;access_token&gt;
+    ///     PUT /api/learner/auth/profile
+    ///     Form: firstName, lastName, phoneNumber, avatarFile (optional)
     /// </remarks>
-    /// <returns>Updated profile information</returns>
-    /// <response code="200">Profile updated successfully</response>
-    /// <response code="400">Failed to update profile (validation error)</response>
-    /// <response code="401">Failed to update profile (not authorized)</response>
-    /// <response code="500">Failed to update profile (internal server error)</response>
+    /// <response code="200">Profile updated</response>
+    /// <response code="400">Validation error</response>
+    /// <response code="401">Not authorized</response>
     [HttpPut("profile")]
-    [AuthorizeRoles("Student")]
+    [AuthorizeRoles(nameof(RoleEnum.Learner))]
     [ProducesResponseType(typeof(Result<ProfileResponse>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(Result<ProfileResponse>), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(Result<ProfileResponse>), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(Result<ProfileResponse>), StatusCodes.Status500InternalServerError)]
     [SwaggerOperation(
-        Summary = "Update profile of the logged-in student",
-        Description = "This API updates the profile information of the currently authenticated student",
+        Summary = "Update profile of the logged-in learner",
+        Description = "This API updates the profile information of the currently authenticated learner",
         OperationId = "UpdateProfile",
-        Tags = new[] { "Student" }
-    )] 
+        Tags = new[] { "Learner" }
+    )]
     public async Task<IActionResult> UpdateProfile([FromForm] UpdateProfileRequest request, IFormFile? avatarFile)
     {
         var command = new UpdateProfileCommand(request, avatarFile);
@@ -425,35 +373,28 @@ public class AuthController : ControllerBase
     }
 
     /// <summary>
-    /// Refresh token of the logged-in user in Student website
+    /// Refresh token of the logged-in user in Learner website
     /// </summary>
     /// <remarks>
-    /// This API refesh access token of the currently student user.
-    /// It requires a valid access token in the request header.
+    /// Gửi refresh token (qua cookie hoặc header) để nhận access token mới.
     /// 
-    /// Sample request:
-    /// 
-    ///     GET /api/student/auth/refresh-token
-    /// 
-    /// Headers:
-    ///     Authorization: Bearer &lt;access_token&gt;
+    ///     POST /api/learner/auth/refresh-token
+    ///     Headers: Authorization: Bearer &lt;access_token&gt; (hoặc refresh token tùy cấu hình)
     /// </remarks>
-    /// <returns>refresh token for student</returns>
-    /// <response code="200">Refresh token successfully</response>
-    /// <response code="401">Failed to refresh token (not authorized)</response>
-    /// <response code="403">No access (user is not a CMS member)</response>
-    /// <response code="500">Failed to refresh token (internal server error)</response>
+    /// <response code="200">New access token returned</response>
+    /// <response code="401">Invalid or expired token</response>
+    /// <response code="403">Not a Learner</response>
     [HttpPost("refresh-token")]
-    [AuthorizeRoles(nameof(RoleEnum.Student))]
+    [AuthorizeRoles(nameof(RoleEnum.Learner))]
     [ProducesResponseType(typeof(Result<ProfileResponse>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(Result<ProfileResponse>), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(Result<ProfileResponse>), StatusCodes.Status403Forbidden)]
     [ProducesResponseType(typeof(Result<ProfileResponse>), StatusCodes.Status500InternalServerError)]
     [SwaggerOperation(
-        Summary = "Refresh token for the logged-in user in Student website",
-        Description = "This API refesh access token of the currently authenticated student user",
+        Summary = "Refresh token for the logged-in user in Learner website",
+        Description = "This API refreshes access token of the currently authenticated learner user",
         OperationId = "RefreshToken",
-        Tags = new[] { "Student" }
+        Tags = new[] { "Learner" }
     )]
     public async Task<IActionResult> RefreshToken()
     {

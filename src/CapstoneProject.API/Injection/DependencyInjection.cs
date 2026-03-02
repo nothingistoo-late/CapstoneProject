@@ -21,8 +21,8 @@ public static class DependencyInjection
         });
         
         // Register role-based access filters
-        services.AddScoped<StudentRoleAccessFilter>();
-        services.AddScoped<TeacherRoleAccessFilter>();
+        services.AddScoped<LearnerRoleAccessFilter>();
+        services.AddScoped<ModeratorRoleAccessFilter>();
         services.AddScoped<AdminRoleAccessFilter>();
 
         // Register validation configuration

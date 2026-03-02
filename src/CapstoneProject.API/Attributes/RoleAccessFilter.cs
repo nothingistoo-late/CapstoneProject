@@ -66,64 +66,64 @@ public abstract class SystemAccessFilterBase : IActionFilter
 }
 
 /// <summary>
-/// Filter that allows only user access
+/// Filter that allows Learner (và Admin) truy cập khu vực learner.
 /// </summary>
-public class StudentRoleAccessFilter : SystemAccessFilterBase
+public class LearnerRoleAccessFilter : SystemAccessFilterBase
 {
     protected override bool IsAuthorizedForSystem(AuthResponse user)
     {
-        return HasRole(user, RoleEnum.Student.ToString()) || HasRole(user, RoleEnum.Teacher.ToString()) || HasRole(user, RoleEnum.Admin.ToString());
+        return HasRole(user, RoleEnum.Learner.ToString()) || HasRole(user, RoleEnum.Admin.ToString());
     }
-    
+
     protected override string GetSystemName()
     {
-        return "Student Website";
+        return "Learner Website";
     }
-    
+
     protected override string GetAllowedRolesDescription()
     {
-        return "Students, Teacher members, and Administrators";
+        return "Learners and Administrators";
     }
 }
 
 /// <summary>
-/// Filter that allows only Teacher and admin access
+/// Filter that allows Moderator and Admin access (portal kiểm duyệt).
 /// </summary>
-public class TeacherRoleAccessFilter : SystemAccessFilterBase
+public class ModeratorRoleAccessFilter : SystemAccessFilterBase
 {
     protected override bool IsAuthorizedForSystem(AuthResponse user)
     {
-        return HasRole(user, RoleEnum.Teacher.ToString()) || HasRole(user, RoleEnum.Admin.ToString());
+        return HasRole(user, RoleEnum.Moderator.ToString()) || HasRole(user, RoleEnum.Admin.ToString());
     }
-    
+
     protected override string GetSystemName()
     {
-        return "Teacher Portal";
+        return "Moderator Portal";
     }
-    
+
     protected override string GetAllowedRolesDescription()
     {
-        return "Teacher members and Administrators";
+        return "Moderators and Administrators";
     }
 }
 
 /// <summary>
-/// Filter that allows only admin and Teacher access to admin portal
+/// Filter that allows Admin and Moderator access to CMS.
 /// </summary>
 public class AdminRoleAccessFilter : SystemAccessFilterBase
 {
     protected override bool IsAuthorizedForSystem(AuthResponse user)
     {
-        return HasRole(user, RoleEnum.Admin.ToString()) || HasRole(user, RoleEnum.Teacher.ToString());
+        return HasRole(user, RoleEnum.Admin.ToString()) || HasRole(user, RoleEnum.Moderator.ToString());
     }
-    
+
     protected override string GetSystemName()
     {
         return "CMS System";
     }
-    
+
     protected override string GetAllowedRolesDescription()
     {
-        return "Teacher members and Administrators";
+        return "Moderators and Administrators";
     }
 } 

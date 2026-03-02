@@ -23,7 +23,7 @@ public class ProfileResponse
 
     public string? AvatarPath { get; set; }
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public string? StudentCode { get; set; }
+    public string? LearnerCode { get; set; }
 
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public string? TeacherCode { get; set; }

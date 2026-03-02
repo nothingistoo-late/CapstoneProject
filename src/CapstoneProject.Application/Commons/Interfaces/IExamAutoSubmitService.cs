@@ -6,9 +6,9 @@ namespace CapstoneProject.Application.Commons.Interfaces;
 public interface IExamAutoSubmitService
 {
     /// <summary>
-    /// Schedule an auto-submit job for a student attempt
+    /// Schedule an auto-submit job for a learner attempt
     /// </summary>
-    /// <param name="attemptId">The student attempt ID</param>
+    /// <param name="attemptId">The learner attempt ID</param>
     /// <param name="deadline">When the job should execute</param>
     /// <returns>Job ID for tracking</returns>
     string ScheduleAutoSubmit(Guid attemptId, DateTime deadline);

@@ -38,6 +38,14 @@ public class QuickLoginCommandHandler : IRequestHandler<QuickLoginCommand, Resul
     {
         try
         {
+            // Quick login can be temporarily disabled via configuration
+            var quickLoginEnabled = _configuration.GetSection("QuickLogin").GetValue<bool?>("Enabled") ?? true;
+            if (!quickLoginEnabled)
+            {
+                _logger.LogInformation("Quick login attempted but feature is disabled");
+                return Result<AuthResponse>.Failure("Quick login is temporarily disabled.", ErrorCodeEnum.Forbidden);
+            }
+
             // Get quick login configuration
             var configuredQuickCode = _configuration.GetSection("QuickLogin").GetValue<string>("Code");
             var defaultPassword = _configuration.GetSection("QuickLogin").GetValue<string>("DemoUserPassword") ?? "Demo@123";
@@ -96,8 +104,8 @@ public class QuickLoginCommandHandler : IRequestHandler<QuickLoginCommand, Resul
                     return Result<AuthResponse>.Failure("Failed to create user", ErrorCodeEnum.ValidationFailed, errors);
                 }
 
-                // Add Student role
-                var roleResult = await _identityService.AddUserToRoleAsync(user, RoleEnum.Student.ToString());
+                // Add Learner role
+                var roleResult = await _identityService.AddUserToRoleAsync(user, RoleEnum.Learner.ToString());
                 if (!roleResult.Succeeded)
                 {
                     var errors = roleResult.Errors.Select(e => e.Description).ToList();

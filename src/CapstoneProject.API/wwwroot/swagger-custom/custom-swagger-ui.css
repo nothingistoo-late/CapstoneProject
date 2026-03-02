@@ -3,9 +3,9 @@
     font-size: 16px;
 }
 
-/* Main tags: CMS, Student, Chat */
+/* Main tags: CMS, Learner, Chat */
 .opblock-tag-section h3.opblock-tag[data-tag="CMS"] span,
-.opblock-tag-section h3.opblock-tag[data-tag="Student"] span,
+.opblock-tag-section h3.opblock-tag[data-tag="Learner"] span,
 .opblock-tag-section h3.opblock-tag[data-tag="Chat"] span {
     font-size: 20px !important;
     font-weight: bold !important;
@@ -21,8 +21,8 @@
     color: #e74c3c !important;
 }
 
-/* Student tag */
-.opblock-tag-section h3.opblock-tag[data-tag="Student"] span {
+/* Learner tag */
+.opblock-tag-section h3.opblock-tag[data-tag="Learner"] span {
     border-left: 5px solid #2ecc71 !important;
     color: #2ecc71 !important;
 }
@@ -33,7 +33,7 @@
     color: #3498db !important;
 }
 
-/* Sub-tags: CMS_Auth, Student_Auth, etc. */
+/* Sub-tags: CMS_Auth, Learner_Auth, etc. */
 .opblock-tag-section h3.opblock-tag[data-tag*="_"] {
     margin-left: 20px !important;
     position: relative;
@@ -54,8 +54,8 @@
     color: #c0392b !important;
 }
 
-/* All Student sub-tags */
-.opblock-tag-section h3.opblock-tag[data-tag^="Student_"] span {
+/* All Learner sub-tags */
+.opblock-tag-section h3.opblock-tag[data-tag^="Learner_"] span {
     border-left: 3px solid #2ecc71 !important;
     color: #27ae60 !important;
 }

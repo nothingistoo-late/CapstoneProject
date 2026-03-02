@@ -64,6 +64,7 @@ public class CreateUserCommandHandler : IRequestHandler<CreateUserCommand, Resul
 
             var user = _mapper.Map<AppUser>(request);
             user.InitializeEntity(userId);
+            user.Status = request.Status ?? EntityStatusEnum.Active;
 
             // Upload avatar if provided
             if (command.AvatarFile != null)

@@ -23,7 +23,10 @@ public class CreateUserRequestValidator : AbstractValidator<CreateUserRequest>
             .ValidPassword(6);
 
         RuleFor(x => x.Role)
-            .IsInEnum().WithMessage("Invalid role. Must be Student, Teacher, or Admin");
+            .IsInEnum().WithMessage("Invalid role. Must be Learner, Moderator, or Admin");
+
+        When(x => x.Status.HasValue, () =>
+            RuleFor(x => x.Status!.Value).IsInEnum().WithMessage("Invalid status"));
 
         When(x => !string.IsNullOrEmpty(x.PhoneNumber), () =>
         {

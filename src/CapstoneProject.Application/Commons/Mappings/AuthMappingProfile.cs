@@ -19,10 +19,7 @@ public class AuthMappingProfile : Profile
             .ForMember(dest => dest.EmailConfirmed, opt => opt.MapFrom(src => true))
             .ForMember(dest => dest.AvatarPath, opt => opt.Ignore())
             .IgnoreIdentityFields()
-            .ForMember(dest => dest.CreatedAt, opt => opt.Ignore())
-            .ForMember(dest => dest.CreatedBy, opt => opt.Ignore())
-            .ForMember(dest => dest.UpdatedAt, opt => opt.Ignore())
-            .ForMember(dest => dest.UpdatedBy, opt => opt.Ignore());
+            .IgnoreAuditFields();
 
         CreateMap<AppUser, ProfileResponse>()
             .ForMember(dest => dest.UserId, opt => opt.MapFrom(src => src.Id))
@@ -31,7 +28,7 @@ public class AuthMappingProfile : Profile
             .ForMember(dest => dest.DateOfBirth, opt => opt.Ignore())
             .ForMember(dest => dest.HireDate, opt => opt.Ignore())
             .ForMember(dest => dest.Salary, opt => opt.Ignore())
-            .ForMember(dest => dest.StudentCode, opt => opt.Ignore())
+            .ForMember(dest => dest.LearnerCode, opt => opt.Ignore())
             .ForMember(dest => dest.TeacherCode, opt => opt.Ignore());
     }
 }
