@@ -26,7 +26,7 @@ namespace CapstoneProject.API.Controllers.Student;
 [ApiController]
 [Route("api/student/auth")]
 [ApiExplorerSettings(GroupName = "v1")]
-[Configurations.Tags("Student", "Student_Auth")]
+[Configurations.Tags("Student")]
 [SwaggerTag("This API is used for Authentication for Student website")]
 public class AuthController : ControllerBase
 {
@@ -69,7 +69,7 @@ public class AuthController : ControllerBase
         Summary = "Login to the Student website",
         Description = "This API is used for Authentication for Student website",
         OperationId = "Login",
-        Tags = new[] { "Student", "Student_Auth" }
+        Tags = new[] { "Student" }
     )]
     public async Task<IActionResult> Login([FromBody] LoginRequest request)
     {
@@ -101,7 +101,7 @@ public class AuthController : ControllerBase
         Summary = "Quick login with demo account",
         Description = "This API allows quick login using a configured quick code for testing purposes",
         OperationId = "QuickLogin",
-        Tags = new[] { "Student", "Student_Auth" }
+        Tags = new[] { "Student" }
     )]
     public async Task<IActionResult> QuickLogin([FromBody] QuickLoginRequest request)
     {
@@ -143,7 +143,7 @@ public class AuthController : ControllerBase
         Summary = "Logout from the Student website",
         Description = "This API is used for Logging out from the Student website",
         OperationId = "Logout",
-        Tags = new[] { "Student", "Student_Auth" }
+        Tags = new[] { "Student" }
     )]
     public async Task<IActionResult> Logout()
     {
@@ -188,7 +188,7 @@ public class AuthController : ControllerBase
         Summary = "Register a new Student",
         Description = "This API is used for Registering a new Student",
         OperationId = "Register",
-        Tags = new[] { "Student", "Student_Auth" }
+        Tags = new[] { "Student" }
     )]
     public async Task<IActionResult> Register(
         [FromForm(Name = "email")] string email,
@@ -249,7 +249,7 @@ public class AuthController : ControllerBase
         Summary = "Reset password",
         Description = "This API is used for Resetting password",
         OperationId = "ResetPassword",
-        Tags = new[] { "Student", "Student_Auth" }
+        Tags = new[] { "Student" }
     )]
     public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordRequest request)
     {
@@ -286,7 +286,7 @@ public class AuthController : ControllerBase
         Summary = "Verify OTP for registration",
         Description = "This API is used for Verifying OTP for registration",
         OperationId = "VerifyOtp",
-        Tags = new[] { "Student", "Student_Auth" }
+        Tags = new[] { "Student" }
     )]
     public async Task<IActionResult> VerifyOtp([FromBody] VerifyOtpRequest request)
     {
@@ -324,7 +324,7 @@ public class AuthController : ControllerBase
         Summary = "Get profile of the logged-in user in Student website",
         Description = "This API retrieves the profile information of the currently Student authenticated user",
         OperationId = "GetProfile",
-        Tags = new[] { "Student", "Student_Auth" }
+        Tags = new[] { "Student" }
     )]
     public async Task<IActionResult> GetProfile()
     {
@@ -367,7 +367,7 @@ public class AuthController : ControllerBase
         Summary = "Change password",
         Description = "This API is used for Changing password",
         OperationId = "ChangePassword",
-        Tags = new[] { "Student", "Student_Auth" }
+        Tags = new[] { "Student" }
     )]
     public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordRequest request)
     {
@@ -415,7 +415,7 @@ public class AuthController : ControllerBase
         Summary = "Update profile of the logged-in student",
         Description = "This API updates the profile information of the currently authenticated student",
         OperationId = "UpdateProfile",
-        Tags = new[] { "Student", "Student_Auth" }
+        Tags = new[] { "Student" }
     )] 
     public async Task<IActionResult> UpdateProfile([FromForm] UpdateProfileRequest request, IFormFile? avatarFile)
     {
@@ -453,7 +453,7 @@ public class AuthController : ControllerBase
         Summary = "Refresh token for the logged-in user in Student website",
         Description = "This API refesh access token of the currently authenticated student user",
         OperationId = "RefreshToken",
-        Tags = new[] { "Student", "Student_Auth" }
+        Tags = new[] { "Student" }
     )]
     public async Task<IActionResult> RefreshToken()
     {

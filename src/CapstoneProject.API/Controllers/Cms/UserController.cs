@@ -23,7 +23,7 @@ namespace CapstoneProject.API.Controllers.Cms;
 [ApiController]
 [Route("api/cms/users")]
 [ApiExplorerSettings(GroupName = "v1")]
-[Configurations.Tags("CMS", "CMS_Users")]
+[Configurations.Tags("CMS")]
 [SwaggerTag("This API is used for User Management in CMS")]
 public class UserController : ControllerBase
 {
@@ -46,7 +46,7 @@ public class UserController : ControllerBase
     [ProducesResponseType(typeof(PaginationResult<UserListItem>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(Result), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(Result), StatusCodes.Status403Forbidden)]
-    [SwaggerOperation(Summary = "Get paginated list of users", OperationId = "GetPagedUsers", Tags = new[] { "CMS", "CMS_Users" })]
+    [SwaggerOperation(Summary = "Get paginated list of users", OperationId = "GetPagedUsers", Tags = new[] { "CMS" })]
     public async Task<IActionResult> GetPagedUsers([FromQuery] UserFilter filter)
     {
         var query = new GetPagedUsersQuery(filter);
@@ -63,7 +63,7 @@ public class UserController : ControllerBase
     [ProducesResponseType(typeof(Result), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(Result), StatusCodes.Status403Forbidden)]
     [ProducesResponseType(typeof(Result), StatusCodes.Status404NotFound)]
-    [SwaggerOperation(Summary = "Get user by ID", OperationId = "GetUserById", Tags = new[] { "CMS", "CMS_Users" })]
+    [SwaggerOperation(Summary = "Get user by ID", OperationId = "GetUserById", Tags = new[] { "CMS" })]
     public async Task<IActionResult> GetUserById(Guid id)
     {
         var query = new GetUserByIdQuery(id);
@@ -80,7 +80,7 @@ public class UserController : ControllerBase
     [ProducesResponseType(typeof(Result), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(Result), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(Result), StatusCodes.Status403Forbidden)]
-    [SwaggerOperation(Summary = "Create a new user", OperationId = "CreateUser", Tags = new[] { "CMS", "CMS_Users" })]
+    [SwaggerOperation(Summary = "Create a new user", OperationId = "CreateUser", Tags = new[] { "CMS" })]
     public async Task<IActionResult> CreateUser([FromForm] CreateUserRequest request, IFormFile? avatarFile)
     {
         var command = new CreateUserCommand(request, avatarFile);
@@ -98,7 +98,7 @@ public class UserController : ControllerBase
     [ProducesResponseType(typeof(Result), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(Result), StatusCodes.Status403Forbidden)]
     [ProducesResponseType(typeof(Result), StatusCodes.Status404NotFound)]
-    [SwaggerOperation(Summary = "Update an existing user", OperationId = "UpdateUser", Tags = new[] { "CMS", "CMS_Users" })]
+    [SwaggerOperation(Summary = "Update an existing user", OperationId = "UpdateUser", Tags = new[] { "CMS" })]
     public async Task<IActionResult> UpdateUser(Guid id, [FromForm] UpdateUserRequest request, IFormFile? avatarFile)
     {
         var command = new UpdateUserCommand(id, request, avatarFile);
@@ -115,7 +115,7 @@ public class UserController : ControllerBase
     [ProducesResponseType(typeof(Result), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(Result), StatusCodes.Status403Forbidden)]
     [ProducesResponseType(typeof(Result), StatusCodes.Status404NotFound)]
-    [SwaggerOperation(Summary = "Delete a user (soft delete)", OperationId = "DeleteUser", Tags = new[] { "CMS", "CMS_Users" })]
+    [SwaggerOperation(Summary = "Delete a user (soft delete)", OperationId = "DeleteUser", Tags = new[] { "CMS" })]
     public async Task<IActionResult> DeleteUser(Guid id)
     {
         var command = new DeleteUserCommand(id);
@@ -136,7 +136,7 @@ public class UserController : ControllerBase
         Summary = "Cleanup inactive QuickLogin users",
         Description = "Deactivates QuickLogin users that haven't logged in for the specified number of days. This job also runs automatically daily via Hangfire.",
         OperationId = "CleanupQuickLoginUsers",
-        Tags = new[] { "CMS", "CMS_Users" }
+        Tags = new[] { "CMS" }
     )]
     public async Task<IActionResult> CleanupQuickLoginUsers([FromQuery] int daysInactive = 7)
     {

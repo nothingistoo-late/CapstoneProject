@@ -3,12 +3,13 @@
     font-size: 16px;
 }
 
-/* Main tags: CMS, Student */
+/* Main tags: CMS, Student, Chat */
 .opblock-tag-section h3.opblock-tag[data-tag="CMS"] span,
-.opblock-tag-section h3.opblock-tag[data-tag="Student"] span {
+.opblock-tag-section h3.opblock-tag[data-tag="Student"] span,
+.opblock-tag-section h3.opblock-tag[data-tag="Chat"] span {
     font-size: 20px !important;
     font-weight: bold !important;
-    color: #2c3e50 !important; 
+    color: #2c3e50 !important;
     background-color: #f8f9fa !important;
     padding: 8px 16px !important;
     border-radius: 4px !important;
@@ -24,6 +25,12 @@
 .opblock-tag-section h3.opblock-tag[data-tag="Student"] span {
     border-left: 5px solid #2ecc71 !important;
     color: #2ecc71 !important;
+}
+
+/* Chat tag */
+.opblock-tag-section h3.opblock-tag[data-tag="Chat"] span {
+    border-left: 5px solid #3498db !important;
+    color: #3498db !important;
 }
 
 /* Sub-tags: CMS_Auth, Student_Auth, etc. */

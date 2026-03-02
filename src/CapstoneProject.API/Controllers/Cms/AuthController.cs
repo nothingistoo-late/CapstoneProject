@@ -21,7 +21,7 @@ namespace CapstoneProject.API.Controllers.Cms;
 [ApiController]
 [Route("api/cms/auth")]
 [ApiExplorerSettings(GroupName = "v1")]
-[Configurations.Tags("CMS", "CMS_Auth")]
+[Configurations.Tags("CMS")]
 [SwaggerTag("This API is used for Authentication for CMS website")]
 public class AuthController : ControllerBase
 {
@@ -63,7 +63,7 @@ public class AuthController : ControllerBase
         Summary = "Login to the CMS system",
         Description = "This API is used for Authentication for CMS website",
         OperationId = "Login",
-        Tags = new[] { "CMS", "CMS_Auth" }
+        Tags = new[] { "CMS" }
     )]
     public async Task<IActionResult> Login([FromBody] LoginRequest request)
     {
@@ -99,7 +99,7 @@ public class AuthController : ControllerBase
         Summary = "Logout from the CMS system",
         Description = "This API is used for Logging out from the CMS website",
         OperationId = "Logout",
-        Tags = new[] { "CMS", "CMS_Auth" }
+        Tags = new[] { "CMS" }
     )]
     public async Task<IActionResult> Logout()
     {
@@ -137,7 +137,7 @@ public class AuthController : ControllerBase
         Summary = "Get profile of the logged-in user in cms system",
         Description = "This API retrieves the profile information of the currently cms authenticated user",
         OperationId = "GetProfile",
-        Tags = new[] { "CMS", "CMS_Auth" }
+        Tags = new[] { "CMS" }
     )]
     public async Task<IActionResult> GetProfile()
     {
@@ -184,7 +184,7 @@ public class AuthController : ControllerBase
         Summary = "Update profile of the logged-in user in cms system",
         Description = "This API updates the profile information of the currently cms authenticated user",
         OperationId = "UpdateProfile",
-        Tags = new[] { "CMS", "CMS_Auth" }
+        Tags = new[] { "CMS" }
     )]
     public async Task<IActionResult> UpdateProfile([FromForm] UpdateProfileRequest request, IFormFile? avatarFile)
     {
@@ -222,7 +222,7 @@ public class AuthController : ControllerBase
         Summary = "Refresh token for the logged-in user in cms system",
         Description = "This API refesh access token of the currently authenticated cms user",
         OperationId = "RefreshToken",
-        Tags = new[] { "CMS", "CMS_Auth" }
+        Tags = new[] { "CMS" }
     )]
     public async Task<IActionResult> RefreshToken()
     {
