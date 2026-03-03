@@ -36,31 +36,28 @@ public class AuthController : ControllerBase
     /// Login to the Learner website
     /// </summary>
     /// <remarks>
-    /// Sample request:
-    /// 
+    /// Đăng nhập bằng email và mật khẩu. Trả về access token (JWT) và danh sách roles. Dùng token trả về trong header Authorization cho các API cần xác thực.
+    ///
     ///     POST /api/learner/auth/login
-    ///     {
-    ///        "email": "user@example.com",
-    ///        "password": "User@123",
-    ///        "grantType": 0
-    ///     }
-    ///     
-    /// `grantType` default is 0 (Password)
+    ///     { "email": "user@example.com", "password": "User@123", "grantType": 0 }
+    ///
+    /// **Request body (LoginRequest):**
+    /// - email (string, bắt buộc): Email đăng nhập. Định dạng email hợp lệ.
+    /// - password (string, bắt buộc): Mật khẩu. Phải thỏa ràng buộc Identity (ít nhất 6 ký tự, có chữ thường, có chữ số).
+    /// - grantType (int, tùy chọn): Loại grant. Giá trị: 0 = Password (mặc định). Hiện chỉ hỗ trợ Password.
     /// </remarks>
-    /// <param name="request">Login request</param>
-    /// <returns>User information and authentication token</returns>
-    /// <response code="200">Login successfully</response>
-    /// <response code="400">Login failed (validation error)</response>
-    /// <response code="401">Login failed (email or password is incorrect)</response>
-    /// <response code="500">Login failed (internal server error)</response>
+    /// <response code="200">Login successfully. Returns message and data (accessToken, expiresAt, roles).</response>
+    /// <response code="400">Validation error</response>
+    /// <response code="401">Email or password is incorrect</response>
+    /// <response code="500">Internal server error</response>
     [HttpPost("login")]
     [ProducesResponseType(typeof(Result<AuthResponse>), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(Result<AuthResponse>), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(Result<AuthResponse>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(Result<AuthResponse>), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(Result<AuthResponse>), StatusCodes.Status500InternalServerError)]
     [SwaggerOperation(
         Summary = "Login to the Learner website",
-        Description = "This API is used for Authentication for Learner website. Returns JWT access token and refresh token.",
+        Description = "Authenticate by email and password. Returns JWT access token and roles.",
         OperationId = "Login",
         Tags = new[] { "Learner" }
     )]
@@ -75,15 +72,19 @@ public class AuthController : ControllerBase
     /// Quick login with demo account
     /// </summary>
     /// <remarks>
-    /// Allows quick login using a configured quick code. Used for testing/demo. Automatically logs in with a demo user.
-    /// 
+    /// Đăng nhập nhanh bằng quick code (dùng cho demo/test). Không cần email/password. Trả về access token tương tự Login. Cấu hình quick code trong appsettings.
+    ///
     ///     POST /api/learner/auth/quick-login
     ///     { "quickCode": "DEMO123" }
+    ///
+    /// **Request body (QuickLoginRequest):**
+    /// - quickCode (string, bắt buộc): Mã quick login. Tối thiểu 3 ký tự. Phải khớp với cấu hình trên server.
     /// </remarks>
-    /// <response code="200">Login successfully</response>
+    /// <response code="200">Login successfully. Returns message and data (accessToken, expiresAt, roles).</response>
     /// <response code="400">Invalid request or quick code</response>
     /// <response code="401">Quick code not valid</response>
     /// <response code="404">Demo user not found</response>
+    /// <response code="500">Internal server error</response>
     [HttpPost("quick-login")]
     [ProducesResponseType(typeof(Result<AuthResponse>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(Result<AuthResponse>), StatusCodes.Status400BadRequest)]
@@ -92,7 +93,7 @@ public class AuthController : ControllerBase
     [ProducesResponseType(typeof(Result<AuthResponse>), StatusCodes.Status500InternalServerError)]
     [SwaggerOperation(
         Summary = "Quick login with demo account",
-        Description = "This API allows quick login using a configured quick code for testing purposes",
+        Description = "Quick login using configured quick code for testing/demo. Returns JWT access token.",
         OperationId = "QuickLogin",
         Tags = new[] { "Learner" }
     )]
@@ -110,24 +111,28 @@ public class AuthController : ControllerBase
     }
 
     /// <summary>
-    /// Đăng nhập bằng Google OAuth2 (gửi id_token từ Google Sign-In).
+    /// Login with Google OAuth2
     /// </summary>
     /// <remarks>
-    /// Client gửi id_token nhận được từ Google Sign-In. Server xác thực token và tạo/cập nhật user, trả về JWT.
-    /// 
+    /// Đăng nhập bằng id_token từ Google Sign-In (client nhận từ Google sau khi user đăng nhập Google). Server xác thực token, tạo hoặc cập nhật user và trả về JWT. Nếu user chưa có sẽ được tạo với role Learner.
+    ///
     ///     POST /api/learner/auth/google
-    ///     { "idToken": "eyJhbGc..." }
+    ///     { "idToken": "eyJhbGciOiJSUzI1NiIs..." }
+    ///
+    /// **Request body (GoogleLoginRequest):**
+    /// - idToken (string, bắt buộc): ID token do Google trả về sau khi user đăng nhập Google (credential từ Google Sign-In). Server verify token với Google.
     /// </remarks>
-    /// <response code="200">Login successfully</response>
+    /// <response code="200">Login successfully. Returns message and data (accessToken, expiresAt, roles).</response>
     /// <response code="400">Invalid or missing id_token</response>
     /// <response code="401">Token validation failed</response>
+    /// <response code="500">Internal server error</response>
     [HttpPost("google")]
     [ProducesResponseType(typeof(Result<AuthResponse>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(Result<AuthResponse>), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(Result<AuthResponse>), StatusCodes.Status401Unauthorized)]
     [SwaggerOperation(
         Summary = "Login with Google",
-        Description = "Authenticate using Google OAuth2 id_token. Creates or updates user and returns JWT.",
+        Description = "Authenticate using Google OAuth2 id_token. Creates or updates user, returns JWT access token.",
         OperationId = "GoogleLogin",
         Tags = new[] { "Learner" }
     )]
@@ -144,20 +149,23 @@ public class AuthController : ControllerBase
     /// Logout from the Learner website
     /// </summary>
     /// <remarks>
-    /// Clears refresh token in database. Requires access token in header.
-    /// 
+    /// Đăng xuất: xóa refresh token của user trong database. User cần gửi access token hiện tại trong header; không có request body.
+    ///
     ///     POST /api/learner/auth/logout
     ///     Headers: Authorization: Bearer &lt;access_token&gt;
+    ///
+    /// **Request:** Không có body. Chỉ cần header Authorization với Bearer token nhận được từ Login/VerifyOtp/RefreshToken.
     /// </remarks>
-    /// <response code="200">Logout successfully</response>
+    /// <response code="200">Logout successfully. Returns message only.</response>
     /// <response code="401">Not authorized</response>
+    /// <response code="500">Internal server error</response>
     [HttpPost("logout")]
     [ProducesResponseType(typeof(Result), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(Result), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(Result), StatusCodes.Status500InternalServerError)]
     [SwaggerOperation(
         Summary = "Logout from the Learner website",
-        Description = "This API is used for Logging out from the Learner website",
+        Description = "Clears refresh token in database. Requires Bearer access token in header.",
         OperationId = "Logout",
         Tags = new[] { "Learner" }
     )]
@@ -172,13 +180,25 @@ public class AuthController : ControllerBase
     /// Register a new Learner
     /// </summary>
     /// <remarks>
-    /// Gửi thông tin đăng ký (multipart/form-data). Hệ thống lưu OTP và gửi qua email/phone. Sau đó gọi Verify OTP để hoàn tất.
-    /// 
+    /// Gửi thông tin đăng ký (multipart/form-data). Hệ thống validate (email unique, mật khẩu đủ ràng buộc) rồi gửi OTP qua email. Sau đó gọi verify-otp với OTP nhận được để hoàn tất đăng ký và nhận token.
+    ///
     ///     POST /api/learner/auth/register
-    ///     Form: email, password, confirmPassword, firstName, lastName, phoneNumber, learnerCode (optional), gender, dateOfBirth
+    ///     Content-Type: multipart/form-data
+    ///     Form: email, password, confirmPassword, firstName, lastName, phoneNumber, learnerCode, gender, dateOfBirth
+    ///
+    /// **Request (Form data – RegisterRequest):**
+    /// - email (string, bắt buộc): Email đăng ký. Định dạng email, phải chưa tồn tại trong hệ thống.
+    /// - password (string, bắt buộc): Mật khẩu. Ít nhất 6 ký tự, có ít nhất 1 chữ số, 1 chữ thường.
+    /// - confirmPassword (string, bắt buộc): Xác nhận mật khẩu. Phải trùng với password.
+    /// - firstName (string, bắt buộc): Tên. Tối đa 50 ký tự.
+    /// - lastName (string, bắt buộc): Họ. Tối đa 50 ký tự.
+    /// - phoneNumber (string, bắt buộc): Số điện thoại. Định dạng SĐT hợp lệ, phải unique.
+    /// - learnerCode (string, tùy chọn): Mã học viên (nếu có).
+    /// - gender (int?, tùy chọn): Giới tính. Giá trị enum (0=Male, 1=Female, 2=Other,... tùy GenderEnum).
+    /// - dateOfBirth (DateTime?, tùy chọn): Ngày sinh. ISO date.
     /// </remarks>
-    /// <response code="200">OTP sent successfully</response>
-    /// <response code="400">Validation error</response>
+    /// <response code="200">OTP sent successfully. Returns message only. Call verify-otp to complete registration.</response>
+    /// <response code="400">Validation error (e.g. password constraints, email already exists)</response>
     /// <response code="500">Internal server error</response>
     [HttpPost("register")]
     [SkipModelValidation]
@@ -187,7 +207,7 @@ public class AuthController : ControllerBase
     [ProducesResponseType(typeof(Result), StatusCodes.Status500InternalServerError)]
     [SwaggerOperation(
         Summary = "Register a new Learner",
-        Description = "This API is used for Registering a new Learner",
+        Description = "Submit registration form. Sends OTP to email. Call verify-otp with received OTP to complete registration.",
         OperationId = "Register",
         Tags = new[] { "Learner" }
     )]
@@ -224,20 +244,26 @@ public class AuthController : ControllerBase
     /// Reset password
     /// </summary>
     /// <remarks>
-    /// Gửi contact (email/phone) và mật khẩu mới. Hệ thống gửi OTP xác thực, sau đó gọi Verify OTP (otpType = PasswordReset) để đổi mật khẩu.
-    /// 
+    /// Gửi contact (email hoặc SĐT tùy kênh) và mật khẩu mới. Hệ thống gửi OTP qua kênh đã chọn. Sau đó gọi verify-otp với otpType = 2 (PasswordReset) và cùng contact/otpSentChannel để hoàn tất đổi mật khẩu.
+    ///
     ///     POST /api/learner/auth/reset-password
     ///     { "contact": "user@example.com", "newPassword": "New@123", "otpSentChannel": 1 }
+    ///
+    /// **Request body (ResetPasswordRequest):**
+    /// - contact (string, bắt buộc): Email hoặc số điện thoại tùy otpSentChannel. Nếu channel Email thì là email; nếu SMS thì là SĐT. User phải tồn tại với contact này.
+    /// - newPassword (string, bắt buộc): Mật khẩu mới. Ràng buộc giống đăng ký (ít nhất 8 ký tự cho reset, có chữ số, chữ thường).
+    /// - otpSentChannel (int, bắt buộc): Kênh gửi OTP. Giá trị: 1 = Email, 2 = SMS, 3 = Firebase (chưa hỗ trợ). Phải trùng với contact (email vs SĐT).
     /// </remarks>
-    /// <response code="200">OTP sent</response>
+    /// <response code="200">OTP sent successfully. Returns message only. Call verify-otp (otpType=2) to complete.</response>
     /// <response code="400">Validation error</response>
+    /// <response code="500">Internal server error</response>
     [HttpPost("reset-password")]
     [ProducesResponseType(typeof(Result), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(Result), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(Result), StatusCodes.Status500InternalServerError)]
     [SwaggerOperation(
         Summary = "Reset password",
-        Description = "This API is used for Resetting password",
+        Description = "Request OTP for password reset. Send contact and new password. Then call verify-otp with otpType=2 to complete.",
         OperationId = "ResetPassword",
         Tags = new[] { "Learner" }
     )]
@@ -252,13 +278,20 @@ public class AuthController : ControllerBase
     /// Verify OTP for registration or password reset
     /// </summary>
     /// <remarks>
-    /// Sau khi đăng ký hoặc reset password, client gửi OTP nhận được. otpType: 1 = Registration (tự động đăng ký + login), 2 = PasswordReset.
-    /// 
+    /// Sau khi đăng ký (register) hoặc reset password, client nhận OTP qua email/SMS. Gọi API này với OTP nhận được. Nếu otpType = 1 (Registration): tạo tài khoản và trả về access token (không cần login lại). Nếu otpType = 2 (PasswordReset): chỉ đổi mật khẩu, trả về message, data = null.
+    ///
     ///     POST /api/learner/auth/verify-otp
     ///     { "contact": "user@example.com", "otp": "123456", "otpType": 1, "otpSentChannel": 1 }
+    ///
+    /// **Request body (VerifyOtpRequest):**
+    /// - contact (string, bắt buộc): Email hoặc SĐT – cùng giá trị đã dùng khi gọi register hoặc reset-password. Định dạng phải khớp với otpSentChannel (email nếu channel Email, SĐT nếu SMS).
+    /// - otp (string, bắt buộc): Mã OTP 6 chữ số nhận qua email/SMS. Chỉ chữ số, đúng 6 ký tự.
+    /// - otpType (int, bắt buộc): Loại OTP. Giá trị: 1 = Registration (xác thực đăng ký, sau khi verify tạo user và trả token), 2 = PasswordReset (xác thực đổi mật khẩu).
+    /// - otpSentChannel (int, bắt buộc): Kênh đã gửi OTP. Giá trị: 1 = Email, 2 = SMS. Phải trùng với kênh đã chọn khi gọi register/reset-password.
     /// </remarks>
     /// <response code="200">Verified. For registration (otpType=1): returns message and data (accessToken, expiresAt, roles). For password reset (otpType=2): returns message only, data is null.</response>
     /// <response code="400">Invalid OTP or validation error</response>
+    /// <response code="500">Internal server error</response>
     [HttpPost("verify-otp")]
     [ProducesResponseType(typeof(Result<AuthResponse>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(Result<AuthResponse>), StatusCodes.Status400BadRequest)]
@@ -277,18 +310,21 @@ public class AuthController : ControllerBase
     }
 
     /// <summary>
-    /// Get profile of the logged-in user in Learner website
+    /// Get profile of the logged-in user
     /// </summary>
     /// <remarks>
-    /// Lấy thông tin profile của user đang đăng nhập. Cần access token.
-    /// 
+    /// Lấy thông tin profile của Learner đang đăng nhập (email, firstName, lastName, phoneNumber, avatarUrl, learnerCode, gender, dateOfBirth,...). Chỉ user có role Learner. Không có request body, chỉ cần Bearer token.
+    ///
     ///     GET /api/learner/auth/profile
     ///     Headers: Authorization: Bearer &lt;access_token&gt;
+    ///
+    /// **Request:** Không có body, không có query. Chỉ cần header Authorization với Bearer token (nhận từ Login / VerifyOtp / RefreshToken).
+    /// **Response data (ProfileResponse):** id, email, firstName, lastName, phoneNumber, avatarUrl, learnerCode, gender, dateOfBirth, lastLoginAt,...
     /// </remarks>
-    /// <returns>Learner profile (email, name, phone, avatar, etc.)</returns>
-    /// <response code="200">Profile retrieved successfully</response>
+    /// <response code="200">Profile retrieved successfully. Returns message and data (profile).</response>
     /// <response code="401">Not authorized</response>
     /// <response code="403">User is not Learner</response>
+    /// <response code="500">Internal server error</response>
     [HttpGet("profile")]
     [AuthorizeRoles(nameof(RoleEnum.Learner))]
     [ProducesResponseType(typeof(Result<ProfileResponse>), StatusCodes.Status200OK)]
@@ -296,8 +332,8 @@ public class AuthController : ControllerBase
     [ProducesResponseType(typeof(Result<ProfileResponse>), StatusCodes.Status403Forbidden)]
     [ProducesResponseType(typeof(Result<ProfileResponse>), StatusCodes.Status500InternalServerError)]
     [SwaggerOperation(
-        Summary = "Get profile of the logged-in user in Learner website",
-        Description = "This API retrieves the profile information of the currently authenticated Learner user",
+        Summary = "Get profile of the logged-in user",
+        Description = "Returns profile (email, name, phone, avatar, etc.) of the authenticated Learner. Requires Bearer token.",
         OperationId = "GetProfile",
         Tags = new[] { "Learner" }
     )]
@@ -312,15 +348,21 @@ public class AuthController : ControllerBase
     /// Change password
     /// </summary>
     /// <remarks>
-    /// Đổi mật khẩu khi đã đăng nhập. Cần currentPassword, newPassword, confirmPassword.
-    /// 
+    /// Đổi mật khẩu khi đã đăng nhập. User gửi mật khẩu hiện tại và mật khẩu mới (kèm xác nhận). Yêu cầu Bearer token (Learner).
+    ///
     ///     POST /api/learner/auth/change-password
-    ///     { "currentPassword": "...", "newPassword": "...", "confirmPassword": "..." }
+    ///     { "currentPassword": "Old@123", "newPassword": "New@456", "confirmPassword": "New@456" }
+    ///
+    /// **Request body (ChangePasswordRequest):**
+    /// - currentPassword (string, bắt buộc): Mật khẩu hiện tại. Phải đúng với mật khẩu trong DB thì mới đổi được.
+    /// - newPassword (string, bắt buộc): Mật khẩu mới. Ràng buộc: ít nhất 8 ký tự, có chữ số, chữ thường (theo Identity).
+    /// - confirmPassword (string, bắt buộc): Xác nhận mật khẩu mới. Phải trùng với newPassword.
     /// </remarks>
-    /// <response code="200">Password changed</response>
-    /// <response code="400">Validation or wrong current password</response>
+    /// <response code="200">Password changed successfully. Returns message only.</response>
+    /// <response code="400">Validation error or wrong current password</response>
     /// <response code="401">Not authorized</response>
     /// <response code="404">User not found</response>
+    /// <response code="500">Internal server error</response>
     [HttpPost("change-password")]
     [AuthorizeRoles(nameof(RoleEnum.Learner))]
     [ProducesResponseType(typeof(Result), StatusCodes.Status200OK)]
@@ -330,7 +372,7 @@ public class AuthController : ControllerBase
     [ProducesResponseType(typeof(Result), StatusCodes.Status500InternalServerError)]
     [SwaggerOperation(
         Summary = "Change password",
-        Description = "This API is used for Changing password",
+        Description = "Change password for authenticated user. Requires current password, new password and confirm. Requires Bearer token.",
         OperationId = "ChangePassword",
         Tags = new[] { "Learner" }
     )]
@@ -345,14 +387,22 @@ public class AuthController : ControllerBase
     /// Update profile of the logged-in learner
     /// </summary>
     /// <remarks>
-    /// Cập nhật firstName, lastName, phoneNumber, avatar (multipart/form-data). Cần access token.
-    /// 
+    /// Cập nhật thông tin profile: firstName, lastName, phoneNumber, avatar. Gửi dạng multipart/form-data. Chỉ cập nhật các field gửi lên. Yêu cầu Bearer token (Learner).
+    ///
     ///     PUT /api/learner/auth/profile
+    ///     Content-Type: multipart/form-data
     ///     Form: firstName, lastName, phoneNumber, avatarFile (optional)
+    ///
+    /// **Request (Form – UpdateProfileRequest):**
+    /// - firstName (string, tùy chọn): Tên. Tối đa 50 ký tự.
+    /// - lastName (string, tùy chọn): Họ. Tối đa 50 ký tự.
+    /// - phoneNumber (string, tùy chọn): Số điện thoại. Định dạng SĐT, unique (trừ SĐT của chính user).
+    /// - avatarFile (file, tùy chọn): File ảnh avatar. Hỗ trợ jpg, png, ... Kích thước tối đa theo cấu hình (vd 10MB).
     /// </remarks>
-    /// <response code="200">Profile updated</response>
+    /// <response code="200">Profile updated successfully. Returns message and data (updated profile).</response>
     /// <response code="400">Validation error</response>
     /// <response code="401">Not authorized</response>
+    /// <response code="500">Internal server error</response>
     [HttpPut("profile")]
     [AuthorizeRoles(nameof(RoleEnum.Learner))]
     [ProducesResponseType(typeof(Result<ProfileResponse>), StatusCodes.Status200OK)]
@@ -361,7 +411,7 @@ public class AuthController : ControllerBase
     [ProducesResponseType(typeof(Result<ProfileResponse>), StatusCodes.Status500InternalServerError)]
     [SwaggerOperation(
         Summary = "Update profile of the logged-in learner",
-        Description = "This API updates the profile information of the currently authenticated learner",
+        Description = "Update profile (firstName, lastName, phoneNumber, avatar). Multipart form-data. Requires Bearer token.",
         OperationId = "UpdateProfile",
         Tags = new[] { "Learner" }
     )]
@@ -373,17 +423,21 @@ public class AuthController : ControllerBase
     }
 
     /// <summary>
-    /// Refresh token of the logged-in user in Learner website
+    /// Refresh token for the logged-in user
     /// </summary>
     /// <remarks>
-    /// Gửi refresh token (qua cookie hoặc header) để nhận access token mới.
-    /// 
+    /// Lấy access token mới khi token cũ sắp hết hạn. Client gửi request với Bearer token hiện tại (hoặc refresh token tùy cấu hình). Response trả về accessToken, expiresAt, roles giống Login. Không có request body.
+    ///
     ///     POST /api/learner/auth/refresh-token
-    ///     Headers: Authorization: Bearer &lt;access_token&gt; (hoặc refresh token tùy cấu hình)
+    ///     Headers: Authorization: Bearer &lt;access_token&gt;
+    ///
+    /// **Request:** Không có body. Header Authorization: Bearer với token hiện tại (access token hoặc refresh token). User phải có role Learner.
+    /// **Response data (AuthResponse):** accessToken, expiresAt, roles.
     /// </remarks>
-    /// <response code="200">New access token returned</response>
+    /// <response code="200">New access token returned. Returns message and data (accessToken, expiresAt, roles).</response>
     /// <response code="401">Invalid or expired token</response>
     /// <response code="403">Not a Learner</response>
+    /// <response code="500">Internal server error</response>
     [HttpPost("refresh-token")]
     [AuthorizeRoles(nameof(RoleEnum.Learner))]
     [ProducesResponseType(typeof(Result<ProfileResponse>), StatusCodes.Status200OK)]
@@ -391,8 +445,8 @@ public class AuthController : ControllerBase
     [ProducesResponseType(typeof(Result<ProfileResponse>), StatusCodes.Status403Forbidden)]
     [ProducesResponseType(typeof(Result<ProfileResponse>), StatusCodes.Status500InternalServerError)]
     [SwaggerOperation(
-        Summary = "Refresh token for the logged-in user in Learner website",
-        Description = "This API refreshes access token of the currently authenticated learner user",
+        Summary = "Refresh token for the logged-in user",
+        Description = "Returns new access token for the authenticated Learner. Requires Bearer token in header.",
         OperationId = "RefreshToken",
         Tags = new[] { "Learner" }
     )]

@@ -16,14 +16,28 @@ public class LearnerGameplayController : ControllerBase
 
     public LearnerGameplayController(IMediator mediator) => _mediator = mediator;
 
-    /// <summary>Nộp bài và kiểm tra kết quả (AST hoặc bytecode).</summary>
+    /// <summary>
+    /// Validate solution
+    /// </summary>
+    /// <remarks>
+    /// Nộp bài giải (mapId, astSpec hoặc bytecodeSpec, language). Trả về Accepted/Rejected, stars, XP. Yêu cầu Bearer token.
+    ///
+    ///     POST /api/learner/gameplay/validate
+    ///     Body: ValidateSolutionRequest (mapId, astSpec or bytecodeSpec, language)
+    /// </remarks>
+    /// <response code="200">Returns message and data (result, stars, XP).</response>
+    /// <response code="400">Validation error</response>
+    /// <response code="401">Not authorized</response>
+    /// <response code="404">Map not found</response>
+    /// <response code="500">Internal server error</response>
     [HttpPost("validate")]
     [AuthorizeRoles(nameof(RoleEnum.Learner), nameof(RoleEnum.Admin), nameof(RoleEnum.Moderator))]
     [ProducesResponseType(typeof(Result<ValidateSolutionResultDto>), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(Result), StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(typeof(Result), StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(typeof(Result), StatusCodes.Status404NotFound)]
-    [SwaggerOperation(Summary = "Validate solution", Description = "Submits solution (mapId, astSpec or bytecodeSpec, language). Returns Accepted/Rejected, stars, XP. Creates Submission and updates UserMapResult.", OperationId = "Learner_ValidateSolution", Tags = new[] { "Learner - Gameplay" })]
+    [ProducesResponseType(typeof(Result<ValidateSolutionResultDto>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(Result<ValidateSolutionResultDto>), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(Result<ValidateSolutionResultDto>), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(Result<ValidateSolutionResultDto>), StatusCodes.Status500InternalServerError)]
+    [SwaggerOperation(Summary = "Validate solution", Description = "Submits solution. Returns Accepted/Rejected, stars, XP. Creates Submission and updates UserMapResult. Requires Bearer token.", OperationId = "Learner_ValidateSolution", Tags = new[] { "Learner - Gameplay" })]
     public async Task<IActionResult> ValidateSolution([FromBody] ValidateSolutionRequest request)
     {
         var result = await _mediator.Send(new ValidateSolutionCommand(request));

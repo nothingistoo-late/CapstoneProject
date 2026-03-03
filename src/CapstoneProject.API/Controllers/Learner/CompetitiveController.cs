@@ -17,14 +17,28 @@ public class LearnerCompetitiveController : ControllerBase
 
     public LearnerCompetitiveController(IMediator mediator) => _mediator = mediator;
 
-    /// <summary>Tạo trận đấu (chọn map).</summary>
+    /// <summary>
+    /// Create competitive match
+    /// </summary>
+    /// <remarks>
+    /// Tạo trận đấu cho một map. Trả về matchId. Sau đó tạo room và join qua SignalR. Yêu cầu Bearer token.
+    ///
+    ///     POST /api/learner/competitive/matches
+    ///     Body: { "mapId": "guid", "rulesSpec": "optional" }
+    /// </remarks>
+    /// <response code="201">Match created. Returns message and data (matchId).</response>
+    /// <response code="400">Validation error</response>
+    /// <response code="401">Not authorized</response>
+    /// <response code="404">Map not found</response>
+    /// <response code="500">Internal server error</response>
     [HttpPost("matches")]
     [AuthorizeRoles(nameof(RoleEnum.Learner), nameof(RoleEnum.Admin), nameof(RoleEnum.Moderator))]
     [ProducesResponseType(typeof(Result<Guid>), StatusCodes.Status201Created)]
-    [ProducesResponseType(typeof(Result), StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(typeof(Result), StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(typeof(Result), StatusCodes.Status404NotFound)]
-    [SwaggerOperation(Summary = "Create match", Description = "Creates a competitive match for a map. Body: mapId, optional rulesSpec. Returns matchId. Then create room and join via SignalR.", OperationId = "Learner_CreateMatch", Tags = new[] { "Learner - Competitive" })]
+    [ProducesResponseType(typeof(Result<Guid>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(Result<Guid>), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(Result<Guid>), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(Result<Guid>), StatusCodes.Status500InternalServerError)]
+    [SwaggerOperation(Summary = "Create match", Description = "Creates competitive match for a map. Returns matchId. Then create room and join via SignalR. Requires Bearer token.", OperationId = "Learner_CreateMatch", Tags = new[] { "Learner - Competitive" })]
     public async Task<IActionResult> CreateMatch([FromBody] CreateMatchRequest request)
     {
         var result = await _mediator.Send(new CreateMatchCommand(request.MapId, request.RulesSpec));

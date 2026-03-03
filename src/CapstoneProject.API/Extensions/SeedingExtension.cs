@@ -24,7 +24,25 @@ public static class SeedingExtension
         var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<AppRole>>();
         var userManager = scope.ServiceProvider.GetRequiredService<UserManager<AppUser>>();
 
-        // Seed roles from RoleEnum
+        // Migrate legacy "Student" role to "Learner" first (one-time fix for DBs created before rename)
+        var studentRole = await roleManager.FindByNameAsync("Student");
+        if (studentRole != null)
+        {
+            studentRole.Name = "Learner";
+            studentRole.NormalizedName = "LEARNER";
+            var updateResult = await roleManager.UpdateAsync(studentRole);
+            if (updateResult.Succeeded)
+            {
+                logger.LogInformation("Migrated role Student to Learner.");
+            }
+            else
+            {
+                var errors = string.Join(", ", updateResult.Errors.Select(e => e.Description));
+                logger.LogWarning("Failed to migrate Student to Learner: {Errors}", errors);
+            }
+        }
+
+        // Seed roles from RoleEnum (Admin, Learner, Moderator)
         foreach (var roleName in Enum.GetNames(typeof(RoleEnum)))
         {
             if (!await roleManager.RoleExistsAsync(roleName))

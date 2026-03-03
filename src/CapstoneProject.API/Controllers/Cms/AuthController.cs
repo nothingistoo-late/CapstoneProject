@@ -29,32 +29,31 @@ public class AuthController : ControllerBase
     /// Login to the CMS system
     /// </summary>
     /// <remarks>
-    /// Sample request:
-    /// 
+    /// Đăng nhập CMS bằng email và mật khẩu. Chỉ user có role Admin hoặc Moderator mới đăng nhập được; nếu không trả 403. Trả về access token và roles. Dùng token trong header Authorization cho các API CMS.
+    ///
     ///     POST /api/cms/auth/login
-    ///     {
-    ///        "email": "admin@example.com",
-    ///        "password": "Admin@123",
-    ///        "grantType": 0
-    ///     }
-    ///     
-    /// `grantType` default is 0 (Password)
+    ///     { "email": "admin@example.com", "password": "Admin@123", "grantType": 0 }
+    ///
+    /// **Request body (LoginRequest):**
+    /// - email (string, bắt buộc): Email đăng nhập. Định dạng email hợp lệ.
+    /// - password (string, bắt buộc): Mật khẩu. Phải thỏa ràng buộc Identity (ít nhất 6 ký tự, chữ thường, chữ số).
+    /// - grantType (int, tùy chọn): Loại grant. Giá trị: 0 = Password (mặc định).
     /// </remarks>
-    /// <param name="request">Login request</param>
-    /// <returns>User information and authentication token</returns>
-    /// <response code="200">Login successfully</response>
-    /// <response code="400">Login failed (validation error)</response>
-    /// <response code="401">Login failed (email or password is incorrect)</response>
-    /// <response code="403">No access (user is not a CMS member)</response>
+    /// <response code="200">Login successfully. Returns message and data (accessToken, expiresAt, roles).</response>
+    /// <response code="400">Validation error</response>
+    /// <response code="401">Email or password is incorrect</response>
+    /// <response code="403">User is not a CMS member (Admin/Moderator)</response>
+    /// <response code="500">Internal server error</response>
     [HttpPost("login")]
     [ServiceFilter(typeof(AdminRoleAccessFilter))]
     [ProducesResponseType(typeof(Result<AuthResponse>), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(Result<AuthResponse>), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(Result<AuthResponse>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(Result<AuthResponse>), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(Result<AuthResponse>), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(Result<AuthResponse>), StatusCodes.Status500InternalServerError)]
     [SwaggerOperation(
         Summary = "Login to the CMS system",
-        Description = "This API is used for Authentication for CMS website",
+        Description = "Authenticate by email and password. Returns JWT access token. CMS members (Admin/Moderator) only.",
         OperationId = "Login",
         Tags = new[] { "CMS" }
     )]
@@ -69,28 +68,26 @@ public class AuthController : ControllerBase
     /// Logout from the CMS system
     /// </summary>
     /// <remarks>
-    /// This API is used for Logging out from the CMS website. It will clear the refresh token and refresh token expiry time in the database.
-    /// Need access token in the header.
-    /// 
-    /// Sample request:
-    /// 
+    /// Đăng xuất CMS: xóa refresh token trong database. Chỉ cần gửi access token trong header; không có request body. User phải có role Admin hoặc Moderator.
+    ///
     ///     POST /api/cms/auth/logout
-    /// 
-    /// Headers:
-    ///     Authorization: Bearer &lt;access_token&gt;
+    ///     Headers: Authorization: Bearer &lt;access_token&gt;
+    ///
+    /// **Request:** Không có body. Chỉ header Authorization với Bearer token nhận từ Login hoặc RefreshToken.
     /// </remarks>
-    /// <returns>Logout successfully</returns>
-    /// <response code="200">Logout successfully</response>
-    /// <response code="401">Logout failed (not authorized)</response>
-    /// <response code="403">No access (user is not a CMS member)</response>
+    /// <response code="200">Logout successfully. Returns message only.</response>
+    /// <response code="401">Not authorized</response>
+    /// <response code="403">User is not a CMS member</response>
+    /// <response code="500">Internal server error</response>
     [HttpPost("logout")]
     [AuthorizeRoles(nameof(RoleEnum.Admin), nameof(RoleEnum.Moderator))]
     [ProducesResponseType(typeof(Result), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(Result), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(Result), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(Result), StatusCodes.Status500InternalServerError)]
     [SwaggerOperation(
         Summary = "Logout from the CMS system",
-        Description = "This API is used for Logging out from the CMS website",
+        Description = "Clears refresh token in database. Requires Bearer token (Admin/Moderator).",
         OperationId = "Logout",
         Tags = new[] { "CMS" }
     )]
@@ -102,24 +99,21 @@ public class AuthController : ControllerBase
     }
     
     /// <summary>
-    /// Get profile of the logged-in user in cms system
+    /// Get profile of the logged-in CMS user
     /// </summary>
     /// <remarks>
-    /// This API retrieves the profile information of the currently authenticated user.
-    /// It requires a valid access token in the request header.
-    /// 
-    /// Sample request:
-    /// 
+    /// Lấy thông tin profile của user CMS đang đăng nhập (Admin/Moderator): id, email, firstName, lastName, phoneNumber, avatarUrl, roles,... Không có request body hay query.
+    ///
     ///     GET /api/cms/auth/profile
-    /// 
-    /// Headers:
-    ///     Authorization: Bearer &lt;access_token&gt;
+    ///     Headers: Authorization: Bearer &lt;access_token&gt;
+    ///
+    /// **Request:** Không có body, không có query. Chỉ header Authorization với Bearer token.
+    /// **Response data (ProfileResponse):** id, email, firstName, lastName, phoneNumber, avatarUrl, roles, lastLoginAt,...
     /// </remarks>
-    /// <returns>admin or Teacher profile information</returns>
-    /// <response code="200">Profile retrieved successfully</response>
-    /// <response code="401">Failed to retrieve profile (not authorized)</response>
-    /// <response code="403">No access (user is not a CMS member)</response>
-    /// <response code="500">Failed to retrieve profile (internal server error)</response>
+    /// <response code="200">Profile retrieved successfully. Returns message and data (profile).</response>
+    /// <response code="401">Not authorized</response>
+    /// <response code="403">User is not a CMS member</response>
+    /// <response code="500">Internal server error</response>
     [HttpGet("profile")]
     [AuthorizeRoles(nameof(RoleEnum.Admin), nameof(RoleEnum.Moderator))]
     [ProducesResponseType(typeof(Result<ProfileResponse>), StatusCodes.Status200OK)]
@@ -127,8 +121,8 @@ public class AuthController : ControllerBase
     [ProducesResponseType(typeof(Result<ProfileResponse>), StatusCodes.Status403Forbidden)]
     [ProducesResponseType(typeof(Result<ProfileResponse>), StatusCodes.Status500InternalServerError)]
     [SwaggerOperation(
-        Summary = "Get profile of the logged-in user in cms system",
-        Description = "This API retrieves the profile information of the currently cms authenticated user",
+        Summary = "Get profile of the logged-in CMS user",
+        Description = "Returns profile of the authenticated CMS user (Admin/Moderator). Requires Bearer token.",
         OperationId = "GetProfile",
         Tags = new[] { "CMS" }
     )]
@@ -140,32 +134,27 @@ public class AuthController : ControllerBase
     }
 
     /// <summary>
-    /// Update profile of the logged-in user in cms system
+    /// Update profile of the logged-in CMS user
     /// </summary>
     /// <remarks>
-    /// This API updates the profile information of the currently authenticated user.
-    /// It requires a valid access token in the request header.
-    /// 
-    /// Sample request:
-    /// 
+    /// Cập nhật thông tin profile CMS: firstName, lastName, phoneNumber, avatar. Gửi multipart/form-data. Chỉ cập nhật các field gửi lên. Yêu cầu Bearer token (Admin/Moderator).
+    ///
     ///     PUT /api/cms/auth/profile
     ///     Content-Type: multipart/form-data
-    /// 
-    /// Form fields (camelCase naming):
-    /// - firstName (optional): First name (max 50 characters)
-    /// - lastName (optional): Last name (max 50 characters)
-    /// - phoneNumber (optional): Phone number (10-11 digits)
-    /// - avatarFile (optional): Avatar image file (max 10MB, .jpg/.jpeg/.png/.gif)
-    /// 
-    /// Headers:
-    ///     Authorization: Bearer &lt;access_token&gt;
+    ///     Form: firstName, lastName, phoneNumber, avatarFile (optional)
+    ///     Headers: Authorization: Bearer &lt;access_token&gt;
+    ///
+    /// **Request (Form – UpdateProfileRequest):**
+    /// - firstName (string, tùy chọn): Tên. Tối đa 50 ký tự.
+    /// - lastName (string, tùy chọn): Họ. Tối đa 50 ký tự.
+    /// - phoneNumber (string, tùy chọn): Số điện thoại. Định dạng SĐT, unique (trừ SĐT của chính user).
+    /// - avatarFile (file, tùy chọn): File ảnh avatar. Hỗ trợ jpg, png,... Kích thước tối đa theo cấu hình.
     /// </remarks>
-    /// <returns>Updated profile information</returns>
-    /// <response code="200">Profile updated successfully</response>
-    /// <response code="400">Failed to update profile (validation error)</response>
-    /// <response code="401">Failed to update profile (not authorized)</response>
-    /// <response code="403">No access (user is not a CMS member)</response>
-    /// <response code="500">Failed to update profile (internal server error)</response>
+    /// <response code="200">Profile updated successfully. Returns message and data (updated profile).</response>
+    /// <response code="400">Validation error</response>
+    /// <response code="401">Not authorized</response>
+    /// <response code="403">User is not a CMS member</response>
+    /// <response code="500">Internal server error</response>
     [HttpPut("profile")]
     [AuthorizeRoles(nameof(RoleEnum.Admin), nameof(RoleEnum.Moderator))]
     [ProducesResponseType(typeof(Result<ProfileResponse>), StatusCodes.Status200OK)]
@@ -174,8 +163,8 @@ public class AuthController : ControllerBase
     [ProducesResponseType(typeof(Result<ProfileResponse>), StatusCodes.Status403Forbidden)]
     [ProducesResponseType(typeof(Result<ProfileResponse>), StatusCodes.Status500InternalServerError)]
     [SwaggerOperation(
-        Summary = "Update profile of the logged-in user in cms system",
-        Description = "This API updates the profile information of the currently cms authenticated user",
+        Summary = "Update profile of the logged-in CMS user",
+        Description = "Update profile (firstName, lastName, phoneNumber, avatar). Multipart form-data. Requires Bearer token.",
         OperationId = "UpdateProfile",
         Tags = new[] { "CMS" }
     )]
@@ -187,24 +176,21 @@ public class AuthController : ControllerBase
     }
 
     /// <summary>
-    /// Refresh token of the logged-in user in cms system
+    /// Refresh token for the logged-in CMS user
     /// </summary>
     /// <remarks>
-    /// This API refresh access token of the currently cms authenticated user.
-    /// It requires a valid access token in the request header.
-    /// 
-    /// Sample request:
-    /// 
-    ///     GET /api/cms/auth/refresh-token
-    /// 
-    /// Headers:
-    ///     Authorization: Bearer &lt;access_token&gt;
+    /// Lấy access token mới khi token cũ sắp hết hạn. Client gửi Bearer token hiện tại trong header. Response trả về accessToken, expiresAt, roles. Chỉ Admin/Moderator. Không có request body.
+    ///
+    ///     POST /api/cms/auth/refresh-token
+    ///     Headers: Authorization: Bearer &lt;access_token&gt;
+    ///
+    /// **Request:** Không có body. Chỉ header Authorization: Bearer với token hiện tại.
+    /// **Response data (AuthResponse):** accessToken, expiresAt, roles.
     /// </remarks>
-    /// <returns>refresh token for admin or staff</returns>
-    /// <response code="200">Refresh token successfully</response>
-    /// <response code="401">Failed to refresh token (not authorized)</response>
-    /// <response code="403">No access (user is not a CMS member)</response>
-    /// <response code="500">Failed to refresh token (internal server error)</response>
+    /// <response code="200">New access token returned. Returns message and data (accessToken, expiresAt, roles).</response>
+    /// <response code="401">Not authorized</response>
+    /// <response code="403">User is not a CMS member</response>
+    /// <response code="500">Internal server error</response>
     [HttpPost("refresh-token")]
     [AuthorizeRoles(nameof(RoleEnum.Admin), nameof(RoleEnum.Moderator))]
     [ProducesResponseType(typeof(Result<ProfileResponse>), StatusCodes.Status200OK)]
@@ -212,8 +198,8 @@ public class AuthController : ControllerBase
     [ProducesResponseType(typeof(Result<ProfileResponse>), StatusCodes.Status403Forbidden)]
     [ProducesResponseType(typeof(Result<ProfileResponse>), StatusCodes.Status500InternalServerError)]
     [SwaggerOperation(
-        Summary = "Refresh token for the logged-in user in cms system",
-        Description = "This API refresh access token of the currently authenticated cms user",
+        Summary = "Refresh token for the logged-in CMS user",
+        Description = "Returns new access token for the authenticated CMS user. Requires Bearer token in header.",
         OperationId = "RefreshToken",
         Tags = new[] { "CMS" }
     )]

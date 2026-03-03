@@ -29,12 +29,25 @@ public class LearnerChatController : ControllerBase
         _logger = logger;
     }
 
-    /// <summary>Tạo hoặc lấy hội thoại riêng với một user.</summary>
+    /// <summary>
+    /// Get or create private conversation
+    /// </summary>
+    /// <remarks>
+    /// Lấy hoặc tạo hội thoại riêng với một user. Body chứa otherUserId. Yêu cầu Bearer token.
+    ///
+    ///     POST /api/learner/chat/conversations/private
+    ///     Body: { "otherUserId": "guid" }
+    /// </remarks>
+    /// <response code="200">Returns message and data (conversation).</response>
+    /// <response code="400">Validation error</response>
+    /// <response code="401">Not authorized</response>
+    /// <response code="500">Internal server error</response>
     [HttpPost("conversations/private")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    [SwaggerOperation(Summary = "Get or create private conversation", Description = "Gets existing or creates new private conversation with target userId. Body contains other user Id. Requires Bearer token.", OperationId = "Learner_CreatePrivateConversation", Tags = new[] { "Learner - Chat" })]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+    [SwaggerOperation(Summary = "Get or create private conversation", Description = "Gets existing or creates new private conversation with target userId. Requires Bearer token.", OperationId = "Learner_CreatePrivateConversation", Tags = new[] { "Learner - Chat" })]
     public async Task<IActionResult> CreatePrivateConversation([FromBody] CreatePrivateConversationCommand command)
     {
         var result = await _mediator.Send(command);

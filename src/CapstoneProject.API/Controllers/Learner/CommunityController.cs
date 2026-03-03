@@ -17,28 +17,56 @@ public class LearnerCommunityController : ControllerBase
 
     public LearnerCommunityController(IMediator mediator) => _mediator = mediator;
 
-    /// <summary>Đánh giá map (1–5 sao) và gửi/nhận comment.</summary>
+    /// <summary>
+    /// Rate challenge map (1–5 stars)
+    /// </summary>
+    /// <remarks>
+    /// Gửi hoặc cập nhật đánh giá (1–5 sao) và comment tùy chọn cho map. Yêu cầu Bearer token.
+    ///
+    ///     POST /api/learner/community/maps/{mapId}/rate
+    ///     Body: { "rating": 5, "comment": "optional" }
+    /// </remarks>
+    /// <response code="200">Rating submitted. Returns message only.</response>
+    /// <response code="400">Validation error</response>
+    /// <response code="401">Not authorized</response>
+    /// <response code="404">Map not found</response>
+    /// <response code="500">Internal server error</response>
     [HttpPost("maps/{mapId:guid}/rate")]
     [AuthorizeRoles(nameof(RoleEnum.Learner), nameof(RoleEnum.Admin), nameof(RoleEnum.Moderator))]
     [ProducesResponseType(typeof(Result), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(Result), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(Result), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(Result), StatusCodes.Status404NotFound)]
-    [SwaggerOperation(Summary = "Đánh giá map (1–5 sao)", Description = "Gửi hoặc cập nhật đánh giá (rating 1–5) và comment tùy chọn cho map. Body: rating (bắt buộc), comment (tùy chọn). Yêu cầu Bearer token.", OperationId = "Learner_RateMap", Tags = new[] { "Learner - Community" })]
+    [ProducesResponseType(typeof(Result), StatusCodes.Status500InternalServerError)]
+    [SwaggerOperation(Summary = "Đánh giá map (1–5 sao)", Description = "Submit or update rating (1–5) and optional comment for map. Requires Bearer token.", OperationId = "Learner_RateMap", Tags = new[] { "Learner - Community" })]
     public async Task<IActionResult> RateMap(Guid mapId, [FromBody] RateMapRequest request)
     {
         var result = await _mediator.Send(new RateMapCommand(mapId, request.Rating, request.Comment));
         return StatusCode(result.GetHttpStatusCode(), result);
     }
 
-    /// <summary>Báo cáo map (nội dung không phù hợp).</summary>
+    /// <summary>
+    /// Report map (inappropriate content)
+    /// </summary>
+    /// <remarks>
+    /// Gửi báo cáo nội dung không phù hợp cho map. Admin/Moderator xử lý tại CMS. Yêu cầu Bearer token.
+    ///
+    ///     POST /api/learner/community/maps/{mapId}/report
+    ///     Body: { "reason": "required", "details": "optional" }
+    /// </remarks>
+    /// <response code="201">Report created. Returns message and data (reportId).</response>
+    /// <response code="400">Validation error</response>
+    /// <response code="401">Not authorized</response>
+    /// <response code="404">Map not found</response>
+    /// <response code="500">Internal server error</response>
     [HttpPost("maps/{mapId:guid}/report")]
     [AuthorizeRoles(nameof(RoleEnum.Learner), nameof(RoleEnum.Admin), nameof(RoleEnum.Moderator))]
     [ProducesResponseType(typeof(Result<Guid>), StatusCodes.Status201Created)]
-    [ProducesResponseType(typeof(Result), StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(typeof(Result), StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(typeof(Result), StatusCodes.Status404NotFound)]
-    [SwaggerOperation(Summary = "Báo cáo map", Description = "Gửi báo cáo nội dung không phù hợp cho map. Body: reason (bắt buộc), details (tùy chọn). Trả về reportId. Admin/Moderator xử lý tại CMS - Community. Yêu cầu Bearer token.", OperationId = "Learner_ReportMap", Tags = new[] { "Learner - Community" })]
+    [ProducesResponseType(typeof(Result<Guid>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(Result<Guid>), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(Result<Guid>), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(Result<Guid>), StatusCodes.Status500InternalServerError)]
+    [SwaggerOperation(Summary = "Báo cáo map", Description = "Submit report for inappropriate content. Returns reportId. Processed in CMS. Requires Bearer token.", OperationId = "Learner_ReportMap", Tags = new[] { "Learner - Community" })]
     public async Task<IActionResult> ReportMap(Guid mapId, [FromBody] ReportMapRequest request)
     {
         var result = await _mediator.Send(new ReportMapCommand(mapId, request.Reason, request.Details));
