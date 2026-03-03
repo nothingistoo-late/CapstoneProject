@@ -257,15 +257,15 @@ public class AuthController : ControllerBase
     ///     POST /api/learner/auth/verify-otp
     ///     { "contact": "user@example.com", "otp": "123456", "otpType": 1, "otpSentChannel": 1 }
     /// </remarks>
-    /// <response code="200">Verified; with registration returns auth tokens</response>
+    /// <response code="200">Verified. For registration (otpType=1): returns message and data (accessToken, expiresAt, roles). For password reset (otpType=2): returns message only, data is null.</response>
     /// <response code="400">Invalid OTP or validation error</response>
     [HttpPost("verify-otp")]
-    [ProducesResponseType(typeof(Result), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(Result), StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(typeof(Result), StatusCodes.Status500InternalServerError)]
+    [ProducesResponseType(typeof(Result<AuthResponse>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(Result<AuthResponse>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(Result<AuthResponse>), StatusCodes.Status500InternalServerError)]
     [SwaggerOperation(
-        Summary = "Verify OTP for registration",
-        Description = "This API is used for Verifying OTP for registration",
+        Summary = "Verify OTP for registration or password reset",
+        Description = "Verify OTP. For registration (otpType=1): returns access token and roles so client does not need to login again. For password reset (otpType=2): returns success message only.",
         OperationId = "VerifyOtp",
         Tags = new[] { "Learner" }
     )]

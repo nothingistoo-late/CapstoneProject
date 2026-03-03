@@ -48,13 +48,16 @@ public static class AuthValidationExtensions
     }
 
     /// <summary>
-    /// Validates password with minimum length requirement
+    /// Validates password with minimum length and Identity-aligned rules (digit, lowercase).
+    /// Use this so OTP is only sent when password already satisfies backend Identity requirements.
     /// </summary>
     public static IRuleBuilderOptions<T, string> ValidPassword<T>(this IRuleBuilder<T, string> ruleBuilder, int minLength = 6)
     {
         return ruleBuilder
             .NotEmpty().WithMessage("Password is required")
-            .MinimumLength(minLength).WithMessage($"Password must be at least {minLength} characters");
+            .MinimumLength(minLength).WithMessage($"Password must be at least {minLength} characters")
+            .Must(p => p.Any(char.IsDigit)).WithMessage("Password must contain at least one digit.")
+            .Must(p => p.Any(char.IsLower)).WithMessage("Password must contain at least one lowercase letter.");
     }
 
     /// <summary>
