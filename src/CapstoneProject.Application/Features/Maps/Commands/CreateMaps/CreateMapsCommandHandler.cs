@@ -62,13 +62,14 @@ public class CreateMapsCommandHandler : IRequestHandler<CreateMapsCommand, Resul
         await detailRepo.AddAsync(detail);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
+        var jsonContentElement = JsonSerializer.Deserialize<JsonElement>(json);
         var dto = new MapsResponseDto
         {
             Id = catalog.Id,
             Name = catalog.Name,
             Type = catalog.Type,
             Difficulty = catalog.Difficulty,
-            JsonContent = json,
+            JsonContent = jsonContentElement,
             CreatedAt = catalog.CreatedAt,
             UpdatedAt = catalog.UpdatedAt
         };

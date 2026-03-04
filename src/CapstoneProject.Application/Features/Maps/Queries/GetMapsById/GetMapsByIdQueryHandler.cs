@@ -1,3 +1,4 @@
+using System.Text.Json;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using CapstoneProject.Application.Common.Enums;
@@ -33,13 +34,17 @@ public class GetMapsByIdQueryHandler : IRequestHandler<GetMapsByIdQuery, Result<
         if (detail != null)
             jsonContent = detail.JsonContent;
 
+        JsonElement? jsonContentElement = null;
+        if (!string.IsNullOrWhiteSpace(jsonContent))
+            jsonContentElement = JsonSerializer.Deserialize<JsonElement>(jsonContent);
+
         var dto = new MapsResponseDto
         {
             Id = catalog.Id,
             Name = catalog.Name,
             Type = catalog.Type,
             Difficulty = catalog.Difficulty,
-            JsonContent = jsonContent,
+            JsonContent = jsonContentElement,
             CreatedAt = catalog.CreatedAt,
             UpdatedAt = catalog.UpdatedAt
         };

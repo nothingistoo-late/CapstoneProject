@@ -79,13 +79,17 @@ public class UpdateMapsCommandHandler : IRequestHandler<UpdateMapsCommand, Resul
 
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
+        JsonElement? jsonContentElement = null;
+        if (!string.IsNullOrWhiteSpace(jsonContent))
+            jsonContentElement = JsonSerializer.Deserialize<JsonElement>(jsonContent);
+
         var dto = new MapsResponseDto
         {
             Id = catalog.Id,
             Name = catalog.Name,
             Type = catalog.Type,
             Difficulty = catalog.Difficulty,
-            JsonContent = jsonContent,
+            JsonContent = jsonContentElement,
             CreatedAt = catalog.CreatedAt,
             UpdatedAt = catalog.UpdatedAt
         };
