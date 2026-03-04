@@ -643,6 +643,111 @@ namespace CapstoneProject.Infrastructure.Migrations
                     b.ToTable("Hints");
                 });
 
+            modelBuilder.Entity("CapstoneProject.Domain.Entities.LevelCatalog", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime")
+                        .HasDefaultValueSql("(getdate())");
+
+                    b.Property<Guid?>("CreatedBy")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("datetime");
+
+                    b.Property<Guid?>("DeletedBy")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Difficulty")
+                        .HasMaxLength(32)
+                        .HasColumnType("nvarchar(32)");
+
+                    b.Property<bool>("IsDeleted")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(false);
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Type")
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime");
+
+                    b.Property<Guid?>("UpdatedBy")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Name");
+
+                    b.HasIndex("Type");
+
+                    b.ToTable("LevelCatalogs", (string)null);
+                });
+
+            modelBuilder.Entity("CapstoneProject.Domain.Entities.LevelDetail", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime")
+                        .HasDefaultValueSql("(getdate())");
+
+                    b.Property<Guid?>("CreatedBy")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("datetime");
+
+                    b.Property<Guid?>("DeletedBy")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<bool>("IsDeleted")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(false);
+
+                    b.Property<string>("JsonContent")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid>("LevelCatalogId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime");
+
+                    b.Property<Guid?>("UpdatedBy")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("LevelCatalogId")
+                        .IsUnique();
+
+                    b.ToTable("LevelDetails", (string)null);
+                });
+
             modelBuilder.Entity("CapstoneProject.Domain.Entities.Map", b =>
                 {
                     b.Property<Guid>("Id")
@@ -933,62 +1038,6 @@ namespace CapstoneProject.Infrastructure.Migrations
                         .IsUnique();
 
                     b.ToTable("MapTags");
-                });
-
-            modelBuilder.Entity("CapstoneProject.Domain.Entities.Maps", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<DateTime?>("CreatedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("datetime")
-                        .HasDefaultValueSql("(getdate())");
-
-                    b.Property<Guid?>("CreatedBy")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<DateTime?>("DeletedAt")
-                        .HasColumnType("datetime");
-
-                    b.Property<Guid?>("DeletedBy")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<string>("ExternalId")
-                        .HasMaxLength(128)
-                        .HasColumnType("nvarchar(128)");
-
-                    b.Property<bool>("IsDeleted")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("bit")
-                        .HasDefaultValue(false);
-
-                    b.Property<string>("JsonContent")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
-
-                    b.Property<int>("Status")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("datetime");
-
-                    b.Property<Guid?>("UpdatedBy")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ExternalId");
-
-                    b.HasIndex("Name");
-
-                    b.ToTable("LevelMaps", (string)null);
                 });
 
             modelBuilder.Entity("CapstoneProject.Domain.Entities.Match", b =>
@@ -2048,6 +2097,17 @@ namespace CapstoneProject.Infrastructure.Migrations
                     b.Navigation("Map");
                 });
 
+            modelBuilder.Entity("CapstoneProject.Domain.Entities.LevelDetail", b =>
+                {
+                    b.HasOne("CapstoneProject.Domain.Entities.LevelCatalog", "LevelCatalog")
+                        .WithOne("Detail")
+                        .HasForeignKey("CapstoneProject.Domain.Entities.LevelDetail", "LevelCatalogId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("LevelCatalog");
+                });
+
             modelBuilder.Entity("CapstoneProject.Domain.Entities.MapConcept", b =>
                 {
                     b.HasOne("CapstoneProject.Domain.Entities.Concept", "Concept")
@@ -2303,6 +2363,11 @@ namespace CapstoneProject.Infrastructure.Migrations
             modelBuilder.Entity("CapstoneProject.Domain.Entities.Concept", b =>
                 {
                     b.Navigation("MapConcepts");
+                });
+
+            modelBuilder.Entity("CapstoneProject.Domain.Entities.LevelCatalog", b =>
+                {
+                    b.Navigation("Detail");
                 });
 
             modelBuilder.Entity("CapstoneProject.Domain.Entities.Map", b =>

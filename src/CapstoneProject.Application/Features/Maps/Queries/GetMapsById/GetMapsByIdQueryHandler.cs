@@ -5,7 +5,7 @@ using CapstoneProject.Application.Common.Interfaces;
 using CapstoneProject.Application.Common.Models;
 using CapstoneProject.Application.Commons.DTOs.Maps;
 using CapstoneProject.Application.Commons.Interfaces;
-using MapEntity = CapstoneProject.Domain.Entities.Maps;
+using CapstoneProject.Domain.Entities;
 
 namespace CapstoneProject.Application.Features.Maps.Queries.GetMapsById;
 
@@ -20,20 +20,28 @@ public class GetMapsByIdQueryHandler : IRequestHandler<GetMapsByIdQuery, Result<
 
     public async Task<Result<MapsResponseDto>> Handle(GetMapsByIdQuery request, CancellationToken cancellationToken)
     {
-        var repo = _unitOfWork.Repository<MapEntity>();
-        var entity = await repo.GetQueryable()
+        var catalogRepo = _unitOfWork.Repository<LevelCatalog>();
+        var catalog = await catalogRepo.GetQueryable()
             .FirstOrDefaultAsync(x => x.Id == request.Id, cancellationToken);
-        if (entity == null)
-            return Result<MapsResponseDto>.Failure("Map not found.", ErrorCodeEnum.NotFound);
+        if (catalog == null)
+            return Result<MapsResponseDto>.Failure("Level not found.", ErrorCodeEnum.NotFound);
+
+        string? jsonContent = null;
+        var detailRepo = _unitOfWork.Repository<LevelDetail>();
+        var detail = await detailRepo.GetQueryable()
+            .FirstOrDefaultAsync(x => x.LevelCatalogId == request.Id, cancellationToken);
+        if (detail != null)
+            jsonContent = detail.JsonContent;
 
         var dto = new MapsResponseDto
         {
-            Id = entity.Id,
-            ExternalId = entity.ExternalId,
-            Name = entity.Name,
-            JsonContent = entity.JsonContent,
-            CreatedAt = entity.CreatedAt,
-            UpdatedAt = entity.UpdatedAt
+            Id = catalog.Id,
+            Name = catalog.Name,
+            Type = catalog.Type,
+            Difficulty = catalog.Difficulty,
+            JsonContent = jsonContent,
+            CreatedAt = catalog.CreatedAt,
+            UpdatedAt = catalog.UpdatedAt
         };
         return Result<MapsResponseDto>.Success(dto, "Success");
     }

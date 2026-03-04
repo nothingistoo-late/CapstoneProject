@@ -5,7 +5,7 @@ using CapstoneProject.Application.Common.Interfaces;
 using CapstoneProject.Application.Common.Models;
 using CapstoneProject.Application.Commons.Interfaces;
 using CapstoneProject.Domain.Common;
-using MapEntity = CapstoneProject.Domain.Entities.Maps;
+using CapstoneProject.Domain.Entities;
 
 namespace CapstoneProject.Application.Features.Maps.Commands.BatchDeleteMaps;
 
@@ -26,7 +26,7 @@ public class BatchDeleteMapsCommandHandler : IRequestHandler<BatchDeleteMapsComm
         if (!isValid)
             return Result<BatchDeleteMapsResultDto>.Failure("Authentication required.", ErrorCodeEnum.Unauthorized);
 
-        var repo = _unitOfWork.Repository<MapEntity>();
+        var repo = _unitOfWork.Repository<LevelCatalog>();
         var ids = command.Ids?.Distinct().ToList() ?? new List<Guid>();
         var entities = await repo.GetQueryable()
             .Where(x => ids.Contains(x.Id))

@@ -3,14 +3,19 @@ using System.Text.Json;
 namespace CapstoneProject.Application.Commons.DTOs.Maps;
 
 /// <summary>
-/// Request tạo một bản ghi Maps từ nội dung JSON (file level/platform).
-/// Chấp nhận một trong hai: Level (object) hoặc JsonContent (string đã escape).
+/// Request tạo một level: gửi full level (object) + optional name, type, difficulty để override.
 /// </summary>
 public class CreateMapsRequest
 {
-    /// <summary>Level dạng object (gửi nested JSON, không cần escape newline). Ưu tiên dùng nếu gửi cả hai.</summary>
+    /// <summary>Level dạng object (id, name, width, height, layers, startPosition, goalPosition, metadata...). Bắt buộc.</summary>
     public JsonElement? Level { get; set; }
 
-    /// <summary>Toàn bộ nội dung JSON của level dạng string (phải escape đúng, ví dụ \\n cho xuống dòng).</summary>
-    public string? JsonContent { get; set; }
+    /// <summary>Tên level. Nếu không gửi sẽ lấy từ level.name.</summary>
+    public string? Name { get; set; }
+
+    /// <summary>Loại: platform | topdown. Nếu không gửi sẽ lấy từ level.type hoặc level.metadata.</summary>
+    public string? Type { get; set; }
+
+    /// <summary>Độ khó: easy | medium | hard. Nếu không gửi sẽ lấy từ level.metadata.difficulty.</summary>
+    public string? Difficulty { get; set; }
 }

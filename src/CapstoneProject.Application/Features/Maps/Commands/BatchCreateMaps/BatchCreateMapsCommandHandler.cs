@@ -5,7 +5,7 @@ using CapstoneProject.Application.Common.Interfaces;
 using CapstoneProject.Application.Common.Models;
 using CapstoneProject.Application.Commons.Interfaces;
 using CapstoneProject.Domain.Common;
-using MapEntity = CapstoneProject.Domain.Entities.Maps;
+using CapstoneProject.Domain.Entities;
 
 namespace CapstoneProject.Application.Features.Maps.Commands.BatchCreateMaps;
 
@@ -42,7 +42,9 @@ public class BatchCreateMapsCommandHandler : IRequestHandler<BatchCreateMapsComm
 
         var createdIds = new List<Guid>();
         var errors = new List<string>();
-        var repo = _unitOfWork.Repository<MapEntity>();
+        var catalogRepo = _unitOfWork.Repository<LevelCatalog>();
+        var detailRepo = _unitOfWork.Repository<LevelDetail>();
+        var createdCatalogs = new List<(LevelCatalog Catalog, string Json)>();
 
         foreach (var json in jsonStrings)
         {
@@ -52,16 +54,16 @@ public class BatchCreateMapsCommandHandler : IRequestHandler<BatchCreateMapsComm
                 continue;
             }
 
-            string? externalId = null;
             string name = "Unnamed";
+            string? type = null;
+            string? difficulty = null;
             try
             {
                 using var doc = JsonDocument.Parse(json);
                 var root = doc.RootElement;
-                if (root.TryGetProperty("id", out var idEl))
-                    externalId = idEl.GetString();
-                if (root.TryGetProperty("name", out var nameEl))
-                    name = nameEl.GetString() ?? name;
+                if (root.TryGetProperty("name", out var nameEl)) name = nameEl.GetString() ?? name;
+                if (root.TryGetProperty("type", out var typeEl)) type = typeEl.GetString();
+                if (root.TryGetProperty("metadata", out var meta) && meta.TryGetProperty("difficulty", out var diffEl)) difficulty = diffEl.GetString();
             }
             catch (Exception ex)
             {
@@ -69,18 +71,29 @@ public class BatchCreateMapsCommandHandler : IRequestHandler<BatchCreateMapsComm
                 continue;
             }
 
-            var entity = new MapEntity
+            var catalog = new LevelCatalog
             {
-                ExternalId = externalId,
                 Name = name,
-                JsonContent = json
+                Type = type,
+                Difficulty = difficulty
             };
-            entity.InitializeEntity(userId);
-            await repo.AddAsync(entity);
-            createdIds.Add(entity.Id);
+            catalog.InitializeEntity(userId);
+            await catalogRepo.AddAsync(catalog);
+            createdCatalogs.Add((catalog, json));
         }
 
         await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+        foreach (var (catalog, json) in createdCatalogs)
+        {
+            var detail = new LevelDetail { LevelCatalogId = catalog.Id, JsonContent = json };
+            detail.InitializeEntity(userId);
+            await detailRepo.AddAsync(detail);
+            createdIds.Add(catalog.Id);
+        }
+
+        if (createdCatalogs.Count > 0)
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         var dto = new BatchCreateMapsResultDto
         {
@@ -89,6 +102,6 @@ public class BatchCreateMapsCommandHandler : IRequestHandler<BatchCreateMapsComm
             CreatedIds = createdIds,
             Errors = errors
         };
-        return Result<BatchCreateMapsResultDto>.Success(dto, $"Created {dto.SuccessCount} map(s), {dto.FailedCount} failed.");
+        return Result<BatchCreateMapsResultDto>.Success(dto, $"Created {dto.SuccessCount} level(s), {dto.FailedCount} failed.");
     }
 }

@@ -3,6 +3,7 @@ using CapstoneProject.Application.Common.Extensions;
 using CapstoneProject.Application.Common.Models;
 using CapstoneProject.Application.Features.Maps.Commands.BatchCreateMaps;
 using CapstoneProject.Application.Features.Maps.Commands.BatchDeleteMaps;
+using CapstoneProject.Application.Features.Maps.Commands.BatchUpsertCatalog;
 using CapstoneProject.Application.Features.Maps.Commands.CreateMaps;
 using CapstoneProject.Application.Features.Maps.Commands.DeleteMaps;
 using CapstoneProject.Application.Features.Maps.Commands.UpdateMaps;
@@ -109,6 +110,20 @@ public class LevelMapsController : ControllerBase
     public async Task<IActionResult> BatchCreate([FromBody] BatchCreateMapsRequest request)
     {
         var result = await _mediator.Send(new BatchCreateMapsCommand(request));
+        return StatusCode(result.GetHttpStatusCode(), result);
+    }
+
+    /// <summary>Đồng bộ catalog từ FE: gửi { "levels": [{ "id", "file", "name", "type", "difficulty" }] }. Tạo mới hoặc cập nhật theo id (ExternalId).</summary>
+    [HttpPost("batch/upsert-catalog")]
+    [AuthorizeRoles(nameof(RoleEnum.Admin), nameof(RoleEnum.Moderator))]
+    [ProducesResponseType(typeof(Result<BatchUpsertCatalogResultDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(Result), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(Result), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(Result), StatusCodes.Status403Forbidden)]
+    [SwaggerOperation(Summary = "Batch upsert catalog", Description = "Sync catalog from FE. Body: { \"levels\": [{ \"id\", \"file\", \"name\", \"type\", \"difficulty\" }] }. Creates or updates by id. Does not overwrite JsonContent.", OperationId = "BatchUpsertLevelCatalog", Tags = new[] { "CMS - Level Maps" })]
+    public async Task<IActionResult> BatchUpsertCatalog([FromBody] BatchUpsertCatalogRequest request)
+    {
+        var result = await _mediator.Send(new BatchUpsertCatalogCommand(request));
         return StatusCode(result.GetHttpStatusCode(), result);
     }
 

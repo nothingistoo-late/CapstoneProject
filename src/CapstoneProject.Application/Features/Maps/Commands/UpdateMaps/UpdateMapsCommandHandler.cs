@@ -7,7 +7,7 @@ using CapstoneProject.Application.Common.Models;
 using CapstoneProject.Application.Commons.DTOs.Maps;
 using CapstoneProject.Application.Commons.Interfaces;
 using CapstoneProject.Domain.Common;
-using MapEntity = CapstoneProject.Domain.Entities.Maps;
+using CapstoneProject.Domain.Entities;
 
 namespace CapstoneProject.Application.Features.Maps.Commands.UpdateMaps;
 
@@ -28,43 +28,67 @@ public class UpdateMapsCommandHandler : IRequestHandler<UpdateMapsCommand, Resul
         if (!isValid)
             return Result<MapsResponseDto>.Failure("Authentication required.", ErrorCodeEnum.Unauthorized);
 
-        var repo = _unitOfWork.Repository<MapEntity>();
-        var entity = await repo.GetQueryable()
+        var catalogRepo = _unitOfWork.Repository<LevelCatalog>();
+        var catalog = await catalogRepo.GetQueryable()
             .AsNoTracking()
             .FirstOrDefaultAsync(x => x.Id == command.Id, cancellationToken);
 
-        if (entity == null)
-            return Result<MapsResponseDto>.Failure("Map not found.", ErrorCodeEnum.NotFound);
+        if (catalog == null)
+            return Result<MapsResponseDto>.Failure("Level not found.", ErrorCodeEnum.NotFound);
 
-        entity.Name = command.Request.Name ?? entity.Name;
+        catalog.Name = command.Request.Name ?? catalog.Name;
+        if (command.Request.Type != null) catalog.Type = command.Request.Type;
+        if (command.Request.Difficulty != null) catalog.Difficulty = command.Request.Difficulty;
         if (!string.IsNullOrWhiteSpace(command.Request.JsonContent))
         {
-            entity.JsonContent = command.Request.JsonContent;
             try
             {
                 using var doc = JsonDocument.Parse(command.Request.JsonContent);
                 var root = doc.RootElement;
-                if (root.TryGetProperty("id", out var idEl))
-                    entity.ExternalId = idEl.GetString();
-                if (root.TryGetProperty("name", out var nameEl))
-                    entity.Name = nameEl.GetString() ?? entity.Name;
+                if (root.TryGetProperty("name", out var nameEl)) catalog.Name = nameEl.GetString() ?? catalog.Name;
+                if (root.TryGetProperty("type", out var typeEl)) catalog.Type = typeEl.GetString();
+                if (root.TryGetProperty("metadata", out var meta) && meta.TryGetProperty("difficulty", out var diffEl)) catalog.Difficulty = diffEl.GetString();
             }
-            catch { /* keep existing name/externalId */ }
+            catch { /* keep existing */ }
         }
 
-        entity.UpdateEntity(userId);
-        repo.Update(entity);
+        catalog.UpdateEntity(userId);
+        catalogRepo.Update(catalog);
+
+        var detailRepo = _unitOfWork.Repository<LevelDetail>();
+        var existingDetail = await detailRepo.GetQueryable()
+            .FirstOrDefaultAsync(x => x.LevelCatalogId == command.Id, cancellationToken);
+        string? jsonContent = existingDetail?.JsonContent;
+
+        if (!string.IsNullOrWhiteSpace(command.Request.JsonContent))
+        {
+            if (existingDetail != null)
+            {
+                existingDetail.JsonContent = command.Request.JsonContent;
+                existingDetail.UpdateEntity(userId);
+                detailRepo.Update(existingDetail);
+            }
+            else
+            {
+                var detail = new LevelDetail { LevelCatalogId = command.Id, JsonContent = command.Request.JsonContent };
+                detail.InitializeEntity(userId);
+                await detailRepo.AddAsync(detail);
+            }
+            jsonContent = command.Request.JsonContent;
+        }
+
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         var dto = new MapsResponseDto
         {
-            Id = entity.Id,
-            ExternalId = entity.ExternalId,
-            Name = entity.Name,
-            JsonContent = entity.JsonContent,
-            CreatedAt = entity.CreatedAt,
-            UpdatedAt = entity.UpdatedAt
+            Id = catalog.Id,
+            Name = catalog.Name,
+            Type = catalog.Type,
+            Difficulty = catalog.Difficulty,
+            JsonContent = jsonContent,
+            CreatedAt = catalog.CreatedAt,
+            UpdatedAt = catalog.UpdatedAt
         };
-        return Result<MapsResponseDto>.Success(dto, "Map updated successfully.");
+        return Result<MapsResponseDto>.Success(dto, "Level updated successfully.");
     }
 }

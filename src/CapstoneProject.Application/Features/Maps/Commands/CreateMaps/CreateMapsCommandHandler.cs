@@ -6,7 +6,7 @@ using CapstoneProject.Application.Common.Models;
 using CapstoneProject.Application.Commons.DTOs.Maps;
 using CapstoneProject.Application.Commons.Interfaces;
 using CapstoneProject.Domain.Common;
-using MapEntity = CapstoneProject.Domain.Entities.Maps;
+using CapstoneProject.Domain.Entities;
 
 namespace CapstoneProject.Application.Features.Maps.Commands.CreateMaps;
 
@@ -27,51 +27,48 @@ public class CreateMapsCommandHandler : IRequestHandler<CreateMapsCommand, Resul
         if (!isValid)
             return Result<MapsResponseDto>.Failure("Authentication required.", ErrorCodeEnum.Unauthorized);
 
-        string json;
-        if (command.Request.Level.HasValue && command.Request.Level.Value.ValueKind != JsonValueKind.Null && command.Request.Level.Value.ValueKind != JsonValueKind.Undefined)
-            json = command.Request.Level.Value.GetRawText();
-        else if (!string.IsNullOrWhiteSpace(command.Request.JsonContent))
-            json = command.Request.JsonContent;
-        else
-            return Result<MapsResponseDto>.Failure("Either Level (object) or JsonContent (string) is required.", ErrorCodeEnum.ValidationFailed);
+        var req = command.Request;
+        if (!req.Level.HasValue || req.Level.Value.ValueKind == JsonValueKind.Null || req.Level.Value.ValueKind == JsonValueKind.Undefined)
+            return Result<MapsResponseDto>.Failure("Level (object) is required.", ErrorCodeEnum.ValidationFailed);
 
-        string? externalId = null;
-        string name = "Unnamed";
+        var json = req.Level.Value.GetRawText();
+        string name = req.Name ?? "Unnamed";
+        string? type = req.Type;
+        string? difficulty = req.Difficulty;
+
         try
         {
             using var doc = JsonDocument.Parse(json);
             var root = doc.RootElement;
-            if (root.TryGetProperty("id", out var idEl))
-                externalId = idEl.GetString();
-            if (root.TryGetProperty("name", out var nameEl))
-                name = nameEl.GetString() ?? name;
+            if (string.IsNullOrWhiteSpace(req.Name) && root.TryGetProperty("name", out var nameEl)) name = nameEl.GetString() ?? name;
+            if (root.TryGetProperty("type", out var typeEl)) type ??= typeEl.GetString();
+            if (root.TryGetProperty("metadata", out var meta) && meta.TryGetProperty("difficulty", out var diffEl)) difficulty ??= diffEl.GetString();
         }
-        catch
-        {
-            // Giữ name mặc định nếu JSON không hợp lệ
-        }
+        catch { /* keep from request */ }
 
-        var entity = new MapEntity
-        {
-            ExternalId = externalId,
-            Name = name,
-            JsonContent = json
-        };
-        entity.InitializeEntity(userId);
+        var catalog = new LevelCatalog { Name = name, Type = type, Difficulty = difficulty };
+        catalog.InitializeEntity(userId);
 
-        var repo = _unitOfWork.Repository<MapEntity>();
-        await repo.AddAsync(entity);
+        var catalogRepo = _unitOfWork.Repository<LevelCatalog>();
+        await catalogRepo.AddAsync(catalog);
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+        var detail = new LevelDetail { LevelCatalogId = catalog.Id, JsonContent = json };
+        detail.InitializeEntity(userId);
+        var detailRepo = _unitOfWork.Repository<LevelDetail>();
+        await detailRepo.AddAsync(detail);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         var dto = new MapsResponseDto
         {
-            Id = entity.Id,
-            ExternalId = entity.ExternalId,
-            Name = entity.Name,
-            JsonContent = entity.JsonContent,
-            CreatedAt = entity.CreatedAt,
-            UpdatedAt = entity.UpdatedAt
+            Id = catalog.Id,
+            Name = catalog.Name,
+            Type = catalog.Type,
+            Difficulty = catalog.Difficulty,
+            JsonContent = json,
+            CreatedAt = catalog.CreatedAt,
+            UpdatedAt = catalog.UpdatedAt
         };
-        return Result<MapsResponseDto>.Success(dto, "Map created successfully.");
+        return Result<MapsResponseDto>.Success(dto, "Level created successfully.");
     }
 }

@@ -4,7 +4,7 @@ using CapstoneProject.Application.Common.Interfaces;
 using CapstoneProject.Application.Common.Models;
 using CapstoneProject.Application.Commons.DTOs.Maps;
 using CapstoneProject.Application.Commons.Interfaces;
-using MapEntity = CapstoneProject.Domain.Entities.Maps;
+using CapstoneProject.Domain.Entities;
 
 namespace CapstoneProject.Application.Features.Maps.Queries.GetPagedMaps;
 
@@ -20,17 +20,13 @@ public class GetPagedMapsQueryHandler : IRequestHandler<GetPagedMapsQuery, Pagin
     public async Task<PaginationResult<MapsListItemDto>> Handle(GetPagedMapsQuery request, CancellationToken cancellationToken)
     {
         var filter = request.Filter;
-        var repo = _unitOfWork.Repository<MapEntity>();
+        var repo = _unitOfWork.Repository<LevelCatalog>();
         var query = repo.GetQueryable();
-
-        if (!string.IsNullOrWhiteSpace(filter.ExternalId))
-            query = query.Where(x => x.ExternalId != null && x.ExternalId == filter.ExternalId);
         if (!string.IsNullOrWhiteSpace(filter.Search))
         {
             var term = filter.Search.Trim().ToLower();
             query = query.Where(x =>
-                (x.Name != null && x.Name.ToLower().Contains(term)) ||
-                (x.ExternalId != null && x.ExternalId.ToLower().Contains(term)));
+                x.Name != null && x.Name.ToLower().Contains(term));
         }
         if (filter.Status.HasValue)
             query = query.Where(x => x.Status == filter.Status.Value);
@@ -44,7 +40,6 @@ public class GetPagedMapsQueryHandler : IRequestHandler<GetPagedMapsQuery, Pagin
         query = sortBy switch
         {
             "name" => asc ? query.OrderBy(x => x.Name) : query.OrderByDescending(x => x.Name),
-            "externalid" => asc ? query.OrderBy(x => x.ExternalId) : query.OrderByDescending(x => x.ExternalId),
             "updatedat" => asc ? query.OrderBy(x => x.UpdatedAt) : query.OrderByDescending(x => x.UpdatedAt),
             _ => asc ? query.OrderBy(x => x.CreatedAt) : query.OrderByDescending(x => x.CreatedAt)
         };
@@ -55,8 +50,9 @@ public class GetPagedMapsQueryHandler : IRequestHandler<GetPagedMapsQuery, Pagin
             .Select(x => new MapsListItemDto
             {
                 Id = x.Id,
-                ExternalId = x.ExternalId,
                 Name = x.Name,
+                Type = x.Type,
+                Difficulty = x.Difficulty,
                 CreatedAt = x.CreatedAt
             })
             .ToListAsync(cancellationToken);
