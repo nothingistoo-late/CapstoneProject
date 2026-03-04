@@ -11,10 +11,10 @@ API được tách theo **vai trò** để dễ bảo trì và tránh gộp chun
 | Nhóm | Base path | Mô tả |
 |------|-----------|--------|
 | **Learner** | `api/learner/*` | Người học: auth, challenges (catalog + UGC), gameplay, marketplace (xem + mua), community (rate, report), competitive, chat |
-| **CMS** | `api/cms/*` | Admin/Moderator: auth, users, challenges (duyệt map + CRUD tags/concepts), marketplace (CRUD gói + báo cáo thanh toán), community (danh sách + xử lý báo cáo) |
+| **CMS** | `api/cms/*` | Admin/Moderator: auth, users, challenges (duyệt map + CRUD tags/concepts), **level-maps** (catalog + JSON level), marketplace (CRUD gói + báo cáo thanh toán), community (danh sách + xử lý báo cáo) |
 
 - **Learner:** `api/learner/auth`, `api/learner/challenges`, `api/learner/gameplay`, `api/learner/marketplace`, `api/learner/community`, `api/learner/competitive`, `api/learner/chat`
-- **CMS:** `api/cms/auth`, `api/cms/users`, `api/cms/challenges`, `api/cms/marketplace`, `api/cms/community`
+- **CMS:** `api/cms/auth`, `api/cms/users`, `api/cms/challenges`, `api/cms/level-maps`, `api/cms/marketplace`, `api/cms/community`
 
 ---
 
@@ -24,11 +24,12 @@ API được tách theo **vai trò** để dễ bảo trì và tránh gộp chun
 2. [Các kiểu dữ liệu dùng chung](#2-các-kiểu-dữ-liệu-dùng-chung)
 3. [Module 1: Xác thực & Người dùng (Learner / CMS)](#3-module-1-xác-thực--người-dùng-learner--cms)
 4. [Module 2: Quản lý Thử thách (Challenge)](#4-module-2-quản-lý-thử-thách-challenge)
-5. [Module 3: Gameplay & Tiến trình](#5-module-3-gameplay--tiến-trình)
-6. [Module 4: Thi đấu (Competitive)](#6-module-4-thi-đấu-competitive)
-7. [Module 5: Marketplace](#7-module-5-marketplace)
-8. [Module 6: Community & Báo cáo](#8-module-6-community--báo-cáo)
-9. [CMS Users & Chat (tóm tắt)](#9-cms-users--chat-tóm-tắt)
+5. [Module 2.4: Level Maps (CMS) – Catalog & JSON level](#44-level-maps-cms--catalog--json-level)
+6. [Module 3: Gameplay & Tiến trình](#5-module-3-gameplay--tiến-trình)
+7. [Module 4: Thi đấu (Competitive)](#6-module-4-thi-đấu-competitive)
+8. [Module 5: Marketplace](#7-module-5-marketplace)
+9. [Module 6: Community & Báo cáo](#8-module-6-community--báo-cáo)
+10. [CMS Users & Chat (tóm tắt)](#9-cms-users--chat-tóm-tắt)
 
 ---
 
@@ -345,6 +346,47 @@ Request/response tương tự Learner (AuthResponse, Result). Role trả trong `
   `PUT /api/cms/challenges/concepts/{id}`  
   `DELETE /api/cms/challenges/concepts/{id}`
 
+### 4.4 Level Maps (CMS) – Catalog & JSON level
+
+**Base path:** `api/cms/level-maps`  
+**Mục đích:** Lưu và quản lý dữ liệu level (JSON từ level editor): thông tin catalog (name, type, difficulty) tách riêng với nội dung JSON đầy đủ (layers, startPosition, goalPosition, metadata…). Dùng cho CMS import/export level, đồng bộ catalog từ FE.
+
+**Entity (Domain):**
+
+- **LevelCatalog:** Id (Guid), Name, Type, Difficulty (kế thừa BaseEntity: audit, soft delete, status). Không có ExternalId, File.
+- **LevelDetail:** Id, LevelCatalogId (FK), JsonContent (string – raw JSON). Quan hệ 1-1 với LevelCatalog (cascade delete).
+
+**DTOs (Application.Commons.DTOs.Maps):**
+
+| DTO | Mô tả |
+|-----|--------|
+| **MapsFilter** | Pagination + search, sortBy (name \| createdAt \| updatedAt), isAscending, status (EntityStatusEnum?) |
+| **MapsListItemDto** | id, name, type, difficulty, createdAt (danh sách catalog) |
+| **MapsResponseDto** | id, name, type, difficulty, jsonContent (string?, từ LevelDetail), createdAt, updatedAt |
+| **CreateMapsRequest** | **level** (object, bắt buộc): JSON đầy đủ level; **name**, **type**, **difficulty** (optional): override catalog |
+| **UpdateMapsRequest** | name?, type?, difficulty?, jsonContent? (string – ghi đè JSON chi tiết) |
+| **BatchCreateMapsRequest** | **levels** (array of object) và/hoặc **jsonContents** (array of string) |
+| **BatchUpsertCatalogRequest** | **levels**: array of { id, file, name, type, difficulty } (upsert theo name) |
+| **BatchDeleteMapsRequest** | **ids**: List&lt;Guid&gt; |
+| **BatchCreateMapsResultDto** | successCount, failedCount, createdIds, errors |
+| **BatchUpsertCatalogResultDto** | (theo implementation) |
+| **BatchDeleteMapsResultDto** | successCount, notFoundCount, notFoundIds |
+
+**Thứ tự gọi API (Level Maps – CMS):**
+
+| Method | Path | Mô tả |
+|--------|------|--------|
+| GET | `/api/cms/level-maps` | Danh sách catalog có phân trang. Query: page, pageSize, search, sortBy, isAscending, status. **Response:** PaginationResult&lt;MapsListItemDto&gt; (thường trả trực tiếp trong Result). |
+| GET | `/api/cms/level-maps/{id}` | Chi tiết một level (catalog + jsonContent). **Response:** Result&lt;MapsResponseDto&gt;. |
+| POST | `/api/cms/level-maps` | Tạo một level: body **CreateMapsRequest** (level object + name/type/difficulty optional). Tạo LevelCatalog + LevelDetail (1-1). **Response:** Result&lt;MapsResponseDto&gt; (201). |
+| PUT | `/api/cms/level-maps/{id}` | Cập nhật catalog và/hoặc jsonContent. Body **UpdateMapsRequest**. Nếu gửi jsonContent thì ghi đè LevelDetail.JsonContent. |
+| DELETE | `/api/cms/level-maps/{id}` | Soft-delete level (IsDeleted trên LevelCatalog). |
+| POST | `/api/cms/level-maps/batch/create` | Batch tạo nhiều level. Body **BatchCreateMapsRequest** (levels hoặc jsonContents). **Response:** Result&lt;BatchCreateMapsResultDto&gt; (successCount, failedCount, createdIds, errors). |
+| POST | `/api/cms/level-maps/batch/upsert-catalog` | Đồng bộ catalog từ FE. Body **BatchUpsertCatalogRequest**. Upsert theo **name** (tạo mới hoặc cập nhật type/difficulty); không tạo/sửa LevelDetail.JsonContent. |
+| POST | `/api/cms/level-maps/batch/delete` | Soft-delete nhiều level theo danh sách Id. Body **BatchDeleteMapsRequest**. **Response:** Result&lt;BatchDeleteMapsResultDto&gt;. |
+
+**Ghi chú:** Tất cả endpoint Level Maps yêu cầu role Admin hoặc Moderator. Swagger có mô tả chi tiết (remarks) cho từng API trong `LevelMapsController`.
+
 ---
 
 ## 5. Module 3: Gameplay & Tiến trình
@@ -527,6 +569,7 @@ Tất cả Chat yêu cầu Bearer token. SignalR ChatHub dùng cho real-time (ri
 Application/
   Commons/
     DTOs/Challenge: CreateMapRequest, UpdateMapRequest, MapListItemDto, MapDetailDto, BatchMapRequests, HintItemDto, ConstraintItemDto
+    DTOs/Maps: CreateMapsRequest, UpdateMapsRequest, MapsFilter, MapsListItemDto, MapsResponseDto, BatchCreateMapsRequest, BatchUpsertCatalogRequest, BatchDeleteMapsRequest, LevelCatalogItemDto, BatchCreateMapsResultDto, BatchUpsertCatalogResultDto, BatchDeleteMapsResultDto
     DTOs/Marketplace: PackageDto, CreatePackageRequest, UpdatePackageRequest, PackageFilter
     DTOs/Auth: RegisterRequest, LoginRequest, VerifyOtpRequest, AuthResponse, ProfileResponse
     Models: Result, Result<T>, PaginationResult<T>
@@ -534,6 +577,8 @@ Application/
   Features/
     Challenge/Commands: CreateMap, UpdateMap, DeleteMap, SubmitMapForReview, ApproveMap, RejectMap, PublishMap, BatchApprove/Reject/Publish, CreateTag, UpdateTag, DeleteTag, CreateConcept, UpdateConcept, DeleteConcept
     Challenge/Queries: GetMaps, GetMapById, GetTags, GetConcepts
+    Maps/Commands: CreateMaps, UpdateMaps, DeleteMaps, BatchCreateMaps, BatchUpsertCatalog, BatchDeleteMaps
+    Maps/Queries: GetPagedMaps, GetMapsById
     Auth/Commands: Login, Register, VerifyOtp, QuickLogin, GoogleLogin, RefreshToken, Logout, UpdateProfile, ChangePassword, ResetPassword
     Gameplay/Commands: ValidateSolution
     Gameplay/Queries: GetHintsForMap, GetProgressDashboard
@@ -547,7 +592,7 @@ Application/
 
 API/Controllers/
   Learner: AuthController, ChallengeController, GameplayController, MarketplaceController, CommunityController, CompetitiveController, ChatController
-  Cms: AuthController, UserController, ChallengeController, MarketplaceController, CommunityController
+  Cms: AuthController, UserController, ChallengeController, LevelMapsController, MarketplaceController, CommunityController
 ```
 
 ---
