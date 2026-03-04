@@ -22,6 +22,8 @@ public class CapstoneProjectDbContext : IdentityDbContext<AppUser, AppRole, Guid
 
     // QuackOrbit: Challenge Management
     public DbSet<Map> Maps { get; set; }
+    /// <summary>Level/platform map JSON storage (one record = one JSON file).</summary>
+    public DbSet<Maps> LevelMaps { get; set; }
     public DbSet<MapSpec> MapSpecs { get; set; }
     public DbSet<Hint> Hints { get; set; }
     public DbSet<MapConstraint> MapConstraints { get; set; }
@@ -163,6 +165,7 @@ public class CapstoneProjectDbContext : IdentityDbContext<AppUser, AppRole, Guid
 
         // QuackOrbit entities
         QuackOrbitEntityConfiguration.Configure(builder);
+        builder.Entity<Maps>(MapsEntityConfiguration.Configure);
 
         // Gọi cấu hình chung cho BaseEntity (if any BaseEntity-derived entities are added later)
         BaseEntityConfigurationHelper.ConfigureBaseEntities(builder);
