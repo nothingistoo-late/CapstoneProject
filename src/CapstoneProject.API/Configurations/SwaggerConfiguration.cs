@@ -141,6 +141,9 @@ public static class SwaggerConfiguration
                 }
                 return null;
             });
+
+            // Bỏ phần "Responses" (possible responses) khỏi mọi API trong Swagger UI
+            options.OperationFilter<RemoveResponsesOperationFilter>();
         });
         
         return services;
@@ -174,6 +177,17 @@ public static class SwaggerConfiguration
         });
         
         return app;
+    }
+}
+
+/// <summary>
+/// Ẩn toàn bộ mục "Responses" (200 OK, 401 Unauthorized, ...) trong Swagger UI cho mọi API.
+/// </summary>
+public class RemoveResponsesOperationFilter : IOperationFilter
+{
+    public void Apply(OpenApiOperation operation, OperationFilterContext context)
+    {
+        operation.Responses.Clear();
     }
 }
 
