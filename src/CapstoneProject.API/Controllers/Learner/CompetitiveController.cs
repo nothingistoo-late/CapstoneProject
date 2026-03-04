@@ -21,10 +21,15 @@ public class LearnerCompetitiveController : ControllerBase
     /// Create competitive match
     /// </summary>
     /// <remarks>
-    /// Tạo trận đấu cho một map. Trả về matchId. Sau đó tạo room và join qua SignalR. Yêu cầu Bearer token.
+    /// Creates a competitive match for a map. Returns matchId. Then create room and join via SignalR. Requires Bearer token.
     ///
-    ///     POST /api/learner/competitive/matches
-    ///     Body: { "mapId": "guid", "rulesSpec": "optional" }
+    /// **Body (JSON):**
+    /// - mapId (Guid, required): Challenge map ID for the match.
+    /// - rulesSpec (string, optional): Optional rules specification (JSON string).
+    ///
+    /// **METHOD and path:** POST /api/learner/competitive/matches
+    ///
+    /// **Example request body:** { "mapId": "3fa85f64-5717-4562-b3fc-2c963f66afa6", "rulesSpec": null }
     /// </remarks>
     /// <response code="201">Match created. Returns message and data (matchId).</response>
     /// <response code="400">Validation error</response>
@@ -47,7 +52,21 @@ public class LearnerCompetitiveController : ControllerBase
         return StatusCode(result.GetHttpStatusCode(), result);
     }
 
-    /// <summary>Tạo phòng trong trận đấu (trả về roomCode để share).</summary>
+    /// <summary>Create room in match (returns roomCode to share).</summary>
+    /// <remarks>
+    /// Creates a room for the match. Returns roomCode for players to join. Use with SignalR hub /hubs/competitive. Requires Bearer token.
+    ///
+    /// **Route:** matchId (Guid, required): Match ID.
+    ///
+    /// **Query:**
+    /// - maxPlayers (int, optional): Max players in room. Default 8.
+    ///
+    /// **Body:** None.
+    ///
+    /// **METHOD and path:** POST /api/learner/competitive/matches/{matchId}/rooms
+    ///
+    /// **Example request:** POST /api/learner/competitive/matches/3fa85f64-5717-4562-b3fc-2c963f66afa6/rooms?maxPlayers=8
+    /// </remarks>
     [HttpPost("matches/{matchId:guid}/rooms")]
     [AuthorizeRoles(nameof(RoleEnum.Learner), nameof(RoleEnum.Admin), nameof(RoleEnum.Moderator))]
     [ProducesResponseType(typeof(Result<CreateRoomResultDto>), StatusCodes.Status201Created)]
@@ -61,7 +80,17 @@ public class LearnerCompetitiveController : ControllerBase
         return StatusCode(result.GetHttpStatusCode(), result);
     }
 
-    /// <summary>Vào phòng bằng roomCode (sau đó kết nối SignalR JoinRoom).</summary>
+    /// <summary>Join room by roomCode (then connect SignalR JoinRoom).</summary>
+    /// <remarks>
+    /// Joins a room by roomCode. Returns room info. Then connect to SignalR hub and call JoinRoom(roomCode), SubmitSolution when done. Requires Bearer token.
+    ///
+    /// **Body (JSON):**
+    /// - roomCode (string, required): Room code shared by host.
+    ///
+    /// **METHOD and path:** POST /api/learner/competitive/rooms/join
+    ///
+    /// **Example request body:** { "roomCode": "ABC123" }
+    /// </remarks>
     [HttpPost("rooms/join")]
     [AuthorizeRoles(nameof(RoleEnum.Learner), nameof(RoleEnum.Admin), nameof(RoleEnum.Moderator))]
     [ProducesResponseType(typeof(Result<JoinRoomResultDto>), StatusCodes.Status200OK)]

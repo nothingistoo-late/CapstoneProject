@@ -45,6 +45,7 @@ public class LoginCommandHandler : IRequestHandler<LoginCommand, Result<AuthResp
             var authResponse = new AuthResponse
             {
                 AccessToken = token,
+                RefreshToken = refreshToken,
                 Roles = roles,
                 ExpiresAt = expiresAt
             };

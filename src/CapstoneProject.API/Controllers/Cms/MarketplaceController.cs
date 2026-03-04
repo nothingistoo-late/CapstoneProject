@@ -21,7 +21,16 @@ public class CmsMarketplaceController : ControllerBase
 
     public CmsMarketplaceController(IMediator mediator) => _mediator = mediator;
 
-    /// <summary>Danh sách gói tính năng (phân trang, filter).</summary>
+    /// <summary>Get packages (paginated, filter).</summary>
+    /// <remarks>
+    /// Returns paginated packages. Filter by isActive, search. Admin only.
+    ///
+    /// **Query:** pageNumber (int, optional), pageSize (int, optional), isActive (bool?, optional), search (string, optional).
+    ///
+    /// **METHOD and path:** GET /api/cms/marketplace/packages
+    ///
+    /// **Example request:** GET /api/cms/marketplace/packages?pageNumber=1&amp;pageSize=20&amp;isActive=true
+    /// </remarks>
     [HttpGet("packages")]
     [AuthorizeRoles(nameof(RoleEnum.Admin))]
     [ProducesResponseType(typeof(Result<PaginationResult<PackageDto>>), StatusCodes.Status200OK)]
@@ -34,7 +43,16 @@ public class CmsMarketplaceController : ControllerBase
         return StatusCode(result.GetHttpStatusCode(), result);
     }
 
-    /// <summary>Chi tiết gói theo ID.</summary>
+    /// <summary>Get package by ID.</summary>
+    /// <remarks>
+    /// Returns a single package by Id. Admin only.
+    ///
+    /// **Route:** id (Guid, required): Package ID.
+    ///
+    /// **METHOD and path:** GET /api/cms/marketplace/packages/{id}
+    ///
+    /// **Example request:** GET /api/cms/marketplace/packages/3fa85f64-5717-4562-b3fc-2c963f66afa6
+    /// </remarks>
     [HttpGet("packages/{id:guid}")]
     [AuthorizeRoles(nameof(RoleEnum.Admin))]
     [ProducesResponseType(typeof(Result<PackageDto>), StatusCodes.Status200OK)]
@@ -48,7 +66,21 @@ public class CmsMarketplaceController : ControllerBase
         return StatusCode(result.GetHttpStatusCode(), result);
     }
 
-    /// <summary>Tạo gói tính năng mới.</summary>
+    /// <summary>Create package.</summary>
+    /// <remarks>
+    /// Creates a new feature package. Returns package Id. Admin only.
+    ///
+    /// **Body (JSON):**
+    /// - name (string, required): Package name.
+    /// - durationDays (int, required): Duration in days.
+    /// - limit (int?, optional): Usage limit if applicable.
+    /// - price (decimal, required): Price.
+    /// - featuresSpec (string, optional): JSON spec of features.
+    ///
+    /// **METHOD and path:** POST /api/cms/marketplace/packages
+    ///
+    /// **Example request body:** { "name": "Premium", "durationDays": 30, "limit": null, "price": 9.99, "featuresSpec": "{}" }
+    /// </remarks>
     [HttpPost("packages")]
     [AuthorizeRoles(nameof(RoleEnum.Admin))]
     [ProducesResponseType(typeof(Result<Guid>), StatusCodes.Status201Created)]
@@ -62,7 +94,18 @@ public class CmsMarketplaceController : ControllerBase
         return StatusCode(result.GetHttpStatusCode(), result);
     }
 
-    /// <summary>Cập nhật gói tính năng.</summary>
+    /// <summary>Update package.</summary>
+    /// <remarks>
+    /// Updates package by Id. All body fields optional. Admin only.
+    ///
+    /// **Route:** id (Guid, required): Package ID.
+    ///
+    /// **Body (JSON):** name (string?, optional), durationDays (int?, optional), limit (int?, optional), price (decimal?, optional), featuresSpec (string?, optional), isActive (bool?, optional).
+    ///
+    /// **METHOD and path:** PUT /api/cms/marketplace/packages/{id}
+    ///
+    /// **Example request body:** { "name": "Premium Plus", "price": 14.99, "isActive": true }
+    /// </remarks>
     [HttpPut("packages/{id:guid}")]
     [AuthorizeRoles(nameof(RoleEnum.Admin))]
     [ProducesResponseType(typeof(Result), StatusCodes.Status200OK)]
@@ -77,7 +120,18 @@ public class CmsMarketplaceController : ControllerBase
         return StatusCode(result.GetHttpStatusCode(), result);
     }
 
-    /// <summary>Xóa gói (soft delete).</summary>
+    /// <summary>Delete package (soft delete).</summary>
+    /// <remarks>
+    /// Soft-deletes a package by Id. Admin only.
+    ///
+    /// **Route:** id (Guid, required): Package ID.
+    ///
+    /// **Body:** None.
+    ///
+    /// **METHOD and path:** DELETE /api/cms/marketplace/packages/{id}
+    ///
+    /// **Example request:** DELETE /api/cms/marketplace/packages/3fa85f64-5717-4562-b3fc-2c963f66afa6
+    /// </remarks>
     [HttpDelete("packages/{id:guid}")]
     [AuthorizeRoles(nameof(RoleEnum.Admin))]
     [ProducesResponseType(typeof(Result), StatusCodes.Status200OK)]
@@ -91,7 +145,18 @@ public class CmsMarketplaceController : ControllerBase
         return StatusCode(result.GetHttpStatusCode(), result);
     }
 
-    /// <summary>Bật/tắt trạng thái nhiều gói cùng lúc.</summary>
+    /// <summary>Batch update package status.</summary>
+    /// <remarks>
+    /// Sets isActive for multiple packages. Returns successCount, failedCount, notFoundIds. Admin only.
+    ///
+    /// **Body (JSON):**
+    /// - packageIds (array of Guid, required): Package IDs.
+    /// - isActive (bool, required): New active status.
+    ///
+    /// **METHOD and path:** POST /api/cms/marketplace/packages/batch/status
+    ///
+    /// **Example request body:** { "packageIds": [ "3fa85f64-5717-4562-b3fc-2c963f66afa6" ], "isActive": false }
+    /// </remarks>
     [HttpPost("packages/batch/status")]
     [AuthorizeRoles(nameof(RoleEnum.Admin))]
     [ProducesResponseType(typeof(Result<BatchUpdatePackageStatusResultDto>), StatusCodes.Status200OK)]
@@ -105,7 +170,19 @@ public class CmsMarketplaceController : ControllerBase
         return StatusCode(result.GetHttpStatusCode(), result);
     }
 
-    /// <summary>Báo cáo thanh toán (theo khoảng thời gian, groupBy).</summary>
+    /// <summary>Payment report (by date range, groupBy).</summary>
+    /// <remarks>
+    /// Returns payment report. Query: from, to (date), groupBy (Day|Month|Year). Admin only.
+    ///
+    /// **Query:**
+    /// - from (DateTime?, optional): Start date.
+    /// - to (DateTime?, optional): End date.
+    /// - groupBy (string, optional): "Day", "Month", or "Year". Default "Day".
+    ///
+    /// **METHOD and path:** GET /api/cms/marketplace/reports/payments
+    ///
+    /// **Example request:** GET /api/cms/marketplace/reports/payments?from=2025-01-01&amp;to=2025-03-01&amp;groupBy=Month
+    /// </remarks>
     [HttpGet("reports/payments")]
     [AuthorizeRoles(nameof(RoleEnum.Admin))]
     [ProducesResponseType(typeof(Result<PaymentReportDto>), StatusCodes.Status200OK)]

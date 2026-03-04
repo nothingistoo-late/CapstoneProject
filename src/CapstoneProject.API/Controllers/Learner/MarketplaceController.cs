@@ -21,10 +21,17 @@ public class LearnerMarketplaceController : ControllerBase
     /// Get list of feature packages
     /// </summary>
     /// <remarks>
-    /// Trả về danh sách gói tính năng có phân trang. Query: pageNumber, pageSize, isActive, search.
+    /// Returns paginated list of feature packages. Use filters for active/inactive and search. Login required to purchase.
     ///
-    ///     GET /api/learner/marketplace/packages
-    ///     Query: pageNumber=1, pageSize=10, isActive, search
+    /// **Query:**
+    /// - pageNumber (int, optional): Page number. Default 1.
+    /// - pageSize (int, optional): Items per page. Default 20.
+    /// - isActive (bool?, optional): Filter by active status; null = all.
+    /// - search (string, optional): Search in package name.
+    ///
+    /// **METHOD and path:** GET /api/learner/marketplace/packages
+    ///
+    /// **Example request:** GET /api/learner/marketplace/packages?pageNumber=1&amp;pageSize=10&amp;isActive=true&amp;search=premium
     /// </remarks>
     /// <response code="200">Returns message and data (paginated list of packages).</response>
     /// <response code="500">Internal server error</response>
@@ -42,9 +49,15 @@ public class LearnerMarketplaceController : ControllerBase
     /// Get package detail by ID
     /// </summary>
     /// <remarks>
-    /// Trả về thông tin chi tiết gói (tên, giá, thời hạn, tính năng). Dùng trước khi gọi Purchase.
+    /// Returns package detail (name, price, duration, features). Use before calling Purchase. Requires Bearer token for purchase.
     ///
-    ///     GET /api/learner/marketplace/packages/{id}
+    /// **Route:** id (Guid, required): Package ID.
+    ///
+    /// **Body:** None.
+    ///
+    /// **METHOD and path:** GET /api/learner/marketplace/packages/{id}
+    ///
+    /// **Example request:** GET /api/learner/marketplace/packages/3fa85f64-5717-4562-b3fc-2c963f66afa6
     /// </remarks>
     /// <response code="200">Returns message and data (package detail).</response>
     /// <response code="404">Package not found</response>
@@ -64,10 +77,18 @@ public class LearnerMarketplaceController : ControllerBase
     /// Purchase feature package
     /// </summary>
     /// <remarks>
-    /// Mua gói tính năng cho user hiện tại. Yêu cầu Bearer token (Learner).
+    /// Purchases a feature package for the current user. Requires Bearer token (Learner).
     ///
-    ///     POST /api/learner/marketplace/packages/{id}/purchase
-    ///     Query: paymentMethodId (optional)
+    /// **Route:** id (Guid, required): Package ID.
+    ///
+    /// **Query:**
+    /// - paymentMethodId (Guid?, optional): Payment method ID if multiple methods supported.
+    ///
+    /// **Body:** None.
+    ///
+    /// **METHOD and path:** POST /api/learner/marketplace/packages/{id}/purchase
+    ///
+    /// **Example request:** POST /api/learner/marketplace/packages/3fa85f64-5717-4562-b3fc-2c963f66afa6/purchase?paymentMethodId=3fa85f64-5717-4562-b3fc-2c963f66afa7
     /// </remarks>
     /// <response code="200">Purchase successful. Returns message and data (order/purchase id).</response>
     /// <response code="401">Not authorized</response>
@@ -92,10 +113,18 @@ public class LearnerMarketplaceController : ControllerBase
     /// Purchase paid challenge map
     /// </summary>
     /// <remarks>
-    /// Mua map thử thách trả phí (map có giá > 0). Yêu cầu Bearer token (Learner).
+    /// Purchases a paid challenge map (price &gt; 0) for the current user. Requires Bearer token (Learner).
     ///
-    ///     POST /api/learner/marketplace/maps/{mapId}/purchase
-    ///     Query: paymentMethodId (optional)
+    /// **Route:** mapId (Guid, required): Challenge map ID.
+    ///
+    /// **Query:**
+    /// - paymentMethodId (Guid?, optional): Payment method ID.
+    ///
+    /// **Body:** None.
+    ///
+    /// **METHOD and path:** POST /api/learner/marketplace/maps/{mapId}/purchase
+    ///
+    /// **Example request:** POST /api/learner/marketplace/maps/3fa85f64-5717-4562-b3fc-2c963f66afa6/purchase
     /// </remarks>
     /// <response code="200">Purchase successful. Returns message and data.</response>
     /// <response code="401">Not authorized</response>

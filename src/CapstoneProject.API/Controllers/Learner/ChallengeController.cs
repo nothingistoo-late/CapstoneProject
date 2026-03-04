@@ -28,21 +28,22 @@ public class LearnerChallengeController : ControllerBase
     /// Get list of challenge maps (catalog)
     /// </summary>
     /// <remarks>
-    /// Trả về danh sách map thử thách có phân trang và bộ lọc. Dùng cho trang catalog Learner. Khi publishedOnly=true chỉ trả về map đã xuất bản.
+    /// Returns paginated challenge maps for the learner catalog. Use filters for difficulty, concept, tag, and search. When publishedOnly=true only published maps are returned.
     ///
-    ///     GET /api/learner/challenges
-    ///     Query: pageNumber=1, pageSize=10, publishedOnly=true, difficulty=1, conceptId, tagId, search=abc, sortBy=Title, sortAscending=true
+    /// **Query:**
+    /// - pageNumber (int, optional): Page number. Default 1.
+    /// - pageSize (int, optional): Items per page. Default 20.
+    /// - publishedOnly (bool?, optional): true = only published maps (catalog), false/null = include draft/pending. Default true.
+    /// - difficulty (int?, optional): Filter by difficulty (e.g. 0=Easy, 1=Medium, 2=Hard).
+    /// - conceptId (Guid?, optional): Filter by concept ID.
+    /// - tagId (Guid?, optional): Filter by tag ID.
+    /// - search (string, optional): Search in title and description.
+    /// - sortBy (string, optional): Sort by: CreatedAt, Title, Difficulty, TimeLimitMs.
+    /// - sortAscending (bool, optional): true = ascending, false = descending. Default false.
     ///
-    /// **Query (GetMapsQuery):**
-    /// - pageNumber (int, tùy chọn): Trang. Mặc định 1.
-    /// - pageSize (int, tùy chọn): Số bản ghi mỗi trang. Mặc định 20.
-    /// - publishedOnly (bool?, tùy chọn): true = chỉ map đã xuất bản (catalog), false/null = gồm draft/pending (cho admin/tác giả). Mặc định true.
-    /// - difficulty (int?, tùy chọn): Lọc theo độ khó. Giá trị theo enum Difficulty.
-    /// - conceptId (Guid?, tùy chọn): Lọc theo concept.
-    /// - tagId (Guid?, tùy chọn): Lọc theo tag.
-    /// - search (string, tùy chọn): Tìm trong title và mô tả.
-    /// - sortBy (string, tùy chọn): Sắp xếp theo: CreatedAt, Title, Difficulty, TimeLimitMs.
-    /// - sortAscending (bool, tùy chọn): true = tăng dần, false = giảm dần. Mặc định false.
+    /// **METHOD and path:** GET /api/learner/challenges
+    ///
+    /// **Example request:** GET /api/learner/challenges?pageNumber=1&amp;pageSize=10&amp;publishedOnly=true&amp;difficulty=1&amp;search=abc&amp;sortBy=Title&amp;sortAscending=true
     /// </remarks>
     /// <response code="200">Returns message and data (paginated list of maps).</response>
     /// <response code="500">Internal server error</response>
@@ -60,10 +61,16 @@ public class LearnerChallengeController : ControllerBase
     /// Get challenge map detail by ID
     /// </summary>
     /// <remarks>
-    /// Trả về chi tiết map (spec, hints, constraints). includeEditorialForUser=true để lấy editorial khi user đạt đủ sao.
+    /// Returns full map detail (spec, hints, constraints). Set includeEditorialForUser=true to get editorial when the user has earned enough stars.
     ///
-    ///     GET /api/learner/challenges/{id}
-    ///     Query: includeEditorialForUser=false
+    /// **Route:** id (Guid, required): Map ID.
+    ///
+    /// **Query:**
+    /// - includeEditorialForUser (bool, optional): If true, includes editorial content when user has sufficient stars. Default false.
+    ///
+    /// **METHOD and path:** GET /api/learner/challenges/{id}
+    ///
+    /// **Example request:** GET /api/learner/challenges/3fa85f64-5717-4562-b3fc-2c963f66afa6?includeEditorialForUser=false
     /// </remarks>
     /// <response code="200">Returns message and data (map detail).</response>
     /// <response code="404">Map not found</response>
@@ -83,10 +90,26 @@ public class LearnerChallengeController : ControllerBase
     /// Create new challenge map (draft)
     /// </summary>
     /// <remarks>
-    /// Tạo map thử thách mới ở trạng thái Draft. Sau đó có thể Update rồi Submit để duyệt. Yêu cầu Bearer token (Learner/Admin/Moderator).
+    /// Creates a new challenge map in Draft status. Then Update and Submit for moderator review. Requires Bearer token (Learner/Admin/Moderator).
     ///
-    ///     POST /api/learner/challenges
-    ///     Body: CreateMapRequest (title, difficulty, specs, hints, tagIds, conceptIds...)
+    /// **Body (JSON):**
+    /// - title (string, required): Map title.
+    /// - description (string, required): Map description.
+    /// - difficulty (int, required): Difficulty level (e.g. 0=Easy, 1=Medium, 2=Hard).
+    /// - timeLimitMs (int, required): Time limit in milliseconds.
+    /// - price (decimal?, optional): Price for paid map; null = free.
+    /// - gridSpec (string, required): Grid specification.
+    /// - initialStateSpec (string, required): Initial state spec.
+    /// - winConditionSpec (string, required): Win condition spec.
+    /// - failConditionSpec (string, required): Fail condition spec.
+    /// - hints (array of { orderNo: int, content: string }, optional): Ordered hints.
+    /// - constraints (array of { type: string, payload: string }, optional): Constraints.
+    /// - tagIds (array of Guid, optional): Tag IDs.
+    /// - conceptIds (array of Guid, optional): Concept IDs.
+    ///
+    /// **METHOD and path:** POST /api/learner/challenges
+    ///
+    /// **Example request body:** { "title": "My Map", "description": "Description", "difficulty": 1, "timeLimitMs": 60000, "gridSpec": "{}", "initialStateSpec": "{}", "winConditionSpec": "{}", "failConditionSpec": "{}", "hints": [], "constraints": [], "tagIds": [], "conceptIds": [] }
     /// </remarks>
     /// <response code="201">Map created. Returns message and data (mapId).</response>
     /// <response code="400">Validation error</response>
@@ -111,10 +134,25 @@ public class LearnerChallengeController : ControllerBase
     /// Update challenge map (draft only)
     /// </summary>
     /// <remarks>
-    /// Cập nhật map ở trạng thái Draft. Chỉ tác giả hoặc Admin/Moderator. Yêu cầu Bearer token.
+    /// Updates a map in Draft status. Author or Admin/Moderator only. Requires Bearer token.
     ///
-    ///     PUT /api/learner/challenges/{id}
-    ///     Body: UpdateMapRequest (title, difficulty, specs, hints, tagIds, conceptIds...)
+    /// **Route:** id (Guid, required): Map ID.
+    ///
+    /// **Body (JSON):**
+    /// - title (string, required): Map title.
+    /// - description (string, required): Map description.
+    /// - difficulty (int, required): Difficulty (0=Easy, 1=Medium, 2=Hard).
+    /// - timeLimitMs (int, required): Time limit in ms.
+    /// - price (decimal?, optional): Price; null = free.
+    /// - gridSpec, initialStateSpec, winConditionSpec, failConditionSpec (string, optional): Specs.
+    /// - editorialContent (string, optional): Editorial text.
+    /// - unlockEditorialAfterStars (int?, optional): Stars required to unlock editorial.
+    /// - hints, constraints (arrays, optional): Hint and constraint items.
+    /// - tagIds, conceptIds (array of Guid, optional): Tag and concept IDs.
+    ///
+    /// **METHOD and path:** PUT /api/learner/challenges/{id}
+    ///
+    /// **Example request body:** { "title": "Updated Map", "description": "Desc", "difficulty": 1, "timeLimitMs": 60000, "tagIds": [], "conceptIds": [] }
     /// </remarks>
     /// <response code="200">Map updated. Returns message only.</response>
     /// <response code="401">Not authorized</response>
@@ -139,9 +177,15 @@ public class LearnerChallengeController : ControllerBase
     /// Submit map for review
     /// </summary>
     /// <remarks>
-    /// Gửi map Draft lên để moderator duyệt. Chỉ tác giả. Yêu cầu Bearer token.
+    /// Submits a Draft map for moderator review. Author only. Requires Bearer token.
     ///
-    ///     POST /api/learner/challenges/{id}/submit
+    /// **Route:** id (Guid, required): Map ID.
+    ///
+    /// **Body:** None. Headers only (Authorization: Bearer &lt;token&gt;).
+    ///
+    /// **METHOD and path:** POST /api/learner/challenges/{id}/submit
+    ///
+    /// **Example request:** POST /api/learner/challenges/3fa85f64-5717-4562-b3fc-2c963f66afa6/submit
     /// </remarks>
     /// <response code="200">Map submitted for review. Returns message only.</response>
     /// <response code="401">Not authorized</response>
@@ -164,9 +208,15 @@ public class LearnerChallengeController : ControllerBase
     /// Delete challenge map (soft delete)
     /// </summary>
     /// <remarks>
-    /// Xóa mềm map. Chỉ tác giả hoặc Admin/Moderator. Yêu cầu Bearer token.
+    /// Soft-deletes the map. Author or Admin/Moderator only. Requires Bearer token.
     ///
-    ///     DELETE /api/learner/challenges/{id}
+    /// **Route:** id (Guid, required): Map ID.
+    ///
+    /// **Body:** None.
+    ///
+    /// **METHOD and path:** DELETE /api/learner/challenges/{id}
+    ///
+    /// **Example request:** DELETE /api/learner/challenges/3fa85f64-5717-4562-b3fc-2c963f66afa6
     /// </remarks>
     /// <response code="200">Map deleted. Returns message only.</response>
     /// <response code="401">Not authorized</response>
@@ -191,10 +241,14 @@ public class LearnerChallengeController : ControllerBase
     /// Get list of tags
     /// </summary>
     /// <remarks>
-    /// Trả về danh sách tag (chỉ đọc). Dùng cho dropdown khi tạo/sửa map.
+    /// Returns all tags (read-only). Use for dropdown when creating/editing maps.
     ///
-    ///     GET /api/learner/challenges/tags
-    ///     Query: search (optional)
+    /// **Query:**
+    /// - search (string, optional): Filter tags by name.
+    ///
+    /// **METHOD and path:** GET /api/learner/challenges/tags
+    ///
+    /// **Example request:** GET /api/learner/challenges/tags?search=logic
     /// </remarks>
     /// <response code="200">Returns message and data (list of tags).</response>
     /// <response code="500">Internal server error</response>
@@ -212,10 +266,14 @@ public class LearnerChallengeController : ControllerBase
     /// Get list of concepts
     /// </summary>
     /// <remarks>
-    /// Trả về danh sách concept (chỉ đọc). Dùng cho dropdown khi tạo/sửa map.
+    /// Returns all concepts (read-only). Use for dropdown when creating/editing maps.
     ///
-    ///     GET /api/learner/challenges/concepts
-    ///     Query: search (optional)
+    /// **Query:**
+    /// - search (string, optional): Filter concepts by name.
+    ///
+    /// **METHOD and path:** GET /api/learner/challenges/concepts
+    ///
+    /// **Example request:** GET /api/learner/challenges/concepts?search=loop
     /// </remarks>
     /// <response code="200">Returns message and data (list of concepts).</response>
     /// <response code="500">Internal server error</response>

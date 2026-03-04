@@ -20,10 +20,17 @@ public class LearnerGameplayController : ControllerBase
     /// Validate solution
     /// </summary>
     /// <remarks>
-    /// Nộp bài giải (mapId, astSpec hoặc bytecodeSpec, language). Trả về Accepted/Rejected, stars, XP. Yêu cầu Bearer token.
+    /// Submits solution (mapId, astSpec or bytecodeSpec, language). Returns Accepted/Rejected, stars, XP. Creates Submission and updates UserMapResult. Requires Bearer token.
     ///
-    ///     POST /api/learner/gameplay/validate
-    ///     Body: ValidateSolutionRequest (mapId, astSpec or bytecodeSpec, language)
+    /// **Body (JSON):**
+    /// - mapId (Guid, required): Challenge map ID.
+    /// - language (string, optional): Solution language. Default "Blockly".
+    /// - astSpec (string, optional): AST specification (JSON). Use either astSpec or bytecodeSpec.
+    /// - bytecodeSpec (string, optional): Bytecode specification. Use either astSpec or bytecodeSpec.
+    ///
+    /// **METHOD and path:** POST /api/learner/gameplay/validate
+    ///
+    /// **Example request body:** { "mapId": "3fa85f64-5717-4562-b3fc-2c963f66afa6", "language": "Blockly", "astSpec": "{}" }
     /// </remarks>
     /// <response code="200">Returns message and data (result, stars, XP).</response>
     /// <response code="400">Validation error</response>
@@ -44,7 +51,18 @@ public class LearnerGameplayController : ControllerBase
         return StatusCode(result.GetHttpStatusCode(), result);
     }
 
-    /// <summary>Lấy danh sách gợi ý theo cấp độ cho map.</summary>
+    /// <summary>Get hints for map (by level).</summary>
+    /// <remarks>
+    /// Returns ordered hints (orderNo, content) for the given map. Use after loading map detail.
+    ///
+    /// **Route:** mapId (Guid, required): Map ID.
+    ///
+    /// **Body:** None.
+    ///
+    /// **METHOD and path:** GET /api/learner/gameplay/maps/{mapId}/hints
+    ///
+    /// **Example request:** GET /api/learner/gameplay/maps/3fa85f64-5717-4562-b3fc-2c963f66afa6/hints
+    /// </remarks>
     [HttpGet("maps/{mapId:guid}/hints")]
     [ProducesResponseType(typeof(Result<List<HintLevelDto>>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(Result), StatusCodes.Status404NotFound)]
@@ -55,7 +73,16 @@ public class LearnerGameplayController : ControllerBase
         return StatusCode(result.GetHttpStatusCode(), result);
     }
 
-    /// <summary>Dashboard tiến trình: XP, sao, badge, hoạt động gần đây.</summary>
+    /// <summary>Get progress dashboard (XP, stars, badges, recent activity).</summary>
+    /// <remarks>
+    /// Returns totalXp, mapsCompleted, totalStars, badges, conceptsPracticed, recentActivities for the current user. Requires Bearer token.
+    ///
+    /// **Body:** None. Headers only (Authorization: Bearer &lt;token&gt;).
+    ///
+    /// **METHOD and path:** GET /api/learner/gameplay/dashboard
+    ///
+    /// **Example request:** GET /api/learner/gameplay/dashboard
+    /// </remarks>
     [HttpGet("dashboard")]
     [AuthorizeRoles(nameof(RoleEnum.Learner), nameof(RoleEnum.Admin), nameof(RoleEnum.Moderator))]
     [ProducesResponseType(typeof(Result<ProgressDashboardDto>), StatusCodes.Status200OK)]

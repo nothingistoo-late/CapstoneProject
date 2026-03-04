@@ -38,13 +38,15 @@ public class AuthController : ControllerBase
     /// <remarks>
     /// Đăng nhập bằng email và mật khẩu. Trả về access token (JWT) và danh sách roles. Dùng token trả về trong header Authorization cho các API cần xác thực.
     ///
-    ///     POST /api/learner/auth/login
+    /// **METHOD and path:** POST /api/learner/auth/login
+    ///
+    /// **Example request body:**
     ///     { "email": "user@example.com", "password": "User@123", "grantType": 0 }
     ///
-    /// **Request body (LoginRequest):**
-    /// - email (string, bắt buộc): Email đăng nhập. Định dạng email hợp lệ.
-    /// - password (string, bắt buộc): Mật khẩu. Phải thỏa ràng buộc Identity (ít nhất 6 ký tự, có chữ thường, có chữ số).
-    /// - grantType (int, tùy chọn): Loại grant. Giá trị: 0 = Password (mặc định). Hiện chỉ hỗ trợ Password.
+    /// **Body (JSON):**
+    /// - email (string, required): Email đăng nhập. Định dạng email hợp lệ.
+    /// - password (string, required): Mật khẩu. Phải thỏa ràng buộc Identity (ít nhất 6 ký tự, có chữ thường, có chữ số).
+    /// - grantType (int, optional): Loại grant. Possible values: 0 = Password (mặc định). Hiện chỉ hỗ trợ Password.
     /// </remarks>
     /// <response code="200">Login successfully. Returns message and data (accessToken, expiresAt, roles).</response>
     /// <response code="400">Validation error</response>
@@ -74,11 +76,13 @@ public class AuthController : ControllerBase
     /// <remarks>
     /// Đăng nhập nhanh bằng quick code (dùng cho demo/test). Không cần email/password. Trả về access token tương tự Login. Cấu hình quick code trong appsettings.
     ///
-    ///     POST /api/learner/auth/quick-login
+    /// **METHOD and path:** POST /api/learner/auth/quick-login
+    ///
+    /// **Example request body:**
     ///     { "quickCode": "DEMO123" }
     ///
-    /// **Request body (QuickLoginRequest):**
-    /// - quickCode (string, bắt buộc): Mã quick login. Tối thiểu 3 ký tự. Phải khớp với cấu hình trên server.
+    /// **Body (JSON):**
+    /// - quickCode (string, required): Mã quick login. Tối thiểu 3 ký tự. Phải khớp với cấu hình trên server.
     /// </remarks>
     /// <response code="200">Login successfully. Returns message and data (accessToken, expiresAt, roles).</response>
     /// <response code="400">Invalid request or quick code</response>
@@ -116,11 +120,13 @@ public class AuthController : ControllerBase
     /// <remarks>
     /// Đăng nhập bằng id_token từ Google Sign-In (client nhận từ Google sau khi user đăng nhập Google). Server xác thực token, tạo hoặc cập nhật user và trả về JWT. Nếu user chưa có sẽ được tạo với role Learner.
     ///
-    ///     POST /api/learner/auth/google
+    /// **METHOD and path:** POST /api/learner/auth/google
+    ///
+    /// **Example request body:**
     ///     { "idToken": "eyJhbGciOiJSUzI1NiIs..." }
     ///
-    /// **Request body (GoogleLoginRequest):**
-    /// - idToken (string, bắt buộc): ID token do Google trả về sau khi user đăng nhập Google (credential từ Google Sign-In). Server verify token với Google.
+    /// **Body (JSON):**
+    /// - idToken (string, required): ID token do Google trả về sau khi user đăng nhập Google (credential từ Google Sign-In). Server verify token với Google.
     /// </remarks>
     /// <response code="200">Login successfully. Returns message and data (accessToken, expiresAt, roles).</response>
     /// <response code="400">Invalid or missing id_token</response>
@@ -151,10 +157,12 @@ public class AuthController : ControllerBase
     /// <remarks>
     /// Đăng xuất: xóa refresh token của user trong database. User cần gửi access token hiện tại trong header; không có request body.
     ///
-    ///     POST /api/learner/auth/logout
-    ///     Headers: Authorization: Bearer &lt;access_token&gt;
+    /// **METHOD and path:** POST /api/learner/auth/logout
     ///
-    /// **Request:** Không có body. Chỉ cần header Authorization với Bearer token nhận được từ Login/VerifyOtp/RefreshToken.
+    /// **Body:** None. Headers only.
+    ///
+    /// **Headers:**
+    /// - Authorization (required): Bearer &lt;access_token&gt; – token nhận được từ Login / VerifyOtp / RefreshToken.
     /// </remarks>
     /// <response code="200">Logout successfully. Returns message only.</response>
     /// <response code="401">Not authorized</response>
@@ -182,20 +190,20 @@ public class AuthController : ControllerBase
     /// <remarks>
     /// Gửi thông tin đăng ký (multipart/form-data). Hệ thống validate (email unique, mật khẩu đủ ràng buộc) rồi gửi OTP qua email. Sau đó gọi verify-otp với OTP nhận được để hoàn tất đăng ký và nhận token.
     ///
-    ///     POST /api/learner/auth/register
-    ///     Content-Type: multipart/form-data
-    ///     Form: email, password, confirmPassword, firstName, lastName, phoneNumber, learnerCode, gender, dateOfBirth
+    /// **METHOD and path:** POST /api/learner/auth/register
     ///
-    /// **Request (Form data – RegisterRequest):**
-    /// - email (string, bắt buộc): Email đăng ký. Định dạng email, phải chưa tồn tại trong hệ thống.
-    /// - password (string, bắt buộc): Mật khẩu. Ít nhất 6 ký tự, có ít nhất 1 chữ số, 1 chữ thường.
-    /// - confirmPassword (string, bắt buộc): Xác nhận mật khẩu. Phải trùng với password.
-    /// - firstName (string, bắt buộc): Tên. Tối đa 50 ký tự.
-    /// - lastName (string, bắt buộc): Họ. Tối đa 50 ký tự.
-    /// - phoneNumber (string, bắt buộc): Số điện thoại. Định dạng SĐT hợp lệ, phải unique.
-    /// - learnerCode (string, tùy chọn): Mã học viên (nếu có).
-    /// - gender (int?, tùy chọn): Giới tính. Giá trị enum (0=Male, 1=Female, 2=Other,... tùy GenderEnum).
-    /// - dateOfBirth (DateTime?, tùy chọn): Ngày sinh. ISO date.
+    /// **Example:** Content-Type: multipart/form-data. Form fields: email, password, confirmPassword, firstName, lastName, phoneNumber, learnerCode, gender, dateOfBirth
+    ///
+    /// **Body (Form – multipart/form-data):**
+    /// - email (string, required): Email đăng ký. Định dạng email, phải chưa tồn tại trong hệ thống.
+    /// - password (string, required): Mật khẩu. Ít nhất 6 ký tự, có ít nhất 1 chữ số, 1 chữ thường.
+    /// - confirmPassword (string, required): Xác nhận mật khẩu. Phải trùng với password.
+    /// - firstName (string, required): Tên. Tối đa 50 ký tự.
+    /// - lastName (string, required): Họ. Tối đa 50 ký tự.
+    /// - phoneNumber (string, required): Số điện thoại. Định dạng SĐT hợp lệ, phải unique.
+    /// - learnerCode (string, optional): Mã học viên (nếu có).
+    /// - gender (int?, optional): Giới tính. Possible values: 0 = Male, 1 = Female, 2 = Other (GenderEnum).
+    /// - dateOfBirth (DateTime?, optional): Ngày sinh. ISO date.
     /// </remarks>
     /// <response code="200">OTP sent successfully. Returns message only. Call verify-otp to complete registration.</response>
     /// <response code="400">Validation error (e.g. password constraints, email already exists)</response>
@@ -246,13 +254,15 @@ public class AuthController : ControllerBase
     /// <remarks>
     /// Gửi contact (email hoặc SĐT tùy kênh) và mật khẩu mới. Hệ thống gửi OTP qua kênh đã chọn. Sau đó gọi verify-otp với otpType = 2 (PasswordReset) và cùng contact/otpSentChannel để hoàn tất đổi mật khẩu.
     ///
-    ///     POST /api/learner/auth/reset-password
+    /// **METHOD and path:** POST /api/learner/auth/reset-password
+    ///
+    /// **Example request body:**
     ///     { "contact": "user@example.com", "newPassword": "New@123", "otpSentChannel": 1 }
     ///
-    /// **Request body (ResetPasswordRequest):**
-    /// - contact (string, bắt buộc): Email hoặc số điện thoại tùy otpSentChannel. Nếu channel Email thì là email; nếu SMS thì là SĐT. User phải tồn tại với contact này.
-    /// - newPassword (string, bắt buộc): Mật khẩu mới. Ràng buộc giống đăng ký (ít nhất 8 ký tự cho reset, có chữ số, chữ thường).
-    /// - otpSentChannel (int, bắt buộc): Kênh gửi OTP. Giá trị: 1 = Email, 2 = SMS, 3 = Firebase (chưa hỗ trợ). Phải trùng với contact (email vs SĐT).
+    /// **Body (JSON):**
+    /// - contact (string, required): Email hoặc số điện thoại tùy otpSentChannel. Nếu channel Email thì là email; nếu SMS thì là SĐT. User phải tồn tại với contact này.
+    /// - newPassword (string, required): Mật khẩu mới. Ràng buộc giống đăng ký (ít nhất 8 ký tự cho reset, có chữ số, chữ thường).
+    /// - otpSentChannel (int, required): Kênh gửi OTP. Possible values: 1 = Email, 2 = SMS. Phải trùng với contact (email vs SĐT).
     /// </remarks>
     /// <response code="200">OTP sent successfully. Returns message only. Call verify-otp (otpType=2) to complete.</response>
     /// <response code="400">Validation error</response>
@@ -280,14 +290,16 @@ public class AuthController : ControllerBase
     /// <remarks>
     /// Sau khi đăng ký (register) hoặc reset password, client nhận OTP qua email/SMS. Gọi API này với OTP nhận được. Nếu otpType = 1 (Registration): tạo tài khoản và trả về access token (không cần login lại). Nếu otpType = 2 (PasswordReset): chỉ đổi mật khẩu, trả về message, data = null.
     ///
-    ///     POST /api/learner/auth/verify-otp
+    /// **METHOD and path:** POST /api/learner/auth/verify-otp
+    ///
+    /// **Example request body:**
     ///     { "contact": "user@example.com", "otp": "123456", "otpType": 1, "otpSentChannel": 1 }
     ///
-    /// **Request body (VerifyOtpRequest):**
-    /// - contact (string, bắt buộc): Email hoặc SĐT – cùng giá trị đã dùng khi gọi register hoặc reset-password. Định dạng phải khớp với otpSentChannel (email nếu channel Email, SĐT nếu SMS).
-    /// - otp (string, bắt buộc): Mã OTP 6 chữ số nhận qua email/SMS. Chỉ chữ số, đúng 6 ký tự.
-    /// - otpType (int, bắt buộc): Loại OTP. Giá trị: 1 = Registration (xác thực đăng ký, sau khi verify tạo user và trả token), 2 = PasswordReset (xác thực đổi mật khẩu).
-    /// - otpSentChannel (int, bắt buộc): Kênh đã gửi OTP. Giá trị: 1 = Email, 2 = SMS. Phải trùng với kênh đã chọn khi gọi register/reset-password.
+    /// **Body (JSON):**
+    /// - contact (string, required): Email hoặc SĐT – cùng giá trị đã dùng khi gọi register hoặc reset-password. Định dạng phải khớp với otpSentChannel (email nếu channel Email, SĐT nếu SMS).
+    /// - otp (string, required): Mã OTP 6 chữ số nhận qua email/SMS. Chỉ chữ số, đúng 6 ký tự.
+    /// - otpType (int, required): Loại OTP. Possible values: 1 = Registration (xác thực đăng ký, sau khi verify tạo user và trả token), 2 = PasswordReset (xác thực đổi mật khẩu).
+    /// - otpSentChannel (int, required): Kênh đã gửi OTP. Possible values: 1 = Email, 2 = SMS. Phải trùng với kênh đã chọn khi gọi register/reset-password.
     /// </remarks>
     /// <response code="200">Verified. For registration (otpType=1): returns message and data (accessToken, expiresAt, roles). For password reset (otpType=2): returns message only, data is null.</response>
     /// <response code="400">Invalid OTP or validation error</response>
@@ -315,10 +327,13 @@ public class AuthController : ControllerBase
     /// <remarks>
     /// Lấy thông tin profile của Learner đang đăng nhập (email, firstName, lastName, phoneNumber, avatarUrl, learnerCode, gender, dateOfBirth,...). Chỉ user có role Learner. Không có request body, chỉ cần Bearer token.
     ///
-    ///     GET /api/learner/auth/profile
-    ///     Headers: Authorization: Bearer &lt;access_token&gt;
+    /// **METHOD and path:** GET /api/learner/auth/profile
     ///
-    /// **Request:** Không có body, không có query. Chỉ cần header Authorization với Bearer token (nhận từ Login / VerifyOtp / RefreshToken).
+    /// **Body:** None. Headers only.
+    ///
+    /// **Headers:**
+    /// - Authorization (required): Bearer &lt;access_token&gt; – token nhận từ Login / VerifyOtp / RefreshToken.
+    ///
     /// **Response data (ProfileResponse):** id, email, firstName, lastName, phoneNumber, avatarUrl, learnerCode, gender, dateOfBirth, lastLoginAt,...
     /// </remarks>
     /// <response code="200">Profile retrieved successfully. Returns message and data (profile).</response>
@@ -350,13 +365,15 @@ public class AuthController : ControllerBase
     /// <remarks>
     /// Đổi mật khẩu khi đã đăng nhập. User gửi mật khẩu hiện tại và mật khẩu mới (kèm xác nhận). Yêu cầu Bearer token (Learner).
     ///
-    ///     POST /api/learner/auth/change-password
+    /// **METHOD and path:** POST /api/learner/auth/change-password
+    ///
+    /// **Example request body:**
     ///     { "currentPassword": "Old@123", "newPassword": "New@456", "confirmPassword": "New@456" }
     ///
-    /// **Request body (ChangePasswordRequest):**
-    /// - currentPassword (string, bắt buộc): Mật khẩu hiện tại. Phải đúng với mật khẩu trong DB thì mới đổi được.
-    /// - newPassword (string, bắt buộc): Mật khẩu mới. Ràng buộc: ít nhất 8 ký tự, có chữ số, chữ thường (theo Identity).
-    /// - confirmPassword (string, bắt buộc): Xác nhận mật khẩu mới. Phải trùng với newPassword.
+    /// **Body (JSON):**
+    /// - currentPassword (string, required): Mật khẩu hiện tại. Phải đúng với mật khẩu trong DB thì mới đổi được.
+    /// - newPassword (string, required): Mật khẩu mới. Ràng buộc: ít nhất 8 ký tự, có chữ số, chữ thường (theo Identity).
+    /// - confirmPassword (string, required): Xác nhận mật khẩu mới. Phải trùng với newPassword.
     /// </remarks>
     /// <response code="200">Password changed successfully. Returns message only.</response>
     /// <response code="400">Validation error or wrong current password</response>
@@ -389,15 +406,15 @@ public class AuthController : ControllerBase
     /// <remarks>
     /// Cập nhật thông tin profile: firstName, lastName, phoneNumber, avatar. Gửi dạng multipart/form-data. Chỉ cập nhật các field gửi lên. Yêu cầu Bearer token (Learner).
     ///
-    ///     PUT /api/learner/auth/profile
-    ///     Content-Type: multipart/form-data
-    ///     Form: firstName, lastName, phoneNumber, avatarFile (optional)
+    /// **METHOD and path:** PUT /api/learner/auth/profile
     ///
-    /// **Request (Form – UpdateProfileRequest):**
-    /// - firstName (string, tùy chọn): Tên. Tối đa 50 ký tự.
-    /// - lastName (string, tùy chọn): Họ. Tối đa 50 ký tự.
-    /// - phoneNumber (string, tùy chọn): Số điện thoại. Định dạng SĐT, unique (trừ SĐT của chính user).
-    /// - avatarFile (file, tùy chọn): File ảnh avatar. Hỗ trợ jpg, png, ... Kích thước tối đa theo cấu hình (vd 10MB).
+    /// **Example:** Content-Type: multipart/form-data. Form fields: firstName, lastName, phoneNumber, avatarFile
+    ///
+    /// **Body (Form – multipart/form-data):**
+    /// - firstName (string, optional): Tên. Tối đa 50 ký tự.
+    /// - lastName (string, optional): Họ. Tối đa 50 ký tự.
+    /// - phoneNumber (string, optional): Số điện thoại. Định dạng SĐT, unique (trừ SĐT của chính user).
+    /// - avatarFile (file, optional): File ảnh avatar. Hỗ trợ jpg, png, ... Kích thước tối đa theo cấu hình (vd 10MB).
     /// </remarks>
     /// <response code="200">Profile updated successfully. Returns message and data (updated profile).</response>
     /// <response code="400">Validation error</response>
@@ -428,10 +445,13 @@ public class AuthController : ControllerBase
     /// <remarks>
     /// Lấy access token mới khi token cũ sắp hết hạn. Client gửi request với Bearer token hiện tại (hoặc refresh token tùy cấu hình). Response trả về accessToken, expiresAt, roles giống Login. Không có request body.
     ///
-    ///     POST /api/learner/auth/refresh-token
-    ///     Headers: Authorization: Bearer &lt;access_token&gt;
+    /// **METHOD and path:** POST /api/learner/auth/refresh-token
     ///
-    /// **Request:** Không có body. Header Authorization: Bearer với token hiện tại (access token hoặc refresh token). User phải có role Learner.
+    /// **Body:** None. Headers only.
+    ///
+    /// **Headers:**
+    /// - Authorization (required): Bearer &lt;access_token&gt; hoặc refresh token. User phải có role Learner.
+    ///
     /// **Response data (AuthResponse):** accessToken, expiresAt, roles.
     /// </remarks>
     /// <response code="200">New access token returned. Returns message and data (accessToken, expiresAt, roles).</response>

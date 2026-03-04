@@ -20,7 +20,23 @@ public class CmsCommunityController : ControllerBase
 
     public CmsCommunityController(IMediator mediator) => _mediator = mediator;
 
-    /// <summary>Danh sách báo cáo (phân trang, filter theo trạng thái, map, user, ngày).</summary>
+    /// <summary>Get list of reports (paginated, filter by status, map, user, date).</summary>
+    /// <remarks>
+    /// Returns paginated reports. Filter by status, mapId, userId, date range. Admin/Moderator only.
+    ///
+    /// **Query:**
+    /// - status (ReportStatusFilter?, optional): All, Pending, Reviewed, Resolved, Dismissed.
+    /// - pageNumber (int, optional): Page number. Default 1.
+    /// - pageSize (int, optional): Items per page. Default 20.
+    /// - mapId (Guid?, optional): Filter by map ID.
+    /// - userId (Guid?, optional): Filter by reporter user ID.
+    /// - dateFrom (DateTime?, optional): From date.
+    /// - dateTo (DateTime?, optional): To date.
+    ///
+    /// **METHOD and path:** GET /api/cms/community/reports
+    ///
+    /// **Example request:** GET /api/cms/community/reports?status=Pending&amp;pageNumber=1&amp;pageSize=20
+    /// </remarks>
     [HttpGet("reports")]
     [AuthorizeRoles(nameof(RoleEnum.Admin), nameof(RoleEnum.Moderator))]
     [ProducesResponseType(typeof(Result<PaginationResult<ReportListItemDto>>), StatusCodes.Status200OK)]
@@ -33,7 +49,20 @@ public class CmsCommunityController : ControllerBase
         return StatusCode(result.GetHttpStatusCode(), result);
     }
 
-    /// <summary>Đánh dấu báo cáo đã xử lý.</summary>
+    /// <summary>Mark report as resolved.</summary>
+    /// <remarks>
+    /// Marks a report as Resolved. Optional query: reviewNote. Admin/Moderator only.
+    ///
+    /// **Route:** reportId (Guid, required): Report ID.
+    ///
+    /// **Query:** reviewNote (string, optional): Moderator note.
+    ///
+    /// **Body:** None.
+    ///
+    /// **METHOD and path:** POST /api/cms/community/reports/{reportId}/resolve
+    ///
+    /// **Example request:** POST /api/cms/community/reports/3fa85f64-5717-4562-b3fc-2c963f66afa6/resolve?reviewNote=Resolved
+    /// </remarks>
     [HttpPost("reports/{reportId:guid}/resolve")]
     [AuthorizeRoles(nameof(RoleEnum.Admin), nameof(RoleEnum.Moderator))]
     [ProducesResponseType(typeof(Result), StatusCodes.Status200OK)]
@@ -47,7 +76,20 @@ public class CmsCommunityController : ControllerBase
         return StatusCode(result.GetHttpStatusCode(), result);
     }
 
-    /// <summary>Bỏ qua báo cáo (không hợp lệ).</summary>
+    /// <summary>Dismiss report (e.g. not valid).</summary>
+    /// <remarks>
+    /// Marks a report as Dismissed. Optional query: reviewNote. Admin/Moderator only.
+    ///
+    /// **Route:** reportId (Guid, required): Report ID.
+    ///
+    /// **Query:** reviewNote (string, optional): Moderator note.
+    ///
+    /// **Body:** None.
+    ///
+    /// **METHOD and path:** POST /api/cms/community/reports/{reportId}/dismiss
+    ///
+    /// **Example request:** POST /api/cms/community/reports/3fa85f64-5717-4562-b3fc-2c963f66afa6/dismiss
+    /// </remarks>
     [HttpPost("reports/{reportId:guid}/dismiss")]
     [AuthorizeRoles(nameof(RoleEnum.Admin), nameof(RoleEnum.Moderator))]
     [ProducesResponseType(typeof(Result), StatusCodes.Status200OK)]
@@ -61,7 +103,18 @@ public class CmsCommunityController : ControllerBase
         return StatusCode(result.GetHttpStatusCode(), result);
     }
 
-    /// <summary>Xử lý nhiều báo cáo cùng lúc (resolve).</summary>
+    /// <summary>Batch resolve reports.</summary>
+    /// <remarks>
+    /// Marks multiple reports as resolved. Returns successCount, failedCount, notFoundIds. Admin/Moderator only.
+    ///
+    /// **Body (JSON):**
+    /// - reportIds (array of Guid, required): Report IDs to resolve.
+    /// - reviewNote (string, optional): Common review note.
+    ///
+    /// **METHOD and path:** POST /api/cms/community/reports/batch/resolve
+    ///
+    /// **Example request body:** { "reportIds": [ "3fa85f64-5717-4562-b3fc-2c963f66afa6" ], "reviewNote": "Resolved" }
+    /// </remarks>
     [HttpPost("reports/batch/resolve")]
     [AuthorizeRoles(nameof(RoleEnum.Admin), nameof(RoleEnum.Moderator))]
     [ProducesResponseType(typeof(Result<BatchReportResultDto>), StatusCodes.Status200OK)]
@@ -75,7 +128,18 @@ public class CmsCommunityController : ControllerBase
         return StatusCode(result.GetHttpStatusCode(), result);
     }
 
-    /// <summary>Bỏ qua nhiều báo cáo cùng lúc.</summary>
+    /// <summary>Batch dismiss reports.</summary>
+    /// <remarks>
+    /// Dismisses multiple reports. Returns successCount, failedCount, notFoundIds. Admin/Moderator only.
+    ///
+    /// **Body (JSON):**
+    /// - reportIds (array of Guid, required): Report IDs to dismiss.
+    /// - reviewNote (string, optional): Common review note.
+    ///
+    /// **METHOD and path:** POST /api/cms/community/reports/batch/dismiss
+    ///
+    /// **Example request body:** { "reportIds": [ "3fa85f64-5717-4562-b3fc-2c963f66afa6" ], "reviewNote": "Not valid" }
+    /// </remarks>
     [HttpPost("reports/batch/dismiss")]
     [AuthorizeRoles(nameof(RoleEnum.Admin), nameof(RoleEnum.Moderator))]
     [ProducesResponseType(typeof(Result<BatchReportResultDto>), StatusCodes.Status200OK)]

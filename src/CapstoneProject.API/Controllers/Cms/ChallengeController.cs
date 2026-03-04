@@ -31,7 +31,16 @@ public class CmsChallengeController : ControllerBase
 
     public CmsChallengeController(IMediator mediator) => _mediator = mediator;
 
-    /// <summary>Danh sách map để duyệt (phân trang, filter).</summary>
+    /// <summary>Get maps for moderation (paginated, filter).</summary>
+    /// <remarks>
+    /// Returns paginated challenge maps for moderation. Filter by mapStatus, difficulty, search, etc. Admin/Moderator only.
+    ///
+    /// **Query:** Same as Learner GetMaps (pageNumber, pageSize, publishedOnly, difficulty, conceptId, tagId, mapStatus, search, createdByUserId, sortBy, sortAscending). mapStatus: 0=Draft, 1=PendingReview, 2=Approved, 3=Rejected, 4=Published.
+    ///
+    /// **METHOD and path:** GET /api/cms/challenges/maps
+    ///
+    /// **Example request:** GET /api/cms/challenges/maps?pageNumber=1&amp;pageSize=20&amp;mapStatus=1
+    /// </remarks>
     [HttpGet("maps")]
     [AuthorizeRoles(nameof(RoleEnum.Admin), nameof(RoleEnum.Moderator))]
     [ProducesResponseType(typeof(Result<PaginationResult<MapListItemDto>>), StatusCodes.Status200OK)]
@@ -44,7 +53,18 @@ public class CmsChallengeController : ControllerBase
         return StatusCode(result.GetHttpStatusCode(), result);
     }
 
-    /// <summary>Chi tiết một map theo ID (dùng khi duyệt).</summary>
+    /// <summary>Get map by ID (for moderation).</summary>
+    /// <remarks>
+    /// Returns full map detail for moderation. includeEditorialForUser optional. Admin/Moderator only.
+    ///
+    /// **Route:** id (Guid, required): Map ID.
+    ///
+    /// **Query:** includeEditorialForUser (bool, optional). Default false.
+    ///
+    /// **METHOD and path:** GET /api/cms/challenges/maps/{id}
+    ///
+    /// **Example request:** GET /api/cms/challenges/maps/3fa85f64-5717-4562-b3fc-2c963f66afa6
+    /// </remarks>
     [HttpGet("maps/{id:guid}")]
     [AuthorizeRoles(nameof(RoleEnum.Admin), nameof(RoleEnum.Moderator))]
     [ProducesResponseType(typeof(Result<MapDetailDto>), StatusCodes.Status200OK)]
@@ -58,7 +78,20 @@ public class CmsChallengeController : ControllerBase
         return StatusCode(result.GetHttpStatusCode(), result);
     }
 
-    /// <summary>Duyệt map (PendingReview → Approved).</summary>
+    /// <summary>Approve map (PendingReview → Approved).</summary>
+    /// <remarks>
+    /// Marks map as Approved (from PendingReview). Optional query: reviewNote. Admin/Moderator only.
+    ///
+    /// **Route:** id (Guid, required): Map ID.
+    ///
+    /// **Query:** reviewNote (string, optional).
+    ///
+    /// **Body:** None.
+    ///
+    /// **METHOD and path:** POST /api/cms/challenges/maps/{id}/approve
+    ///
+    /// **Example request:** POST /api/cms/challenges/maps/3fa85f64-5717-4562-b3fc-2c963f66afa6/approve?reviewNote=Approved
+    /// </remarks>
     [HttpPost("maps/{id:guid}/approve")]
     [AuthorizeRoles(nameof(RoleEnum.Admin), nameof(RoleEnum.Moderator))]
     [ProducesResponseType(typeof(Result), StatusCodes.Status200OK)]
@@ -73,7 +106,20 @@ public class CmsChallengeController : ControllerBase
         return StatusCode(result.GetHttpStatusCode(), result);
     }
 
-    /// <summary>Từ chối map (PendingReview → Rejected).</summary>
+    /// <summary>Reject map (PendingReview → Rejected).</summary>
+    /// <remarks>
+    /// Marks map as Rejected. Optional query: rejectReason. Admin/Moderator only.
+    ///
+    /// **Route:** id (Guid, required): Map ID.
+    ///
+    /// **Query:** rejectReason (string, optional).
+    ///
+    /// **Body:** None.
+    ///
+    /// **METHOD and path:** POST /api/cms/challenges/maps/{id}/reject
+    ///
+    /// **Example request:** POST /api/cms/challenges/maps/3fa85f64-5717-4562-b3fc-2c963f66afa6/reject?rejectReason=Incomplete
+    /// </remarks>
     [HttpPost("maps/{id:guid}/reject")]
     [AuthorizeRoles(nameof(RoleEnum.Admin), nameof(RoleEnum.Moderator))]
     [ProducesResponseType(typeof(Result), StatusCodes.Status200OK)]
@@ -88,7 +134,18 @@ public class CmsChallengeController : ControllerBase
         return StatusCode(result.GetHttpStatusCode(), result);
     }
 
-    /// <summary>Xuất bản map (Approved → Published, hiện trên catalog).</summary>
+    /// <summary>Publish map (Approved → Published, appears on catalog).</summary>
+    /// <remarks>
+    /// Publishes an Approved map so it appears in learner catalog. Admin/Moderator only.
+    ///
+    /// **Route:** id (Guid, required): Map ID.
+    ///
+    /// **Body:** None.
+    ///
+    /// **METHOD and path:** POST /api/cms/challenges/maps/{id}/publish
+    ///
+    /// **Example request:** POST /api/cms/challenges/maps/3fa85f64-5717-4562-b3fc-2c963f66afa6/publish
+    /// </remarks>
     [HttpPost("maps/{id:guid}/publish")]
     [AuthorizeRoles(nameof(RoleEnum.Admin), nameof(RoleEnum.Moderator))]
     [ProducesResponseType(typeof(Result), StatusCodes.Status200OK)]
@@ -103,7 +160,18 @@ public class CmsChallengeController : ControllerBase
         return StatusCode(result.GetHttpStatusCode(), result);
     }
 
-    /// <summary>Xóa map (soft delete).</summary>
+    /// <summary>Delete map (soft delete).</summary>
+    /// <remarks>
+    /// Soft-deletes a challenge map. Admin/Moderator only.
+    ///
+    /// **Route:** id (Guid, required): Map ID.
+    ///
+    /// **Body:** None.
+    ///
+    /// **METHOD and path:** DELETE /api/cms/challenges/maps/{id}
+    ///
+    /// **Example request:** DELETE /api/cms/challenges/maps/3fa85f64-5717-4562-b3fc-2c963f66afa6
+    /// </remarks>
     [HttpDelete("maps/{id:guid}")]
     [AuthorizeRoles(nameof(RoleEnum.Admin), nameof(RoleEnum.Moderator))]
     [ProducesResponseType(typeof(Result), StatusCodes.Status200OK)]
@@ -117,7 +185,18 @@ public class CmsChallengeController : ControllerBase
         return StatusCode(result.GetHttpStatusCode(), result);
     }
 
-    /// <summary>Duyệt nhiều map cùng lúc.</summary>
+    /// <summary>Batch approve maps.</summary>
+    /// <remarks>
+    /// Approves multiple maps. Returns successCount, failedCount, notFoundIds, invalidStatusIds. Admin/Moderator only.
+    ///
+    /// **Body (JSON):**
+    /// - mapIds (array of Guid, required): Map IDs to approve.
+    /// - reviewNote (string, optional): Common review note.
+    ///
+    /// **METHOD and path:** POST /api/cms/challenges/maps/batch/approve
+    ///
+    /// **Example request body:** { "mapIds": [ "3fa85f64-5717-4562-b3fc-2c963f66afa6" ], "reviewNote": "Approved" }
+    /// </remarks>
     [HttpPost("maps/batch/approve")]
     [AuthorizeRoles(nameof(RoleEnum.Admin), nameof(RoleEnum.Moderator))]
     [ProducesResponseType(typeof(Result<BatchMapResultDto>), StatusCodes.Status200OK)]
@@ -131,7 +210,18 @@ public class CmsChallengeController : ControllerBase
         return StatusCode(result.GetHttpStatusCode(), result);
     }
 
-    /// <summary>Từ chối nhiều map cùng lúc.</summary>
+    /// <summary>Batch reject maps.</summary>
+    /// <remarks>
+    /// Rejects multiple maps. Returns successCount, failedCount, notFoundIds, invalidStatusIds. Admin/Moderator only.
+    ///
+    /// **Body (JSON):**
+    /// - mapIds (array of Guid, required): Map IDs to reject.
+    /// - rejectReason (string, optional): Common reject reason.
+    ///
+    /// **METHOD and path:** POST /api/cms/challenges/maps/batch/reject
+    ///
+    /// **Example request body:** { "mapIds": [ "3fa85f64-5717-4562-b3fc-2c963f66afa6" ], "rejectReason": "Quality" }
+    /// </remarks>
     [HttpPost("maps/batch/reject")]
     [AuthorizeRoles(nameof(RoleEnum.Admin), nameof(RoleEnum.Moderator))]
     [ProducesResponseType(typeof(Result<BatchMapResultDto>), StatusCodes.Status200OK)]
@@ -145,7 +235,17 @@ public class CmsChallengeController : ControllerBase
         return StatusCode(result.GetHttpStatusCode(), result);
     }
 
-    /// <summary>Xuất bản nhiều map cùng lúc.</summary>
+    /// <summary>Batch publish maps.</summary>
+    /// <remarks>
+    /// Publishes multiple Approved maps. Returns successCount, failedCount, notFoundIds, invalidStatusIds. Admin/Moderator only.
+    ///
+    /// **Body (JSON):**
+    /// - mapIds (array of Guid, required): Map IDs to publish.
+    ///
+    /// **METHOD and path:** POST /api/cms/challenges/maps/batch/publish
+    ///
+    /// **Example request body:** { "mapIds": [ "3fa85f64-5717-4562-b3fc-2c963f66afa6" ] }
+    /// </remarks>
     [HttpPost("maps/batch/publish")]
     [AuthorizeRoles(nameof(RoleEnum.Admin), nameof(RoleEnum.Moderator))]
     [ProducesResponseType(typeof(Result<BatchMapResultDto>), StatusCodes.Status200OK)]
@@ -159,7 +259,16 @@ public class CmsChallengeController : ControllerBase
         return StatusCode(result.GetHttpStatusCode(), result);
     }
 
-    /// <summary>Danh sách tag (CRUD cho CMS).</summary>
+    /// <summary>Get tags (CRUD for CMS).</summary>
+    /// <remarks>
+    /// Returns all tags with optional search. Admin/Moderator only.
+    ///
+    /// **Query:** search (string, optional).
+    ///
+    /// **METHOD and path:** GET /api/cms/challenges/tags
+    ///
+    /// **Example request:** GET /api/cms/challenges/tags?search=logic
+    /// </remarks>
     [HttpGet("tags")]
     [AuthorizeRoles(nameof(RoleEnum.Admin), nameof(RoleEnum.Moderator))]
     [ProducesResponseType(typeof(Result<List<TagDto>>), StatusCodes.Status200OK)]
@@ -172,7 +281,17 @@ public class CmsChallengeController : ControllerBase
         return StatusCode(result.GetHttpStatusCode(), result);
     }
 
-    /// <summary>Tạo tag mới.</summary>
+    /// <summary>Create tag.</summary>
+    /// <remarks>
+    /// Creates a new tag. Returns tag Id. Admin/Moderator only.
+    ///
+    /// **Body (JSON):**
+    /// - name (string, required): Tag name.
+    ///
+    /// **METHOD and path:** POST /api/cms/challenges/tags
+    ///
+    /// **Example request body:** { "name": "Logic" }
+    /// </remarks>
     [HttpPost("tags")]
     [AuthorizeRoles(nameof(RoleEnum.Admin), nameof(RoleEnum.Moderator))]
     [ProducesResponseType(typeof(Result<Guid>), StatusCodes.Status201Created)]
@@ -186,7 +305,18 @@ public class CmsChallengeController : ControllerBase
         return StatusCode(result.GetHttpStatusCode(), result);
     }
 
-    /// <summary>Cập nhật tag.</summary>
+    /// <summary>Update tag.</summary>
+    /// <remarks>
+    /// Updates tag name by Id. Admin/Moderator only.
+    ///
+    /// **Route:** id (Guid, required): Tag ID.
+    ///
+    /// **Body (JSON):** name (string, required): New tag name.
+    ///
+    /// **METHOD and path:** PUT /api/cms/challenges/tags/{id}
+    ///
+    /// **Example request body:** { "name": "Logic Updated" }
+    /// </remarks>
     [HttpPut("tags/{id:guid}")]
     [AuthorizeRoles(nameof(RoleEnum.Admin), nameof(RoleEnum.Moderator))]
     [ProducesResponseType(typeof(Result), StatusCodes.Status200OK)]
@@ -201,7 +331,18 @@ public class CmsChallengeController : ControllerBase
         return StatusCode(result.GetHttpStatusCode(), result);
     }
 
-    /// <summary>Xóa tag.</summary>
+    /// <summary>Delete tag.</summary>
+    /// <remarks>
+    /// Deletes a tag by Id. Admin/Moderator only.
+    ///
+    /// **Route:** id (Guid, required): Tag ID.
+    ///
+    /// **Body:** None.
+    ///
+    /// **METHOD and path:** DELETE /api/cms/challenges/tags/{id}
+    ///
+    /// **Example request:** DELETE /api/cms/challenges/tags/3fa85f64-5717-4562-b3fc-2c963f66afa6
+    /// </remarks>
     [HttpDelete("tags/{id:guid}")]
     [AuthorizeRoles(nameof(RoleEnum.Admin), nameof(RoleEnum.Moderator))]
     [ProducesResponseType(typeof(Result), StatusCodes.Status200OK)]
@@ -215,7 +356,16 @@ public class CmsChallengeController : ControllerBase
         return StatusCode(result.GetHttpStatusCode(), result);
     }
 
-    /// <summary>Danh sách concept (CRUD cho CMS).</summary>
+    /// <summary>Get concepts (CRUD for CMS).</summary>
+    /// <remarks>
+    /// Returns all concepts with optional search. Admin/Moderator only.
+    ///
+    /// **Query:** search (string, optional).
+    ///
+    /// **METHOD and path:** GET /api/cms/challenges/concepts
+    ///
+    /// **Example request:** GET /api/cms/challenges/concepts?search=loop
+    /// </remarks>
     [HttpGet("concepts")]
     [AuthorizeRoles(nameof(RoleEnum.Admin), nameof(RoleEnum.Moderator))]
     [ProducesResponseType(typeof(Result<List<ConceptDto>>), StatusCodes.Status200OK)]
@@ -228,7 +378,18 @@ public class CmsChallengeController : ControllerBase
         return StatusCode(result.GetHttpStatusCode(), result);
     }
 
-    /// <summary>Tạo concept mới.</summary>
+    /// <summary>Create concept.</summary>
+    /// <remarks>
+    /// Creates a new concept. Returns concept Id. Admin/Moderator only.
+    ///
+    /// **Body (JSON):**
+    /// - name (string, required): Concept name.
+    /// - description (string, optional): Concept description.
+    ///
+    /// **METHOD and path:** POST /api/cms/challenges/concepts
+    ///
+    /// **Example request body:** { "name": "Loops", "description": "Loop constructs" }
+    /// </remarks>
     [HttpPost("concepts")]
     [AuthorizeRoles(nameof(RoleEnum.Admin), nameof(RoleEnum.Moderator))]
     [ProducesResponseType(typeof(Result<Guid>), StatusCodes.Status201Created)]
@@ -242,7 +403,18 @@ public class CmsChallengeController : ControllerBase
         return StatusCode(result.GetHttpStatusCode(), result);
     }
 
-    /// <summary>Cập nhật concept.</summary>
+    /// <summary>Update concept.</summary>
+    /// <remarks>
+    /// Updates concept name/description by Id. Admin/Moderator only.
+    ///
+    /// **Route:** id (Guid, required): Concept ID.
+    ///
+    /// **Body (JSON):** name (string, required), description (string, optional).
+    ///
+    /// **METHOD and path:** PUT /api/cms/challenges/concepts/{id}
+    ///
+    /// **Example request body:** { "name": "Loops", "description": "Updated" }
+    /// </remarks>
     [HttpPut("concepts/{id:guid}")]
     [AuthorizeRoles(nameof(RoleEnum.Admin), nameof(RoleEnum.Moderator))]
     [ProducesResponseType(typeof(Result), StatusCodes.Status200OK)]
@@ -257,7 +429,18 @@ public class CmsChallengeController : ControllerBase
         return StatusCode(result.GetHttpStatusCode(), result);
     }
 
-    /// <summary>Xóa concept.</summary>
+    /// <summary>Delete concept.</summary>
+    /// <remarks>
+    /// Deletes a concept by Id. Admin/Moderator only.
+    ///
+    /// **Route:** id (Guid, required): Concept ID.
+    ///
+    /// **Body:** None.
+    ///
+    /// **METHOD and path:** DELETE /api/cms/challenges/concepts/{id}
+    ///
+    /// **Example request:** DELETE /api/cms/challenges/concepts/3fa85f64-5717-4562-b3fc-2c963f66afa6
+    /// </remarks>
     [HttpDelete("concepts/{id:guid}")]
     [AuthorizeRoles(nameof(RoleEnum.Admin), nameof(RoleEnum.Moderator))]
     [ProducesResponseType(typeof(Result), StatusCodes.Status200OK)]

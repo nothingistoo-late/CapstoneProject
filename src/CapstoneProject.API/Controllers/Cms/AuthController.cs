@@ -29,15 +29,16 @@ public class AuthController : ControllerBase
     /// Login to the CMS system
     /// </summary>
     /// <remarks>
-    /// Đăng nhập CMS bằng email và mật khẩu. Chỉ user có role Admin hoặc Moderator mới đăng nhập được; nếu không trả 403. Trả về access token và roles. Dùng token trong header Authorization cho các API CMS.
+    /// Authenticate by email and password. Only Admin or Moderator can login; otherwise returns 403. Returns access token and roles. Use token in Authorization header for CMS APIs.
     ///
-    ///     POST /api/cms/auth/login
-    ///     { "email": "admin@example.com", "password": "Admin@123", "grantType": 0 }
+    /// **Body (JSON):**
+    /// - email (string, required): Login email. Valid email format.
+    /// - password (string, required): Password. Must satisfy Identity rules (min 6 chars, lowercase, digit).
+    /// - grantType (int, optional): Grant type. Possible values: 0 = Password (default).
     ///
-    /// **Request body (LoginRequest):**
-    /// - email (string, bắt buộc): Email đăng nhập. Định dạng email hợp lệ.
-    /// - password (string, bắt buộc): Mật khẩu. Phải thỏa ràng buộc Identity (ít nhất 6 ký tự, chữ thường, chữ số).
-    /// - grantType (int, tùy chọn): Loại grant. Giá trị: 0 = Password (mặc định).
+    /// **METHOD and path:** POST /api/cms/auth/login
+    ///
+    /// **Example request body:** { "email": "admin@example.com", "password": "Admin@123", "grantType": 0 }
     /// </remarks>
     /// <response code="200">Login successfully. Returns message and data (accessToken, expiresAt, roles).</response>
     /// <response code="400">Validation error</response>
@@ -68,12 +69,15 @@ public class AuthController : ControllerBase
     /// Logout from the CMS system
     /// </summary>
     /// <remarks>
-    /// Đăng xuất CMS: xóa refresh token trong database. Chỉ cần gửi access token trong header; không có request body. User phải có role Admin hoặc Moderator.
+    /// Clears refresh token in database. Send access token in header only; no request body. User must have Admin or Moderator role.
     ///
-    ///     POST /api/cms/auth/logout
-    ///     Headers: Authorization: Bearer &lt;access_token&gt;
+    /// **Body:** None. Headers only.
     ///
-    /// **Request:** Không có body. Chỉ header Authorization với Bearer token nhận từ Login hoặc RefreshToken.
+    /// **Headers:** Authorization (required): Bearer &lt;access_token&gt; – token from Login or RefreshToken.
+    ///
+    /// **METHOD and path:** POST /api/cms/auth/logout
+    ///
+    /// **Example request:** POST /api/cms/auth/logout with header Authorization: Bearer &lt;token&gt;
     /// </remarks>
     /// <response code="200">Logout successfully. Returns message only.</response>
     /// <response code="401">Not authorized</response>
@@ -102,13 +106,13 @@ public class AuthController : ControllerBase
     /// Get profile of the logged-in CMS user
     /// </summary>
     /// <remarks>
-    /// Lấy thông tin profile của user CMS đang đăng nhập (Admin/Moderator): id, email, firstName, lastName, phoneNumber, avatarUrl, roles,... Không có request body hay query.
+    /// Returns profile of the authenticated CMS user (Admin/Moderator): id, email, firstName, lastName, phoneNumber, avatarUrl, roles. Requires Bearer token.
     ///
-    ///     GET /api/cms/auth/profile
-    ///     Headers: Authorization: Bearer &lt;access_token&gt;
+    /// **Body:** None. **Query:** None. Headers only (Authorization: Bearer &lt;token&gt;).
     ///
-    /// **Request:** Không có body, không có query. Chỉ header Authorization với Bearer token.
-    /// **Response data (ProfileResponse):** id, email, firstName, lastName, phoneNumber, avatarUrl, roles, lastLoginAt,...
+    /// **METHOD and path:** GET /api/cms/auth/profile
+    ///
+    /// **Example request:** GET /api/cms/auth/profile
     /// </remarks>
     /// <response code="200">Profile retrieved successfully. Returns message and data (profile).</response>
     /// <response code="401">Not authorized</response>
@@ -137,18 +141,17 @@ public class AuthController : ControllerBase
     /// Update profile of the logged-in CMS user
     /// </summary>
     /// <remarks>
-    /// Cập nhật thông tin profile CMS: firstName, lastName, phoneNumber, avatar. Gửi multipart/form-data. Chỉ cập nhật các field gửi lên. Yêu cầu Bearer token (Admin/Moderator).
+    /// Updates CMS profile: firstName, lastName, phoneNumber, avatar. Send as multipart/form-data. Only sent fields are updated. Requires Bearer token (Admin/Moderator).
     ///
-    ///     PUT /api/cms/auth/profile
-    ///     Content-Type: multipart/form-data
-    ///     Form: firstName, lastName, phoneNumber, avatarFile (optional)
-    ///     Headers: Authorization: Bearer &lt;access_token&gt;
+    /// **Form (multipart/form-data):**
+    /// - firstName (string, optional): First name. Max 50 chars.
+    /// - lastName (string, optional): Last name. Max 50 chars.
+    /// - phoneNumber (string, optional): Phone number. Valid format, unique (except current user).
+    /// - avatarFile (file, optional): Avatar image. jpg, png, etc. Max size per config.
     ///
-    /// **Request (Form – UpdateProfileRequest):**
-    /// - firstName (string, tùy chọn): Tên. Tối đa 50 ký tự.
-    /// - lastName (string, tùy chọn): Họ. Tối đa 50 ký tự.
-    /// - phoneNumber (string, tùy chọn): Số điện thoại. Định dạng SĐT, unique (trừ SĐT của chính user).
-    /// - avatarFile (file, tùy chọn): File ảnh avatar. Hỗ trợ jpg, png,... Kích thước tối đa theo cấu hình.
+    /// **METHOD and path:** PUT /api/cms/auth/profile
+    ///
+    /// **Example:** Content-Type: multipart/form-data with fields firstName, lastName, phoneNumber, avatarFile
     /// </remarks>
     /// <response code="200">Profile updated successfully. Returns message and data (updated profile).</response>
     /// <response code="400">Validation error</response>
@@ -179,13 +182,13 @@ public class AuthController : ControllerBase
     /// Refresh token for the logged-in CMS user
     /// </summary>
     /// <remarks>
-    /// Lấy access token mới khi token cũ sắp hết hạn. Client gửi Bearer token hiện tại trong header. Response trả về accessToken, expiresAt, roles. Chỉ Admin/Moderator. Không có request body.
+    /// Returns new access token when current one is expiring. Send current Bearer token in header. Response: accessToken, expiresAt, roles. Admin/Moderator only. No request body.
     ///
-    ///     POST /api/cms/auth/refresh-token
-    ///     Headers: Authorization: Bearer &lt;access_token&gt;
+    /// **Body:** None. Headers only (Authorization: Bearer &lt;token&gt;).
     ///
-    /// **Request:** Không có body. Chỉ header Authorization: Bearer với token hiện tại.
-    /// **Response data (AuthResponse):** accessToken, expiresAt, roles.
+    /// **METHOD and path:** POST /api/cms/auth/refresh-token
+    ///
+    /// **Example request:** POST /api/cms/auth/refresh-token
     /// </remarks>
     /// <response code="200">New access token returned. Returns message and data (accessToken, expiresAt, roles).</response>
     /// <response code="401">Not authorized</response>

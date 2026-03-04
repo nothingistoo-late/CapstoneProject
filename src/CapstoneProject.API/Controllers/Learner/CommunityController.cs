@@ -21,10 +21,17 @@ public class LearnerCommunityController : ControllerBase
     /// Rate challenge map (1–5 stars)
     /// </summary>
     /// <remarks>
-    /// Gửi hoặc cập nhật đánh giá (1–5 sao) và comment tùy chọn cho map. Yêu cầu Bearer token.
+    /// Submit or update rating (1–5 stars) and optional comment for a map. Requires Bearer token.
     ///
-    ///     POST /api/learner/community/maps/{mapId}/rate
-    ///     Body: { "rating": 5, "comment": "optional" }
+    /// **Route:** mapId (Guid, required): Map ID to rate.
+    ///
+    /// **Body (JSON):**
+    /// - rating (int, required): Star rating 1–5.
+    /// - comment (string, optional): Optional comment text.
+    ///
+    /// **METHOD and path:** POST /api/learner/community/maps/{mapId}/rate
+    ///
+    /// **Example request body:** { "rating": 5, "comment": "Great map!" }
     /// </remarks>
     /// <response code="200">Rating submitted. Returns message only.</response>
     /// <response code="400">Validation error</response>
@@ -49,10 +56,17 @@ public class LearnerCommunityController : ControllerBase
     /// Report map (inappropriate content)
     /// </summary>
     /// <remarks>
-    /// Gửi báo cáo nội dung không phù hợp cho map. Admin/Moderator xử lý tại CMS. Yêu cầu Bearer token.
+    /// Submit a report for inappropriate content on a map. Processed by Admin/Moderator in CMS. Requires Bearer token.
     ///
-    ///     POST /api/learner/community/maps/{mapId}/report
-    ///     Body: { "reason": "required", "details": "optional" }
+    /// **Route:** mapId (Guid, required): Map ID to report.
+    ///
+    /// **Body (JSON):**
+    /// - reason (string, required): Report reason/category.
+    /// - details (string, optional): Additional details.
+    ///
+    /// **METHOD and path:** POST /api/learner/community/maps/{mapId}/report
+    ///
+    /// **Example request body:** { "reason": "Inappropriate content", "details": "Description of issue" }
     /// </remarks>
     /// <response code="201">Report created. Returns message and data (reportId).</response>
     /// <response code="400">Validation error</response>

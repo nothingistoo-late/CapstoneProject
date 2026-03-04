@@ -124,12 +124,14 @@ public class VerifyOtpCommandHandler : IRequestHandler<VerifyOtpCommand, Result<
         user.LastLoginAt = DateTime.UtcNow;
         user.UpdateEntity(user.Id);
         await _identityService.UpdateUserAsync(user);
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-        // Generate JWT and return auth response so client does not need to login again
+        // Generate JWT and return auth response (message + tokens) so client does not need to login again
         var (token, roles, _, expiresAt) = _jwtService.GenerateJwtTokenWithExpiration(user);
         var authResponse = new AuthResponse
         {
             AccessToken = token,
+            RefreshToken = refreshToken,
             Roles = roles,
             ExpiresAt = expiresAt
         };
