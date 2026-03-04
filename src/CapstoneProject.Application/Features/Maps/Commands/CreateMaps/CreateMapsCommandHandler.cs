@@ -28,10 +28,13 @@ public class CreateMapsCommandHandler : IRequestHandler<CreateMapsCommand, Resul
             return Result<MapsResponseDto>.Failure("Authentication required.", ErrorCodeEnum.Unauthorized);
 
         var req = command.Request;
-        if (!req.Level.HasValue || req.Level.Value.ValueKind == JsonValueKind.Null || req.Level.Value.ValueKind == JsonValueKind.Undefined)
-            return Result<MapsResponseDto>.Failure("Level (object) is required.", ErrorCodeEnum.ValidationFailed);
-
-        var json = req.Level.Value.GetRawText();
+        var json = !string.IsNullOrWhiteSpace(req.LevelJson)
+            ? req.LevelJson
+            : (req.Level.HasValue && req.Level.Value.ValueKind != JsonValueKind.Null && req.Level.Value.ValueKind != JsonValueKind.Undefined
+                ? req.Level.Value.GetRawText()
+                : null);
+        if (string.IsNullOrWhiteSpace(json))
+            return Result<MapsResponseDto>.Failure("Level is required (level object or levelFile).", ErrorCodeEnum.ValidationFailed);
         string name = req.Name ?? "Unnamed";
         string? type = req.Type;
         string? difficulty = req.Difficulty;

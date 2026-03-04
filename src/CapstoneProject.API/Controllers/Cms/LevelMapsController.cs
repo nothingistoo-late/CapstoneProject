@@ -1,3 +1,4 @@
+using System.IO;
 using CapstoneProject.Application.Common.Enums;
 using CapstoneProject.Application.Common.Extensions;
 using CapstoneProject.Application.Common.Models;
@@ -140,6 +141,62 @@ public class LevelMapsController : ControllerBase
         Tags = new[] { "CMS - Level Maps" })]
     public async Task<IActionResult> Create([FromBody] CreateMapsRequest request)
     {
+        var result = await _mediator.Send(new CreateMapsCommand(request));
+        return StatusCode(result.GetHttpStatusCode(), result);
+    }
+
+    /// <summary>Tạo một level từ file JSON upload (multipart).</summary>
+    /// <remarks>
+    /// Upload file .json chứa nội dung level (cùng format export từ level editor). Nội dung file được lưu vào DB (LevelCatalog + LevelDetail) giống API Create.
+    ///
+    /// **Form:**
+    /// - levelFile (file, bắt buộc): file JSON (ví dụ level-xxx.json).
+    /// - name (string?, optional): override tên catalog.
+    /// - type (string?, optional): platform | topdown...
+    /// - difficulty (string?, optional): easy | medium | hard...
+    /// </remarks>
+    [HttpPost("upload")]
+    [Consumes("multipart/form-data")]
+    [AuthorizeRoles(nameof(RoleEnum.Admin), nameof(RoleEnum.Moderator))]
+    [ProducesResponseType(typeof(Result<MapsResponseDto>), StatusCodes.Status201Created)]
+    [ProducesResponseType(typeof(Result), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(Result), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(Result), StatusCodes.Status403Forbidden)]
+    [SwaggerOperation(
+        Summary = "Create level from file upload",
+        Description =
+            "Upload a JSON file (e.g. level-xxx.json) to create a level. Same storage as Create: LevelCatalog + LevelDetail in DB.\n\n" +
+            "**Form (multipart/form-data):**\n" +
+            "- levelFile (required): JSON file.\n" +
+            "- name, type, difficulty (optional): override catalog fields.\n",
+        OperationId = "CreateLevelMapFromUpload",
+        Tags = new[] { "CMS - Level Maps" })]
+    public async Task<IActionResult> Upload(
+        IFormFile levelFile,
+        [FromForm] string? name = null,
+        [FromForm] string? type = null,
+        [FromForm] string? difficulty = null)
+    {
+        if (levelFile == null || levelFile.Length == 0)
+            return BadRequest(Result.Failure("levelFile is required.", ErrorCodeEnum.ValidationFailed));
+
+        string content;
+        using (var stream = levelFile.OpenReadStream())
+        using (var reader = new StreamReader(stream))
+        {
+            content = await reader.ReadToEndAsync();
+        }
+
+        if (string.IsNullOrWhiteSpace(content))
+            return BadRequest(Result.Failure("File content is empty.", ErrorCodeEnum.ValidationFailed));
+
+        var request = new CreateMapsRequest
+        {
+            LevelJson = content,
+            Name = name,
+            Type = type,
+            Difficulty = difficulty
+        };
         var result = await _mediator.Send(new CreateMapsCommand(request));
         return StatusCode(result.GetHttpStatusCode(), result);
     }
