@@ -13,13 +13,10 @@ public static class QuackOrbitEntityConfiguration
     public static void Configure(ModelBuilder builder)
     {
         builder.Entity<Map>(ConfigureMap);
-        builder.Entity<MapSpec>(ConfigureMapSpec);
+        builder.Entity<MapDetail>(ConfigureMapDetail);
         builder.Entity<Hint>(ConfigureHint);
-        builder.Entity<MapConstraint>(ConfigureMapConstraint);
         builder.Entity<Tag>(ConfigureTag);
-        builder.Entity<Concept>(ConfigureConcept);
         builder.Entity<MapTag>(ConfigureMapTag);
-        builder.Entity<MapConcept>(ConfigureMapConcept);
         builder.Entity<Achievement>(ConfigureAchievement);
         builder.Entity<UserAchievement>(ConfigureUserAchievement);
         builder.Entity<Submission>(ConfigureSubmission);
@@ -34,26 +31,27 @@ public static class QuackOrbitEntityConfiguration
         builder.Entity<Room>(ConfigureRoom);
         builder.Entity<RoomParticipant>(ConfigureRoomParticipant);
         builder.Entity<UserMatchResult>(ConfigureUserMatchResult);
-        builder.Entity<ChallengeRating>(ConfigureChallengeRating);
-        builder.Entity<ChallengeReport>(ConfigureChallengeReport);
+        builder.Entity<MapRating>(ConfigureMapRating);
+        builder.Entity<MapReport>(ConfigureMapReport);
     }
 
     static void ConfigureMap(EntityTypeBuilder<Map> e)
     {
         e.Property(x => x.MapStatus).HasConversion<int>();
-        e.HasIndex(x => x.CreatedByUserId);
+        e.HasIndex(x => x.CreatedBy);
         e.HasIndex(x => x.MapStatus);
         e.HasIndex(x => x.IsPublished);
-        e.HasMany(x => x.MapSpecs).WithOne(x => x.Map).HasForeignKey(x => x.MapId).OnDelete(DeleteBehavior.Cascade);
         e.HasMany(x => x.Hints).WithOne(x => x.Map).HasForeignKey(x => x.MapId).OnDelete(DeleteBehavior.Cascade);
-        e.HasMany(x => x.Constraints).WithOne(x => x.Map).HasForeignKey(x => x.MapId).OnDelete(DeleteBehavior.Cascade);
         e.HasMany(x => x.MapTags).WithOne(x => x.Map).HasForeignKey(x => x.MapId).OnDelete(DeleteBehavior.Cascade);
-        e.HasMany(x => x.MapConcepts).WithOne(x => x.Map).HasForeignKey(x => x.MapId).OnDelete(DeleteBehavior.Cascade);
     }
 
-    static void ConfigureMapSpec(EntityTypeBuilder<MapSpec> e)
+    static void ConfigureMapDetail(EntityTypeBuilder<MapDetail> e)
     {
         e.HasIndex(x => x.MapId);
+        e.HasOne(x => x.Map)
+            .WithOne(x => x.MapDetail)
+            .HasForeignKey<MapDetail>(x => x.MapId)
+            .OnDelete(DeleteBehavior.Cascade);
     }
 
     static void ConfigureHint(EntityTypeBuilder<Hint> e)
@@ -61,19 +59,9 @@ public static class QuackOrbitEntityConfiguration
         e.HasIndex(x => new { x.MapId, x.OrderNo });
     }
 
-    static void ConfigureMapConstraint(EntityTypeBuilder<MapConstraint> e)
-    {
-        e.HasIndex(x => x.MapId);
-    }
-
     static void ConfigureTag(EntityTypeBuilder<Tag> e)
     {
         e.HasIndex(x => x.Name).IsUnique();
-    }
-
-    static void ConfigureConcept(EntityTypeBuilder<Concept> e)
-    {
-        e.HasIndex(x => x.Name);
     }
 
     static void ConfigureMapTag(EntityTypeBuilder<MapTag> e)
@@ -81,10 +69,6 @@ public static class QuackOrbitEntityConfiguration
         e.HasIndex(x => new { x.MapId, x.TagId }).IsUnique();
     }
 
-    static void ConfigureMapConcept(EntityTypeBuilder<MapConcept> e)
-    {
-        e.HasIndex(x => new { x.MapId, x.ConceptId }).IsUnique();
-    }
 
     static void ConfigureAchievement(EntityTypeBuilder<Achievement> e)
     {
@@ -171,12 +155,12 @@ public static class QuackOrbitEntityConfiguration
         e.HasIndex(x => new { x.MatchId, x.UserId }).IsUnique();
     }
 
-    static void ConfigureChallengeRating(EntityTypeBuilder<ChallengeRating> e)
+    static void ConfigureMapRating(EntityTypeBuilder<MapRating> e)
     {
         e.HasIndex(x => new { x.UserId, x.MapId }).IsUnique();
     }
 
-    static void ConfigureChallengeReport(EntityTypeBuilder<ChallengeReport> e)
+    static void ConfigureMapReport(EntityTypeBuilder<MapReport> e)
     {
         e.Property(x => x.ReportStatus).HasConversion<int>();
         e.HasIndex(x => x.MapId);

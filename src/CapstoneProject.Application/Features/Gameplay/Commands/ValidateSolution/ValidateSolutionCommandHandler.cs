@@ -34,13 +34,11 @@ public class ValidateSolutionCommandHandler : IRequestHandler<ValidateSolutionCo
         var userId = userIdNullable.Value;
 
         var mapRepo = _unitOfWork.Repository<Map>();
-        var map = await mapRepo.GetQueryable().Include(m => m.MapSpecs).FirstOrDefaultAsync(m => m.Id == command.Request.MapId && !m.IsDeleted, cancellationToken);
+        var map = await mapRepo.GetQueryable().Include(m => m.MapDetail).FirstOrDefaultAsync(m => m.Id == command.Request.MapId && !m.IsDeleted, cancellationToken);
         if (map == null)
             return Result<ValidateSolutionResultDto>.Failure("Map not found", ErrorCodeEnum.NotFound);
-
-        var spec = map.MapSpecs.OrderByDescending(s => s.Version).FirstOrDefault();
-        if (spec == null)
-            return Result<ValidateSolutionResultDto>.Failure("Map has no spec", ErrorCodeEnum.ValidationFailed);
+        if (map.MapDetail == null)
+            return Result<ValidateSolutionResultDto>.Failure("Map data not found", ErrorCodeEnum.ValidationFailed);
 
         // Placeholder: run simple validation (in real app would run block interpreter/simulator)
         var stepsUsed = command.Request.AstSpec?.Length ?? 0;

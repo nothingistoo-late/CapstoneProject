@@ -28,7 +28,7 @@ public class GetReportsQueryHandler : IRequestHandler<GetReportsQuery, Result<Pa
         if (!roles.Contains(RoleEnum.Admin) && !roles.Contains(RoleEnum.Moderator))
             return Result<PaginationResult<ReportListItemDto>>.Failure("You do not have permission to view reports. Only Admin or Moderator can access this list.", ErrorCodeEnum.Forbidden);
 
-        var query = _unitOfWork.Repository<ChallengeReport>().GetQueryable().Where(r => !r.IsDeleted);
+        var query = _unitOfWork.Repository<MapReport>().GetQueryable().Where(r => !r.IsDeleted);
         if (request.Status.HasValue && request.Status != ReportStatusFilter.All)
         {
             var status = request.Status.Value switch

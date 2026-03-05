@@ -30,7 +30,7 @@ public class ResolveReportCommandHandler : IRequestHandler<ResolveReportCommand,
         if (!roles.Contains(RoleEnum.Admin) && !roles.Contains(RoleEnum.Moderator))
             return Result.Failure("You do not have permission to resolve reports. Only Admin or Moderator can perform this action.", ErrorCodeEnum.Forbidden);
 
-        var report = await _unitOfWork.Repository<ChallengeReport>().GetQueryable().FirstOrDefaultAsync(r => r.Id == command.ReportId && !r.IsDeleted, cancellationToken);
+        var report = await _unitOfWork.Repository<MapReport>().GetQueryable().FirstOrDefaultAsync(r => r.Id == command.ReportId && !r.IsDeleted, cancellationToken);
         if (report == null)
             return Result.Failure($"Report not found with Id: {command.ReportId}. The report may have been deleted or does not exist.", ErrorCodeEnum.NotFound);
 
@@ -39,7 +39,7 @@ public class ResolveReportCommandHandler : IRequestHandler<ResolveReportCommand,
         report.ReviewedAt = DateTime.UtcNow;
         report.ReviewNote = command.ReviewNote;
         report.UpdateEntity(userIdNullable.Value);
-        _unitOfWork.Repository<ChallengeReport>().Update(report);
+        _unitOfWork.Repository<MapReport>().Update(report);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
         return Result.Success("Report resolved.");
     }

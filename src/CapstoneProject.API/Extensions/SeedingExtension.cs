@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using CapstoneProject.Infrastructure.Context;
 using CapstoneProject.Domain.Entities;
 using CapstoneProject.Domain.Enums;
 
@@ -23,6 +24,7 @@ public static class SeedingExtension
 
         var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<AppRole>>();
         var userManager = scope.ServiceProvider.GetRequiredService<UserManager<AppUser>>();
+        var dbContext = scope.ServiceProvider.GetRequiredService<CapstoneProjectDbContext>();
 
         // Migrate legacy "Student" role to "Learner" first (one-time fix for DBs created before rename)
         var studentRole = await roleManager.FindByNameAsync("Student");
@@ -176,6 +178,124 @@ public static class SeedingExtension
                 }
             }
         }
+
+        // Seed map tags (idempotent)
+        var defaultTagNames = new[]
+        {
+            "Variables",
+            "Operators",
+            "Conditionals",
+            "Loops",
+            "Functions",
+            "Arrays",
+            "Objects",
+            "Pointers",
+            "Recursion",
+            "Algorithm Basics",
+            "Beginner",
+            "Easy",
+            "Medium",
+            "Hard",
+            "Expert",
+            "Pathfinding",
+            "Resource Collection",
+            "Obstacle Avoidance",
+            "Logic Puzzle",
+            "Optimization",
+            "Pattern Recognition",
+            "Strategy",
+            "Logical Thinking",
+            "Problem Solving",
+            "Computational Thinking",
+            "Algorithm Design",
+            "Debugging"
+        };
+
+        var existingTagNames = await dbContext.Tags
+            .AsNoTracking()
+            .Select(t => t.Name)
+            .ToListAsync();
+        var existingTagSet = new HashSet<string>(existingTagNames, StringComparer.OrdinalIgnoreCase);
+
+        var tagsToInsert = defaultTagNames
+            .Where(name => !existingTagSet.Contains(name))
+            .Select(name => new Tag
+            {
+                Name = name,
+                CreatedAt = DateTime.UtcNow,
+                CreatedBy = existingAdmin?.Id ?? Guid.Empty,
+                Status = EntityStatusEnum.Active
+            })
+            .ToList();
+
+        if (tagsToInsert.Count > 0)
+        {
+            await dbContext.Tags.AddRangeAsync(tagsToInsert);
+            await dbContext.SaveChangesAsync();
+            logger.LogInformation("Seeded {Count} tags.", tagsToInsert.Count);
+        }
+        else
+        {
+            logger.LogInformation("All default tags already exist.");
+        }
+
+        // Seed membership packages (upsert, VND prices)
+        var packageSeeds = new[]
+        {
+            new Package
+            {
+                Name = "Free",
+                DurationDays = 3650,
+                Limit = 20,
+                Price = 0,
+                FeaturesSpec = "Play basic maps; max 20 maps; no hints; cannot create/publish maps; no XP boost."
+            },
+            new Package
+            {
+                Name = "Pro",
+                DurationDays = 30,
+                Limit = null,
+                Price = 149000m,
+                FeaturesSpec = "Play basic and advanced maps; hints enabled; cannot create/publish maps; XP boost enabled."
+            },
+            new Package
+            {
+                Name = "Creator",
+                DurationDays = 30,
+                Limit = null,
+                Price = 299000m,
+                FeaturesSpec = "Play basic and advanced maps; hints enabled; can create and publish maps; map analytics; XP boost enabled."
+            }
+        };
+
+        var existingPackages = await dbContext.Packages
+            .Where(p => packageSeeds.Select(s => s.Name).Contains(p.Name))
+            .ToListAsync();
+
+        foreach (var seed in packageSeeds)
+        {
+            var existing = existingPackages.FirstOrDefault(p => p.Name.Equals(seed.Name, StringComparison.OrdinalIgnoreCase));
+            if (existing == null)
+            {
+                seed.CreatedAt = DateTime.UtcNow;
+                seed.CreatedBy = existingAdmin?.Id ?? Guid.Empty;
+                seed.Status = EntityStatusEnum.Active;
+                await dbContext.Packages.AddAsync(seed);
+            }
+            else
+            {
+                existing.DurationDays = seed.DurationDays;
+                existing.Limit = seed.Limit;
+                existing.Price = seed.Price;
+                existing.FeaturesSpec = seed.FeaturesSpec;
+                existing.UpdatedAt = DateTime.UtcNow;
+                existing.UpdatedBy = existingAdmin?.Id ?? Guid.Empty;
+                if (existing.Status != EntityStatusEnum.Active)
+                    existing.Status = EntityStatusEnum.Active;
+            }
+        }
+
+        await dbContext.SaveChangesAsync();
 
         logger.LogInformation("Data seeding completed.");
     }

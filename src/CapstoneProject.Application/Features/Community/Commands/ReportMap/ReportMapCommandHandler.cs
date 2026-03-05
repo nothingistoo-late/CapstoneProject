@@ -30,11 +30,11 @@ public class ReportMapCommandHandler : IRequestHandler<ReportMapCommand, Result<
         if (string.IsNullOrWhiteSpace(command.Reason))
             return Result<Guid>.Failure("Report reason is required. Please provide a reason for reporting this content.", ErrorCodeEnum.ValidationFailed);
 
-        var mapExists = await _unitOfWork.Repository<Map>().GetQueryable().AnyAsync(m => m.Id == command.MapId && !m.IsDeleted, cancellationToken);
+        var mapExists = await _unitOfWork.Repository<Map>().GetQueryable().AnyAsync(g => g.Id == command.MapId && !g.IsDeleted, cancellationToken);
         if (!mapExists)
             return Result<Guid>.Failure($"Map not found with Id: {command.MapId}. The map may have been deleted or does not exist.", ErrorCodeEnum.NotFound);
 
-        var report = new ChallengeReport
+        var report = new MapReport
         {
             UserId = userId,
             MapId = command.MapId,
@@ -43,7 +43,7 @@ public class ReportMapCommandHandler : IRequestHandler<ReportMapCommand, Result<
             ReportStatus = ReportStatusEnum.Pending
         };
         report.InitializeEntity(userId);
-        await _unitOfWork.Repository<ChallengeReport>().AddAsync(report);
+        await _unitOfWork.Repository<MapReport>().AddAsync(report);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
         return Result<Guid>.Success(report.Id, "Report submitted.");
     }

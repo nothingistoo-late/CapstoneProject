@@ -30,7 +30,7 @@ public class BatchResolveReportsCommandHandler : IRequestHandler<BatchResolveRep
         if (!roles.Contains(RoleEnum.Admin) && !roles.Contains(RoleEnum.Moderator))
             return Result<BatchReportResultDto>.Failure("You do not have permission to resolve reports. Only Admin or Moderator can perform batch resolve.", ErrorCodeEnum.Forbidden);
 
-        var repo = _unitOfWork.Repository<ChallengeReport>();
+        var repo = _unitOfWork.Repository<MapReport>();
         var reports = await repo.GetQueryable()
             .Where(r => command.ReportIds.Contains(r.Id) && !r.IsDeleted)
             .ToListAsync(cancellationToken);

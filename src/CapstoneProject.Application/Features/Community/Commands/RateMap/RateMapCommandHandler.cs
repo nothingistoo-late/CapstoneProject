@@ -29,11 +29,11 @@ public class RateMapCommandHandler : IRequestHandler<RateMapCommand, Result>
         if (command.Rating < 1 || command.Rating > 5)
             return Result.Failure("Rating must be between 1 and 5 stars. Please provide a valid rating.", ErrorCodeEnum.ValidationFailed);
 
-        var mapExists = await _unitOfWork.Repository<Map>().GetQueryable().AnyAsync(m => m.Id == command.MapId && !m.IsDeleted, cancellationToken);
+        var mapExists = await _unitOfWork.Repository<Map>().GetQueryable().AnyAsync(g => g.Id == command.MapId && !g.IsDeleted, cancellationToken);
         if (!mapExists)
             return Result.Failure($"Map not found with Id: {command.MapId}. The map may have been deleted or does not exist.", ErrorCodeEnum.NotFound);
 
-        var repo = _unitOfWork.Repository<ChallengeRating>();
+        var repo = _unitOfWork.Repository<MapRating>();
         var existing = await repo.GetQueryable().FirstOrDefaultAsync(r => r.UserId == userId && r.MapId == command.MapId && !r.IsDeleted, cancellationToken);
         if (existing != null)
         {
@@ -44,7 +44,7 @@ public class RateMapCommandHandler : IRequestHandler<RateMapCommand, Result>
         }
         else
         {
-            var rating = new ChallengeRating { UserId = userId, MapId = command.MapId, Rating = command.Rating, Comment = command.Comment };
+            var rating = new MapRating { UserId = userId, MapId = command.MapId, Rating = command.Rating, Comment = command.Comment };
             rating.InitializeEntity(userId);
             await repo.AddAsync(rating);
         }

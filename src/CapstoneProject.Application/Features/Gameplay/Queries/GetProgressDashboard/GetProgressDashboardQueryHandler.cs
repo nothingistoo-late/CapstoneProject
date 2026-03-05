@@ -53,18 +53,7 @@ public class GetProgressDashboardQueryHandler : IRequestHandler<GetProgressDashb
             })
             .ToListAsync(cancellationToken);
 
-        var completedMapIds = await umrRepo.GetQueryable()
-            .Where(u => u.UserId == userId && u.BestStars > 0)
-            .Select(u => u.MapId)
-            .ToListAsync(cancellationToken);
-        var conceptsPracticed = completedMapIds.Count == 0
-            ? new List<string>()
-            : await _unitOfWork.Repository<MapConcept>().GetQueryable()
-                .Where(mc => completedMapIds.Contains(mc.MapId))
-                .Include(mc => mc.Concept)
-                .Select(mc => mc.Concept.Name)
-                .Distinct()
-                .ToListAsync(cancellationToken);
+        var conceptsPracticed = new List<string>();
 
         var recent = await umrRepo.GetQueryable()
             .Where(u => u.UserId == userId && u.LastPlayedAt != null)

@@ -18,7 +18,7 @@ public class LearnerCommunityController : ControllerBase
     public LearnerCommunityController(IMediator mediator) => _mediator = mediator;
 
     /// <summary>
-    /// Rate challenge map (1–5 stars)
+    /// Rate map (1–5 stars)
     /// </summary>
     /// <remarks>
     /// Submit or update rating (1–5 stars) and optional comment for a map. Requires Bearer token.

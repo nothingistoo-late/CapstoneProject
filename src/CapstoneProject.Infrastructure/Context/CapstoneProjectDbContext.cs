@@ -22,17 +22,10 @@ public class CapstoneProjectDbContext : IdentityDbContext<AppUser, AppRole, Guid
 
     // QuackOrbit: Challenge Management
     public DbSet<Map> Maps { get; set; }
-    /// <summary>Level catalog (id, name, type, difficulty, file).</summary>
-    public DbSet<LevelCatalog> LevelCatalogs { get; set; }
-    /// <summary>Level detail (full JSON). 1-1 with LevelCatalog.</summary>
-    public DbSet<LevelDetail> LevelDetails { get; set; }
-    public DbSet<MapSpec> MapSpecs { get; set; }
+    public DbSet<MapDetail> MapDetails { get; set; }
     public DbSet<Hint> Hints { get; set; }
-    public DbSet<MapConstraint> MapConstraints { get; set; }
     public DbSet<Tag> Tags { get; set; }
-    public DbSet<Concept> Concepts { get; set; }
     public DbSet<MapTag> MapTags { get; set; }
-    public DbSet<MapConcept> MapConcepts { get; set; }
 
     // QuackOrbit: Gameplay & Progress
     public DbSet<Submission> Submissions { get; set; }
@@ -55,8 +48,8 @@ public class CapstoneProjectDbContext : IdentityDbContext<AppUser, AppRole, Guid
     public DbSet<PaymentRecord> PaymentRecords { get; set; }
 
     // QuackOrbit: Community & Safety
-    public DbSet<ChallengeRating> ChallengeRatings { get; set; }
-    public DbSet<ChallengeReport> ChallengeReports { get; set; }
+    public DbSet<MapRating> MapRatings { get; set; }
+    public DbSet<MapReport> MapReports { get; set; }
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -167,8 +160,6 @@ public class CapstoneProjectDbContext : IdentityDbContext<AppUser, AppRole, Guid
 
         // QuackOrbit entities
         QuackOrbitEntityConfiguration.Configure(builder);
-        builder.Entity<LevelCatalog>(LevelCatalogEntityConfiguration.Configure);
-        builder.Entity<LevelDetail>(LevelDetailEntityConfiguration.Configure);
 
         // Gọi cấu hình chung cho BaseEntity (if any BaseEntity-derived entities are added later)
         BaseEntityConfigurationHelper.ConfigureBaseEntities(builder);
