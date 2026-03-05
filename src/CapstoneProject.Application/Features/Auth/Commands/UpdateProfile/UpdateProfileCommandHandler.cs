@@ -82,6 +82,15 @@ public class UpdateProfileCommandHandler : IRequestHandler<UpdateProfileCommand,
             if (!string.IsNullOrEmpty(request.PhoneNumber))
                 user.PhoneNumber = request.PhoneNumber;
 
+            if (request.Gender.HasValue)
+                user.Gender = request.Gender;
+
+            if (request.DateOfBirth.HasValue)
+                user.DateOfBirth = request.DateOfBirth;
+
+            if (!string.IsNullOrWhiteSpace(request.Bio))
+                user.Bio = request.Bio;
+
             // Handle avatar upload
             if (command.AvatarFile != null)
             {

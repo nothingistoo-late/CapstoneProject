@@ -13,6 +13,9 @@ public class AppUser : IdentityUser<Guid>, IEntityLike
     public string? RefreshToken { get; set; }
     public DateTime? RefreshTokenExpiryTime { get; set; }
     public string? AvatarPath { get; set; }
+    public GenderEnum? Gender { get; set; }
+    public DateTime? DateOfBirth { get; set; }
+    public string? Bio { get; set; }
     public DateTime? CreatedAt { get; set; }
     public Guid? CreatedBy { get; set; }
     public DateTime? UpdatedAt { get; set; }

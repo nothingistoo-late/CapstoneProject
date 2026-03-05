@@ -25,15 +25,4 @@ public class ProfileResponse
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public string? LearnerCode { get; set; }
 
-    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public string? TeacherCode { get; set; }
-
-    // Teacher specific fields
-    // [JsonPropertyName("position")]
-    // [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public string? Position { get; set; }
-    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public DateTime? HireDate { get; set; }
-    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public decimal? Salary { get; set; }
 }

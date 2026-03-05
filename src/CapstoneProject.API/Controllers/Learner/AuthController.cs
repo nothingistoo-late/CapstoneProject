@@ -404,16 +404,19 @@ public class AuthController : ControllerBase
     /// Update profile of the logged-in learner
     /// </summary>
     /// <remarks>
-    /// Cập nhật thông tin profile: firstName, lastName, phoneNumber, avatar. Gửi dạng multipart/form-data. Chỉ cập nhật các field gửi lên. Yêu cầu Bearer token (Learner).
+    /// Cập nhật thông tin profile: firstName, lastName, phoneNumber, gender, dateOfBirth, bio, avatar. Gửi dạng multipart/form-data. Chỉ cập nhật các field gửi lên. Yêu cầu Bearer token (Learner).
     ///
     /// **METHOD and path:** PUT /api/learner/auth/profile
     ///
-    /// **Example:** Content-Type: multipart/form-data. Form fields: firstName, lastName, phoneNumber, avatarFile
+    /// **Example:** Content-Type: multipart/form-data. Form fields: firstName, lastName, phoneNumber, gender, dateOfBirth, bio, avatarFile
     ///
     /// **Body (Form – multipart/form-data):**
     /// - firstName (string, optional): Tên. Tối đa 50 ký tự.
     /// - lastName (string, optional): Họ. Tối đa 50 ký tự.
     /// - phoneNumber (string, optional): Số điện thoại. Định dạng SĐT, unique (trừ SĐT của chính user).
+    /// - gender (int?, optional): Giới tính. 0 = Female, 1 = Male, 2 = Other.
+    /// - dateOfBirth (DateTime?, optional): Ngày sinh (ISO date).
+    /// - bio (string, optional): Giới thiệu bản thân ngắn, tối đa 500 ký tự.
     /// - avatarFile (file, optional): File ảnh avatar. Hỗ trợ jpg, png, ... Kích thước tối đa theo cấu hình (vd 10MB).
     /// </remarks>
     /// <response code="200">Profile updated successfully. Returns message and data (updated profile).</response>
@@ -428,7 +431,7 @@ public class AuthController : ControllerBase
     [ProducesResponseType(typeof(Result<ProfileResponse>), StatusCodes.Status500InternalServerError)]
     [SwaggerOperation(
         Summary = "Update profile of the logged-in learner",
-        Description = "Update profile (firstName, lastName, phoneNumber, avatar). Multipart form-data. Requires Bearer token.",
+        Description = "Update profile (firstName, lastName, phoneNumber, gender, dateOfBirth, bio, avatar). Multipart form-data. Requires Bearer token.",
         OperationId = "UpdateProfile",
         Tags = new[] { "Learner" }
     )]

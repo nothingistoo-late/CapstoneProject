@@ -25,5 +25,12 @@ public class UpdateProfileRequestValidator : AbstractValidator<UpdateProfileRequ
             RuleFor(x => x.PhoneNumber!)
                 .ValidPhoneNumber();
         });
+
+        When(x => x.Bio != null, () =>
+        {
+            RuleFor(x => x.Bio!)
+                .MaximumLength(500)
+                .WithMessage("Bio must be at most 500 characters.");
+        });
     }
 }

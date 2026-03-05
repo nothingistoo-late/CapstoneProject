@@ -18,17 +18,19 @@ public class AuthMappingProfile : Profile
             .ForMember(dest => dest.JoiningAt, opt => opt.MapFrom(src => DateTime.UtcNow))
             .ForMember(dest => dest.EmailConfirmed, opt => opt.MapFrom(src => true))
             .ForMember(dest => dest.AvatarPath, opt => opt.Ignore())
+            .ForMember(dest => dest.Gender, opt => opt.MapFrom(src => src.Gender))
+            .ForMember(dest => dest.DateOfBirth, opt => opt.MapFrom(src => src.DateOfBirth))
+            .ForMember(dest => dest.Bio, opt => opt.Ignore())
             .IgnoreIdentityFields()
             .IgnoreAuditFields();
 
         CreateMap<AppUser, ProfileResponse>()
             .ForMember(dest => dest.UserId, opt => opt.MapFrom(src => src.Id))
             .ForMember(dest => dest.AvatarPath, opt => opt.MapFrom<AvatarUrlResolver>())
-            .ForMember(dest => dest.Gender, opt => opt.Ignore())
-            .ForMember(dest => dest.DateOfBirth, opt => opt.Ignore())
-            .ForMember(dest => dest.HireDate, opt => opt.Ignore())
-            .ForMember(dest => dest.Salary, opt => opt.Ignore())
-            .ForMember(dest => dest.LearnerCode, opt => opt.Ignore())
-            .ForMember(dest => dest.TeacherCode, opt => opt.Ignore());
+            .ForMember(dest => dest.Gender, opt => opt.MapFrom(src =>
+                src.Gender.HasValue ? src.Gender.Value.ToString() : null))
+            .ForMember(dest => dest.DateOfBirth, opt => opt.MapFrom(src => src.DateOfBirth))
+            .ForMember(dest => dest.Bio, opt => opt.MapFrom(src => src.Bio));
+           
     }
 }
