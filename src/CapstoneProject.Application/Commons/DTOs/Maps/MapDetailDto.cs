@@ -1,3 +1,4 @@
+using System.Text.Json;
 using CapstoneProject.Domain.Enums;
 
 namespace CapstoneProject.Application.Commons.DTOs.Maps;
@@ -16,7 +17,8 @@ public class MapDetailDto
     public string? EditorialContent { get; set; }
     public int UnlockEditorialAfterStars { get; set; }
     public DateTime? CreatedAt { get; set; }
-    public string? MapDetailJson { get; set; }
+    /// <summary>Map level JSON (layers, startPosition, goalPosition, objects...) returned as object, not escaped string.</summary>
+    public JsonElement? MapDetailJson { get; set; }
     public List<HintItemDto> Hints { get; set; } = new();
     public List<string> TagNames { get; set; } = new();
     public int WinCondition { get; set; }

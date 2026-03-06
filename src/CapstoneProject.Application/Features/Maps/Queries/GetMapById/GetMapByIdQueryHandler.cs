@@ -1,3 +1,4 @@
+using System.Text.Json;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using CapstoneProject.Application.Common.Enums;
@@ -57,11 +58,25 @@ public class GetMapByIdQueryHandler : IRequestHandler<GetMapByIdQuery, Result<Ma
             EditorialContent = showEditorial ? map.EditorialContent : null,
             UnlockEditorialAfterStars = map.UnlockEditorialAfterStars,
             CreatedAt = map.CreatedAt,
-            MapDetailJson = map.MapDetail?.JsonContent,
+            MapDetailJson = ParseMapDetailJson(map.MapDetail?.JsonContent),
             Hints = map.Hints.OrderBy(h => h.OrderNo).Select(h => new HintItemDto { OrderNo = h.OrderNo, Content = h.Content }).ToList(),
             TagNames = map.MapTags.Select(t => t.Tag.Name).ToList(),
             WinCondition = map.WinCondition
         };
         return Result<MapDetailDto>.Success(dto);
+    }
+
+    private static JsonElement? ParseMapDetailJson(string? jsonContent)
+    {
+        if (string.IsNullOrWhiteSpace(jsonContent)) return null;
+        try
+        {
+            using var doc = JsonDocument.Parse(jsonContent);
+            return doc.RootElement.Clone();
+        }
+        catch
+        {
+            return null;
+        }
     }
 }
