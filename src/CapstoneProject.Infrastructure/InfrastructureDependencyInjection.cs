@@ -13,6 +13,7 @@ using CapstoneProject.Infrastructure.Repositories;
 using CapstoneProject.Infrastructure.Services;
 using CapstoneProject.Infrastructure.Configurations;
 using CapstoneProject.Infrastructure.Factories;
+using Microsoft.Extensions.Options;
 
 namespace CapstoneProject.Infrastructure;
 
@@ -140,7 +141,15 @@ public static class InfrastructureDependencyInjection
         // services.AddScoped<AzureBlobFileService>(); // Uncomment when Azure Blob is implemented
         // services.AddScoped<GoogleCloudFileService>(); // Uncomment when Google Cloud is implemented
         services.AddScoped<IFileServiceFactory, FileServiceFactory>(); // Register factory as scoped to resolve scoped services
-        
+
+        // OrbitCoin virtual currency
+        services.AddScoped<IOrbitCoinService, OrbitCoinService>();
+
+        // PayOS (user top-up)
+        services.Configure<PayOSSettings>(configuration.GetSection(PayOSSettings.SectionName));
+        services.AddScoped<Application.Commons.Interfaces.IPayOSService, PayOSService>();
+        services.AddScoped<Application.Commons.Interfaces.IOrbitCoinDepositSettings, OrbitCoinDepositSettingsAdapter>();
+
         return services;
     }
 }

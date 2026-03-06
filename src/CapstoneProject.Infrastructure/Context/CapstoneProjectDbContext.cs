@@ -51,6 +51,10 @@ public class CapstoneProjectDbContext : IdentityDbContext<AppUser, AppRole, Guid
     public DbSet<MapRating> MapRatings { get; set; }
     public DbSet<MapReport> MapReports { get; set; }
 
+    // OrbitCoin: virtual currency
+    public DbSet<UserWallet> UserWallets { get; set; }
+    public DbSet<OrbitCoinTransaction> OrbitCoinTransactions { get; set; }
+
     protected override void OnModelCreating(ModelBuilder builder)
     {
         base.OnModelCreating(builder);
@@ -160,6 +164,9 @@ public class CapstoneProjectDbContext : IdentityDbContext<AppUser, AppRole, Guid
 
         // QuackOrbit entities
         QuackOrbitEntityConfiguration.Configure(builder);
+
+        // OrbitCoin virtual currency
+        OrbitCoinEntityConfiguration.Configure(builder);
 
         // Gọi cấu hình chung cho BaseEntity (if any BaseEntity-derived entities are added later)
         BaseEntityConfigurationHelper.ConfigureBaseEntities(builder);

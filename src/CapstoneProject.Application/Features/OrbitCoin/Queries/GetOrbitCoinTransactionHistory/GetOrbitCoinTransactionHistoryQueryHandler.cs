@@ -1,0 +1,44 @@
+using MediatR;
+using CapstoneProject.Application.Common.Enums;
+using CapstoneProject.Application.Common.Interfaces;
+using CapstoneProject.Application.Common.Models;
+using CapstoneProject.Application.Commons.Interfaces;
+
+namespace CapstoneProject.Application.Features.OrbitCoin.Queries.GetOrbitCoinTransactionHistory;
+
+public class GetOrbitCoinTransactionHistoryQueryHandler : IRequestHandler<GetOrbitCoinTransactionHistoryQuery, Result<OrbitCoinTransactionHistoryResult>>
+{
+    private readonly IOrbitCoinService _orbitCoinService;
+    private readonly ICurrentUserService _currentUserService;
+
+    public GetOrbitCoinTransactionHistoryQueryHandler(IOrbitCoinService orbitCoinService, ICurrentUserService currentUserService)
+    {
+        _orbitCoinService = orbitCoinService;
+        _currentUserService = currentUserService;
+    }
+
+    public async Task<Result<OrbitCoinTransactionHistoryResult>> Handle(GetOrbitCoinTransactionHistoryQuery request, CancellationToken cancellationToken)
+    {
+        var userId = request.UserId;
+        if (!userId.HasValue)
+        {
+            var (isValid, id) = await _currentUserService.IsUserValidAsync();
+            if (!isValid || !id.HasValue)
+                return Result<OrbitCoinTransactionHistoryResult>.Failure("Authentication required.", ErrorCodeEnum.Unauthorized);
+            userId = id.Value;
+        }
+        var (items, total) = await _orbitCoinService.GetTransactionHistoryAsync(
+            userId.Value,
+            request.PageNumber,
+            request.PageSize,
+            cancellationToken);
+        var result = new OrbitCoinTransactionHistoryResult
+        {
+            Items = items,
+            TotalCount = total,
+            PageNumber = request.PageNumber,
+            PageSize = request.PageSize
+        };
+        return Result<OrbitCoinTransactionHistoryResult>.Success(result, "Transaction history retrieved.");
+    }
+}

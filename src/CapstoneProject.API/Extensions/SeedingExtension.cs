@@ -258,7 +258,7 @@ public static class SeedingExtension
                 Name = "Pro",
                 DurationDays = 30,
                 Limit = null,
-                Price = 149000m,
+                Price = 149m,
                 FeaturesSpec = "Play basic and advanced maps; hints enabled; cannot create/publish maps; XP boost enabled."
             },
             new Package
@@ -266,7 +266,7 @@ public static class SeedingExtension
                 Name = "Creator",
                 DurationDays = 30,
                 Limit = null,
-                Price = 299000m,
+                Price = 299m,
                 FeaturesSpec = "Play basic and advanced maps; hints enabled; can create and publish maps; map analytics; XP boost enabled."
             }
         };
@@ -299,6 +299,41 @@ public static class SeedingExtension
         }
 
         await dbContext.SaveChangesAsync();
+
+        // Seed payment methods: OrbitCoin, PayOS
+        var orbitCoinPayment = await dbContext.Payments.AsNoTracking().FirstOrDefaultAsync(p => p.Code == "OrbitCoin");
+        if (orbitCoinPayment == null)
+        {
+            var payment = new Payment
+            {
+                Code = "OrbitCoin",
+                Name = "OrbitCoin",
+                Description = "Virtual currency (in-platform)",
+                CreatedAt = DateTime.UtcNow,
+                CreatedBy = existingAdmin?.Id ?? Guid.Empty,
+                Status = EntityStatusEnum.Active
+            };
+            await dbContext.Payments.AddAsync(payment);
+            await dbContext.SaveChangesAsync();
+            logger.LogInformation("Seeded payment method: OrbitCoin.");
+        }
+
+        var payOSPayment = await dbContext.Payments.AsNoTracking().FirstOrDefaultAsync(p => p.Code == "PayOS");
+        if (payOSPayment == null)
+        {
+            var payos = new Payment
+            {
+                Code = "PayOS",
+                Name = "PayOS",
+                Description = "User top-up via PayOS",
+                CreatedAt = DateTime.UtcNow,
+                CreatedBy = existingAdmin?.Id ?? Guid.Empty,
+                Status = EntityStatusEnum.Active
+            };
+            await dbContext.Payments.AddAsync(payos);
+            await dbContext.SaveChangesAsync();
+            logger.LogInformation("Seeded payment method: PayOS.");
+        }
 
         // Seed demo maps from JSON files (idempotent by Title = filename without extension)
         var seedMapFiles = new[] { "level-platform-01.json", "level-topdown-1771989668367.json", "level-topdown-foreground-example.json" };

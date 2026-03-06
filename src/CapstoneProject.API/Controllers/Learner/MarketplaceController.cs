@@ -1,8 +1,8 @@
 using CapstoneProject.Application.Commons.DTOs.Marketplace;
-using CapstoneProject.Application.Features.Marketplace.Commands.PurchaseMap;
 using CapstoneProject.Application.Features.Marketplace.Commands.PurchasePackage;
 using CapstoneProject.Application.Features.Marketplace.Queries.GetPackageById;
 using CapstoneProject.Application.Features.Marketplace.Queries.GetPackages;
+using CapstoneProject.Application.Features.OrbitCoin.Commands.PurchaseMapWithOrbitCoin;
 
 namespace CapstoneProject.API.Controllers.Learner;
 
@@ -74,21 +74,14 @@ public class LearnerMarketplaceController : ControllerBase
     }
 
     /// <summary>
-    /// Purchase feature package
+    /// Purchase feature package with OrbitCoin
     /// </summary>
     /// <remarks>
-    /// Purchases a feature package for the current user. Requires Bearer token (Learner).
+    /// Purchases a feature package for the current user by deducting OrbitCoin. User must have topped up OrbitCoin first. Requires Bearer token (Learner).
     ///
     /// **Route:** id (Guid, required): Package ID.
     ///
-    /// **Query:**
-    /// - paymentMethodId (Guid?, optional): Payment method ID if multiple methods supported.
-    ///
-    /// **Body:** None.
-    ///
     /// **METHOD and path:** POST /api/learner/marketplace/packages/{id}/purchase
-    ///
-    /// **Example request:** POST /api/learner/marketplace/packages/3fa85f64-5717-4562-b3fc-2c963f66afa6/purchase?paymentMethodId=3fa85f64-5717-4562-b3fc-2c963f66afa7
     /// </remarks>
     /// <response code="200">Purchase successful. Returns message and data (order/purchase id).</response>
     /// <response code="401">Not authorized</response>
@@ -102,46 +95,39 @@ public class LearnerMarketplaceController : ControllerBase
     [ProducesResponseType(typeof(Result<Guid>), StatusCodes.Status403Forbidden)]
     [ProducesResponseType(typeof(Result<Guid>), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(Result<Guid>), StatusCodes.Status500InternalServerError)]
-    [SwaggerOperation(Summary = "Purchase package", Description = "Purchases a feature package for the current user. Requires Bearer token.", OperationId = "Learner_PurchasePackage", Tags = new[] { "Learner - Marketplace" })]
-    public async Task<IActionResult> PurchasePackage(Guid id, [FromQuery] Guid? paymentMethodId = null)
+    [SwaggerOperation(Summary = "Purchase package (OrbitCoin)", Description = "Purchases a feature package by deducting OrbitCoin. User must top up first.", OperationId = "Learner_PurchasePackage", Tags = new[] { "Learner - Marketplace" })]
+    public async Task<IActionResult> PurchasePackage(Guid id)
     {
-        var result = await _mediator.Send(new PurchasePackageCommand(id, paymentMethodId));
+        var result = await _mediator.Send(new PurchasePackageCommand(id));
         return StatusCode(result.GetHttpStatusCode(), result);
     }
 
     /// <summary>
-    /// Purchase paid challenge map
+    /// Purchase paid challenge map with OrbitCoin
     /// </summary>
     /// <remarks>
-    /// Purchases a paid challenge map (price &gt; 0) for the current user. Requires Bearer token (Learner).
+    /// Purchases a paid challenge map (price &gt; 0) by deducting OrbitCoin. User must have topped up OrbitCoin first. Requires Bearer token (Learner).
     ///
     /// **Route:** mapId (Guid, required): Challenge map ID.
     ///
-    /// **Query:**
-    /// - paymentMethodId (Guid?, optional): Payment method ID.
-    ///
-    /// **Body:** None.
-    ///
     /// **METHOD and path:** POST /api/learner/marketplace/maps/{mapId}/purchase
-    ///
-    /// **Example request:** POST /api/learner/marketplace/maps/3fa85f64-5717-4562-b3fc-2c963f66afa6/purchase
     /// </remarks>
-    /// <response code="200">Purchase successful. Returns message and data.</response>
+    /// <response code="200">Purchase successful.</response>
     /// <response code="401">Not authorized</response>
     /// <response code="403">Not a Learner</response>
     /// <response code="404">Map not found</response>
     /// <response code="500">Internal server error</response>
     [HttpPost("maps/{mapId:guid}/purchase")]
     [AuthorizeRoles(nameof(RoleEnum.Learner))]
-    [ProducesResponseType(typeof(Result<Guid>), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(Result<Guid>), StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(typeof(Result<Guid>), StatusCodes.Status403Forbidden)]
-    [ProducesResponseType(typeof(Result<Guid>), StatusCodes.Status404NotFound)]
-    [ProducesResponseType(typeof(Result<Guid>), StatusCodes.Status500InternalServerError)]
-    [SwaggerOperation(Summary = "Mua map trả phí", Description = "Purchases paid challenge map by mapId. Only for maps with price > 0. Optional paymentMethodId. Requires Bearer token.", OperationId = "Learner_PurchaseMap", Tags = new[] { "Learner - Marketplace" })]
-    public async Task<IActionResult> PurchaseMap(Guid mapId, [FromQuery] Guid? paymentMethodId = null)
+    [ProducesResponseType(typeof(Result), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(Result), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(Result), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(Result), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(Result), StatusCodes.Status500InternalServerError)]
+    [SwaggerOperation(Summary = "Mua map trả phí (OrbitCoin)", Description = "Purchases paid map by deducting OrbitCoin. User must top up first.", OperationId = "Learner_PurchaseMap", Tags = new[] { "Learner - Marketplace" })]
+    public async Task<IActionResult> PurchaseMap(Guid mapId)
     {
-        var result = await _mediator.Send(new PurchaseMapCommand(mapId, paymentMethodId));
+        var result = await _mediator.Send(new PurchaseMapWithOrbitCoinCommand(mapId));
         return StatusCode(result.GetHttpStatusCode(), result);
     }
 }

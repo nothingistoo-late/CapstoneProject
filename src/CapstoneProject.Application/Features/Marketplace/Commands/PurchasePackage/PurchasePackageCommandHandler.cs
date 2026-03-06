@@ -13,11 +13,16 @@ namespace CapstoneProject.Application.Features.Marketplace.Commands.PurchasePack
 public class PurchasePackageCommandHandler : IRequestHandler<PurchasePackageCommand, Result<Guid>>
 {
     private readonly IUnitOfWork _unitOfWork;
+    private readonly IOrbitCoinService _orbitCoinService;
     private readonly ICurrentUserService _currentUserService;
 
-    public PurchasePackageCommandHandler(IUnitOfWork unitOfWork, ICurrentUserService currentUserService)
+    public PurchasePackageCommandHandler(
+        IUnitOfWork unitOfWork,
+        IOrbitCoinService orbitCoinService,
+        ICurrentUserService currentUserService)
     {
         _unitOfWork = unitOfWork;
+        _orbitCoinService = orbitCoinService;
         _currentUserService = currentUserService;
     }
 
@@ -28,9 +33,30 @@ public class PurchasePackageCommandHandler : IRequestHandler<PurchasePackageComm
             return Result<Guid>.Failure("Authentication required. Please log in to purchase a package.", ErrorCodeEnum.Unauthorized);
         var userId = userIdNullable.Value;
 
-        var pkg = await _unitOfWork.Repository<Package>().GetQueryable().FirstOrDefaultAsync(p => p.Id == command.PackageId && !p.IsDeleted && p.Status == EntityStatusEnum.Active, cancellationToken);
+        var pkg = await _unitOfWork.Repository<Package>().GetQueryable()
+            .FirstOrDefaultAsync(p => p.Id == command.PackageId && !p.IsDeleted && p.Status == EntityStatusEnum.Active, cancellationToken);
         if (pkg == null)
-            return Result<Guid>.Failure($"Package not found with Id: {command.PackageId}, or the package is inactive and cannot be purchased.", ErrorCodeEnum.NotFound);
+            return Result<Guid>.Failure("Package not found or inactive.", ErrorCodeEnum.NotFound);
+        if (pkg.Price <= 0)
+            return Result<Guid>.Failure("This package has no price; contact support.", ErrorCodeEnum.InvalidOperation);
+
+        // Deduct OrbitCoin (platform only accepts OrbitCoin; user must have topped up first)
+        var (success, error) = await _orbitCoinService.DebitAsync(
+            userId,
+            pkg.Price,
+            CoinTransactionTypeEnum.SpendPackagePurchase,
+            "Package",
+            pkg.Id,
+            feeAmount: 0,
+            $"Purchase package: {pkg.Name}",
+            userId,
+            cancellationToken);
+        if (!success)
+            return Result<Guid>.Failure(error ?? "Insufficient OrbitCoin. Please top up first.", ErrorCodeEnum.InvalidOperation);
+
+        var orbitCoinPayment = await _unitOfWork.Repository<Payment>()
+            .GetQueryable()
+            .FirstOrDefaultAsync(p => p.Code == "OrbitCoin", cancellationToken);
 
         var record = new PaymentRecord
         {
@@ -39,7 +65,7 @@ public class PurchasePackageCommandHandler : IRequestHandler<PurchasePackageComm
             Amount = pkg.Price,
             PaymentStatus = PaymentStatusEnum.Completed,
             PaidAt = DateTime.UtcNow,
-            PaymentId = command.PaymentMethodId
+            PaymentId = orbitCoinPayment?.Id
         };
         record.InitializeEntity(userId);
         await _unitOfWork.Repository<PaymentRecord>().AddAsync(record);
@@ -57,6 +83,6 @@ public class PurchasePackageCommandHandler : IRequestHandler<PurchasePackageComm
         await _unitOfWork.Repository<UserPackage>().AddAsync(userPkg);
 
         await _unitOfWork.SaveChangesAsync(cancellationToken);
-        return Result<Guid>.Success(record.Id, "Purchase completed.");
+        return Result<Guid>.Success(record.Id, "Package purchased with OrbitCoin.");
     }
 }
