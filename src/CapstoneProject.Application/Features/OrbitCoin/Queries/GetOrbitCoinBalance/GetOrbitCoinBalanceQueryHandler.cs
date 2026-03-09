@@ -2,6 +2,7 @@ using MediatR;
 using CapstoneProject.Application.Common.Enums;
 using CapstoneProject.Application.Common.Interfaces;
 using CapstoneProject.Application.Common.Models;
+using CapstoneProject.Application.Commons.DTOs.OrbitCoin;
 using CapstoneProject.Application.Commons.Interfaces;
 
 namespace CapstoneProject.Application.Features.OrbitCoin.Queries.GetOrbitCoinBalance;

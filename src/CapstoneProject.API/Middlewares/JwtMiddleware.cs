@@ -99,13 +99,13 @@ public class JwtMiddleware
     /// <summary>
     /// Send a 401 Unauthorized response
     /// </summary>
-    private async Task SendUnauthorizedResponse(HttpContext context, string message, ErrorCodeEnum ErrorCodeEnum)
+    private async Task SendUnauthorizedResponse(HttpContext context, string message, ErrorCodeEnum errorCode)
     {
         context.Response.Clear();
         context.Response.StatusCode = (int)HttpStatusCode.Unauthorized;
         context.Response.ContentType = "application/json";
         
-        var result = Result.Failure(message, ErrorCodeEnum);
+        var result = Result.Failure(message, errorCode);
         await context.Response.WriteAsync(JsonSerializer.Serialize(result, new JsonSerializerOptions
         {
             PropertyNamingPolicy = JsonNamingPolicy.CamelCase

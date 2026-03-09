@@ -1,8 +1,8 @@
+using CapstoneProject.Application.Commons.DTOs.Competitive;
 using CapstoneProject.Application.Features.Competitive.Commands.CreateMatch;
 using CapstoneProject.Application.Features.Competitive.Commands.CreateRoom;
 using CapstoneProject.Application.Features.Competitive.Commands.JoinRoom;
 using CreateRoomResultDto = CapstoneProject.Application.Features.Competitive.Commands.CreateRoom.CreateRoomResultDto;
-using JoinRoomResultDto = CapstoneProject.Application.Features.Competitive.Commands.JoinRoom.JoinRoomResultDto;
 
 namespace CapstoneProject.API.Controllers.Learner;
 
@@ -103,15 +103,4 @@ public class LearnerCompetitiveController : ControllerBase
         var result = await _mediator.Send(new JoinRoomCommand(request.RoomCode));
         return StatusCode(result.GetHttpStatusCode(), result);
     }
-}
-
-public class CreateMatchRequest
-{
-    public Guid MapId { get; set; }
-    public string? RulesSpec { get; set; }
-}
-
-public class JoinRoomRequest
-{
-    public string RoomCode { get; set; } = string.Empty;
 }

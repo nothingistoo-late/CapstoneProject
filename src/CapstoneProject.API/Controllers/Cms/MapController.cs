@@ -1,5 +1,7 @@
+using CapstoneProject.API.Models;
 using CapstoneProject.Application.Commons.DTOs.Maps;
 using CapstoneProject.Application.Features.Maps.Commands.ApproveMap;
+using CapstoneProject.Application.Features.Maps.Commands.CreateMapFromJsonFile;
 using CapstoneProject.Application.Features.Maps.Commands.BatchApproveMaps;
 using CapstoneProject.Application.Features.Maps.Commands.BatchPublishMaps;
 using CapstoneProject.Application.Features.Maps.Commands.BatchRejectMaps;
@@ -79,10 +81,21 @@ public class CmsMapController : ControllerBase
 
     /// <summary>Create and publish map immediately (Admin only).</summary>
     /// <remarks>
-    /// Creates a map and publishes it directly without approval workflow.
+    /// Tạo map và publish ngay, không qua quy trình duyệt. Chỉ Admin. Body JSON giống Learner CreateMap (title, description, difficulty, timeLimitMs, winCondition, price?, mapDetailJson, hints?, tagIds?).
     ///
     /// **METHOD and path:** POST /api/cms/maps
+    ///
+    /// **Body (JSON):**
+    /// - title (string, required), description (string, required), difficulty (int), timeLimitMs (int), winCondition (int).
+    /// - price (decimal?, optional), mapDetailJson (object, required), hints (array, optional), tagIds (array of Guid, optional).
+    ///
+    /// **Example request body:** { "title": "Official Map", "description": "Desc", "difficulty": 1, "timeLimitMs": 60000, "winCondition": 10, "mapDetailJson": { "id": "level-1", "layers": {} }, "hints": [], "tagIds": [] }
     /// </remarks>
+    /// <response code="201">Map created and published. Returns message and data (mapId).</response>
+    /// <response code="400">Validation error</response>
+    /// <response code="401">Not authorized</response>
+    /// <response code="403">Admin only</response>
+    /// <response code="500">Internal server error</response>
     [HttpPost]
     [AuthorizeRoles(nameof(RoleEnum.Admin))]
     [ProducesResponseType(typeof(Result<Guid>), StatusCodes.Status201Created)]
@@ -99,6 +112,19 @@ public class CmsMapController : ControllerBase
     }
 
     /// <summary>Create and publish map from uploaded JSON file (Admin only).</summary>
+    /// <remarks>
+    /// Admin tạo map từ file JSON và publish ngay (không qua duyệt). Form giống Learner upload-json: title, description, difficulty, timeLimitMs, winCondition, price?, hintsJson?, tagIdsCsv?, mapDetailFile (file JSON, required).
+    ///
+    /// **METHOD and path:** POST /api/cms/maps/upload-json
+    ///
+    /// **Body (multipart/form-data):**
+    /// - title, description, difficulty, timeLimitMs, winCondition (required); price, hintsJson, tagIdsCsv (optional); mapDetailFile (file, required).
+    /// </remarks>
+    /// <response code="201">Map created and published. Returns message and data (mapId).</response>
+    /// <response code="400">Validation error or MapDetailFile is required</response>
+    /// <response code="401">Not authorized</response>
+    /// <response code="403">Admin only</response>
+    /// <response code="500">Internal server error</response>
     [HttpPost("upload-json")]
     [AuthorizeRoles(nameof(RoleEnum.Admin))]
     [Consumes("multipart/form-data")]
@@ -106,7 +132,8 @@ public class CmsMapController : ControllerBase
     [ProducesResponseType(typeof(Result<Guid>), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(Result), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(Result), StatusCodes.Status403Forbidden)]
-    [SwaggerOperation(Summary = "Create and publish map from JSON file", Description = "Admin uploads a JSON file and publishes map immediately.", OperationId = "Cms_CreateAndPublishMapFromJsonFile", Tags = new[] { "CMS - Maps" })]
+    [ProducesResponseType(typeof(Result), StatusCodes.Status500InternalServerError)]
+    [SwaggerOperation(Summary = "Create and publish map from JSON file", Description = "Admin uploads a JSON file and publishes map immediately. Form: title, description, difficulty, timeLimitMs, winCondition, price?, hintsJson?, tagIdsCsv?, mapDetailFile (required).", OperationId = "Cms_CreateAndPublishMapFromJsonFile", Tags = new[] { "CMS - Maps" })]
     public async Task<IActionResult> CreateAndPublishMapFromJsonFile([FromForm] CreateMapFromJsonFileRequest request)
     {
         if (request.MapDetailFile == null || request.MapDetailFile.Length == 0)
@@ -118,76 +145,7 @@ public class CmsMapController : ControllerBase
             jsonContent = await reader.ReadToEndAsync();
         }
 
-        JsonElement detailJson;
-        try
-        {
-            detailJson = JsonSerializer.Deserialize<JsonElement>(jsonContent);
-        }
-        catch (JsonException)
-        {
-            return BadRequest(Result<Guid>.Failure("Uploaded file is not valid JSON.", ErrorCodeEnum.ValidationFailed));
-        }
-
-        List<HintItemDto> hints = new();
-        if (!string.IsNullOrWhiteSpace(request.HintsJson))
-        {
-            try
-            {
-                using var doc = JsonDocument.Parse(request.HintsJson);
-                if (doc.RootElement.ValueKind == JsonValueKind.Array)
-                {
-                    hints = JsonSerializer.Deserialize<List<HintItemDto>>(request.HintsJson) ?? new List<HintItemDto>();
-                }
-                else if (doc.RootElement.ValueKind == JsonValueKind.Object)
-                {
-                    var one = JsonSerializer.Deserialize<HintItemDto>(request.HintsJson);
-                    if (one != null) hints.Add(one);
-                }
-                else if (doc.RootElement.ValueKind == JsonValueKind.String)
-                {
-                    var inner = doc.RootElement.GetString();
-                    if (!string.IsNullOrWhiteSpace(inner))
-                    {
-                        using var innerDoc = JsonDocument.Parse(inner);
-                        if (innerDoc.RootElement.ValueKind == JsonValueKind.Array)
-                        {
-                            hints = JsonSerializer.Deserialize<List<HintItemDto>>(inner) ?? new List<HintItemDto>();
-                        }
-                        else if (innerDoc.RootElement.ValueKind == JsonValueKind.Object)
-                        {
-                            var one = JsonSerializer.Deserialize<HintItemDto>(inner);
-                            if (one != null) hints.Add(one);
-                        }
-                        else
-                        {
-                            return BadRequest(Result<Guid>.Failure("HintsJson must be a JSON array or object.", ErrorCodeEnum.ValidationFailed));
-                        }
-                    }
-                }
-                else
-                {
-                    return BadRequest(Result<Guid>.Failure("HintsJson must be a JSON array or object.", ErrorCodeEnum.ValidationFailed));
-                }
-            }
-            catch (JsonException)
-            {
-                return BadRequest(Result<Guid>.Failure("HintsJson must be valid JSON.", ErrorCodeEnum.ValidationFailed));
-            }
-        }
-
-        List<Guid> tagIds = new();
-        if (!string.IsNullOrWhiteSpace(request.TagIdsCsv))
-        {
-            var tokens = request.TagIdsCsv.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
-            foreach (var token in tokens)
-            {
-                if (!Guid.TryParse(token, out var tagId))
-                    return BadRequest(Result<Guid>.Failure($"Invalid TagId: {token}", ErrorCodeEnum.ValidationFailed));
-                tagIds.Add(tagId);
-            }
-        }
-
-        var cmd = new CreateMapCommand(new CreateMapRequest
+        var input = new CreateMapFromJsonFileInput
         {
             Title = request.Title,
             Description = request.Description,
@@ -195,12 +153,12 @@ public class CmsMapController : ControllerBase
             TimeLimitMs = request.TimeLimitMs,
             WinCondition = request.WinCondition,
             Price = request.Price,
-            TagIds = tagIds,
-            Hints = hints,
-            MapDetailJson = detailJson
-        }, true);
+            HintsJson = request.HintsJson ?? "[]",
+            TagIdsCsv = request.TagIdsCsv ?? string.Empty,
+            MapDetailJsonContent = jsonContent
+        };
 
-        var result = await _mediator.Send(cmd);
+        var result = await _mediator.Send(new CreateMapFromJsonFileCommand(input, AutoPublish: true));
         if (result.IsSuccess && result.Data != default)
             return CreatedAtAction(nameof(GetMapById), new { id = result.Data }, result);
         return StatusCode(result.GetHttpStatusCode(), result);
@@ -427,9 +385,9 @@ public class CmsMapController : ControllerBase
     [ProducesResponseType(typeof(Result), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(Result), StatusCodes.Status403Forbidden)]
     [SwaggerOperation(Summary = "Create tag", Description = "Creates a new tag. Body: { name }. Returns tag Id. Admin/Moderator only.", OperationId = "Cms_CreateTag", Tags = new[] { "CMS - Maps" })]
-    public async Task<IActionResult> CreateTag([FromBody] CmsCreateTagBody body)
+    public async Task<IActionResult> CreateTag([FromBody] CreateTagRequest request)
     {
-        var result = await _mediator.Send(new CreateTagCommand(body.Name));
+        var result = await _mediator.Send(new CreateTagCommand(request.Name));
         return StatusCode(result.GetHttpStatusCode(), result);
     }
 
@@ -453,9 +411,9 @@ public class CmsMapController : ControllerBase
     [ProducesResponseType(typeof(Result), StatusCodes.Status403Forbidden)]
     [ProducesResponseType(typeof(Result), StatusCodes.Status404NotFound)]
     [SwaggerOperation(Summary = "Update tag", Description = "Updates tag name by Id. Body: { name }. Admin/Moderator only.", OperationId = "Cms_UpdateTag", Tags = new[] { "CMS - Maps" })]
-    public async Task<IActionResult> UpdateTag(Guid id, [FromBody] CmsUpdateTagBody body)
+    public async Task<IActionResult> UpdateTag(Guid id, [FromBody] UpdateTagRequest request)
     {
-        var result = await _mediator.Send(new UpdateTagCommand(id, body.Name));
+        var result = await _mediator.Send(new UpdateTagCommand(id, request.Name));
         return StatusCode(result.GetHttpStatusCode(), result);
     }
 
@@ -483,20 +441,4 @@ public class CmsMapController : ControllerBase
         var result = await _mediator.Send(new DeleteTagCommand(id));
         return StatusCode(result.GetHttpStatusCode(), result);
     }
-
-}
-
-public class CmsCreateTagBody { public string Name { get; set; } = string.Empty; }
-public class CmsUpdateTagBody { public string Name { get; set; } = string.Empty; }
-public class CreateMapFromJsonFileRequest
-{
-    public string Title { get; set; } = string.Empty;
-    public string Description { get; set; } = string.Empty;
-    public int Difficulty { get; set; }
-    public int TimeLimitMs { get; set; }
-    public int WinCondition { get; set; }
-    public decimal? Price { get; set; }
-    public string HintsJson { get; set; } = "[]";
-    public string TagIdsCsv { get; set; } = string.Empty;
-    public IFormFile MapDetailFile { get; set; } = null!;
 }

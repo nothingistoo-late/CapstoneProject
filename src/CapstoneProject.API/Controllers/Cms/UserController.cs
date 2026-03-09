@@ -56,6 +56,10 @@ public class UserController : ControllerBase
     ///
     /// **Example request:** GET /api/cms/users?page=1&amp;pageSize=10&amp;role=Learner&amp;status=Active
     /// </remarks>
+    /// <response code="200">Returns paginated list of users (data: items, totalCount, page, pageSize).</response>
+    /// <response code="401">Not authorized</response>
+    /// <response code="403">Admin only</response>
+    /// <response code="500">Internal server error</response>
     [HttpGet]
     [AuthorizeRoles(nameof(RoleEnum.Admin))]
     [ProducesResponseType(typeof(PaginationResult<UserListItem>), StatusCodes.Status200OK)]
@@ -220,6 +224,10 @@ public class UserController : ControllerBase
     ///
     /// **Example request:** POST /api/cms/users/quicklogin/cleanup?daysInactive=7
     /// </remarks>
+    /// <response code="200">Returns message and data (deletedCount).</response>
+    /// <response code="401">Not authorized</response>
+    /// <response code="403">Admin only</response>
+    /// <response code="500">Internal server error (cleanup failed)</response>
     /// <param name="daysInactive">Number of days of inactivity before deletion (default: 7)</param>
     [HttpPost("quicklogin/cleanup")]
     [AuthorizeRoles(nameof(RoleEnum.Admin))]

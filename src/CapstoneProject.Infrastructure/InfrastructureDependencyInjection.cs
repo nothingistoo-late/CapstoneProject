@@ -150,6 +150,9 @@ public static class InfrastructureDependencyInjection
         services.AddScoped<Application.Commons.Interfaces.IPayOSService, PayOSService>();
         services.AddScoped<Application.Commons.Interfaces.IOrbitCoinDepositSettings, OrbitCoinDepositSettingsAdapter>();
 
+        // In-memory lobby room manager (Gunny/GunBound style) - singleton for thread-safe shared state
+        services.AddSingleton<Application.Commons.Interfaces.IRoomManager, RoomManager>();
+
         return services;
     }
 }

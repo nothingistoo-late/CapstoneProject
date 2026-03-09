@@ -2,6 +2,7 @@ using System.Text;
 using CapstoneProject.Application.Features.OrbitCoin.Commands.HandlePayOSWebhook;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Swashbuckle.AspNetCore.Annotations;
 
 namespace CapstoneProject.API.Controllers;
 
@@ -13,6 +14,7 @@ namespace CapstoneProject.API.Controllers;
 [Route("api/webhooks/payos")]
 [AllowAnonymous]
 [ApiExplorerSettings(GroupName = "v1")]
+[SwaggerTag("Webhook: PayOS gọi khi thanh toán thành công. Không dùng từ client.")]
 public class PayOSWebhookController : ControllerBase
 {
     private readonly IMediator _mediator;
@@ -25,10 +27,24 @@ public class PayOSWebhookController : ControllerBase
     }
 
     /// <summary>
-    /// PayOS payment webhook. PayOS calls this when payment succeeds. Do not call from client.
+    /// PayOS payment webhook
     /// </summary>
+    /// <remarks>
+    /// PayOS gọi endpoint này khi thanh toán thành công (POST body JSON từ PayOS). Server xác thực chữ ký, cập nhật trạng thái order và cộng OrbitCoin cho user. Không gọi từ client; không cần Authorization.
+    ///
+    /// **METHOD and path:** POST /api/webhooks/payos
+    ///
+    /// **Body:** application/json — payload từ PayOS (data, signature...).
+    ///
+    /// **Response:** 200 OK khi xử lý thành công; 400 Bad Request khi body rỗng hoặc xử lý thất bại.
+    /// </remarks>
+    /// <response code="200">Webhook processed successfully (payment verified and OrbitCoin credited).</response>
+    /// <response code="400">Empty body or verification/processing failed</response>
     [HttpPost]
     [Consumes("application/json")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [SwaggerOperation(Summary = "PayOS webhook", Description = "Called by PayOS when payment succeeds. Verifies signature and credits OrbitCoin. Do not call from client.", OperationId = "PayOS_Webhook", Tags = new[] { "Webhooks" })]
     public async Task<IActionResult> HandleWebhook(CancellationToken cancellationToken)
     {
         Request.EnableBuffering();

@@ -1,3 +1,4 @@
+using CapstoneProject.Application.Commons.DTOs.OrbitCoin;
 using CapstoneProject.Application.Features.OrbitCoin.Commands.ConfirmDeposit;
 using CapstoneProject.Application.Features.OrbitCoin.Commands.CreateDepositOrder;
 using CapstoneProject.Application.Features.OrbitCoin.Queries.GetOrbitCoinBalance;
@@ -20,15 +21,21 @@ public class LearnerOrbitCoinController : ControllerBase
     /// Get current user OrbitCoin balance
     /// </summary>
     /// <remarks>
-    /// Returns the authenticated user's OrbitCoin (virtual currency) balance. Requires Bearer token.
+    /// Trả về số dư OrbitCoin (tiền ảo) của user đang đăng nhập. Yêu cầu Bearer token.
+    ///
+    /// **METHOD and path:** GET /api/learner/orbitcoin/balance
+    ///
+    /// **Body:** None. Headers: Authorization Bearer &lt;token&gt;.
     /// </remarks>
-    /// <response code="200">Returns balance (decimal).</response>
+    /// <response code="200">Returns message and data (balance).</response>
     /// <response code="401">Unauthorized</response>
+    /// <response code="500">Internal server error</response>
     [HttpGet("balance")]
     [AuthorizeRoles(nameof(RoleEnum.Learner), nameof(RoleEnum.Admin), nameof(RoleEnum.Moderator))]
     [ProducesResponseType(typeof(Result<OrbitCoinBalanceDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(Result<OrbitCoinBalanceDto>), StatusCodes.Status401Unauthorized)]
-    [SwaggerOperation(Summary = "Get OrbitCoin balance", Description = "Returns current user's OrbitCoin balance in data.balance.", OperationId = "Learner_GetOrbitCoinBalance", Tags = new[] { "Learner - OrbitCoin" })]
+    [ProducesResponseType(typeof(Result<OrbitCoinBalanceDto>), StatusCodes.Status500InternalServerError)]
+    [SwaggerOperation(Summary = "Get OrbitCoin balance", Description = "Returns current user's OrbitCoin balance in data.balance. Requires Bearer token.", OperationId = "Learner_GetOrbitCoinBalance", Tags = new[] { "Learner - OrbitCoin" })]
     public async Task<IActionResult> GetBalance()
     {
         var result = await _mediator.Send(new GetOrbitCoinBalanceQuery());
@@ -39,16 +46,23 @@ public class LearnerOrbitCoinController : ControllerBase
     /// Get OrbitCoin transaction history
     /// </summary>
     /// <remarks>
-    /// Returns paginated transaction history for the current user (credits and debits). Requires Bearer token.
-    /// Query: pageNumber (default 1), pageSize (default 20).
+    /// Trả về lịch sử giao dịch OrbitCoin (nạp/trừ) có phân trang. Yêu cầu Bearer token.
+    ///
+    /// **METHOD and path:** GET /api/learner/orbitcoin/transactions
+    ///
+    /// **Query:** pageNumber (int, optional, default 1), pageSize (int, optional, default 20).
+    ///
+    /// **Example request:** GET /api/learner/orbitcoin/transactions?pageNumber=1&amp;pageSize=20
     /// </remarks>
-    /// <response code="200">Returns items, totalCount, pageNumber, pageSize.</response>
+    /// <response code="200">Returns message and data (items, totalCount, pageNumber, pageSize).</response>
     /// <response code="401">Unauthorized</response>
+    /// <response code="500">Internal server error</response>
     [HttpGet("transactions")]
     [AuthorizeRoles(nameof(RoleEnum.Learner), nameof(RoleEnum.Admin), nameof(RoleEnum.Moderator))]
     [ProducesResponseType(typeof(Result<OrbitCoinTransactionHistoryResult>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(Result<OrbitCoinTransactionHistoryResult>), StatusCodes.Status401Unauthorized)]
-    [SwaggerOperation(Summary = "Get transaction history", Description = "Returns paginated OrbitCoin transaction history.", OperationId = "Learner_GetOrbitCoinTransactionHistory", Tags = new[] { "Learner - OrbitCoin" })]
+    [ProducesResponseType(typeof(Result<OrbitCoinTransactionHistoryResult>), StatusCodes.Status500InternalServerError)]
+    [SwaggerOperation(Summary = "Get transaction history", Description = "Returns paginated OrbitCoin transaction history. Query: pageNumber, pageSize. Requires Bearer token.", OperationId = "Learner_GetOrbitCoinTransactionHistory", Tags = new[] { "Learner - OrbitCoin" })]
     public async Task<IActionResult> GetTransactionHistory([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 20)
     {
         var result = await _mediator.Send(new GetOrbitCoinTransactionHistoryQuery(pageNumber, pageSize));
@@ -59,17 +73,26 @@ public class LearnerOrbitCoinController : ControllerBase
     /// Create deposit order and get PayOS checkout URL (user top-up OrbitCoin)
     /// </summary>
     /// <remarks>
-    /// Creates a pending deposit order and returns a PayOS checkout URL. User opens the URL to pay with PayOS; on success, webhook credits OrbitCoin. Body: amountOrbitCoin (decimal, required).
+    /// Tạo lệnh nạp tiền và trả về URL thanh toán PayOS. User mở URL để thanh toán; khi thành công, webhook sẽ cộng OrbitCoin. Yêu cầu Bearer token.
+    ///
+    /// **METHOD and path:** POST /api/learner/orbitcoin/deposit
+    ///
+    /// **Body (JSON):**
+    /// - amountOrbitCoin (decimal, required): Số OrbitCoin muốn nạp (số dương).
+    ///
+    /// **Example request body:** { "amountOrbitCoin": 100 }
     /// </remarks>
-    /// <response code="200">Returns orderId and checkoutUrl. Redirect user to checkoutUrl.</response>
-    /// <response code="400">Invalid amount.</response>
+    /// <response code="200">Returns message and data (orderId, checkoutUrl). Redirect user to checkoutUrl.</response>
+    /// <response code="400">Invalid amount</response>
     /// <response code="401">Unauthorized</response>
+    /// <response code="500">Internal server error</response>
     [HttpPost("deposit")]
     [AuthorizeRoles(nameof(RoleEnum.Learner), nameof(RoleEnum.Admin), nameof(RoleEnum.Moderator))]
     [ProducesResponseType(typeof(Result<CreateDepositOrderResult>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(Result<CreateDepositOrderResult>), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(Result<CreateDepositOrderResult>), StatusCodes.Status401Unauthorized)]
-    [SwaggerOperation(Summary = "Create deposit order (PayOS)", Description = "Creates deposit order and returns PayOS checkout URL. User pays there; webhook credits OrbitCoin.", OperationId = "Learner_CreateDepositOrder", Tags = new[] { "Learner - OrbitCoin" })]
+    [ProducesResponseType(typeof(Result<CreateDepositOrderResult>), StatusCodes.Status500InternalServerError)]
+    [SwaggerOperation(Summary = "Create deposit order (PayOS)", Description = "Creates deposit order and returns PayOS checkout URL. Body: amountOrbitCoin. User pays at URL; webhook credits OrbitCoin.", OperationId = "Learner_CreateDepositOrder", Tags = new[] { "Learner - OrbitCoin" })]
     public async Task<IActionResult> CreateDepositOrder([FromBody] CreateDepositOrderRequest request)
     {
         var result = await _mediator.Send(new CreateDepositOrderCommand(request.AmountOrbitCoin));
@@ -77,25 +100,33 @@ public class LearnerOrbitCoinController : ControllerBase
     }
 
     /// <summary>
-    /// Confirm deposit after redirect from PayOS (when webhook is not used or delayed).
-    /// Call this when user lands on the success/return URL with orderId in query. Backend checks PayOS and credits OrbitCoin if paid.
+    /// Confirm deposit after redirect from PayOS
     /// </summary>
-    /// <param name="orderId">Order ID from return URL query (e.g. ?orderId=xxx).</param>
+    /// <remarks>
+    /// Gọi khi user quay lại từ trang thành công PayOS (khi webhook chưa xử lý hoặc trễ). Backend kiểm tra PayOS và cộng OrbitCoin nếu đã thanh toán. Yêu cầu Bearer token.
+    ///
+    /// **METHOD and path:** POST /api/learner/orbitcoin/deposit/confirm
+    ///
+    /// **Query:** orderId (Guid, required): Order ID từ return URL (vd ?orderId=xxx).
+    ///
+    /// **Example request:** POST /api/learner/orbitcoin/deposit/confirm?orderId=3fa85f64-5717-4562-b3fc-2c963f66afa6
+    /// </remarks>
+    /// <response code="200">Deposit confirmed and OrbitCoin credited.</response>
+    /// <response code="400">Order invalid or already processed</response>
+    /// <response code="401">Unauthorized</response>
+    /// <response code="404">Order not found</response>
+    /// <response code="500">Internal server error</response>
     [HttpPost("deposit/confirm")]
     [AuthorizeRoles(nameof(RoleEnum.Learner), nameof(RoleEnum.Admin), nameof(RoleEnum.Moderator))]
     [ProducesResponseType(typeof(Result), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(Result), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(Result), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(Result), StatusCodes.Status404NotFound)]
-    [SwaggerOperation(Summary = "Confirm deposit (after PayOS redirect)", Description = "Call when user returns from PayOS success page. Verifies payment with PayOS and credits OrbitCoin.", OperationId = "Learner_ConfirmDeposit", Tags = new[] { "Learner - OrbitCoin" })]
+    [ProducesResponseType(typeof(Result), StatusCodes.Status500InternalServerError)]
+    [SwaggerOperation(Summary = "Confirm deposit (after PayOS redirect)", Description = "Call when user returns from PayOS success page. Query: orderId. Verifies payment and credits OrbitCoin.", OperationId = "Learner_ConfirmDeposit", Tags = new[] { "Learner - OrbitCoin" })]
     public async Task<IActionResult> ConfirmDeposit([FromQuery] Guid orderId)
     {
         var result = await _mediator.Send(new ConfirmDepositCommand(orderId));
         return StatusCode(result.GetHttpStatusCode(), result);
     }
-}
-
-public class CreateDepositOrderRequest
-{
-    public decimal AmountOrbitCoin { get; set; }
 }

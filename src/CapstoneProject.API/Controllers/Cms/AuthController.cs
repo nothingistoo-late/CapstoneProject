@@ -208,13 +208,9 @@ public class AuthController : ControllerBase
     )]
     public async Task<IActionResult> RefreshToken()
     {
-        var query = new RefreshTokenCommand();
-        var result = await _mediator.Send(query);
-        if (!result.IsSuccess)
-        {
-            return StatusCode(result.GetHttpStatusCode(), result);
-        }
-        return Ok(result);
+        var command = new RefreshTokenCommand();
+        var result = await _mediator.Send(command);
+        return StatusCode(result.GetHttpStatusCode(), result);
     }
 
 }

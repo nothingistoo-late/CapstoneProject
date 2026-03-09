@@ -1,3 +1,4 @@
+using CapstoneProject.Application.Commons.DTOs.Community;
 using CapstoneProject.Application.Features.Community.Commands.RateMap;
 using CapstoneProject.Application.Features.Community.Commands.ReportMap;
 
@@ -86,16 +87,4 @@ public class LearnerCommunityController : ControllerBase
         var result = await _mediator.Send(new ReportMapCommand(mapId, request.Reason, request.Details));
         return StatusCode(result.GetHttpStatusCode(), result);
     }
-}
-
-public class RateMapRequest
-{
-    public int Rating { get; set; }
-    public string? Comment { get; set; }
-}
-
-public class ReportMapRequest
-{
-    public string Reason { get; set; } = string.Empty;
-    public string? Details { get; set; }
 }

@@ -1,6 +1,6 @@
 using CapstoneProject.Application.Common.Models;
+using CapstoneProject.Application.Commons.DTOs.Community;
 using MediatR;
-using BatchReportResultDto = CapstoneProject.Application.Features.Community.Commands.BatchResolveReports.BatchReportResultDto;
 
 namespace CapstoneProject.Application.Features.Community.Commands.BatchDismissReports;
 

@@ -5,6 +5,7 @@ namespace CapstoneProject.Domain.Entities;
 
 /// <summary>
 /// Bài nộp (block strategy) của người chơi cho một map - chơi đơn hoặc trong match.
+/// Bảng Submissions: PK Id (SubmissionId), FK UserId, FK MapId, AstSpec, BytecodeSpec, Status (ResultStatus), Score, StepsUsed, BlocksUsed, CreatedAt (BaseEntity); thêm Language, MatchId.
 /// </summary>
 public class Submission : BaseEntity
 {
@@ -13,7 +14,7 @@ public class Submission : BaseEntity
     public string Language { get; set; } = "Blockly";
     public string? AstSpec { get; set; }
     public string? BytecodeSpec { get; set; }
-    /// <summary>Trạng thái kết quả chạy (Accepted, WrongAnswer...). Khác với BaseEntity.Status (Active/Inactive).</summary>
+    /// <summary>Status bài nộp (Accepted, WrongAnswer...). Trong DB/diagram gọi là Status.</summary>
     public SubmissionStatusEnum ResultStatus { get; set; }
     public int? Score { get; set; }
     public int? StepsUsed { get; set; }

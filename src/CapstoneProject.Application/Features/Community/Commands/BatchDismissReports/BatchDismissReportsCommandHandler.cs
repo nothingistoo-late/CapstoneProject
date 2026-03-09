@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using CapstoneProject.Application.Common.Enums;
 using CapstoneProject.Application.Common.Interfaces;
 using CapstoneProject.Application.Common.Models;
-using CapstoneProject.Application.Features.Community.Commands.BatchResolveReports;
+using CapstoneProject.Application.Commons.DTOs.Community;
 using CapstoneProject.Application.Commons.Interfaces;
 using CapstoneProject.Domain.Common;
 using CapstoneProject.Domain.Entities;

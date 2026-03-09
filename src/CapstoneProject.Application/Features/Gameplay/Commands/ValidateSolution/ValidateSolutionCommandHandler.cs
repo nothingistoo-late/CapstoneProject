@@ -40,13 +40,17 @@ public class ValidateSolutionCommandHandler : IRequestHandler<ValidateSolutionCo
         if (map.MapDetail == null)
             return Result<ValidateSolutionResultDto>.Failure("Map data not found", ErrorCodeEnum.ValidationFailed);
 
-        // Placeholder: run simple validation (in real app would run block interpreter/simulator)
-        var stepsUsed = command.Request.AstSpec?.Length ?? 0;
-        var blocksUsed = command.Request.BytecodeSpec?.Length ?? 0;
-        const int maxSteps = 1000;
-        var accepted = stepsUsed <= maxSteps && stepsUsed > 0;
-        var status = accepted ? SubmissionStatusEnum.Accepted : SubmissionStatusEnum.WrongAnswer;
-        var score = accepted ? Math.Max(0, 100 - stepsUsed / 10) : 0;
+        // Placeholder: chỉ chấp nhận khi có đủ AstSpec + BytecodeSpec hợp lệ. Thực tế cần chạy engine/block interpreter để chấm đúng.
+        var ast = command.Request.AstSpec?.Trim() ?? string.Empty;
+        var bytecode = command.Request.BytecodeSpec?.Trim() ?? string.Empty;
+        var stepsUsed = ast.Length;
+        var blocksUsed = bytecode.Length;
+        const int maxSteps = 10000;
+        const int minLength = 2; // ít nhất phải có nội dung thật (không chấp nhận 1 ký tự rác)
+        var hasValidInput = ast.Length >= minLength && bytecode.Length >= minLength;
+        var accepted = hasValidInput && stepsUsed <= maxSteps;
+        var statusEnum = accepted ? SubmissionStatusEnum.Accepted : SubmissionStatusEnum.WrongAnswer;
+        var score = accepted ? Math.Max(0, 100 - stepsUsed / 50) : 0; // càng nhiều step càng trừ điểm
         var stars = accepted ? (score >= 90 ? 3 : score >= 60 ? 2 : 1) : 0;
 
         var submission = new Submission
@@ -56,7 +60,7 @@ public class ValidateSolutionCommandHandler : IRequestHandler<ValidateSolutionCo
             Language = command.Request.Language,
             AstSpec = command.Request.AstSpec,
             BytecodeSpec = command.Request.BytecodeSpec,
-            ResultStatus = status,
+            ResultStatus = statusEnum,
             Score = score,
             StepsUsed = stepsUsed,
             BlocksUsed = blocksUsed
@@ -111,14 +115,15 @@ public class ValidateSolutionCommandHandler : IRequestHandler<ValidateSolutionCo
 
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
+        // Map response DTO từ entity Submission đã lưu (đúng diagram: SubmissionId, Status, Score, StepsUsed, BlocksUsed)
         var dto = new ValidateSolutionResultDto
         {
             SubmissionId = submission.Id,
-            Status = status,
-            Score = score,
+            Status = submission.ResultStatus,
+            Score = submission.Score,
+            StepsUsed = submission.StepsUsed,
+            BlocksUsed = submission.BlocksUsed,
             Stars = stars,
-            StepsUsed = stepsUsed,
-            BlocksUsed = blocksUsed,
             Message = accepted ? "Accepted" : "Wrong answer or constraint violation"
         };
         return Result<ValidateSolutionResultDto>.Success(dto);

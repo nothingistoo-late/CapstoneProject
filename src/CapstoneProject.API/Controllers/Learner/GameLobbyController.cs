@@ -1,0 +1,332 @@
+using MediatR;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
+using CapstoneProject.API.Hubs;
+using CapstoneProject.Application.Commons.DTOs.Gameplay;
+using CapstoneProject.Application.Commons.DTOs.Lobby;
+using CapstoneProject.Application.Features.Lobby.Commands.CreateLobbyRoom;
+using CapstoneProject.Application.Features.Lobby.Commands.EndLobbyGame;
+using CapstoneProject.Application.Features.Lobby.Commands.JoinLobbyRoom;
+using CapstoneProject.Application.Features.Lobby.Commands.LeaveLobbyRoom;
+using CapstoneProject.Application.Features.Lobby.Commands.SetLobbyRoomMap;
+using CapstoneProject.Application.Features.Lobby.Commands.StartLobbyGame;
+using CapstoneProject.Application.Features.Lobby.Commands.SubmitLobbySolution;
+using CapstoneProject.Application.Features.Lobby.Commands.ToggleLobbyReady;
+using CapstoneProject.Application.Features.Lobby.Queries.GetLobbyRoom;
+using CapstoneProject.Application.Features.Lobby.Queries.GetLobbyRooms;
+using CapstoneProject.Application.Common.Extensions;
+using CapstoneProject.Domain.Enums;
+
+namespace CapstoneProject.API.Controllers.Learner;
+
+[ApiController]
+[Route("api/learner/lobby")]
+[ApiExplorerSettings(GroupName = "v1")]
+[Configurations.Tags("Learner - Game Lobby")]
+[SwaggerTag("Game Lobby: list/create/join rooms. Real-time via SignalR /hubs/gamelobby")]
+public class GameLobbyController : ControllerBase
+{
+    private readonly IMediator _mediator;
+    private readonly IHubContext<GameLobbyHub> _hubContext;
+
+    public GameLobbyController(IMediator mediator, IHubContext<GameLobbyHub> hubContext)
+    {
+        _mediator = mediator;
+        _hubContext = hubContext;
+    }
+
+    /// <summary>Danh sách phòng lobby (REST).</summary>
+    /// <remarks>
+    /// Trả về danh sách tất cả phòng lobby đang mở. Real-time cập nhật qua SignalR hub /hubs/gamelobby. Yêu cầu Bearer token.
+    ///
+    /// **METHOD and path:** GET /api/learner/lobby/rooms
+    ///
+    /// **Body:** None. Headers: Authorization Bearer &lt;token&gt;.
+    /// </remarks>
+    /// <response code="200">Returns message and data (list of rooms: roomId, roomCode, hostId, playerCount, maxPlayers, status, selectedMapId).</response>
+    /// <response code="401">Not authorized</response>
+    /// <response code="500">Internal server error</response>
+    [HttpGet("rooms")]
+    [AuthorizeRoles(nameof(RoleEnum.Learner), nameof(RoleEnum.Admin), nameof(RoleEnum.Moderator))]
+    [ProducesResponseType(typeof(Result<IReadOnlyList<LobbyRoomListItemDto>>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(Result), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(Result), StatusCodes.Status500InternalServerError)]
+    [SwaggerOperation(Summary = "List rooms", Description = "Returns all lobby rooms. Real-time updates via SignalR /hubs/gamelobby. Requires Bearer token.", OperationId = "Lobby_GetRooms", Tags = new[] { "Learner - Game Lobby" })]
+    public async Task<IActionResult> GetRooms()
+    {
+        var result = await _mediator.Send(new GetLobbyRoomsQuery());
+        return StatusCode(result.GetHttpStatusCode(), result);
+    }
+
+    /// <summary>Tạo phòng lobby mới.</summary>
+    /// <remarks>
+    /// Tạo phòng mới; người gọi trở thành host. Body tùy chọn: maxPlayers (mặc định 8), selectedMapId (Guid?). Sau khi tạo có thể set map qua SetRoomMap hoặc SignalR. Real-time: kết nối SignalR và join room. Yêu cầu Bearer token.
+    ///
+    /// **METHOD and path:** POST /api/learner/lobby/rooms
+    ///
+    /// **Body (JSON, optional):**
+    /// - maxPlayers (int, optional): Số người tối đa. Default 8.
+    /// - selectedMapId (Guid?, optional): Map đã chọn ngay khi tạo; null = chọn sau.
+    ///
+    /// **Example request body:** { "maxPlayers": 8, "selectedMapId": null }
+    /// </remarks>
+    /// <response code="201">Room created. Returns message and data (roomId, roomCode, hostId, maxPlayers, selectedMapId).</response>
+    /// <response code="401">Not authorized</response>
+    /// <response code="500">Internal server error</response>
+    [HttpPost("rooms")]
+    [AuthorizeRoles(nameof(RoleEnum.Learner), nameof(RoleEnum.Admin), nameof(RoleEnum.Moderator))]
+    [ProducesResponseType(typeof(Result<CreateLobbyRoomResponse>), StatusCodes.Status201Created)]
+    [ProducesResponseType(typeof(Result), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(Result), StatusCodes.Status500InternalServerError)]
+    [SwaggerOperation(Summary = "Create room", Description = "Creates new lobby room; caller becomes host. Optional body: maxPlayers, selectedMapId. Requires Bearer token.", OperationId = "Lobby_CreateRoom", Tags = new[] { "Learner - Game Lobby" })]
+    public async Task<IActionResult> CreateRoom([FromBody] CreateLobbyRoomRequest? request = null)
+    {
+        var result = await _mediator.Send(new CreateLobbyRoomCommand(request));
+        if (result.IsSuccess && result.Data != null)
+            return Created(string.Empty, result);
+        return StatusCode(result.GetHttpStatusCode(), result);
+    }
+
+    /// <summary>Vào phòng lobby theo RoomId hoặc RoomCode.</summary>
+    /// <remarks>
+    /// Gửi một trong hai: roomId (Guid) hoặc roomCode (string, ví dụ "AB12CD"). Phòng phải tồn tại và chưa đầy. Sau khi join nên kết nối SignalR và join group Room_&lt;roomId&gt; để nhận cập nhật real-time. Yêu cầu Bearer token.
+    ///
+    /// **METHOD and path:** POST /api/learner/lobby/rooms/join
+    ///
+    /// **Body (JSON):**
+    /// - roomId (Guid?, optional): ID phòng. Bắt buộc nếu không gửi roomCode.
+    /// - roomCode (string?, optional): Mã phòng (vd AB12CD). Bắt buộc nếu không gửi roomId.
+    ///
+    /// **Example by code:** { "roomCode": "AB12CD" }
+    /// **Example by id:** { "roomId": "3fa85f64-5717-4562-b3fc-2c963f66afa6" }
+    /// </remarks>
+    /// <response code="200">Joined. Returns message and data (roomId, roomCode, hostId, playerCount, maxPlayers, status, selectedMapId, players).</response>
+    /// <response code="400">Missing roomId/roomCode or room full</response>
+    /// <response code="401">Not authorized</response>
+    /// <response code="404">Room not found</response>
+    /// <response code="500">Internal server error</response>
+    [HttpPost("rooms/join")]
+    [AuthorizeRoles(nameof(RoleEnum.Learner), nameof(RoleEnum.Admin), nameof(RoleEnum.Moderator))]
+    [ProducesResponseType(typeof(Result<JoinLobbyRoomResponse>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(Result), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(Result), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(Result), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(Result), StatusCodes.Status500InternalServerError)]
+    [SwaggerOperation(Summary = "Join room by RoomId OR RoomCode", Description = "Body: provide either roomId or roomCode. Example by code: { \"roomCode\": \"AB12CD\" }. Example by id: { \"roomId\": \"guid\" }. Requires Bearer token.", OperationId = "Lobby_JoinRoom", Tags = new[] { "Learner - Game Lobby" })]
+    public async Task<IActionResult> JoinRoom([FromBody] JoinLobbyRoomRequest request)
+    {
+        var result = await _mediator.Send(new JoinLobbyRoomCommand(request));
+        return StatusCode(result.GetHttpStatusCode(), result);
+    }
+
+    /// <summary>Chi tiết phòng lobby theo roomId.</summary>
+    /// <remarks>
+    /// Trả về thông tin phòng: roomId, roomCode, hostId, số người, maxPlayers, status, selectedMapId, danh sách players (playerId, isReady, isHost). Yêu cầu Bearer token.
+    ///
+    /// **METHOD and path:** GET /api/learner/lobby/rooms/{roomId}
+    ///
+    /// **Route:** roomId (Guid, required): ID phòng.
+    ///
+    /// **Example request:** GET /api/learner/lobby/rooms/3fa85f64-5717-4562-b3fc-2c963f66afa6
+    /// </remarks>
+    /// <response code="200">Returns message and data (room detail with players).</response>
+    /// <response code="401">Not authorized</response>
+    /// <response code="404">Room not found</response>
+    /// <response code="500">Internal server error</response>
+    [HttpGet("rooms/{roomId:guid}")]
+    [AuthorizeRoles(nameof(RoleEnum.Learner), nameof(RoleEnum.Admin), nameof(RoleEnum.Moderator))]
+    [ProducesResponseType(typeof(Result<LobbyRoomDetailResponse>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(Result), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(Result), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(Result), StatusCodes.Status500InternalServerError)]
+    [SwaggerOperation(Summary = "Get room detail", Description = "Returns room detail: roomId, roomCode, hostId, players, status, selectedMapId. Requires Bearer token.", OperationId = "Lobby_GetRoom", Tags = new[] { "Learner - Game Lobby" })]
+    public async Task<IActionResult> GetRoom(Guid roomId)
+    {
+        var result = await _mediator.Send(new GetLobbyRoomQuery(roomId));
+        return StatusCode(result.GetHttpStatusCode(), result);
+    }
+
+    /// <summary>Bắt đầu game trong phòng (chỉ host).</summary>
+    /// <remarks>
+    /// Chỉ host mới gọi được. Phòng phải có ít nhất 2 người và đã chọn map (selectedMapId). Trạng thái phòng chuyển sang InGame. Real-time: gửi event qua SignalR. Yêu cầu Bearer token.
+    ///
+    /// **METHOD and path:** POST /api/learner/lobby/rooms/{roomId}/start
+    ///
+    /// **Route:** roomId (Guid, required): ID phòng.
+    ///
+    /// **Body:** None.
+    /// </remarks>
+    /// <response code="200">Game started. Returns message and data (roomId, mapId, startedAt).</response>
+    /// <response code="400">Not host / not enough players / map not set</response>
+    /// <response code="401">Not authorized</response>
+    /// <response code="404">Room not found</response>
+    /// <response code="500">Internal server error</response>
+    [HttpPost("rooms/{roomId:guid}/start")]
+    [AuthorizeRoles(nameof(RoleEnum.Learner), nameof(RoleEnum.Admin), nameof(RoleEnum.Moderator))]
+    [ProducesResponseType(typeof(Result<StartGameResponse>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(Result), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(Result), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(Result), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(Result), StatusCodes.Status500InternalServerError)]
+    [SwaggerOperation(Summary = "Start game", Description = "Host starts the game. Room must have map set and at least 2 players. Requires Bearer token.", OperationId = "Lobby_StartGame", Tags = new[] { "Learner - Game Lobby" })]
+    public async Task<IActionResult> StartGame(Guid roomId)
+    {
+        var result = await _mediator.Send(new StartLobbyGameCommand(roomId));
+        return StatusCode(result.GetHttpStatusCode(), result);
+    }
+
+    /// <summary>Kết thúc game trong phòng (host hoặc bất kỳ khi đang InGame).</summary>
+    /// <remarks>
+    /// Chuyển trạng thái phòng từ InGame về Waiting. Trả về chi tiết phòng sau khi kết thúc. Real-time: broadcast qua SignalR. Yêu cầu Bearer token.
+    ///
+    /// **METHOD and path:** POST /api/learner/lobby/rooms/{roomId}/end
+    ///
+    /// **Route:** roomId (Guid, required): ID phòng.
+    ///
+    /// **Body:** None.
+    /// </remarks>
+    /// <response code="200">Game ended. Returns message and data (room detail).</response>
+    /// <response code="400">Room not in InGame state</response>
+    /// <response code="401">Not authorized</response>
+    /// <response code="404">Room not found</response>
+    /// <response code="500">Internal server error</response>
+    [HttpPost("rooms/{roomId:guid}/end")]
+    [AuthorizeRoles(nameof(RoleEnum.Learner), nameof(RoleEnum.Admin), nameof(RoleEnum.Moderator))]
+    [ProducesResponseType(typeof(Result<LobbyRoomDetailResponse>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(Result), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(Result), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(Result), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(Result), StatusCodes.Status500InternalServerError)]
+    [SwaggerOperation(Summary = "End game", Description = "Ends the game in room; status returns to Waiting. Requires Bearer token.", OperationId = "Lobby_EndGame", Tags = new[] { "Learner - Game Lobby" })]
+    public async Task<IActionResult> EndGame(Guid roomId)
+    {
+        var result = await _mediator.Send(new EndLobbyGameCommand(roomId));
+        return StatusCode(result.GetHttpStatusCode(), result);
+    }
+
+    /// <summary>Nộp lời giải trong game (khi phòng đang InGame).</summary>
+    /// <remarks>
+    /// Gửi lời giải (astSpec hoặc bytecodeSpec, language). Server validate và cập nhật ranking. Nếu tất cả đã nộp, trả về ranking và broadcast RankingUpdated qua SignalR. Yêu cầu Bearer token.
+    ///
+    /// **METHOD and path:** POST /api/learner/lobby/rooms/{roomId}/submit
+    ///
+    /// **Route:** roomId (Guid, required): ID phòng.
+    ///
+    /// **Body (JSON):**
+    /// - language (string, optional): Ngôn ngữ solution. Default "Blockly".
+    /// - astSpec (string, optional): AST spec (JSON). Dùng astSpec hoặc bytecodeSpec.
+    /// - bytecodeSpec (string, optional): Bytecode spec.
+    ///
+    /// **Example request body:** { "language": "Blockly", "astSpec": "{}" }
+    /// </remarks>
+    /// <response code="200">Submitted. Returns message and data (accepted, stars, rankingIfAllSubmitted).</response>
+    /// <response code="400">Validation error / room not InGame</response>
+    /// <response code="401">Not authorized</response>
+    /// <response code="404">Room or map not found</response>
+    /// <response code="500">Internal server error</response>
+    [HttpPost("rooms/{roomId:guid}/submit")]
+    [AuthorizeRoles(nameof(RoleEnum.Learner), nameof(RoleEnum.Admin), nameof(RoleEnum.Moderator))]
+    [ProducesResponseType(typeof(Result<SubmitGameResponse>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(Result), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(Result), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(Result), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(Result), StatusCodes.Status500InternalServerError)]
+    [SwaggerOperation(Summary = "Submit solution in game", Description = "Submits solution for current game. Returns ranking when all players submitted. Requires Bearer token.", OperationId = "Lobby_SubmitSolution", Tags = new[] { "Learner - Game Lobby" })]
+    public async Task<IActionResult> SubmitSolution(Guid roomId, [FromBody] SubmissionSubmitRequest request)
+    {
+        var result = await _mediator.Send(new SubmitLobbySolutionCommand(roomId, request));
+        if (result.IsSuccess && result.Data?.RankingIfAllSubmitted?.Count > 0)
+            await _hubContext.Clients.Group($"{GameLobbyHub.RoomGroupPrefix}{roomId}").SendAsync("RankingUpdated", result.Data.RankingIfAllSubmitted);
+        return StatusCode(result.GetHttpStatusCode(), result);
+    }
+
+    /// <summary>Rời phòng lobby.</summary>
+    /// <remarks>
+    /// User hiện tại rời khỏi phòng. Nếu là host rời thì phòng có thể bị đóng hoặc chuyển host tùy logic. Real-time: broadcast qua SignalR. Yêu cầu Bearer token.
+    ///
+    /// **METHOD and path:** POST /api/learner/lobby/rooms/{roomId}/leave
+    ///
+    /// **Route:** roomId (Guid, required): ID phòng.
+    ///
+    /// **Body:** None.
+    /// </remarks>
+    /// <response code="200">Left room. Returns message only.</response>
+    /// <response code="400">User not in room</response>
+    /// <response code="401">Not authorized</response>
+    /// <response code="404">Room not found</response>
+    /// <response code="500">Internal server error</response>
+    [HttpPost("rooms/{roomId:guid}/leave")]
+    [AuthorizeRoles(nameof(RoleEnum.Learner), nameof(RoleEnum.Admin), nameof(RoleEnum.Moderator))]
+    [ProducesResponseType(typeof(Result), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(Result), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(Result), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(Result), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(Result), StatusCodes.Status500InternalServerError)]
+    [SwaggerOperation(Summary = "Leave room", Description = "Current user leaves the room. Requires Bearer token.", OperationId = "Lobby_LeaveRoom", Tags = new[] { "Learner - Game Lobby" })]
+    public async Task<IActionResult> LeaveRoom(Guid roomId)
+    {
+        var result = await _mediator.Send(new LeaveLobbyRoomCommand(roomId));
+        return StatusCode(result.GetHttpStatusCode(), result);
+    }
+
+    /// <summary>Bật/tắt trạng thái ready trong phòng.</summary>
+    /// <remarks>
+    /// Chỉ khi phòng đang Waiting. Host có thể start game khi tất cả đã ready. Trả về chi tiết phòng sau khi toggle. Real-time: broadcast qua SignalR. Yêu cầu Bearer token.
+    ///
+    /// **METHOD and path:** POST /api/learner/lobby/rooms/{roomId}/ready
+    ///
+    /// **Route:** roomId (Guid, required): ID phòng.
+    ///
+    /// **Body:** None.
+    /// </remarks>
+    /// <response code="200">Ready toggled. Returns message and data (room detail).</response>
+    /// <response code="400">Room not in Waiting state</response>
+    /// <response code="401">Not authorized</response>
+    /// <response code="404">Room not found</response>
+    /// <response code="500">Internal server error</response>
+    [HttpPost("rooms/{roomId:guid}/ready")]
+    [AuthorizeRoles(nameof(RoleEnum.Learner), nameof(RoleEnum.Admin), nameof(RoleEnum.Moderator))]
+    [ProducesResponseType(typeof(Result<LobbyRoomDetailResponse>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(Result), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(Result), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(Result), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(Result), StatusCodes.Status500InternalServerError)]
+    [SwaggerOperation(Summary = "Toggle ready", Description = "Toggles ready state in room (Waiting only). Returns updated room detail. Requires Bearer token.", OperationId = "Lobby_ToggleReady", Tags = new[] { "Learner - Game Lobby" })]
+    public async Task<IActionResult> ToggleReady(Guid roomId)
+    {
+        var result = await _mediator.Send(new ToggleLobbyReadyCommand(roomId));
+        return StatusCode(result.GetHttpStatusCode(), result);
+    }
+
+    /// <summary>Đặt map cho phòng (chỉ khi Waiting, thường do host).</summary>
+    /// <remarks>
+    /// Chỉ khi phòng đang Waiting. Map phải tồn tại và đã publish. Trả về chi tiết phòng sau khi set. Real-time: broadcast qua SignalR. Yêu cầu Bearer token.
+    ///
+    /// **METHOD and path:** POST /api/learner/lobby/rooms/{roomId}/map
+    ///
+    /// **Route:** roomId (Guid, required): ID phòng.
+    ///
+    /// **Body (JSON):**
+    /// - mapId (Guid, required): ID map đã publish.
+    ///
+    /// **Example request body:** { "mapId": "3fa85f64-5717-4562-b3fc-2c963f66afa6" }
+    /// </remarks>
+    /// <response code="200">Map set. Returns message and data (room detail).</response>
+    /// <response code="400">Room not Waiting / map not found or not published</response>
+    /// <response code="401">Not authorized</response>
+    /// <response code="404">Room or map not found</response>
+    /// <response code="500">Internal server error</response>
+    [HttpPost("rooms/{roomId:guid}/map")]
+    [AuthorizeRoles(nameof(RoleEnum.Learner), nameof(RoleEnum.Admin), nameof(RoleEnum.Moderator))]
+    [ProducesResponseType(typeof(Result<LobbyRoomDetailResponse>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(Result), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(Result), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(Result), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(Result), StatusCodes.Status500InternalServerError)]
+    [SwaggerOperation(Summary = "Set room map", Description = "Sets selected map for room (Waiting only). Map must exist and be published. Requires Bearer token.", OperationId = "Lobby_SetRoomMap", Tags = new[] { "Learner - Game Lobby" })]
+    public async Task<IActionResult> SetRoomMap(Guid roomId, [FromBody] SetRoomMapRequest request)
+    {
+        var result = await _mediator.Send(new SetLobbyRoomMapCommand(roomId, request));
+        return StatusCode(result.GetHttpStatusCode(), result);
+    }
+}

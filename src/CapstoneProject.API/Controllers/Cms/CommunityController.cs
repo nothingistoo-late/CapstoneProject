@@ -1,9 +1,9 @@
+using CapstoneProject.Application.Commons.DTOs.Community;
 using CapstoneProject.Application.Features.Community.Commands.BatchDismissReports;
 using CapstoneProject.Application.Features.Community.Commands.BatchResolveReports;
 using CapstoneProject.Application.Features.Community.Commands.DismissReport;
 using CapstoneProject.Application.Features.Community.Commands.ResolveReport;
 using CapstoneProject.Application.Features.Community.Queries.GetReports;
-using BatchReportResultDto = CapstoneProject.Application.Features.Community.Commands.BatchResolveReports.BatchReportResultDto;
 using ReportListItemDto = CapstoneProject.Application.Features.Community.Queries.GetReports.ReportListItemDto;
 using ReportStatusFilter = CapstoneProject.Application.Features.Community.Queries.GetReports.ReportStatusFilter;
 
@@ -122,7 +122,7 @@ public class CmsCommunityController : ControllerBase
     [ProducesResponseType(typeof(Result), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(Result), StatusCodes.Status403Forbidden)]
     [SwaggerOperation(Summary = "Batch resolve reports", Description = "Marks multiple reports as resolved. Body: reportIds, optional reviewNote. Returns successCount, failedCount, notFoundIds. Admin/Moderator only.", OperationId = "Cms_BatchResolveReports", Tags = new[] { "CMS - Community" })]
-    public async Task<IActionResult> BatchResolveReports([FromBody] CmsBatchReportsRequest request)
+    public async Task<IActionResult> BatchResolveReports([FromBody] BatchReportsRequest request)
     {
         var result = await _mediator.Send(new BatchResolveReportsCommand(request.ReportIds, request.ReviewNote));
         return StatusCode(result.GetHttpStatusCode(), result);
@@ -147,15 +147,9 @@ public class CmsCommunityController : ControllerBase
     [ProducesResponseType(typeof(Result), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(Result), StatusCodes.Status403Forbidden)]
     [SwaggerOperation(Summary = "Batch dismiss reports", Description = "Dismisses multiple reports. Body: reportIds, optional reviewNote. Returns successCount, failedCount, notFoundIds. Admin/Moderator only.", OperationId = "Cms_BatchDismissReports", Tags = new[] { "CMS - Community" })]
-    public async Task<IActionResult> BatchDismissReports([FromBody] CmsBatchReportsRequest request)
+    public async Task<IActionResult> BatchDismissReports([FromBody] BatchReportsRequest request)
     {
         var result = await _mediator.Send(new BatchDismissReportsCommand(request.ReportIds, request.ReviewNote));
         return StatusCode(result.GetHttpStatusCode(), result);
     }
-}
-
-public class CmsBatchReportsRequest
-{
-    public List<Guid> ReportIds { get; set; } = new();
-    public string? ReviewNote { get; set; }
 }

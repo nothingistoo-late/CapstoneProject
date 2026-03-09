@@ -105,7 +105,7 @@ public class AuthController : ControllerBase
     {
         if (request == null)
         {
-            return BadRequest(Result<AuthResponse>.Failure("Request body is required", Application.Common.Enums.ErrorCodeEnum.ValidationFailed));
+            return BadRequest(Result<AuthResponse>.Failure("Request body is required", ErrorCodeEnum.ValidationFailed));
         }
         _logger.LogInformation("QuickLogin endpoint called with QuickCode: {QuickCode}", request.QuickCode);
         var command = new QuickLoginCommand(request);
@@ -145,7 +145,7 @@ public class AuthController : ControllerBase
     public async Task<IActionResult> GoogleLogin([FromBody] GoogleLoginRequest request)
     {
         if (request == null)
-            return BadRequest(Result<AuthResponse>.Failure("Request body is required", Application.Common.Enums.ErrorCodeEnum.ValidationFailed));
+            return BadRequest(Result<AuthResponse>.Failure("Request body is required", ErrorCodeEnum.ValidationFailed));
         var command = new GoogleLoginCommand(request);
         var result = await _mediator.Send(command);
         return StatusCode(result.GetHttpStatusCode(), result);
@@ -475,12 +475,8 @@ public class AuthController : ControllerBase
     )]
     public async Task<IActionResult> RefreshToken()
     {
-        var query = new RefreshTokenCommand();
-        var result = await _mediator.Send(query);
-        if (!result.IsSuccess)
-        {
-            return StatusCode(result.GetHttpStatusCode(), result);
-        }
-        return Ok(result);
+        var command = new RefreshTokenCommand();
+        var result = await _mediator.Send(command);
+        return StatusCode(result.GetHttpStatusCode(), result);
     }
 }

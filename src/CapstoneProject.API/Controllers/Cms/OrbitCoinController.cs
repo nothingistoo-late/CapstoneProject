@@ -1,3 +1,4 @@
+using CapstoneProject.Application.Commons.DTOs.OrbitCoin;
 using CapstoneProject.Application.Features.OrbitCoin.Commands.CreditOrbitCoin;
 
 namespace CapstoneProject.API.Controllers.Cms;
@@ -17,19 +18,34 @@ public class CmsOrbitCoinController : ControllerBase
     /// Credit OrbitCoin to user (e.g. after user deposits real money)
     /// </summary>
     /// <remarks>
-    /// Admin only. Use when user has completed a top-up / deposit; credits their OrbitCoin wallet. Optional note and related payment record.
+    /// Chỉ Admin. Cộng OrbitCoin vào ví user (vd sau khi user nạp tiền thật). Có thể ghi chú và liên kết bản ghi thanh toán.
+    ///
+    /// **METHOD and path:** POST /api/cms/orbitcoin/credit
+    ///
+    /// **Body (JSON):**
+    /// - userId (Guid, required): ID user cần cộng.
+    /// - amount (decimal, required): Số OrbitCoin cộng (số dương).
+    /// - note (string, optional): Ghi chú.
+    /// - relatedEntityType (string, optional): Loại entity liên quan (vd "Deposit").
+    /// - relatedEntityId (string?, optional): ID entity liên quan.
+    ///
+    /// **Example request body:** { "userId": "3fa85f64-5717-4562-b3fc-2c963f66afa6", "amount": 100, "note": "Manual top-up" }
     /// </remarks>
-    /// <response code="200">Credited successfully.</response>
-    /// <response code="400">Invalid amount.</response>
+    /// <response code="200">Credited successfully. Returns message only.</response>
+    /// <response code="400">Invalid amount or userId</response>
     /// <response code="401">Unauthorized</response>
     /// <response code="403">Admin only</response>
+    /// <response code="404">User not found</response>
+    /// <response code="500">Internal server error</response>
     [HttpPost("credit")]
     [AuthorizeRoles(nameof(RoleEnum.Admin))]
     [ProducesResponseType(typeof(Result), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(Result), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(Result), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(Result), StatusCodes.Status403Forbidden)]
-    [SwaggerOperation(Summary = "Credit OrbitCoin (deposit)", Description = "Credit user's wallet when they deposit real money. Admin only.", OperationId = "Cms_CreditOrbitCoin", Tags = new[] { "CMS - OrbitCoin" })]
+    [ProducesResponseType(typeof(Result), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(Result), StatusCodes.Status500InternalServerError)]
+    [SwaggerOperation(Summary = "Credit OrbitCoin (deposit)", Description = "Credit user's wallet when they deposit real money. Admin only. Body: userId, amount, note?, relatedEntityType?, relatedEntityId?.", OperationId = "Cms_CreditOrbitCoin", Tags = new[] { "CMS - OrbitCoin" })]
     public async Task<IActionResult> Credit([FromBody] CreditOrbitCoinRequest request)
     {
         var result = await _mediator.Send(new CreditOrbitCoinCommand(
@@ -40,13 +56,4 @@ public class CmsOrbitCoinController : ControllerBase
             request.RelatedEntityId));
         return StatusCode(result.GetHttpStatusCode(), result);
     }
-}
-
-public class CreditOrbitCoinRequest
-{
-    public Guid UserId { get; set; }
-    public decimal Amount { get; set; }
-    public string? Note { get; set; }
-    public string? RelatedEntityType { get; set; }
-    public Guid? RelatedEntityId { get; set; }
 }
