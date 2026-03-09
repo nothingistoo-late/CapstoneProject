@@ -1,7 +1,7 @@
 # Danh Sách Chi Tiết Các Tính Năng Có Sẵn
 
 ## 🎯 Tổng Quan
-Dự án base được xây dựng với .NET 8, Clean Architecture, CQRS pattern, tích hợp đầy đủ các chức năng cơ bản cho một hệ thống quản lý người dùng.
+Dự án base được xây dựng với .NET 8, Clean Architecture, CQRS (MediatR), tích hợp đầy đủ các chức năng cho hệ thống QuackOrbit: xác thực, quản lý user, thử thách (maps), gameplay, lobby, competitive, marketplace, OrbitCoin, community, chat. Controllers mỏng; logic nghiệp vụ nằm trong Command/Query Handlers.
 
 ---
 
@@ -12,26 +12,28 @@ Dự án base được xây dựng với .NET 8, Clean Architecture, CQRS patter
 
 | Endpoint | Method | Mô Tả | Authorization |
 |----------|--------|-------|---------------|
-| `/api/cms/auth/login` | POST | Đăng nhập vào hệ thống CMS (Admin/Teacher) | Public (với filter) |
-| `/api/cms/auth/logout` | POST | Đăng xuất khỏi hệ thống CMS | Admin, Teacher |
-| `/api/cms/auth/profile` | GET | Lấy thông tin profile của user đang đăng nhập | Admin, Teacher |
-| `/api/cms/auth/profile` | PUT | Cập nhật profile (hỗ trợ upload avatar) | Admin, Teacher |
-| `/api/cms/auth/refresh-token` | POST | Refresh access token mới | Admin, Teacher |
+| `/api/cms/auth/login` | POST | Đăng nhập CMS (Admin/Moderator) | Public (với filter) |
+| `/api/cms/auth/logout` | POST | Đăng xuất CMS | Admin, Moderator |
+| `/api/cms/auth/profile` | GET | Lấy profile user đang đăng nhập | Admin, Moderator |
+| `/api/cms/auth/profile` | PUT | Cập nhật profile (upload avatar) | Admin, Moderator |
+| `/api/cms/auth/refresh-token` | POST | Refresh access token | Admin, Moderator |
 
-### 1.2. Student Authentication (`/api/student/auth`)
-**Controller:** `Student/AuthController.cs`
+### 1.2. Learner Authentication (`/api/learner/auth`)
+**Controller:** `Learner/AuthController.cs`
 
 | Endpoint | Method | Mô Tả | Authorization |
 |----------|--------|-------|---------------|
-| `/api/student/auth/login` | POST | Đăng nhập vào hệ thống Student | Public |
-| `/api/student/auth/logout` | POST | Đăng xuất khỏi hệ thống Student | Student |
-| `/api/student/auth/register` | POST | Đăng ký tài khoản Student mới (gửi OTP) | Public |
-| `/api/student/auth/verify-otp` | POST | Xác thực OTP cho đăng ký hoặc reset password | Public |
-| `/api/student/auth/reset-password` | POST | Yêu cầu reset password (gửi OTP) | Public |
-| `/api/student/auth/change-password` | POST | Đổi mật khẩu (cần password hiện tại) | Student |
-| `/api/student/auth/profile` | GET | Lấy thông tin profile | Student |
-| `/api/student/auth/profile` | PUT | Cập nhật profile (hỗ trợ upload avatar) | Student |
-| `/api/student/auth/refresh-token` | POST | Refresh access token mới | Student |
+| `/api/learner/auth/login` | POST | Đăng nhập (email/password) | Public |
+| `/api/learner/auth/quick-login` | POST | Đăng nhập nhanh (quickCode demo) | Public |
+| `/api/learner/auth/google` | POST | Đăng nhập Google (idToken) | Public |
+| `/api/learner/auth/logout` | POST | Đăng xuất | Learner |
+| `/api/learner/auth/register` | POST | Đăng ký (gửi OTP, multipart/form-data) | Public |
+| `/api/learner/auth/verify-otp` | POST | Xác thực OTP (đăng ký / reset password) | Public |
+| `/api/learner/auth/reset-password` | POST | Yêu cầu reset password (gửi OTP) | Public |
+| `/api/learner/auth/change-password` | POST | Đổi mật khẩu (cần password hiện tại) | Learner |
+| `/api/learner/auth/profile` | GET | Lấy profile | Learner |
+| `/api/learner/auth/profile` | PUT | Cập nhật profile (upload avatar) | Learner |
+| `/api/learner/auth/refresh-token` | POST | Refresh access token | Learner |
 
 ### 1.3. Authentication Features
 - ✅ **JWT Bearer Authentication**
@@ -74,26 +76,37 @@ Dự án base được xây dựng với .NET 8, Clean Architecture, CQRS patter
 | `/api/cms/users/{id}` | PUT | Cập nhật thông tin user (hỗ trợ upload avatar) | Form-data: UpdateUserRequest + avatarFile |
 | `/api/cms/users/{id}` | DELETE | Xóa user (soft delete) | - |
 
-### 2.2. User Features
+### 2.2. User Features (CMS)
 - ✅ **User CRUD Operations**
-  - Create user với role assignment
-  - Update user information
-  - Delete user (soft delete)
-  - Get user by ID
-  - Get paginated users với filtering và sorting
+  - Create user với role assignment (Admin only)
+  - Update user (Admin only)
+  - Delete user – soft delete (Admin only)
+  - Get user by ID, Get paginated users (filter, sort)
   
+- ✅ **Batch & Cleanup**
+  - Batch update user status (Active/Inactive)
+  - QuickLogin cleanup: deactivate inactive QuickLogin users (Hangfire + manual trigger)
+
 - ✅ **User Profile**
-  - FirstName, LastName
-  - Email, PhoneNumber
+  - FirstName, LastName, Email, PhoneNumber
   - Avatar upload và management
   - Status tracking (Active, Inactive, Pending, Rejected)
   - Audit fields (CreatedAt, UpdatedAt, CreatedBy, UpdatedBy)
   
 - ✅ **User Roles**
   - Admin
-  - Teacher
-  - Student
+  - Moderator
+  - Learner
   - Multiple role support (future)
+
+### 2.3. Các module API khác (tóm tắt)
+- **Maps (Thử thách):** `api/learner/maps` (catalog, tạo/sửa/xóa map, upload JSON, tags), `api/cms/maps` (duyệt, approve/reject/publish, tags CRUD).
+- **Game Lobby:** `api/learner/lobby` (rooms, join, start/end, submit solution, set map); real-time qua SignalR `/hubs/gamelobby`.
+- **OrbitCoin:** `api/learner/orbitcoin` (balance, transactions, deposit, confirm), `api/cms/orbitcoin` (credit); webhook PayOS `api/webhooks/payos`.
+- **Marketplace:** `api/learner/marketplace` (packages, purchase package/map), `api/cms/marketplace` (CRUD packages, payment report).
+- **Community:** `api/learner/community` (rate, report), `api/cms/community` (reports, resolve/dismiss).
+- **Competitive:** `api/learner/competitive` (matches, rooms, join); SignalR `/hubs/competitive`.
+- **Chat:** `api/learner/chat` (conversations, messages); SignalR `/hubs/chat`.
 
 ---
 
@@ -185,7 +198,7 @@ Dự án base được xây dựng với .NET 8, Clean Architecture, CQRS patter
 ## 🗄️ 6. DATABASE & DATA ACCESS
 
 ### 6.1. Database Context
-- ✅ **ChemistrySubjectDbContext**
+- ✅ **Application DbContext**
   - ASP.NET Core Identity integration
   - AppUser và AppRole entities
   - Custom table naming
@@ -330,28 +343,25 @@ Dự án base được xây dựng với .NET 8, Clean Architecture, CQRS patter
 ## 🔄 11. CQRS PATTERN
 
 ### 11.1. Commands (Write Operations)
-- ✅ **Auth Commands:**
-  - `LoginCommand` - Xử lý đăng nhập
-  - `LogoutCommand` - Xử lý đăng xuất
-  - `RegisterCommand` - Xử lý đăng ký
-  - `VerifyOtpCommand` - Xác thực OTP
-  - `ResetPasswordCommand` - Reset password
-  - `ChangePasswordCommand` - Đổi password
-  - `UpdateProfileCommand` - Cập nhật profile
-  - `RefreshTokenCommand` - Refresh token
-  
-- ✅ **User Commands:**
-  - `CreateUserCommand` - Tạo user mới
-  - `UpdateUserCommand` - Cập nhật user
-  - `DeleteUserCommand` - Xóa user
+- ✅ **Auth Commands:** Login, Logout, Register, VerifyOtp, ResetPassword, ChangePassword, UpdateProfile, RefreshToken, QuickLogin, GoogleLogin
+- ✅ **User Commands:** CreateUser, UpdateUser, DeleteUser, BatchUpdateUserStatus
+- ✅ **Maps Commands:** CreateMap, UpdateMap, DeleteMap, SubmitMapForReview, CreateMapFromJsonFile; CMS: ApproveMap, RejectMap, PublishMap, BatchApprove/Reject/Publish, CreateTag, UpdateTag, DeleteTag
+- ✅ **Lobby Commands:** CreateLobbyRoom, JoinLobbyRoom, LeaveLobbyRoom, StartLobbyGame, EndLobbyGame, ToggleLobbyReady, SetLobbyRoomMap, SubmitLobbySolution
+- ✅ **Competitive Commands:** CreateMatch, CreateRoom, JoinRoom
+- ✅ **Gameplay Commands:** ValidateSolution
+- ✅ **Marketplace Commands:** CreatePackage, UpdatePackage, DeletePackage, PurchasePackage, PurchaseMapWithOrbitCoin, BatchUpdatePackageStatus
+- ✅ **Community Commands:** RateMap, ReportMap, ResolveReport, DismissReport, BatchResolveReports, BatchDismissReports
+- ✅ **OrbitCoin Commands:** CreateDepositOrder, ConfirmDeposit, CreditOrbitCoin (CMS), HandlePayOSWebhook
 
 ### 11.2. Queries (Read Operations)
-- ✅ **Auth Queries:**
-  - `GetProfileQuery` - Lấy profile của user hiện tại
-  
-- ✅ **User Queries:**
-  - `GetPagedUsersQuery` - Lấy danh sách users có phân trang
-  - `GetUserByIdQuery` - Lấy user theo ID
+- ✅ **Auth:** GetProfileQuery
+- ✅ **User:** GetPagedUsersQuery, GetUserByIdQuery
+- ✅ **Maps:** GetMapsQuery, GetMapByIdQuery, GetTagsQuery; MapExistsQuery
+- ✅ **Lobby:** GetLobbyRoomsQuery, GetLobbyRoomQuery
+- ✅ **Gameplay:** GetHintsForMapQuery, GetProgressDashboardQuery
+- ✅ **Marketplace:** GetPackagesQuery, GetPackageByIdQuery, GetPaymentReportQuery (CMS)
+- ✅ **Community:** GetReportsQuery (CMS)
+- ✅ **OrbitCoin:** GetOrbitCoinBalanceQuery, GetOrbitCoinTransactionHistoryQuery
 
 ### 11.3. Validation
 - ✅ FluentValidation cho tất cả Commands
@@ -445,28 +455,41 @@ Dự án base được xây dựng với .NET 8, Clean Architecture, CQRS patter
 
 ## 🌐 16. DTOs (DATA TRANSFER OBJECTS)
 
-### 16.1. Auth DTOs
-- ✅ `LoginRequest` / `AuthResponse`
-- ✅ `RegisterRequest`
-- ✅ `VerifyOtpRequest`
-- ✅ `ResetPasswordRequest`
-- ✅ `ChangePasswordRequest`
-- ✅ `UpdateProfileRequest`
-- ✅ `ProfileResponse`
+DTOs tập trung tại **Application/Commons/DTOs/** theo từng domain.
 
-### 16.2. User DTOs
-- ✅ `CreateUserRequest`
-- ✅ `UpdateUserRequest`
-- ✅ `UserResponse`
-- ✅ `UserListItem`
-- ✅ `UserFilter` (pagination, search, filtering)
+### 16.1. Auth DTOs (`Commons/DTOs/Auth`)
+- ✅ `LoginRequest`, `AuthResponse`, `RegisterRequest`, `VerifyOtpRequest`, `ResetPasswordRequest`, `ChangePasswordRequest`, `UpdateProfileRequest`, `ProfileResponse`, `QuickLoginRequest`, `GoogleLoginRequest`
+
+### 16.2. User DTOs (`Commons/DTOs/User`)
+- ✅ `CreateUserRequest`, `UpdateUserRequest`, `UserResponse`, `UserListItem`, `UserFilter`, `BatchUpdateUserStatusRequest`
+
+### 16.3. Maps DTOs (`Commons/DTOs/Maps`)
+- ✅ `CreateMapRequest`, `UpdateMapRequest`, `MapListItemDto`, `MapDetailDto`, `TagDto`, `CreateTagRequest`, `UpdateTagRequest`, `CreateMapFromJsonFileInput`; Level Maps: `MapsFilter`, `MapsListItemDto`, `MapsResponseDto`, `CreateMapsRequest`, `UpdateMapsRequest`, batch DTOs
+
+### 16.4. Lobby DTOs (`Commons/DTOs/Lobby`)
+- ✅ `CreateLobbyRoomRequest`, `CreateLobbyRoomResponse`, `JoinLobbyRoomRequest`, `JoinLobbyRoomResponse`, `LobbyRoomDetailResponse`, `LobbyRoomListItemDto`, `LobbyPlayerDto`, `SetRoomMapRequest`, `StartGameResponse`, `SubmitGameResponse`, `PlayerGameResult`, `PlayerRankingDto`
+
+### 16.5. Gameplay DTOs (`Commons/DTOs/Gameplay`)
+- ✅ `ValidateSolutionRequest`, `ValidateSolutionResultDto`, `HintLevelDto`, `ProgressDashboardDto`, `SubmissionSubmitRequest`
+
+### 16.6. Competitive DTOs (`Commons/DTOs/Competitive`)
+- ✅ `CreateMatchRequest`, `JoinRoomRequest`, `JoinRoomResultDto` (CreateRoomResultDto trong Features)
+
+### 16.7. Marketplace DTOs (`Commons/DTOs/Marketplace`)
+- ✅ `PackageDto`, `PackageFilter`, `CreatePackageRequest`, `UpdatePackageRequest`, `PaymentReportDto`, `BatchUpdatePackageStatusRequest`
+
+### 16.8. Community DTOs (`Commons/DTOs/Community`)
+- ✅ `RateMapRequest`, `ReportMapRequest`, `BatchReportsRequest`, `BatchReportResultDto`
+
+### 16.9. OrbitCoin DTOs (`Commons/DTOs/OrbitCoin`)
+- ✅ `CreateDepositOrderRequest`, `CreateDepositOrderResult`, `OrbitCoinBalanceDto`, `CreditOrbitCoinRequest`
 
 ---
 
 ## 📊 17. ENUMS
 
 ### 17.1. Domain Enums
-- ✅ `RoleEnum`: Admin, Teacher, Student
+- ✅ `RoleEnum`: Admin, Moderator, Learner
 - ✅ `EntityStatusEnum`: Inactive, Active, Pending, Rejected
 - ✅ `GenderEnum`: Female, Male, Other
 - ✅ `GrantTypeEnum`: Password, Google
@@ -622,24 +645,31 @@ Dự án base được xây dựng với .NET 8, Clean Architecture, CQRS patter
 ## 📊 TÓM TẮT TÍNH NĂNG
 
 ### ✅ Hoàn Toàn Implemented
-- [x] Authentication (Login, Logout, Register)
-- [x] Authorization (Role-based)
+- [x] Authentication (Login, Logout, Register, QuickLogin, Google)
+- [x] Authorization (Role-based: Admin, Moderator, Learner)
 - [x] OTP Verification System
-- [x] User Management (CRUD)
+- [x] User Management (CRUD, batch status, QuickLogin cleanup)
 - [x] Profile Management
 - [x] File Upload (Avatar)
 - [x] Email Service
 - [x] JWT Token Management
 - [x] Password Management (Change, Reset)
 - [x] Current User Service
+- [x] Maps / Challenges (catalog, UGC, submit, approve, reject, publish, tags, upload JSON)
+- [x] Game Lobby (rooms, join, start/end game, submit solution, SignalR)
+- [x] Gameplay (validate solution, hints, progress dashboard)
+- [x] Competitive (matches, rooms, join, SignalR)
+- [x] Marketplace (packages, purchase package/map với OrbitCoin)
+- [x] OrbitCoin (balance, deposit, PayOS, confirm, CMS credit)
+- [x] Community (rate map, report map, CMS resolve/dismiss reports)
+- [x] Chat (private/temporary group, messages, SignalR)
 - [x] Database Operations
 - [x] Validation System
 - [x] Exception Handling
 - [x] Logging
 - [x] Hangfire Integration
-- [x] DateTime Helpers (Vietnam Time)
 - [x] CORS Configuration
-- [x] Swagger Documentation
+- [x] Swagger Documentation (chi tiết cho API)
 
 ### 🔧 Cần Cấu Hình
 - [ ] Email Settings (SMTP)
@@ -659,38 +689,46 @@ Dự án base được xây dựng với .NET 8, Clean Architecture, CQRS patter
 
 ```
 src/
-├── ChemistrySubjectBe.API/          # Web API Layer
-│   ├── Controllers/                 # API Controllers
-│   │   ├── Cms/                    # CMS endpoints
-│   │   └── Student/                # Student endpoints
-│   ├── Middlewares/                # Custom middlewares
-│   ├── Configurations/             # Service configurations
-│   ├── Attributes/                 # Custom attributes
-│   └── Extensions/                 # Application extensions
+├── CapstoneProject.API/             # Web API Layer
+│   ├── Controllers/
+│   │   ├── Learner/               # Auth, Map, GameLobby, Gameplay, Marketplace, Community, Competitive, Chat, OrbitCoin
+│   │   ├── Cms/                   # Auth, User, Map, Marketplace, Community, OrbitCoin
+│   │   └── PayOSWebhookController # api/webhooks/payos
+│   ├── Hubs/                      # GameLobbyHub, CompetitiveHub, ChatHub
+│   ├── Middlewares/
+│   ├── Configurations/
+│   ├── Attributes/
+│   └── Models/                    # API-specific (vd CreateMapFromJsonFileRequest với IFormFile)
 │
-├── ChemistrySubjectBe.Application/  # Application Layer
-│   ├── Features/                   # CQRS Commands/Queries
-│   │   ├── Auth/                  # Authentication features
-│   │   └── User/                  # User management features
-│   ├── Commons/                    # Shared components
-│   │   ├── DTOs/                  # Data Transfer Objects
-│   │   ├── Interfaces/            # Service interfaces
-│   │   ├── Helpers/               # Helper classes
-│   │   ├── Behaviors/             # MediatR behaviors
-│   │   ├── Validators/            # FluentValidation validators
-│   │   └── Mappings/              # AutoMapper profiles
+├── CapstoneProject.Application/     # Application Layer
+│   ├── Features/                   # CQRS: Commands & Queries
+│   │   ├── Auth/
+│   │   ├── User/
+│   │   ├── Maps/
+│   │   ├── Lobby/
+│   │   ├── Gameplay/
+│   │   ├── Competitive/
+│   │   ├── Marketplace/
+│   │   ├── Community/
+│   │   ├── OrbitCoin/
+│   │   └── Chat/
+│   ├── Commons/
+│   │   ├── DTOs/                  # Auth, User, Maps, Lobby, Gameplay, Competitive, Marketplace, Community, OrbitCoin
+│   │   ├── Interfaces/
+│   │   ├── Behaviors/
+│   │   ├── Validators/
+│   │   └── ...
 │
-├── ChemistrySubjectBe.Domain/       # Domain Layer
-│   ├── Entities/                  # Domain entities
-│   ├── Enums/                     # Domain enums
-│   └── Common/                    # Base classes
+├── CapstoneProject.Domain/          # Domain Layer
+│   ├── Entities/
+│   ├── Enums/
+│   └── Common/
 │
-└── ChemistrySubjectBe.Infrastructure/ # Infrastructure Layer
-    ├── Services/                  # Service implementations
-    ├── Repositories/              # Repository implementations
-    ├── Context/                   # DbContext
-    ├── Configurations/            # Infrastructure configs
-    └── Extensions/                # Infrastructure extensions
+└── CapstoneProject.Infrastructure/   # Infrastructure Layer
+    ├── Services/
+    ├── Repositories/
+    ├── Context/
+    └── ...
 ```
 
 ---

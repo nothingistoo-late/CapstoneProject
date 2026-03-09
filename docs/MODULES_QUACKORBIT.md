@@ -10,11 +10,13 @@ API được tách theo **vai trò** để dễ bảo trì và tránh gộp chun
 
 | Nhóm | Base path | Mô tả |
 |------|-----------|--------|
-| **Learner** | `api/learner/*` | Người học: auth, challenges (catalog + UGC), gameplay, marketplace (xem + mua), community (rate, report), competitive, chat |
-| **CMS** | `api/cms/*` | Admin/Moderator: auth, users, challenges (duyệt map + CRUD tags/concepts), **level-maps** (catalog + JSON level), marketplace (CRUD gói + báo cáo thanh toán), community (danh sách + xử lý báo cáo) |
+| **Learner** | `api/learner/*` | Người học: auth, maps (catalog + UGC), lobby (phòng chơi), gameplay, marketplace (xem + mua), community (rate, report), competitive, chat, orbitcoin (số dư, nạp tiền) |
+| **CMS** | `api/cms/*` | Admin/Moderator: auth, users, maps (duyệt map + CRUD tags), marketplace (CRUD gói + báo cáo thanh toán), community (xử lý báo cáo), orbitcoin (credit) |
+| **Webhooks** | `api/webhooks/*` | PayOS gọi khi thanh toán thành công (không cần auth) |
 
-- **Learner:** `api/learner/auth`, `api/learner/challenges`, `api/learner/gameplay`, `api/learner/marketplace`, `api/learner/community`, `api/learner/competitive`, `api/learner/chat`
-- **CMS:** `api/cms/auth`, `api/cms/users`, `api/cms/challenges`, `api/cms/level-maps`, `api/cms/marketplace`, `api/cms/community`
+- **Learner:** `api/learner/auth`, `api/learner/maps`, `api/learner/lobby`, `api/learner/gameplay`, `api/learner/marketplace`, `api/learner/community`, `api/learner/competitive`, `api/learner/chat`, `api/learner/orbitcoin`
+- **CMS:** `api/cms/auth`, `api/cms/users`, `api/cms/maps`, `api/cms/marketplace`, `api/cms/community`, `api/cms/orbitcoin`
+- **Webhooks:** `api/webhooks/payos`
 
 ---
 
@@ -23,13 +25,15 @@ API được tách theo **vai trò** để dễ bảo trì và tránh gộp chun
 1. [Chuẩn API chung](#1-chuẩn-api-chung)
 2. [Các kiểu dữ liệu dùng chung](#2-các-kiểu-dữ-liệu-dùng-chung)
 3. [Module 1: Xác thực & Người dùng (Learner / CMS)](#3-module-1-xác-thực--người-dùng-learner--cms)
-4. [Module 2: Quản lý Thử thách (Challenge)](#4-module-2-quản-lý-thử-thách-challenge)
-5. [Module 2.4: Level Maps (CMS) – Catalog & JSON level](#44-level-maps-cms--catalog--json-level)
+4. [Module 2: Quản lý Thử thách (Maps)](#4-module-2-quản-lý-thử-thách-maps)
+5. [Module 2.4: Level Maps (CMS) – Catalog & JSON level (tùy triển khai)](#44-level-maps-cms--catalog--json-level-tùy-triển-khai)
 6. [Module 3: Gameplay & Tiến trình](#5-module-3-gameplay--tiến-trình)
-7. [Module 4: Thi đấu (Competitive)](#6-module-4-thi-đấu-competitive)
-8. [Module 5: Marketplace](#7-module-5-marketplace)
-9. [Module 6: Community & Báo cáo](#8-module-6-community--báo-cáo)
-10. [CMS Users & Chat (tóm tắt)](#9-cms-users--chat-tóm-tắt)
+7. [Module 4: Game Lobby](#module-4-game-lobby)
+8. [Module 5: Thi đấu (Competitive)](#6-module-5-thi-đấu-competitive)
+9. [Module 6: Marketplace](#7-module-6-marketplace)
+10. [Module 7: OrbitCoin & PayOS](#module-7-orbitcoin--payos)
+11. [Module 8: Community & Báo cáo](#8-module-8-community--báo-cáo)
+12. [CMS Users & Chat (tóm tắt)](#9-cms-users--chat-tóm-tắt)
 
 ---
 
@@ -241,10 +245,10 @@ Request/response tương tự Learner (AuthResponse, Result). Role trả trong `
 
 ---
 
-## 4. Module 2: Quản lý Thử thách (Challenge)
+## 4. Module 2: Quản lý Thử thách (Maps)
 
-**Learner (catalog + UGC):** `api/learner/challenges` (maps, tags, concepts read-only)  
-**CMS (duyệt + CRUD tags/concepts):** `api/cms/challenges` (maps moderation, tags/concepts CRUD)
+**Learner (catalog + UGC):** `api/learner/maps` (danh sách, chi tiết, tạo/sửa/xóa map, upload JSON, tags read-only)  
+**CMS (duyệt + CRUD tags):** `api/cms/maps` (moderation maps, approve/reject/publish, tags CRUD)
 
 ### 4.1 Kiểu dữ liệu
 
@@ -276,80 +280,68 @@ Request/response tương tự Learner (AuthResponse, Result). Role trả trong `
 #### Người học (Learner) – Chơi thử thách
 
 1. **Lấy danh sách map (catalog)**  
-   `GET /api/learner/challenges?pageNumber=1&pageSize=20&publishedOnly=true&...`
+   `GET /api/learner/maps?pageNumber=1&pageSize=20&publishedOnly=true&...`
 
-   Query (GetMapsQuery): pageNumber, pageSize, difficulty, conceptId, tagId, **publishedOnly** (true = chỉ Published), mapStatus, search, createdByUserId, sortBy (CreatedAt|Title|Difficulty|TimeLimitMs), sortAscending.
+   Query (GetMapsQuery): pageNumber, pageSize, difficulty, tagId, **publishedOnly** (true = chỉ Published), mapStatus, search, sortBy (CreatedAt|Title|Difficulty|TimeLimitMs), sortAscending.
 
    **Response:** `Result<PaginationResult<MapListItemDto>>`.
 
 2. **Xem chi tiết map**  
-   `GET /api/learner/challenges/{id}?includeEditorialForUser=true`  
+   `GET /api/learner/maps/{id}?includeEditorialForUser=true`  
    Trả MapDetailDto; editorial chỉ có nếu user đạt đủ sao (UnlockEditorialAfterStars).
 
-3. (Nếu map trả phí) Mua map: xem [Module 5 – Purchase Map](#75-mua-map-mua-thử-thách-trả-phí).
+3. (Nếu map trả phí) Mua map: xem [Module 7 – OrbitCoin](#module-7-orbitcoin--payos) và [Marketplace – Purchase Map](#73-mua-map-mua-thử-thách-trả-phí-learner).
 
 #### Tác giả / UGC (Learner) – Tạo và gửi duyệt
 
-1. **Lấy tags/concepts (cho form tạo map)**  
-   `GET /api/learner/challenges/tags?search=`  
-   `GET /api/learner/challenges/concepts?search=`  
-   Trả `Result<List<TagDto>>`, `Result<List<ConceptDto>>`.
+1. **Lấy tags (cho form tạo map)**  
+   `GET /api/learner/maps/tags?search=`  
+   Trả `Result<List<TagDto>>`.
 
 2. **Tạo map (nháp)**  
-   `POST /api/learner/challenges`  
-   Body: **CreateMapRequest**.  
-   **Response:** `Result<Guid>` – Id map vừa tạo (status = Draft).  
-   **Role:** Learner, Admin, Moderator.
+   `POST /api/learner/maps` – Body: **CreateMapRequest**.  
+   Hoặc `POST /api/learner/maps/upload-json` – multipart/form-data (title, description, difficulty, timeLimitMs, winCondition, mapDetailFile, …).  
+   **Response:** `Result<Guid>` – Id map (status = Draft). Role: Learner, Admin, Moderator.
 
 3. **Cập nhật map (nháp)**  
-   `PUT /api/learner/challenges/{id}`  
-   Body: **UpdateMapRequest**. Chỉ author hoặc Admin/Moderator.
+   `PUT /api/learner/maps/{id}` – Body: **UpdateMapRequest**. Chỉ author hoặc Admin/Moderator.
 
 4. **Gửi duyệt**  
-   `POST /api/learner/challenges/{id}/submit`  
+   `POST /api/learner/maps/{id}/submit`  
    Chuyển map sang **PendingReview**. Role: Learner (author).
 
 #### Admin/Moderator (CMS) – Duyệt & xuất bản
 
 5. **Duyệt map**  
-   `POST /api/cms/challenges/maps/{id}/approve`  
-   Query (optional): `reviewNote=...`. Chuyển PendingReview → **Approved**.
+   `POST /api/cms/maps/{id}/approve` – Query (optional): `reviewNote=...`. PendingReview → **Approved**.
 
 6. **Từ chối map**  
-   `POST /api/cms/challenges/maps/{id}/reject`  
-   Query (optional): `rejectReason=...`. Chuyển → **Rejected**.
+   `POST /api/cms/maps/{id}/reject` – Query (optional): `rejectReason=...`. → **Rejected**.
 
 7. **Xuất bản map**  
-   `POST /api/cms/challenges/maps/{id}/publish`  
-   Chỉ map **Approved** → **Published** (hiện trên catalog).
+   `POST /api/cms/maps/{id}/publish` – Chỉ map **Approved** → **Published**.
 
 8. **Batch duyệt/từ chối/xuất bản**  
-   - `POST /api/cms/challenges/maps/batch/approve` – Body: `{ "mapIds": [...], "reviewNote": "..." }`  
-   - `POST /api/cms/challenges/maps/batch/reject` – Body: `{ "mapIds": [...], "rejectReason": "..." }`  
-   - `POST /api/cms/challenges/maps/batch/publish` – Body: `{ "mapIds": [...] }`  
-   Response: Result với DTO chứa successCount, failedCount, notFoundIds, invalidStatusIds (nếu có).
+   - `POST /api/cms/maps/batch/approve` – Body: `{ "mapIds": [...], "reviewNote": "..." }`  
+   - `POST /api/cms/maps/batch/reject` – Body: `{ "mapIds": [...], "rejectReason": "..." }`  
+   - `POST /api/cms/maps/batch/publish` – Body: `{ "mapIds": [...] }`  
+   Response: successCount, failedCount, notFoundIds (và invalidStatusIds nếu có).
 
 9. **Xóa map (soft delete)**  
-   `DELETE /api/learner/challenges/{id}` (author) hoặc `DELETE /api/cms/challenges/maps/{id}` (Admin/Moderator).
+   `DELETE /api/learner/maps/{id}` (author) hoặc `DELETE /api/cms/maps/{id}` (Admin/Moderator).
 
-### 4.3 Tags & Concepts (CMS – Admin/Moderator)
+### 4.3 Tags (CMS – Admin/Moderator)
 
 - **Tags:**  
-  `GET /api/cms/challenges/tags?search=`  
-  `POST /api/cms/challenges/tags` – Body: `{ "name": "..." }` → `Result<Guid>`  
-  `PUT /api/cms/challenges/tags/{id}` – Body: `{ "name": "..." }`  
-  `DELETE /api/cms/challenges/tags/{id}`
+  `GET /api/cms/maps/tags?search=`  
+  `POST /api/cms/maps/tags` – Body: `{ "name": "..." }` → `Result<Guid>`  
+  `PUT /api/cms/maps/tags/{id}` – Body: `{ "name": "..." }`  
+  `DELETE /api/cms/maps/tags/{id}`
 
-- **Concepts:**  
-  `GET /api/cms/challenges/concepts?search=`  
-  `POST /api/cms/challenges/concepts` – Body: `{ "name": "...", "description": null }`  
-  `PUT /api/cms/challenges/concepts/{id}`  
-  `DELETE /api/cms/challenges/concepts/{id}`
+### 4.4 Level Maps (CMS) – Catalog & JSON level (tùy triển khai)
 
-### 4.4 Level Maps (CMS) – Catalog & JSON level
-
-**Base path:** `api/cms/level-maps`  
-**Mục đích:** Lưu và quản lý dữ liệu level (JSON từ level editor): thông tin catalog (name, type, difficulty) tách riêng với nội dung JSON đầy đủ (layers, startPosition, goalPosition, metadata…). Dùng cho CMS import/export level, đồng bộ catalog từ FE.
+**Base path (nếu có):** `api/cms/level-maps`  
+**Mục đích:** Lưu và quản lý dữ liệu level (JSON từ level editor): thông tin catalog (name, type, difficulty) tách riêng với nội dung JSON đầy đủ. Trong codebase hiện tại, **api/cms/maps** dùng cho challenge maps (duyệt, tags); Level Maps có thể là module mở rộng hoặc tích hợp riêng.
 
 **Entity (Domain):**
 
@@ -424,7 +416,27 @@ Header: Bearer (Learner).
 
 ---
 
-## 6. Module 4: Thi đấu (Competitive)
+## Module 4: Game Lobby
+
+**Base path REST (Learner):** `api/learner/lobby`  
+**SignalR Hub:** `/hubs/gamelobby`
+
+- **Danh sách phòng:** `GET /api/learner/lobby/rooms`
+- **Tạo phòng:** `POST /api/learner/lobby/rooms` – Body (optional): maxPlayers, selectedMapId.
+- **Vào phòng:** `POST /api/learner/lobby/rooms/join` – Body: roomId hoặc roomCode.
+- **Chi tiết phòng:** `GET /api/learner/lobby/rooms/{roomId}`
+- **Bắt đầu game:** `POST /api/learner/lobby/rooms/{roomId}/start` (chỉ host)
+- **Kết thúc game:** `POST /api/learner/lobby/rooms/{roomId}/end`
+- **Nộp lời giải:** `POST /api/learner/lobby/rooms/{roomId}/submit` – Body: language, astSpec hoặc bytecodeSpec.
+- **Rời phòng:** `POST /api/learner/lobby/rooms/{roomId}/leave`
+- **Bật/tắt ready:** `POST /api/learner/lobby/rooms/{roomId}/ready`
+- **Đặt map cho phòng:** `POST /api/learner/lobby/rooms/{roomId}/map` – Body: mapId.
+
+Real-time: kết nối SignalR tới `/hubs/gamelobby` để nhận cập nhật danh sách phòng, trạng thái phòng, ranking.
+
+---
+
+## 6. Module 5: Thi đấu (Competitive)
 
 **Base path REST (Learner):** `api/learner/competitive`  
 **SignalR Hub:** `/hubs/competitive`
@@ -493,8 +505,7 @@ Query (optional): `paymentMethodId=`.
 ### 7.3 Mua map (thử thách trả phí – Learner)
 
 `POST /api/learner/marketplace/maps/{mapId}/purchase`  
-Query (optional): `paymentMethodId=`.  
-**Response:** `Result<Guid>`. Chỉ map có price > 0; nếu map free API trả lỗi InvalidOperation.
+**Response:** `Result` hoặc `Result<Guid>`. Trừ OrbitCoin; chỉ map có price > 0. Nếu map free API trả lỗi InvalidOperation.
 
 ### 7.4 Báo cáo thanh toán (CMS – Admin)
 
@@ -510,25 +521,25 @@ Query (optional): `paymentMethodId=`.
 
 ### 8.1 Đánh giá map (Learner)
 
-`POST /api/community/maps/{mapId}/rate`  
+`POST /api/learner/community/maps/{mapId}/rate`  
 Body: `{ "rating": 1-5, "comment": "..." }`  
 **Response:** `Result`. Gọi sau khi chơi map (sau validate hoặc khi xem chi tiết map).
 
 ### 8.2 Báo cáo map (Learner)
 
-`POST /api/community/maps/{mapId}/report`  
+`POST /api/learner/community/maps/{mapId}/report`  
 Body: `{ "reason": "string", "details": "..." }`  
 **Response:** `Result<Guid>` – reportId. Dùng khi người dùng bấm “Báo cáo nội dung”.
 
 ### 8.3 Quản lý báo cáo (Admin/Moderator)
 
 - **Danh sách báo cáo:**  
-  `GET /api/community/reports?status=&mapId=&userId=&dateFrom=&dateTo=&pageNumber=&pageSize=`  
+  `GET /api/cms/community/reports?status=&mapId=&userId=&dateFrom=&dateTo=&pageNumber=&pageSize=`  
   **Response:** Paginated reports (filter theo ReportStatusEnum, mapId, userId, khoảng ngày).
 
 - **Xử lý một báo cáo:**  
-  - `POST /api/community/reports/{reportId}/resolve` – Body (optional): `{ "reviewNote": "..." }`  
-  - `POST /api/community/reports/{reportId}/dismiss` – Body (optional): `{ "reviewNote": "..." }`
+  - `POST /api/cms/community/reports/{reportId}/resolve` – Query (optional): `reviewNote=...`  
+  - `POST /api/cms/community/reports/{reportId}/dismiss` – Query (optional): `reviewNote=...`
 
 - **Batch:**  
   - `POST /api/cms/community/reports/batch/resolve` – Body: `{ "reportIds": [...], "reviewNote": "..." }`  
@@ -568,31 +579,42 @@ Tất cả Chat yêu cầu Bearer token. SignalR ChatHub dùng cho real-time (ri
 ```
 Application/
   Commons/
-    DTOs/Challenge: CreateMapRequest, UpdateMapRequest, MapListItemDto, MapDetailDto, BatchMapRequests, HintItemDto, ConstraintItemDto
-    DTOs/Maps: CreateMapsRequest, UpdateMapsRequest, MapsFilter, MapsListItemDto, MapsResponseDto, BatchCreateMapsRequest, BatchUpsertCatalogRequest, BatchDeleteMapsRequest, LevelCatalogItemDto, BatchCreateMapsResultDto, BatchUpsertCatalogResultDto, BatchDeleteMapsResultDto
-    DTOs/Marketplace: PackageDto, CreatePackageRequest, UpdatePackageRequest, PackageFilter
-    DTOs/Auth: RegisterRequest, LoginRequest, VerifyOtpRequest, AuthResponse, ProfileResponse
+    DTOs/Auth: LoginRequest, AuthResponse, RegisterRequest, VerifyOtpRequest, ResetPasswordRequest, ChangePasswordRequest, UpdateProfileRequest, ProfileResponse, QuickLoginRequest, GoogleLoginRequest
+    DTOs/User: CreateUserRequest, UpdateUserRequest, UserResponse, UserListItem, UserFilter, BatchUpdateUserStatusRequest
+    DTOs/Maps: CreateMapRequest, UpdateMapRequest, MapListItemDto, MapDetailDto, TagDto, CreateTagRequest, UpdateTagRequest, CreateMapFromJsonFileInput; Level Maps: MapsFilter, MapsListItemDto, MapsResponseDto, CreateMapsRequest, UpdateMapsRequest, batch DTOs
+    DTOs/Lobby: CreateLobbyRoomRequest/Response, JoinLobbyRoomRequest/Response, LobbyRoomDetailResponse, LobbyRoomListItemDto, LobbyPlayerDto, SetRoomMapRequest, StartGameResponse, SubmitGameResponse, ...
+    DTOs/Gameplay: ValidateSolutionRequest, ValidateSolutionResultDto, HintLevelDto, ProgressDashboardDto, SubmissionSubmitRequest
+    DTOs/Competitive: CreateMatchRequest, JoinRoomRequest, JoinRoomResultDto
+    DTOs/Marketplace: PackageDto, PackageFilter, CreatePackageRequest, UpdatePackageRequest, PaymentReportDto, BatchUpdatePackageStatusRequest
+    DTOs/Community: RateMapRequest, ReportMapRequest, BatchReportsRequest, BatchReportResultDto
+    DTOs/OrbitCoin: CreateDepositOrderRequest, CreateDepositOrderResult, OrbitCoinBalanceDto, CreditOrbitCoinRequest
     Models: Result, Result<T>, PaginationResult<T>
     Enums: ErrorCodeEnum
   Features/
-    Challenge/Commands: CreateMap, UpdateMap, DeleteMap, SubmitMapForReview, ApproveMap, RejectMap, PublishMap, BatchApprove/Reject/Publish, CreateTag, UpdateTag, DeleteTag, CreateConcept, UpdateConcept, DeleteConcept
-    Challenge/Queries: GetMaps, GetMapById, GetTags, GetConcepts
-    Maps/Commands: CreateMaps, UpdateMaps, DeleteMaps, BatchCreateMaps, BatchUpsertCatalog, BatchDeleteMaps
-    Maps/Queries: GetPagedMaps, GetMapsById
-    Auth/Commands: Login, Register, VerifyOtp, QuickLogin, GoogleLogin, RefreshToken, Logout, UpdateProfile, ChangePassword, ResetPassword
+    Auth/Commands: Login, Logout, Register, VerifyOtp, ResetPassword, ChangePassword, UpdateProfile, RefreshToken, QuickLogin, GoogleLogin
+    Auth/Queries: GetProfile
+    User/Commands: CreateUser, UpdateUser, DeleteUser, BatchUpdateUserStatus
+    User/Queries: GetPagedUsers, GetUserById
+    Maps/Commands: CreateMap, UpdateMap, DeleteMap, SubmitMapForReview, CreateMapFromJsonFile; ApproveMap, RejectMap, PublishMap, BatchApprove/Reject/Publish, CreateTag, UpdateTag, DeleteTag
+    Maps/Queries: GetMaps, GetMapById, GetTags, MapExists
+    Lobby/Commands: CreateLobbyRoom, JoinLobbyRoom, LeaveLobbyRoom, StartLobbyGame, EndLobbyGame, ToggleLobbyReady, SetLobbyRoomMap, SubmitLobbySolution
+    Lobby/Queries: GetLobbyRooms, GetLobbyRoom
     Gameplay/Commands: ValidateSolution
     Gameplay/Queries: GetHintsForMap, GetProgressDashboard
     Competitive/Commands: CreateMatch, CreateRoom, JoinRoom
-    Marketplace/Commands: CreatePackage, UpdatePackage, DeletePackage, PurchasePackage, PurchaseMap, BatchUpdatePackageStatus
+    Marketplace/Commands: CreatePackage, UpdatePackage, DeletePackage, PurchasePackage, PurchaseMapWithOrbitCoin, BatchUpdatePackageStatus
     Marketplace/Queries: GetPackages, GetPackageById, GetPaymentReport
     Community/Commands: RateMap, ReportMap, ResolveReport, DismissReport, BatchResolveReports, BatchDismissReports
     Community/Queries: GetReports
-    User/Commands: CreateUser, UpdateUser, DeleteUser, BatchUpdateUserStatus
-    User/Queries: GetPagedUsers, GetUserById
+    OrbitCoin/Commands: CreateDepositOrder, ConfirmDeposit, CreditOrbitCoin, HandlePayOSWebhook
+    OrbitCoin/Queries: GetOrbitCoinBalance, GetOrbitCoinTransactionHistory
+    Chat/Commands: CreatePrivateConversation, CreateTemporaryGroupConversation, CloseConversation, SendMessage, UpdateMessage, DeleteMessage
+    Chat/Queries: GetChatRooms, GetMessages
 
 API/Controllers/
-  Learner: AuthController, ChallengeController, GameplayController, MarketplaceController, CommunityController, CompetitiveController, ChatController
-  Cms: AuthController, UserController, ChallengeController, LevelMapsController, MarketplaceController, CommunityController
+  Learner: AuthController, MapController (LearnerMapController), GameLobbyController, GameplayController, MarketplaceController, CommunityController, CompetitiveController, ChatController, OrbitCoinController
+  Cms: AuthController, UserController, MapController (CmsMapController), MarketplaceController, CommunityController, OrbitCoinController
+  PayOSWebhookController (api/webhooks/payos)
 ```
 
 ---
