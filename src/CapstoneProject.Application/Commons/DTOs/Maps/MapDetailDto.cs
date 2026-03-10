@@ -9,6 +9,8 @@ public class MapDetailDto
     public string Title { get; set; } = string.Empty;
     public string Description { get; set; } = string.Empty;
     public int Difficulty { get; set; }
+    /// <summary>Loại map: "Topdown" hoặc "Platform".</summary>
+    public string Type { get; set; } = string.Empty;
     public int TimeLimitMs { get; set; }
     public bool IsPublished { get; set; }
     public MapStatusEnum MapStatus { get; set; }

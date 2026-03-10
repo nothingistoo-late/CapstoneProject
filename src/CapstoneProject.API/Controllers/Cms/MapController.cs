@@ -16,6 +16,7 @@ using CapstoneProject.Application.Features.Maps.Queries.GetMapById;
 using CapstoneProject.Application.Features.Maps.Queries.GetMaps;
 using CapstoneProject.Application.Features.Maps.Queries.GetTags;
 using CapstoneProject.Application.Common.Enums;
+using CapstoneProject.Domain.Enums;
 using System.Text.Json;
 using BatchMapResultDto = CapstoneProject.Application.Features.Maps.Commands.BatchApproveMaps.BatchMapResultDto;
 
@@ -87,6 +88,7 @@ public class CmsMapController : ControllerBase
     ///
     /// **Body (JSON):**
     /// - title (string, required), description (string, required), difficulty (int), timeLimitMs (int), winCondition (int).
+    /// - type (int, optional): 0 = Topdown, 1 = Platform. Mặc định 0 (Topdown).
     /// - price (decimal?, optional), mapDetailJson (object, required), hints (array, optional), tagIds (array of Guid, optional).
     ///
     /// **Example request body:** { "title": "Official Map", "description": "Desc", "difficulty": 1, "timeLimitMs": 60000, "winCondition": 10, "mapDetailJson": { "id": "level-1", "layers": {} }, "hints": [], "tagIds": [] }
@@ -133,7 +135,7 @@ public class CmsMapController : ControllerBase
     [ProducesResponseType(typeof(Result), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(Result), StatusCodes.Status403Forbidden)]
     [ProducesResponseType(typeof(Result), StatusCodes.Status500InternalServerError)]
-    [SwaggerOperation(Summary = "Create and publish map from JSON file", Description = "Admin uploads a JSON file and publishes map immediately. Form: title, description, difficulty, timeLimitMs, winCondition, price?, hintsJson?, tagIdsCsv?, mapDetailFile (required).", OperationId = "Cms_CreateAndPublishMapFromJsonFile", Tags = new[] { "CMS - Maps" })]
+    [SwaggerOperation(Summary = "Create and publish map from JSON file", Description = "Admin uploads a JSON file and publishes map immediately. Form: title, description, difficulty, type? (Topdown|Platform), timeLimitMs, winCondition, price?, hintsJson?, tagIdsCsv?, mapDetailFile (required).", OperationId = "Cms_CreateAndPublishMapFromJsonFile", Tags = new[] { "CMS - Maps" })]
     public async Task<IActionResult> CreateAndPublishMapFromJsonFile([FromForm] CreateMapFromJsonFileRequest request)
     {
         if (request.MapDetailFile == null || request.MapDetailFile.Length == 0)
@@ -150,6 +152,7 @@ public class CmsMapController : ControllerBase
             Title = request.Title,
             Description = request.Description,
             Difficulty = request.Difficulty,
+            Type = ParseMapType(request.Type),
             TimeLimitMs = request.TimeLimitMs,
             WinCondition = request.WinCondition,
             Price = request.Price,
@@ -440,5 +443,11 @@ public class CmsMapController : ControllerBase
     {
         var result = await _mediator.Send(new DeleteTagCommand(id));
         return StatusCode(result.GetHttpStatusCode(), result);
+    }
+
+    private static MapTypeEnum? ParseMapType(string? type)
+    {
+        if (string.IsNullOrWhiteSpace(type)) return null;
+        return string.Equals(type.Trim(), "Platform", StringComparison.OrdinalIgnoreCase) ? MapTypeEnum.Platform : MapTypeEnum.Topdown;
     }
 }

@@ -34,6 +34,7 @@ public class CreateMapCommandHandler : IRequestHandler<CreateMapCommand, Result<
             Difficulty = req.Difficulty,
             TimeLimitMs = req.TimeLimitMs,
             WinCondition = req.WinCondition,
+            Type = req.Type ?? MapTypeEnum.Topdown,
             Price = req.Price,
             IsPublished = command.AutoPublish,
             MapStatus = command.AutoPublish ? MapStatusEnum.Published : MapStatusEnum.Draft

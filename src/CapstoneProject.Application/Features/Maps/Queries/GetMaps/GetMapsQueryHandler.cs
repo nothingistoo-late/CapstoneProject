@@ -51,6 +51,7 @@ public class GetMapsQueryHandler : IRequestHandler<GetMapsQuery, Result<Paginati
                 Title = m.Title,
                 Description = m.Description,
                 Difficulty = m.Difficulty,
+                Type = m.Type.ToString(),
                 TimeLimitMs = m.TimeLimitMs,
                 IsPublished = m.IsPublished,
                 MapStatus = m.MapStatus,

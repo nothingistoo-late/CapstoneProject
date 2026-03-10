@@ -13,6 +13,8 @@ public class Map : BaseEntity
     public int Difficulty { get; set; }
     public int TimeLimitMs { get; set; }
     public int WinCondition { get; set; }
+    /// <summary>Loại map: Topdown hoặc Platform (user chọn khi tạo).</summary>
+    public MapTypeEnum Type { get; set; } = MapTypeEnum.Topdown;
     public bool IsPublished { get; set; }
     public MapStatusEnum MapStatus { get; set; } = MapStatusEnum.Draft;
     public decimal? Price { get; set; }

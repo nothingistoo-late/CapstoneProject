@@ -42,6 +42,7 @@ public class CreateMapFromJsonFileCommandHandler : IRequestHandler<CreateMapFrom
             Title = input.Title,
             Description = input.Description,
             Difficulty = input.Difficulty,
+            Type = input.Type,
             TimeLimitMs = input.TimeLimitMs,
             WinCondition = input.WinCondition,
             Price = input.Price,

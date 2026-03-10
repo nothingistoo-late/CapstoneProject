@@ -48,6 +48,8 @@ public class UpdateMapCommandHandler : IRequestHandler<UpdateMapCommand, Result>
         map.Difficulty = req.Difficulty;
         map.TimeLimitMs = req.TimeLimitMs;
         map.WinCondition = req.WinCondition;
+        if (req.Type.HasValue)
+            map.Type = req.Type.Value;
         map.Price = req.Price;
         map.EditorialContent = req.EditorialContent;
         if (req.UnlockEditorialAfterStars.HasValue)

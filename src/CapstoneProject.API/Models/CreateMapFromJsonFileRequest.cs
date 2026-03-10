@@ -8,6 +8,8 @@ public class CreateMapFromJsonFileRequest
     public string Title { get; set; } = string.Empty;
     public string Description { get; set; } = string.Empty;
     public int Difficulty { get; set; }
+    /// <summary>Loại map: "Topdown" hoặc "Platform". Để trống = Topdown.</summary>
+    public string? Type { get; set; }
     public int TimeLimitMs { get; set; }
     public int WinCondition { get; set; }
     public decimal? Price { get; set; }

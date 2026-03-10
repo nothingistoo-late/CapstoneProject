@@ -50,6 +50,7 @@ public class GetMapByIdQueryHandler : IRequestHandler<GetMapByIdQuery, Result<Ma
             Title = map.Title,
             Description = map.Description,
             Difficulty = map.Difficulty,
+            Type = map.Type.ToString(),
             TimeLimitMs = map.TimeLimitMs,
             IsPublished = map.IsPublished,
             MapStatus = map.MapStatus,

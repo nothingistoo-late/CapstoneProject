@@ -40,15 +40,15 @@ public class ValidateSolutionCommandHandler : IRequestHandler<ValidateSolutionCo
         if (map.MapDetail == null)
             return Result<ValidateSolutionResultDto>.Failure("Map data not found", ErrorCodeEnum.ValidationFailed);
 
-        // Placeholder: chỉ chấp nhận khi có đủ AstSpec + BytecodeSpec hợp lệ. Thực tế cần chạy engine/block interpreter để chấm đúng.
+        // Placeholder: chấp nhận khi có ít nhất một trong AstSpec hoặc BytecodeSpec hợp lệ. Thực tế cần chạy engine/block interpreter để chấm đúng.
         var ast = command.Request.AstSpec?.Trim() ?? string.Empty;
         var bytecode = command.Request.BytecodeSpec?.Trim() ?? string.Empty;
         var stepsUsed = ast.Length;
         var blocksUsed = bytecode.Length;
         const int maxSteps = 10000;
         const int minLength = 2; // ít nhất phải có nội dung thật (không chấp nhận 1 ký tự rác)
-        var hasValidInput = ast.Length >= minLength && bytecode.Length >= minLength;
-        var accepted = hasValidInput && stepsUsed <= maxSteps;
+        var hasValidInput = ast.Length >= minLength || bytecode.Length >= minLength;
+        var accepted = hasValidInput && stepsUsed <= maxSteps && blocksUsed <= maxSteps;
         var statusEnum = accepted ? SubmissionStatusEnum.Accepted : SubmissionStatusEnum.WrongAnswer;
         var score = accepted ? Math.Max(0, 100 - stepsUsed / 50) : 0; // càng nhiều step càng trừ điểm
         var stars = accepted ? (score >= 90 ? 3 : score >= 60 ? 2 : 1) : 0;

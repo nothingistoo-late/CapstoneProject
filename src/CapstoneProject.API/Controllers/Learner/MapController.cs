@@ -9,6 +9,7 @@ using CapstoneProject.Application.Features.Maps.Queries.GetMapById;
 using CapstoneProject.Application.Features.Maps.Queries.GetMaps;
 using CapstoneProject.Application.Features.Maps.Queries.GetTags;
 using CapstoneProject.Application.Common.Enums;
+using CapstoneProject.Domain.Enums;
 
 namespace CapstoneProject.API.Controllers.Learner;
 
@@ -106,7 +107,8 @@ public class LearnerMapController : ControllerBase
     ///
     /// **METHOD and path:** POST /api/learner/maps
     ///
-    /// **Example request body:** { "title": "My Map", "description": "Description", "difficulty": 1, "timeLimitMs": 60000, "winCondition": 10, "mapDetailJson": { "id": "level-1", "layers": {} }, "hints": [], "tagIds": [] }
+    /// **Body:** type (int, optional): 0 = Topdown, 1 = Platform. Mặc định Topdown.
+    /// **Example request body:** { "title": "My Map", "description": "Description", "difficulty": 1, "type": 0, "timeLimitMs": 60000, "winCondition": 10, "mapDetailJson": { "id": "level-1", "layers": {} }, "hints": [], "tagIds": [] }
     /// </remarks>
     /// <response code="201">Map created. Returns message and data (mapId).</response>
     /// <response code="400">Validation error</response>
@@ -159,7 +161,7 @@ public class LearnerMapController : ControllerBase
     [ProducesResponseType(typeof(Result<Guid>), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(Result<Guid>), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(Result<Guid>), StatusCodes.Status500InternalServerError)]
-    [SwaggerOperation(Summary = "Tạo map từ file JSON", Description = "Uploads a JSON file; creates map as Draft. Form: title, description, difficulty, timeLimitMs, winCondition, price?, hintsJson?, tagIdsCsv?, mapDetailFile (required). Requires Bearer token.", OperationId = "Learner_CreateMapFromJsonFile", Tags = new[] { "Learner - Maps" })]
+    [SwaggerOperation(Summary = "Tạo map từ file JSON", Description = "Uploads a JSON file; creates map as Draft. Form: title, description, difficulty, type? (Topdown|Platform), timeLimitMs, winCondition, price?, hintsJson?, tagIdsCsv?, mapDetailFile (required). Requires Bearer token.", OperationId = "Learner_CreateMapFromJsonFile", Tags = new[] { "Learner - Maps" })]
     public async Task<IActionResult> CreateMapFromJsonFile([FromForm] CreateMapFromJsonFileRequest request)
     {
         if (request.MapDetailFile == null || request.MapDetailFile.Length == 0)
@@ -176,6 +178,7 @@ public class LearnerMapController : ControllerBase
             Title = request.Title,
             Description = request.Description,
             Difficulty = request.Difficulty,
+            Type = ParseMapType(request.Type),
             TimeLimitMs = request.TimeLimitMs,
             WinCondition = request.WinCondition,
             Price = request.Price,
@@ -321,5 +324,11 @@ public class LearnerMapController : ControllerBase
     {
         var result = await _mediator.Send(new GetTagsQuery(search));
         return StatusCode(result.GetHttpStatusCode(), result);
+    }
+
+    private static MapTypeEnum? ParseMapType(string? type)
+    {
+        if (string.IsNullOrWhiteSpace(type)) return null;
+        return string.Equals(type.Trim(), "Platform", StringComparison.OrdinalIgnoreCase) ? MapTypeEnum.Platform : MapTypeEnum.Topdown;
     }
 }

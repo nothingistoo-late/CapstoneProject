@@ -54,7 +54,8 @@ public class SubmitLobbySolutionCommandHandler : IRequestHandler<SubmitLobbySolu
         if (!validateResult.IsSuccess || validateResult.Data == null)
             return Result<SubmitGameResponse>.Failure(validateResult.Message ?? "Validation failed.", ErrorCodeEnum.ValidationFailed);
 
-        var score = validateResult.Data.Score ?? 0;
+        // Ưu tiên dùng Score/StepsUsed/BlocksUsed client gửi lên; không gửi thì dùng kết quả từ ValidateSolution
+        var score = command.Request.Score ?? validateResult.Data.Score ?? 0;
         var status = validateResult.Data.Status.ToString();
         var (recordSuccess, recordError, ranking) = _roomManager.RecordSubmission(
             command.RoomId, userId, score, status, validateResult.Data.SubmissionId);
