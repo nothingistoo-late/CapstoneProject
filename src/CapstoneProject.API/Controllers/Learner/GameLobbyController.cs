@@ -71,11 +71,13 @@ public class GameLobbyController : ControllerBase
     /// **Example request body:** { "maxPlayers": 8, "selectedMapId": null }
     /// </remarks>
     /// <response code="201">Room created. Returns message and data (roomId, roomCode, hostId, maxPlayers, selectedMapId).</response>
+    /// <response code="400">Đã ở trong một phòng: isSuccess=false, message báo lỗi, data chứa thông tin phòng hiện tại (roomId, roomCode, maxPlayers, selectedMapId).</response>
     /// <response code="401">Not authorized</response>
     /// <response code="500">Internal server error</response>
     [HttpPost("rooms")]
     [AuthorizeRoles(nameof(RoleEnum.Learner), nameof(RoleEnum.Admin), nameof(RoleEnum.Moderator))]
     [ProducesResponseType(typeof(Result<CreateLobbyRoomResponse>), StatusCodes.Status201Created)]
+    [ProducesResponseType(typeof(Result<CreateLobbyRoomResponse>), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(Result), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(Result), StatusCodes.Status500InternalServerError)]
     [SwaggerOperation(Summary = "Create room", Description = "Creates new lobby room; caller becomes host. Optional body: maxPlayers, selectedMapId. Requires Bearer token.", OperationId = "Lobby_CreateRoom", Tags = new[] { "Learner - Game Lobby" })]

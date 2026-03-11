@@ -18,6 +18,9 @@ public interface IRoomManager
     /// <summary>Get room by room code (case-insensitive), or null if not found.</summary>
     LobbyRoom? GetRoomByCode(string roomCode);
 
+    /// <summary>Get the room that contains the given player (as host or member), or null if not in any room.</summary>
+    LobbyRoom? GetRoomContainingPlayer(Guid playerId);
+
     /// <summary>Create a new room; creator becomes host. Returns the created room or null on failure. hostConnectionId can be empty when creating via API.</summary>
     LobbyRoom? CreateRoom(Guid hostPlayerId, string hostConnectionId, int maxPlayers = 8, Guid? selectedMapId = null);
 

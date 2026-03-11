@@ -48,6 +48,12 @@ public class RoomManager : IRoomManager
             : null;
     }
 
+    public LobbyRoom? GetRoomContainingPlayer(Guid playerId)
+    {
+        if (playerId == Guid.Empty) return null;
+        return _rooms.Values.FirstOrDefault(r => r.Players.ContainsKey(playerId));
+    }
+
     public LobbyRoom? CreateRoom(Guid hostPlayerId, string hostConnectionId, int maxPlayers = 8, Guid? selectedMapId = null)
     {
         if (hostPlayerId == Guid.Empty) return null;

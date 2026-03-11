@@ -33,6 +33,12 @@ public class Result<T>
     {
         return new Result<T> { IsSuccess = false, Message = message, ErrorCode = errorCode.ToString() };
     }
+
+    /// <summary>Failure with optional data (e.g. current room info when create room is rejected).</summary>
+    public static Result<T> Failure(string message, ErrorCodeEnum errorCode, T? data)
+    {
+        return new Result<T> { IsSuccess = false, Message = message, ErrorCode = errorCode.ToString(), Data = data };
+    }
 }
 
 public class Result

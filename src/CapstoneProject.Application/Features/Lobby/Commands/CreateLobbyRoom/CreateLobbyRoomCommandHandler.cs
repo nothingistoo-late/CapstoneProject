@@ -37,7 +37,24 @@ public class CreateLobbyRoomCommandHandler : IRequestHandler<CreateLobbyRoomComm
                 return Result<CreateLobbyRoomResponse>.Failure(mapExists.Message ?? "Map not found or has been deleted.", ErrorCodeEnum.NotFound);
         }
 
-        var room = _roomManager.CreateRoom(userIdNullable.Value, "", maxPlayers, mapId);
+        var userId = userIdNullable.Value;
+        var existingRoom = _roomManager.GetRoomContainingPlayer(userId);
+        if (existingRoom != null)
+        {
+            var currentRoomInfo = new CreateLobbyRoomResponse
+            {
+                RoomId = existingRoom.RoomId,
+                RoomCode = existingRoom.RoomCode,
+                MaxPlayers = existingRoom.MaxPlayers,
+                SelectedMapId = existingRoom.SelectedMapId
+            };
+            return Result<CreateLobbyRoomResponse>.Failure(
+                "Không thể tạo phòng. Bạn đã ở trong một phòng rồi. Vui lòng rời phòng hiện tại trước khi tạo phòng mới.",
+                ErrorCodeEnum.ValidationFailed,
+                currentRoomInfo);
+        }
+
+        var room = _roomManager.CreateRoom(userId, "", maxPlayers, mapId);
         if (room == null)
             return Result<CreateLobbyRoomResponse>.Failure("Failed to create room.", ErrorCodeEnum.InvalidOperation);
 

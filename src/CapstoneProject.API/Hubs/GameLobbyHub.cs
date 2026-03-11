@@ -72,6 +72,13 @@ public class GameLobbyHub : Hub
                 return;
             }
         }
+        var existingRoom = _roomManager.GetRoomContainingPlayer(userId);
+        if (existingRoom != null)
+        {
+            await Clients.Caller.SendAsync("Error", "Không thể tạo phòng. Bạn đã ở trong một phòng rồi. Vui lòng rời phòng hiện tại trước khi tạo phòng mới.");
+            await Clients.Caller.SendAsync("AlreadyInRoom", ToRoomDto(existingRoom));
+            return;
+        }
         var room = _roomManager.CreateRoom(userId, Context.ConnectionId, maxPlayers, selectedMapId);
         if (room == null)
         {
