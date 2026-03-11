@@ -11,6 +11,7 @@ using CapstoneProject.Application.Features.Maps.Queries.GetMaps;
 using CapstoneProject.Application.Features.Maps.Queries.GetMyMaps;
 using CapstoneProject.Application.Features.Maps.Queries.GetTags;
 using CapstoneProject.Application.Features.Maps.Commands.UpdateMapFromJsonFile;
+using CapstoneProject.Application.Features.Maps.Commands.PublishMap;
 using CapstoneProject.Application.Common.Enums;
 using CapstoneProject.Domain.Enums;
 
@@ -396,6 +397,37 @@ public class LearnerMapController : ControllerBase
     public async Task<IActionResult> SubmitMapForReview(Guid id)
     {
         var result = await _mediator.Send(new SubmitMapForReviewCommand(id));
+        return StatusCode(result.GetHttpStatusCode(), result);
+    }
+
+    /// <summary>
+    /// Publish map (Approved → Published) – dành cho Admin/Moderator trên phía Learner API
+    /// </summary>
+    /// <remarks>
+    /// Publishes an Approved map so it appears in learner catalog. Chỉ Admin/Moderator. Learner bình thường không được tự publish map.
+    ///
+    /// **Route:** id (Guid, required): Map ID.
+    ///
+    /// **METHOD and path:** POST /api/learner/maps/{id}/publish
+    /// </remarks>
+    /// <response code="200">Map published. Returns message only.</response>
+    /// <response code="400">Invalid status (map not Approved) hoặc lỗi khác.</response>
+    /// <response code="401">Not authorized</response>
+    /// <response code="403">Forbidden (không phải Admin/Moderator)</response>
+    /// <response code="404">Map not found</response>
+    /// <response code="500">Internal server error</response>
+    [HttpPost("{id:guid}/publish")]
+    [AuthorizeRoles(nameof(RoleEnum.Admin), nameof(RoleEnum.Moderator))]
+    [ProducesResponseType(typeof(Result), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(Result), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(Result), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(Result), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(Result), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(Result), StatusCodes.Status500InternalServerError)]
+    [SwaggerOperation(Summary = "Publish map (Learner API)", Description = "Publishes an Approved map so it appears in learner catalog. Admin/Moderator only. Route: id.", OperationId = "Learner_PublishMap", Tags = new[] { "Learner - Maps" })]
+    public async Task<IActionResult> PublishMap(Guid id)
+    {
+        var result = await _mediator.Send(new PublishMapCommand(id));
         return StatusCode(result.GetHttpStatusCode(), result);
     }
 

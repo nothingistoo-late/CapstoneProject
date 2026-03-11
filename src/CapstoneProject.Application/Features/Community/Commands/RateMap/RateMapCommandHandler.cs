@@ -6,6 +6,7 @@ using CapstoneProject.Application.Common.Models;
 using CapstoneProject.Application.Commons.Interfaces;
 using CapstoneProject.Domain.Common;
 using CapstoneProject.Domain.Entities;
+using CapstoneProject.Domain.Enums;
 
 namespace CapstoneProject.Application.Features.Community.Commands.RateMap;
 
