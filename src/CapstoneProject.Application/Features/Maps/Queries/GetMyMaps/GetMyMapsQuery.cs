@@ -14,4 +14,8 @@ public class GetMyMapsQuery : IRequest<Result<PaginationResult<MapListItemDto>>>
     public int PageSize { get; set; } = 20;
     public string? SortBy { get; set; }
     public bool SortAscending { get; set; }
+    /// <summary>
+    /// Chỉ lấy map do chính user hiện tại tạo (author). Mặc định false = bao gồm cả map đã mua.
+    /// </summary>
+    public bool IsAuthorOnly { get; set; } = false;
 }

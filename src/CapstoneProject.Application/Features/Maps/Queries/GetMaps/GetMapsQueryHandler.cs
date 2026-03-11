@@ -27,6 +27,7 @@ public class GetMapsQueryHandler : IRequestHandler<GetMapsQuery, Result<Paginati
         else if (request.PublishedOnly == true)
             query = query.Where(m => m.IsPublished && m.MapStatus == MapStatusEnum.Published);
         if (request.Difficulty.HasValue) query = query.Where(m => m.Difficulty == request.Difficulty.Value);
+        if (request.Type.HasValue) query = query.Where(m => m.Type == request.Type.Value);
         if (request.TagId.HasValue) query = query.Where(m => m.MapTags.Any(t => t.TagId == request.TagId.Value));
         if (request.CreatedByUserId.HasValue) query = query.Where(m => m.CreatedBy == request.CreatedByUserId.Value);
         if (request.MinPrice.HasValue) query = query.Where(m => (m.Price ?? 0) >= request.MinPrice.Value);

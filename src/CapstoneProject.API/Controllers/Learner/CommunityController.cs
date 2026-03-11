@@ -1,6 +1,7 @@
 using CapstoneProject.Application.Commons.DTOs.Community;
 using CapstoneProject.Application.Features.Community.Commands.RateMap;
 using CapstoneProject.Application.Features.Community.Commands.ReportMap;
+using CapstoneProject.Application.Features.Community.Queries.GetMapRatings;
 
 namespace CapstoneProject.API.Controllers.Learner;
 
@@ -50,6 +51,38 @@ public class LearnerCommunityController : ControllerBase
     public async Task<IActionResult> RateMap(Guid mapId, [FromBody] RateMapRequest request)
     {
         var result = await _mediator.Send(new RateMapCommand(mapId, request.Rating, request.Comment));
+        return StatusCode(result.GetHttpStatusCode(), result);
+    }
+
+    /// <summary>
+    /// Get all ratings for a map
+    /// </summary>
+    /// <remarks>
+    /// Trả về danh sách rate (đánh giá) cho 1 map, sắp xếp từ mới nhất tới cũ nhất. Yêu cầu Bearer token.
+    ///
+    /// **Route:** mapId (Guid, required): ID của map.
+    ///
+    /// **Query:**
+    /// - isAuthor (bool, optional): true = chỉ lấy những rate của chính user hiện tại; false hoặc không truyền = lấy tất cả rate của map.
+    ///
+    /// **METHOD and path:** GET /api/learner/community/maps/{mapId}/ratings
+    ///
+    /// **Response item fields (MapRatingDto):**
+    /// - id, userId, mapId, rating, comment, createdAt
+    /// - isAuthor (bool): true nếu rate này thuộc về user hiện tại; có thể dùng để lọc các rate của chính mình.
+    /// </remarks>
+    /// <response code="200">Danh sách rate của map.</response>
+    /// <response code="401">Không được phép (chưa đăng nhập).</response>
+    /// <response code="404">Không tìm thấy map.</response>
+    [HttpGet("maps/{mapId:guid}/ratings")]
+    [AuthorizeRoles(nameof(RoleEnum.Learner), nameof(RoleEnum.Admin), nameof(RoleEnum.Moderator))]
+    [ProducesResponseType(typeof(Result<List<MapRatingDto>>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(Result<List<MapRatingDto>>), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(Result<List<MapRatingDto>>), StatusCodes.Status404NotFound)]
+    [SwaggerOperation(Summary = "Danh sách rate của map", Description = "Get ratings for a map, ordered by CreatedAt desc. Query isAuthor=true để chỉ lấy các rate của chính mình.", OperationId = "Learner_GetMapRatings", Tags = new[] { "Learner - Community" })]
+    public async Task<IActionResult> GetMapRatings(Guid mapId, [FromQuery] bool isAuthor = false)
+    {
+        var result = await _mediator.Send(new GetMapRatingsQuery(mapId, isAuthor));
         return StatusCode(result.GetHttpStatusCode(), result);
     }
 

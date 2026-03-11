@@ -30,9 +30,30 @@ public class ReportMapCommandHandler : IRequestHandler<ReportMapCommand, Result<
         if (string.IsNullOrWhiteSpace(command.Reason))
             return Result<Guid>.Failure("Report reason is required. Please provide a reason for reporting this content.", ErrorCodeEnum.ValidationFailed);
 
-        var mapExists = await _unitOfWork.Repository<Map>().GetQueryable().AnyAsync(g => g.Id == command.MapId && !g.IsDeleted, cancellationToken);
-        if (!mapExists)
+        var mapRepo = _unitOfWork.Repository<Map>();
+        var map = await mapRepo.GetQueryable()
+            .FirstOrDefaultAsync(g => g.Id == command.MapId && !g.IsDeleted && g.Status == EntityStatusEnum.Active, cancellationToken);
+        if (map == null)
             return Result<Guid>.Failure($"Map not found with Id: {command.MapId}. The map may have been deleted or does not exist.", ErrorCodeEnum.NotFound);
+        if (map.CreatedBy.HasValue && map.CreatedBy.Value == userId)
+            return Result<Guid>.Failure("You cannot report your own map.", ErrorCodeEnum.Forbidden);
+
+        // Only allow reporting maps the user can actually play:
+        // - Free maps (Price null or <= 0)
+        // - OR paid maps that the user has already purchased (PaymentRecord Completed for this map)
+        var isFreeMap = !map.Price.HasValue || map.Price <= 0;
+        if (!isFreeMap)
+        {
+            var paymentRepo = _unitOfWork.Repository<PaymentRecord>();
+            var hasPurchased = await paymentRepo.GetQueryable()
+                .AnyAsync(p => !p.IsDeleted
+                               && p.UserId == userId
+                               && p.MapId == map.Id
+                               && p.PaymentStatus == PaymentStatusEnum.Completed,
+                    cancellationToken);
+            if (!hasPurchased)
+                return Result<Guid>.Failure("You can only report maps you have access to (free maps or maps you have purchased).", ErrorCodeEnum.Forbidden);
+        }
 
         var report = new MapReport
         {

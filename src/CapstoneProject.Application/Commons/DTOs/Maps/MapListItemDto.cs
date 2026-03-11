@@ -15,6 +15,8 @@ public class MapListItemDto
     public MapStatusEnum MapStatus { get; set; }
     public decimal? Price { get; set; }
     public Guid CreatedByUserId { get; set; }
+    /// <summary>Người hiện tại có phải tác giả map không (CreatedBy).</summary>
+    public bool IsAuthor { get; set; }
     public DateTime? CreatedAt { get; set; }
     public List<string> TagNames { get; set; } = new();
     public int WinCondition { get; set; }

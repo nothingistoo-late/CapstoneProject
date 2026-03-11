@@ -10,6 +10,7 @@ using CapstoneProject.Application.Features.Maps.Queries.GetMapById;
 using CapstoneProject.Application.Features.Maps.Queries.GetMaps;
 using CapstoneProject.Application.Features.Maps.Queries.GetMyMaps;
 using CapstoneProject.Application.Features.Maps.Queries.GetTags;
+using CapstoneProject.Application.Features.Maps.Commands.UpdateMapFromJsonFile;
 using CapstoneProject.Application.Common.Enums;
 using CapstoneProject.Domain.Enums;
 
@@ -33,7 +34,7 @@ public class LearnerMapController : ControllerBase
     /// Get list of challenge maps (catalog)
     /// </summary>
     /// <remarks>
-    /// Returns paginated challenge maps for the learner catalog. Use filters for difficulty, tag, and search. When publishedOnly=true only published maps are returned.
+    /// Returns paginated challenge maps for the learner catalog. Use filters for difficulty, type, tag, and search. When publishedOnly=true only published maps are returned.
     ///
     /// **Query:**
     /// - pageNumber (int, optional): Page number. Default 1.
@@ -41,6 +42,7 @@ public class LearnerMapController : ControllerBase
     /// - publishedOnly (bool?, optional): true = only published maps (catalog). Ignored when mapStatus is set. Default true.
     /// - mapStatus (int?, optional): Filter by map status: 0=Draft, 1=PendingReview, 2=Approved, 3=Rejected, 4=Published. When set, publishedOnly is ignored.
     /// - difficulty (int?, optional): Filter by difficulty (e.g. 0=Easy, 1=Medium, 2=Hard).
+    /// - type (int?, optional): Filter by map type: 0=Topdown, 1=Platform.
     /// - tagId (Guid?, optional): Filter by tag ID.
     /// - search (string, optional): Search in title and description.
     /// - sortBy (string, optional): Sort by: CreatedAt, Title, Difficulty, TimeLimitMs.
@@ -73,6 +75,11 @@ public class LearnerMapController : ControllerBase
     /// - pageSize (int, optional): Items per page. Default 20.
     /// - sortBy (string, optional): CreatedAt, Title, Difficulty, TimeLimitMs.
     /// - sortAscending (bool, optional): Default false.
+    /// - isAuthorOnly (bool, optional): true = chỉ lấy map do chính user tạo; false (mặc định) = bao gồm cả map đã mua.
+    ///
+    /// **Response item fields (MapListItemDto):**
+    /// - id, title, description, difficulty, type, timeLimitMs, isPublished, mapStatus, price, createdByUserId, createdAt, tagNames, winCondition, avatarUrl
+    /// - isAuthor (bool): true nếu map do chính user hiện tại tạo (CreatedBy); false nếu chỉ là map đã mua.
     ///
     /// **METHOD and path:** GET /api/learner/maps/my-maps
     /// </remarks>
@@ -229,7 +236,7 @@ public class LearnerMapController : ControllerBase
     /// Update challenge map (draft only)
     /// </summary>
     /// <remarks>
-    /// Updates a map in Draft status. Author or Admin/Moderator only. Requires Bearer token.
+    /// Updates a map in Draft status. Chỉ tác giả (Learner) hoặc Admin/Moderator mới được sửa. Sau khi update, map sẽ quay lại trạng thái Draft (MapStatus=Draft, IsPublished=false) và cần submit lại để duyệt. Requires Bearer token.
     ///
     /// **Route:** id (Guid, required): Map ID.
     ///
@@ -266,6 +273,74 @@ public class LearnerMapController : ControllerBase
     public async Task<IActionResult> UpdateMap(Guid id, [FromBody] UpdateMapRequest request)
     {
         var result = await _mediator.Send(new UpdateMapCommand(id, request));
+        return StatusCode(result.GetHttpStatusCode(), result);
+    }
+
+    /// <summary>
+    /// Update challenge map from uploaded JSON file (draft only)
+    /// </summary>
+    /// <remarks>
+    /// Cập nhật map (ở trạng thái Draft) từ file JSON (multipart/form-data). Author hoặc Admin/Moderator. Yêu cầu Bearer token.
+    ///
+    /// **Route:** id (Guid, required): Map ID cần update.
+    ///
+    /// **METHOD and path:** PUT /api/learner/maps/{id}/upload-json
+    ///
+    /// **Body (multipart/form-data):**
+    /// - title (string, required): Tiêu đề map.
+    /// - description (string, required): Mô tả.
+    /// - difficulty (int, required): Độ khó (0=Easy, 1=Medium, 2=Hard).
+    /// - timeLimitMs (int, required): Thời gian giới hạn (ms).
+    /// - winCondition (int, required): Điều kiện thắng (metadata).
+    /// - price (decimal?, optional): Giá; null = miễn phí.
+    /// - hintsJson (string, optional): JSON array hints, mặc định "[]".
+    /// - tagIdsCsv (string, optional): Danh sách tag ID cách nhau bằng dấu phẩy.
+    /// - mapDetailFile (file, required): File JSON chứa chi tiết map (level/layers/objects...).
+    ///
+    /// **Lưu ý:** API này chỉ cập nhật nội dung map (spec, hints, tags, metadata) dựa trên file JSON; avatar map cập nhật qua API riêng `/api/learner/maps/{id}/avatar`.
+    /// </remarks>
+    /// <response code="200">Map updated. Returns message only.</response>
+    /// <response code="400">Validation error or MapDetailFile is required</response>
+    /// <response code="401">Not authorized</response>
+    /// <response code="403">Forbidden (not author or admin)</response>
+    /// <response code="404">Map not found</response>
+    /// <response code="500">Internal server error</response>
+    [HttpPut("{id:guid}/upload-json")]
+    [AuthorizeRoles(nameof(RoleEnum.Learner), nameof(RoleEnum.Admin), nameof(RoleEnum.Moderator))]
+    [Consumes("multipart/form-data")]
+    [ProducesResponseType(typeof(Result), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(Result), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(Result), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(Result), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(Result), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(Result), StatusCodes.Status500InternalServerError)]
+    [SwaggerOperation(Summary = "Update map từ file JSON", Description = "Uploads a JSON file; updates existing Draft map. Form: title, description, difficulty, type? (Topdown|Platform), timeLimitMs, winCondition, price?, hintsJson?, tagIdsCsv?, mapDetailFile (required). Requires Bearer token.", OperationId = "Learner_UpdateMapFromJsonFile", Tags = new[] { "Learner - Maps" })]
+    public async Task<IActionResult> UpdateMapFromJsonFile(Guid id, [FromForm] CreateMapFromJsonFileRequest request)
+    {
+        if (request.MapDetailFile == null || request.MapDetailFile.Length == 0)
+            return BadRequest(Result.Failure("MapDetailFile is required.", ErrorCodeEnum.ValidationFailed));
+
+        string jsonContent;
+        using (var reader = new StreamReader(request.MapDetailFile.OpenReadStream()))
+        {
+            jsonContent = await reader.ReadToEndAsync();
+        }
+
+        var input = new CreateMapFromJsonFileInput
+        {
+            Title = request.Title,
+            Description = request.Description,
+            Difficulty = request.Difficulty,
+            Type = ParseMapType(request.Type),
+            TimeLimitMs = request.TimeLimitMs,
+            WinCondition = request.WinCondition,
+            Price = request.Price,
+            HintsJson = request.HintsJson ?? "[]",
+            TagIdsCsv = request.TagIdsCsv ?? string.Empty,
+            MapDetailJsonContent = jsonContent
+        };
+
+        var result = await _mediator.Send(new UpdateMapFromJsonFileCommand(id, input));
         return StatusCode(result.GetHttpStatusCode(), result);
     }
 

@@ -38,7 +38,7 @@ public class GetPackagesQueryHandler : IRequestHandler<GetPackagesQuery, Result<
         var pageSize = Math.Clamp(filter.PageSize, 1, 100);
 
         var list = await query
-            .OrderBy(p => p.Name)
+            .OrderBy(p => p.Price)
             .Skip((pageNumber - 1) * pageSize)
             .Take(pageSize)
             .Select(p => new PackageDto

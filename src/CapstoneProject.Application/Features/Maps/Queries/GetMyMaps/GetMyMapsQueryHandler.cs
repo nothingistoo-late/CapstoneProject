@@ -42,7 +42,9 @@ public class GetMyMapsQueryHandler : IRequestHandler<GetMyMapsQuery, Result<Pagi
             .Distinct()
             .ToListAsync(cancellationToken);
 
-        var ownedMapIds = createdMapIds.Union(purchasedMapIds).Distinct().ToList();
+        var ownedMapIds = request.IsAuthorOnly
+            ? createdMapIds.Distinct().ToList()
+            : createdMapIds.Union(purchasedMapIds).Distinct().ToList();
         if (ownedMapIds.Count == 0)
         {
             var empty = PaginationResult<MapListItemDto>.Success(new List<MapListItemDto>(), 1, request.PageSize, 0, "Retrieved successfully");
@@ -79,6 +81,7 @@ public class GetMyMapsQueryHandler : IRequestHandler<GetMyMapsQuery, Result<Pagi
                 MapStatus = m.MapStatus,
                 Price = m.Price,
                 CreatedByUserId = m.CreatedBy ?? Guid.Empty,
+                IsAuthor = m.CreatedBy == userId.Value,
                 CreatedAt = m.CreatedAt,
                 TagNames = m.MapTags.Select(t => t.Tag.Name).ToList(),
                 WinCondition = m.WinCondition,

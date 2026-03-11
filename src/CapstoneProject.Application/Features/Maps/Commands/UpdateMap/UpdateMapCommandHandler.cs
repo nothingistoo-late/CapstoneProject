@@ -39,6 +39,7 @@ public class UpdateMapCommandHandler : IRequestHandler<UpdateMapCommand, Result>
 
         var roles = await _currentUserService.GetCurrentRolesAsync();
         bool isAdminOrMod = roles.Contains(RoleEnum.Admin) || roles.Contains(RoleEnum.Moderator);
+        // Chỉ tác giả mới được sửa map; Admin/Moderator vẫn có quyền override khi cần moderation.
         if (map.CreatedBy != userId && !isAdminOrMod)
             return Result.Failure("You do not have permission to update this map.", ErrorCodeEnum.Forbidden);
 
@@ -56,6 +57,10 @@ public class UpdateMapCommandHandler : IRequestHandler<UpdateMapCommand, Result>
             map.UnlockEditorialAfterStars = req.UnlockEditorialAfterStars.Value;
         if (req.AvatarUrl != null)
             map.AvatarUrl = req.AvatarUrl;
+
+        // Sau khi cập nhật nội dung, map quay về trạng thái Draft và không còn Published.
+        map.MapStatus = MapStatusEnum.Draft;
+        map.IsPublished = false;
         map.UpdateEntity(userId);
 
         if (req.Hints != null)
@@ -100,6 +105,6 @@ public class UpdateMapCommandHandler : IRequestHandler<UpdateMapCommand, Result>
 
         mapRepo.Update(map);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
-        return Result.Success("Map updated.");
+        return Result.Success("Map updated and moved back to Draft status.");
     }
 }
