@@ -7,6 +7,7 @@ using CapstoneProject.Application.Features.Maps.Commands.SubmitMapForReview;
 using CapstoneProject.Application.Features.Maps.Commands.UpdateMap;
 using CapstoneProject.Application.Features.Maps.Queries.GetMapById;
 using CapstoneProject.Application.Features.Maps.Queries.GetMaps;
+using CapstoneProject.Application.Features.Maps.Queries.GetMyMaps;
 using CapstoneProject.Application.Features.Maps.Queries.GetTags;
 using CapstoneProject.Application.Common.Enums;
 using CapstoneProject.Domain.Enums;
@@ -36,7 +37,8 @@ public class LearnerMapController : ControllerBase
     /// **Query:**
     /// - pageNumber (int, optional): Page number. Default 1.
     /// - pageSize (int, optional): Items per page. Default 20.
-    /// - publishedOnly (bool?, optional): true = only published maps (catalog), false/null = include draft/pending. Default true.
+    /// - publishedOnly (bool?, optional): true = only published maps (catalog). Ignored when mapStatus is set. Default true.
+    /// - mapStatus (int?, optional): Filter by map status: 0=Draft, 1=PendingReview, 2=Approved, 3=Rejected, 4=Published. When set, publishedOnly is ignored.
     /// - difficulty (int?, optional): Filter by difficulty (e.g. 0=Easy, 1=Medium, 2=Hard).
     /// - tagId (Guid?, optional): Filter by tag ID.
     /// - search (string, optional): Search in title and description.
@@ -45,15 +47,42 @@ public class LearnerMapController : ControllerBase
     ///
     /// **METHOD and path:** GET /api/learner/maps
     ///
-    /// **Example request:** GET /api/learner/maps?pageNumber=1&amp;pageSize=10&amp;publishedOnly=true&amp;difficulty=1&amp;search=abc&amp;sortBy=Title&amp;sortAscending=true
+    /// **Example request:** GET /api/learner/maps?pageNumber=1&amp;pageSize=10&amp;mapStatus=4&amp;difficulty=1&amp;search=abc&amp;sortBy=Title&amp;sortAscending=true
     /// </remarks>
     /// <response code="200">Returns message and data (paginated list of maps).</response>
     /// <response code="500">Internal server error</response>
     [HttpGet]
     [ProducesResponseType(typeof(Result<PaginationResult<MapListItemDto>>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(Result<PaginationResult<MapListItemDto>>), StatusCodes.Status500InternalServerError)]
-    [SwaggerOperation(Summary = "Danh sách map (catalog)", Description = "Returns paginated challenge maps for catalog. Filter by publishedOnly, difficulty, tagId, search, sortBy.", OperationId = "Learner_GetMaps", Tags = new[] { "Learner - Maps" })]
+    [SwaggerOperation(Summary = "Danh sách map (catalog)", Description = "Returns paginated challenge maps for catalog. Filter by mapStatus (0–4) or publishedOnly, difficulty, tagId, search, sortBy.", OperationId = "Learner_GetMaps", Tags = new[] { "Learner - Maps" })]
     public async Task<IActionResult> GetMaps([FromQuery] GetMapsQuery query)
+    {
+        var result = await _mediator.Send(query);
+        return StatusCode(result.GetHttpStatusCode(), result);
+    }
+
+    /// <summary>
+    /// Get all maps owned by the current user (created by user + purchased with OrbitCoin)
+    /// </summary>
+    /// <remarks>
+    /// Returns paginated list of maps the user owns: maps they created and maps they purchased. Requires Bearer token.
+    ///
+    /// **Query:**
+    /// - pageNumber (int, optional): Page number. Default 1.
+    /// - pageSize (int, optional): Items per page. Default 20.
+    /// - sortBy (string, optional): CreatedAt, Title, Difficulty, TimeLimitMs.
+    /// - sortAscending (bool, optional): Default false.
+    ///
+    /// **METHOD and path:** GET /api/learner/maps/my-maps
+    /// </remarks>
+    /// <response code="200">Returns message and data (paginated list of owned maps).</response>
+    /// <response code="401">Unauthorized</response>
+    [HttpGet("my-maps")]
+    [AuthorizeRoles(nameof(RoleEnum.Learner), nameof(RoleEnum.Admin), nameof(RoleEnum.Moderator))]
+    [ProducesResponseType(typeof(Result<PaginationResult<MapListItemDto>>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(Result<PaginationResult<MapListItemDto>>), StatusCodes.Status401Unauthorized)]
+    [SwaggerOperation(Summary = "Danh sách map của tôi", Description = "Returns maps owned by current user: created by user + purchased with OrbitCoin. Requires Bearer token.", OperationId = "Learner_GetMyMaps", Tags = new[] { "Learner - Maps" })]
+    public async Task<IActionResult> GetMyMaps([FromQuery] GetMyMapsQuery query)
     {
         var result = await _mediator.Send(query);
         return StatusCode(result.GetHttpStatusCode(), result);

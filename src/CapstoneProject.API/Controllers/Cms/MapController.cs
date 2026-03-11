@@ -13,6 +13,7 @@ using CapstoneProject.Application.Features.Maps.Commands.PublishMap;
 using CapstoneProject.Application.Features.Maps.Commands.RejectMap;
 using CapstoneProject.Application.Features.Maps.Commands.UpdateTag;
 using CapstoneProject.Application.Features.Maps.Queries.GetMapById;
+using CapstoneProject.Application.Features.Maps.Queries.GetAllMapsForAdmin;
 using CapstoneProject.Application.Features.Maps.Queries.GetMaps;
 using CapstoneProject.Application.Features.Maps.Queries.GetTags;
 using CapstoneProject.Application.Common.Enums;
@@ -35,21 +36,57 @@ public class CmsMapController : ControllerBase
 
     /// <summary>Get maps for moderation (paginated, filter).</summary>
     /// <remarks>
-    /// Returns paginated challenge maps for moderation. Filter by mapStatus, difficulty, search, etc. Admin/Moderator only.
+    /// Returns paginated challenge maps for moderation. Admin/Moderator only.
     ///
-    /// **Query:** Same as Learner GetMaps (pageNumber, pageSize, publishedOnly, difficulty, conceptId, tagId, mapStatus, search, createdByUserId, sortBy, sortAscending). mapStatus: 0=Draft, 1=PendingReview, 2=Approved, 3=Rejected, 4=Published.
+    /// **Query:**
+    /// - pageNumber (int, optional): Default 1.
+    /// - pageSize (int, optional): Default 20.
+    /// - mapStatus (int?, optional): 0=Draft, 1=PendingReview, 2=Approved, 3=Rejected, 4=Published.
+    /// - publishedOnly (bool?, optional): true = only published; ignored when mapStatus is set.
+    /// - createdByUserId (Guid?, optional): Lọc theo user tạo map.
+    /// - difficulty (int?, optional): 0=Easy, 1=Medium, 2=Hard.
+    /// - tagId (Guid?, optional): Lọc theo tag.
+    /// - search (string, optional): Tìm trong title, description.
+    /// - minPrice (decimal?, optional): Chỉ map có giá &gt;= minPrice (null/0 = free).
+    /// - maxPrice (decimal?, optional): Chỉ map có giá &lt;= maxPrice.
+    /// - sortBy (string, optional): CreatedAt | Title | Difficulty | TimeLimitMs | Price. Default CreatedAt.
+    /// - sortAscending (bool, optional): Default false.
     ///
     /// **METHOD and path:** GET /api/cms/maps
     ///
-    /// **Example request:** GET /api/cms/maps?pageNumber=1&amp;pageSize=20&amp;mapStatus=1
+    /// **Example:** GET /api/cms/maps?pageNumber=1&amp;pageSize=20&amp;mapStatus=1&amp;createdByUserId=...&amp;minPrice=0&amp;maxPrice=100&amp;sortBy=Price
     /// </remarks>
     [HttpGet]
     [AuthorizeRoles(nameof(RoleEnum.Admin), nameof(RoleEnum.Moderator))]
     [ProducesResponseType(typeof(Result<PaginationResult<MapListItemDto>>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(Result), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(Result), StatusCodes.Status403Forbidden)]
-    [SwaggerOperation(Summary = "Get maps (moderation)", Description = "Returns paginated challenge maps for moderation. Filter by mapStatus, difficulty, search, etc. Admin/Moderator only.", OperationId = "Cms_GetMaps", Tags = new[] { "CMS - Maps" })]
+    [SwaggerOperation(Summary = "Get maps (moderation)", Description = "Returns paginated maps. Filter by user (createdByUserId), price (minPrice, maxPrice), mapStatus, difficulty, tagId, search; sort by CreatedAt, Title, Difficulty, TimeLimitMs, Price. Admin/Moderator only.", OperationId = "Cms_GetMaps", Tags = new[] { "CMS - Maps" })]
     public async Task<IActionResult> GetMaps([FromQuery] GetMapsQuery query)
+    {
+        var result = await _mediator.Send(query);
+        return StatusCode(result.GetHttpStatusCode(), result);
+    }
+
+    /// <summary>Get all maps (no filter) for Admin.</summary>
+    /// <remarks>
+    /// Trả về tất cả map, không lọc theo status hay điều kiện nào. Chỉ phân trang và sắp xếp. Admin/Moderator only.
+    ///
+    /// **Query:**
+    /// - pageNumber (int, optional): Default 1.
+    /// - pageSize (int, optional): Default 20.
+    /// - sortBy (string, optional): CreatedAt | Title | Difficulty | TimeLimitMs | Price | MapStatus. Default CreatedAt.
+    /// - sortAscending (bool, optional): Default false.
+    ///
+    /// **METHOD and path:** GET /api/cms/maps/all
+    /// </remarks>
+    [HttpGet("all")]
+    [AuthorizeRoles(nameof(RoleEnum.Admin), nameof(RoleEnum.Moderator))]
+    [ProducesResponseType(typeof(Result<PaginationResult<MapListItemDto>>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(Result), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(Result), StatusCodes.Status403Forbidden)]
+    [SwaggerOperation(Summary = "Get all maps (no filter)", Description = "Returns all maps without any filter (status, user, price, etc.). Pagination and sort only. Admin/Moderator only.", OperationId = "Cms_GetAllMaps", Tags = new[] { "CMS - Maps" })]
+    public async Task<IActionResult> GetAllMaps([FromQuery] GetAllMapsForAdminQuery query)
     {
         var result = await _mediator.Send(query);
         return StatusCode(result.GetHttpStatusCode(), result);
