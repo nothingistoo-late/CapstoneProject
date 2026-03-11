@@ -10,6 +10,7 @@ using CapstoneProject.Application.Features.Maps.Queries.GetMapById;
 using CapstoneProject.Application.Features.Maps.Queries.GetMaps;
 using CapstoneProject.Application.Features.Maps.Queries.GetMyMaps;
 using CapstoneProject.Application.Features.Maps.Queries.GetTags;
+using CapstoneProject.Application.Features.Maps.Queries.CheckMapOwnership;
 using CapstoneProject.Application.Features.Maps.Commands.UpdateMapFromJsonFile;
 using CapstoneProject.Application.Features.Maps.Commands.PublishMap;
 using CapstoneProject.Application.Common.Enums;
@@ -94,6 +95,34 @@ public class LearnerMapController : ControllerBase
     public async Task<IActionResult> GetMyMaps([FromQuery] GetMyMapsQuery query)
     {
         var result = await _mediator.Send(query);
+        return StatusCode(result.GetHttpStatusCode(), result);
+    }
+
+    /// <summary>
+    /// Check if current user owns a map (created or purchased)
+    /// </summary>
+    /// <remarks>
+    /// Nhập map ID, trả về map có tồn tại không và user hiện tại đã sở hữu map chưa (tự tạo hoặc đã mua bằng OrbitCoin). Requires Bearer token.
+    ///
+    /// **Route:** id (Guid, required): Map ID.
+    ///
+    /// **Response (CheckMapOwnershipDto):**
+    /// - mapExists (bool): Map có tồn tại và active.
+    /// - isOwned (bool): User có sở hữu (tác giả hoặc đã mua).
+    /// - isAuthor (bool): true nếu user là tác giả; false nếu chỉ mua hoặc không sở hữu.
+    ///
+    /// **METHOD and path:** GET /api/learner/maps/{id}/check-ownership
+    /// </remarks>
+    /// <response code="200">Returns message and data (mapExists, isOwned, isAuthor).</response>
+    /// <response code="401">Unauthorized</response>
+    [HttpGet("{id:guid}/check-ownership")]
+    [AuthorizeRoles(nameof(RoleEnum.Learner), nameof(RoleEnum.Admin), nameof(RoleEnum.Moderator))]
+    [ProducesResponseType(typeof(Result<CheckMapOwnershipDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(Result<CheckMapOwnershipDto>), StatusCodes.Status401Unauthorized)]
+    [SwaggerOperation(Summary = "Kiểm tra sở hữu map", Description = "Check if current user owns the map (created or purchased). Returns mapExists, isOwned, isAuthor.", OperationId = "Learner_CheckMapOwnership", Tags = new[] { "Learner - Maps" })]
+    public async Task<IActionResult> CheckMapOwnership(Guid id)
+    {
+        var result = await _mediator.Send(new CheckMapOwnershipQuery(id));
         return StatusCode(result.GetHttpStatusCode(), result);
     }
 
