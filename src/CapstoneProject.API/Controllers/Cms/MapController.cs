@@ -12,6 +12,7 @@ using CapstoneProject.Application.Features.Maps.Commands.DeleteTag;
 using CapstoneProject.Application.Features.Maps.Commands.PublishMap;
 using CapstoneProject.Application.Features.Maps.Commands.RejectMap;
 using CapstoneProject.Application.Features.Maps.Commands.UpdateTag;
+using CapstoneProject.Application.Features.Maps.Commands.UploadMapAvatar;
 using CapstoneProject.Application.Features.Maps.Queries.GetMapById;
 using CapstoneProject.Application.Features.Maps.Queries.GetAllMapsForAdmin;
 using CapstoneProject.Application.Features.Maps.Queries.GetMaps;
@@ -172,7 +173,7 @@ public class CmsMapController : ControllerBase
     [ProducesResponseType(typeof(Result), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(Result), StatusCodes.Status403Forbidden)]
     [ProducesResponseType(typeof(Result), StatusCodes.Status500InternalServerError)]
-    [SwaggerOperation(Summary = "Create and publish map from JSON file", Description = "Admin uploads a JSON file and publishes map immediately. Form: title, description, difficulty, type? (Topdown|Platform), timeLimitMs, winCondition, price?, hintsJson?, tagIdsCsv?, mapDetailFile (required).", OperationId = "Cms_CreateAndPublishMapFromJsonFile", Tags = new[] { "CMS - Maps" })]
+    [SwaggerOperation(Summary = "Create and publish map from JSON file", Description = "Admin uploads a JSON file and publishes map immediately. Form: title, description, difficulty, type? (Topdown|Platform), timeLimitMs, winCondition, price?, hintsJson?, tagIdsCsv?, mapDetailFile (required), avatarFile? (optional).", OperationId = "Cms_CreateAndPublishMapFromJsonFile", Tags = new[] { "CMS - Maps" })]
     public async Task<IActionResult> CreateAndPublishMapFromJsonFile([FromForm] CreateMapFromJsonFileRequest request)
     {
         if (request.MapDetailFile == null || request.MapDetailFile.Length == 0)
@@ -198,7 +199,7 @@ public class CmsMapController : ControllerBase
             MapDetailJsonContent = jsonContent
         };
 
-        var result = await _mediator.Send(new CreateMapFromJsonFileCommand(input, AutoPublish: true));
+        var result = await _mediator.Send(new CreateMapFromJsonFileCommand(input, AutoPublish: true, request.AvatarFile));
         if (result.IsSuccess && result.Data != default)
             return CreatedAtAction(nameof(GetMapById), new { id = result.Data }, result);
         return StatusCode(result.GetHttpStatusCode(), result);
@@ -283,6 +284,25 @@ public class CmsMapController : ControllerBase
     public async Task<IActionResult> PublishMap(Guid id)
     {
         var result = await _mediator.Send(new PublishMapCommand(id));
+        return StatusCode(result.GetHttpStatusCode(), result);
+    }
+
+    /// <summary>Upload map avatar (Cloudinary).</summary>
+    /// <remarks>Admin/Moderator. Form: avatar (file). POST /api/cms/maps/{id}/avatar</remarks>
+    [HttpPost("{id:guid}/avatar")]
+    [AuthorizeRoles(nameof(RoleEnum.Admin), nameof(RoleEnum.Moderator))]
+    [Consumes("multipart/form-data")]
+    [ProducesResponseType(typeof(Result<string>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(Result), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(Result), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(Result), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(Result), StatusCodes.Status404NotFound)]
+    [SwaggerOperation(Summary = "Upload map avatar", Description = "Upload map avatar image to Cloudinary. Admin/Moderator only. Form: avatar (file).", OperationId = "Cms_UploadMapAvatar", Tags = new[] { "CMS - Maps" })]
+    public async Task<IActionResult> UploadMapAvatar(Guid id, IFormFile avatar)
+    {
+        if (avatar == null || avatar.Length == 0)
+            return BadRequest(Result<string>.Failure("Avatar file is required.", ErrorCodeEnum.ValidationFailed));
+        var result = await _mediator.Send(new UploadMapAvatarCommand(id, avatar));
         return StatusCode(result.GetHttpStatusCode(), result);
     }
 

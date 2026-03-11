@@ -81,7 +81,8 @@ public class GetMyMapsQueryHandler : IRequestHandler<GetMyMapsQuery, Result<Pagi
                 CreatedByUserId = m.CreatedBy ?? Guid.Empty,
                 CreatedAt = m.CreatedAt,
                 TagNames = m.MapTags.Select(t => t.Tag.Name).ToList(),
-                WinCondition = m.WinCondition
+                WinCondition = m.WinCondition,
+                AvatarUrl = m.AvatarUrl
             }).ToListAsync(cancellationToken);
 
         var result = PaginationResult<MapListItemDto>.Success(list, pageNumber, pageSize, total, "Retrieved successfully");

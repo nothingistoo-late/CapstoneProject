@@ -116,6 +116,11 @@ public static class InfrastructureDependencyInjection
         // Configure File Storage settings
         services.Configure<FileStorageSettings>(configuration.GetSection("FileStorage"));
 
+        // Configure Cloudinary (avatars, map images)
+        services.Configure<CloudinarySettings>(configuration.GetSection(CloudinarySettings.SectionName));
+        services.AddScoped<Application.Commons.Interfaces.ICloudinaryService, CloudinaryService>();
+        services.AddScoped<Application.Commons.Interfaces.IAvatarUrlResolverService, AvatarUrlResolverService>();
+
         // Register repositories
         services.AddScoped(typeof(IGenericRepository<>), typeof(GenericRepository<>));
 

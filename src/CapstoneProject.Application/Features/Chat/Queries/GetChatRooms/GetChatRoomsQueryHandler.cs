@@ -15,15 +15,18 @@ public class GetChatRoomsQueryHandler : IRequestHandler<GetChatRoomsQuery, Resul
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly ICurrentUserService _currentUserService;
+    private readonly IAvatarUrlResolverService _avatarUrlResolver;
     private readonly ILogger<GetChatRoomsQueryHandler> _logger;
 
     public GetChatRoomsQueryHandler(
         IUnitOfWork unitOfWork,
         ICurrentUserService currentUserService,
+        IAvatarUrlResolverService avatarUrlResolver,
         ILogger<GetChatRoomsQueryHandler> logger)
     {
         _unitOfWork = unitOfWork;
         _currentUserService = currentUserService;
+        _avatarUrlResolver = avatarUrlResolver;
         _logger = logger;
     }
 
@@ -120,7 +123,7 @@ public class GetChatRoomsQueryHandler : IRequestHandler<GetChatRoomsQuery, Resul
                         Id = m.Id,
                         UserId = m.UserId,
                         UserName = $"{m.User.FirstName} {m.User.LastName}".Trim(),
-                        AvatarPath = m.User.AvatarPath,
+                        AvatarPath = _avatarUrlResolver.ResolveAvatarUrl(m.User.AvatarPath),
                         JoinedAt = m.JoinedAt,
                         LeftAt = m.LeftAt,
                         LastReadAt = m.LastReadAt
@@ -131,6 +134,7 @@ public class GetChatRoomsQueryHandler : IRequestHandler<GetChatRoomsQuery, Resul
                         Content = lastMessage.Content,
                         MessageType = lastMessage.MessageType,
                         SenderName = $"{lastMessage.Sender.FirstName} {lastMessage.Sender.LastName}".Trim(),
+                        SenderAvatar = _avatarUrlResolver.ResolveAvatarUrl(lastMessage.Sender.AvatarPath),
                         CreatedAt = lastMessage.CreatedAt ?? DateTime.UtcNow
                     } : null,
                     CreatedAt = room.CreatedAt ?? DateTime.UtcNow

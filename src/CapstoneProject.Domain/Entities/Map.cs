@@ -20,6 +20,8 @@ public class Map : BaseEntity
     public decimal? Price { get; set; }
     public string? EditorialContent { get; set; }
     public int UnlockEditorialAfterStars { get; set; } = 3;
+    /// <summary>URL avatar của map (lưu trên Cloudinary).</summary>
+    public string? AvatarUrl { get; set; }
 
     public virtual ICollection<Hint> Hints { get; set; } = new List<Hint>();
     public virtual ICollection<MapTag> MapTags { get; set; } = new List<MapTag>();

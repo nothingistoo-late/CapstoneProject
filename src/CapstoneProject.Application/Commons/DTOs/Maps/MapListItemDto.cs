@@ -18,4 +18,6 @@ public class MapListItemDto
     public DateTime? CreatedAt { get; set; }
     public List<string> TagNames { get; set; } = new();
     public int WinCondition { get; set; }
+    /// <summary>URL avatar map (Cloudinary).</summary>
+    public string? AvatarUrl { get; set; }
 }

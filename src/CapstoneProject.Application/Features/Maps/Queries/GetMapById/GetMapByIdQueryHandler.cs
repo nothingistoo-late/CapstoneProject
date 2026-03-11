@@ -62,7 +62,8 @@ public class GetMapByIdQueryHandler : IRequestHandler<GetMapByIdQuery, Result<Ma
             MapDetailJson = ParseMapDetailJson(map.MapDetail?.JsonContent),
             Hints = map.Hints.OrderBy(h => h.OrderNo).Select(h => new HintItemDto { OrderNo = h.OrderNo, Content = h.Content }).ToList(),
             TagNames = map.MapTags.Select(t => t.Tag.Name).ToList(),
-            WinCondition = map.WinCondition
+            WinCondition = map.WinCondition,
+            AvatarUrl = map.AvatarUrl
         };
         return Result<MapDetailDto>.Success(dto);
     }

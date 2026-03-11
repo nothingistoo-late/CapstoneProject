@@ -18,6 +18,7 @@ public class CreateTemporaryGroupConversationCommandHandler : IRequestHandler<Cr
     private readonly ICurrentUserService _currentUserService;
     private readonly IUnitOfWork _unitOfWork;
     private readonly IMapper _mapper;
+    private readonly IAvatarUrlResolverService _avatarUrlResolver;
     private readonly ILogger<CreateTemporaryGroupConversationCommandHandler> _logger;
 
     public CreateTemporaryGroupConversationCommandHandler(
@@ -25,12 +26,14 @@ public class CreateTemporaryGroupConversationCommandHandler : IRequestHandler<Cr
         ICurrentUserService currentUserService,
         IUnitOfWork unitOfWork,
         IMapper mapper,
+        IAvatarUrlResolverService avatarUrlResolver,
         ILogger<CreateTemporaryGroupConversationCommandHandler> logger)
     {
         _conversationService = conversationService;
         _currentUserService = currentUserService;
         _unitOfWork = unitOfWork;
         _mapper = mapper;
+        _avatarUrlResolver = avatarUrlResolver;
         _logger = logger;
     }
 
@@ -103,7 +106,7 @@ public class CreateTemporaryGroupConversationCommandHandler : IRequestHandler<Cr
                 Id = m.Id,
                 UserId = m.UserId,
                 UserName = $"{m.User.FirstName} {m.User.LastName}".Trim(),
-                AvatarPath = m.User.AvatarPath,
+                AvatarPath = _avatarUrlResolver.ResolveAvatarUrl(m.User.AvatarPath),
                 JoinedAt = m.JoinedAt,
                 LastReadAt = m.LastReadAt
             }).ToList(),

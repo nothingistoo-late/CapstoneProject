@@ -16,6 +16,8 @@ public class CreateMapRequest
     public JsonElement MapDetailJson { get; set; }
     public List<HintItemDto> Hints { get; set; } = new();
     public List<Guid> TagIds { get; set; } = new();
+    /// <summary>URL avatar map (Cloudinary). Optional khi tạo map.</summary>
+    public string? AvatarUrl { get; set; }
 }
 
 public class HintItemDto

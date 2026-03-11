@@ -18,4 +18,6 @@ public class UpdateMapRequest
     public int? UnlockEditorialAfterStars { get; set; }
     public List<HintItemDto>? Hints { get; set; }
     public List<Guid>? TagIds { get; set; }
+    /// <summary>URL avatar map (Cloudinary). Null = không đổi.</summary>
+    public string? AvatarUrl { get; set; }
 }

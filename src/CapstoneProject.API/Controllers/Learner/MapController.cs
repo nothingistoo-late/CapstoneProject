@@ -5,6 +5,7 @@ using CapstoneProject.Application.Features.Maps.Commands.CreateMapFromJsonFile;
 using CapstoneProject.Application.Features.Maps.Commands.DeleteMap;
 using CapstoneProject.Application.Features.Maps.Commands.SubmitMapForReview;
 using CapstoneProject.Application.Features.Maps.Commands.UpdateMap;
+using CapstoneProject.Application.Features.Maps.Commands.UploadMapAvatar;
 using CapstoneProject.Application.Features.Maps.Queries.GetMapById;
 using CapstoneProject.Application.Features.Maps.Queries.GetMaps;
 using CapstoneProject.Application.Features.Maps.Queries.GetMyMaps;
@@ -133,6 +134,7 @@ public class LearnerMapController : ControllerBase
     /// - mapDetailJson (object, required): Full JSON map detail payload (level/layers/start-goal/objects/metadata...).
     /// - hints (array of { orderNo: int, content: string }, optional): Ordered hints.
     /// - tagIds (array of Guid, optional): Tag IDs.
+    /// - avatarUrl (string, optional): URL avatar map (Cloudinary). Hoặc upload sau qua POST /api/learner/maps/{id}/avatar.
     ///
     /// **METHOD and path:** POST /api/learner/maps
     ///
@@ -176,6 +178,7 @@ public class LearnerMapController : ControllerBase
     /// - hintsJson (string, optional): JSON array hints, mặc định "[]".
     /// - tagIdsCsv (string, optional): Danh sách tag ID cách nhau bằng dấu phẩy.
     /// - mapDetailFile (file, required): File JSON chứa chi tiết map (level/layers/objects...).
+    /// - avatarFile (file, optional): Ảnh avatar map; upload lên Cloudinary khi tạo.
     ///
     /// **Example:** Content-Type: multipart/form-data với các field trên và mapDetailFile là file .json.
     /// </remarks>
@@ -216,7 +219,7 @@ public class LearnerMapController : ControllerBase
             MapDetailJsonContent = jsonContent
         };
 
-        var result = await _mediator.Send(new CreateMapFromJsonFileCommand(input, AutoPublish: false));
+        var result = await _mediator.Send(new CreateMapFromJsonFileCommand(input, AutoPublish: false, request.AvatarFile));
         if (result.IsSuccess && result.Data != default)
             return CreatedAtAction(nameof(GetMapById), new { id = result.Data }, result);
         return StatusCode(result.GetHttpStatusCode(), result);
@@ -263,6 +266,30 @@ public class LearnerMapController : ControllerBase
     public async Task<IActionResult> UpdateMap(Guid id, [FromBody] UpdateMapRequest request)
     {
         var result = await _mediator.Send(new UpdateMapCommand(id, request));
+        return StatusCode(result.GetHttpStatusCode(), result);
+    }
+
+    /// <summary>
+    /// Upload map avatar (image) to Cloudinary
+    /// </summary>
+    /// <remarks>
+    /// Upload avatar cho map. Author hoặc Admin/Moderator. Body: multipart/form-data, field "avatar" (file ảnh).
+    /// **METHOD and path:** POST /api/learner/maps/{id}/avatar
+    /// </remarks>
+    [HttpPost("{id:guid}/avatar")]
+    [AuthorizeRoles(nameof(RoleEnum.Learner), nameof(RoleEnum.Admin), nameof(RoleEnum.Moderator))]
+    [Consumes("multipart/form-data")]
+    [ProducesResponseType(typeof(Result<string>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(Result), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(Result), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(Result), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(Result), StatusCodes.Status404NotFound)]
+    [SwaggerOperation(Summary = "Upload avatar map", Description = "Upload avatar image for map (Cloudinary). Author or Admin/Moderator. Form: avatar (file).", OperationId = "Learner_UploadMapAvatar", Tags = new[] { "Learner - Maps" })]
+    public async Task<IActionResult> UploadMapAvatar(Guid id, IFormFile avatar)
+    {
+        if (avatar == null || avatar.Length == 0)
+            return BadRequest(Result<string>.Failure("Avatar file is required.", ErrorCodeEnum.ValidationFailed));
+        var result = await _mediator.Send(new UploadMapAvatarCommand(id, avatar));
         return StatusCode(result.GetHttpStatusCode(), result);
     }
 

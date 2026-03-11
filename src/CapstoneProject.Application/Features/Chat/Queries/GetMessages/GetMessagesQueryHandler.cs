@@ -15,15 +15,18 @@ public class GetMessagesQueryHandler : IRequestHandler<GetMessagesQuery, Result<
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly ICurrentUserService _currentUserService;
+    private readonly IAvatarUrlResolverService _avatarUrlResolver;
     private readonly ILogger<GetMessagesQueryHandler> _logger;
 
     public GetMessagesQueryHandler(
         IUnitOfWork unitOfWork,
         ICurrentUserService currentUserService,
+        IAvatarUrlResolverService avatarUrlResolver,
         ILogger<GetMessagesQueryHandler> logger)
     {
         _unitOfWork = unitOfWork;
         _currentUserService = currentUserService;
+        _avatarUrlResolver = avatarUrlResolver;
         _logger = logger;
     }
 
@@ -113,7 +116,7 @@ public class GetMessagesQueryHandler : IRequestHandler<GetMessagesQuery, Result<
             ChatRoomId = m.ChatRoomId,
             SenderId = m.SenderId,
             SenderName = $"{m.Sender.FirstName} {m.Sender.LastName}".Trim(),
-            SenderAvatar = m.Sender.AvatarPath,
+            SenderAvatar = _avatarUrlResolver.ResolveAvatarUrl(m.Sender.AvatarPath),
             Content = m.Content,
             MessageType = m.MessageType,
             FilePath = m.FilePath,

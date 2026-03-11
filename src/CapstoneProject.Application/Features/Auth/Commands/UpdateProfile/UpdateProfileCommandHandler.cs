@@ -19,6 +19,7 @@ public class UpdateProfileCommandHandler : IRequestHandler<UpdateProfileCommand,
     private readonly IUnitOfWork _unitOfWork;
     private readonly ICurrentUserService _currentUserService;
     private readonly IFileServiceFactory _fileServiceFactory;
+    private readonly ICloudinaryService _cloudinaryService;
     private readonly IMapper _mapper;
     private readonly ILogger<UpdateProfileCommandHandler> _logger;
 
@@ -27,6 +28,7 @@ public class UpdateProfileCommandHandler : IRequestHandler<UpdateProfileCommand,
         IUnitOfWork unitOfWork,
         ICurrentUserService currentUserService,
         IFileServiceFactory fileServiceFactory,
+        ICloudinaryService cloudinaryService,
         IMapper mapper,
         ILogger<UpdateProfileCommandHandler> logger)
     {
@@ -34,6 +36,7 @@ public class UpdateProfileCommandHandler : IRequestHandler<UpdateProfileCommand,
         _unitOfWork = unitOfWork;
         _currentUserService = currentUserService;
         _fileServiceFactory = fileServiceFactory;
+        _cloudinaryService = cloudinaryService;
         _mapper = mapper;
         _logger = logger;
     }
@@ -91,18 +94,16 @@ public class UpdateProfileCommandHandler : IRequestHandler<UpdateProfileCommand,
             if (!string.IsNullOrWhiteSpace(request.Bio))
                 user.Bio = request.Bio;
 
-            // Handle avatar upload
+            // Handle avatar upload (Cloudinary)
             if (command.AvatarFile != null)
             {
-                var fileService = _fileServiceFactory.CreateFileService();
-
-                // Upload new avatar with timestamp to ensure unique filename
-                var uniqueFileName = $"{userId}_{DateTime.UtcNow.Ticks}_{Path.GetFileName(command.AvatarFile.FileName)}";
-                user.AvatarPath = await fileService.UploadFileAsync(
+                var avatarUrl = await _cloudinaryService.UploadImageAsync(
                     command.AvatarFile,
-                    uniqueFileName,
                     "avatars",
+                    $"user_{userId:N}",
                     cancellationToken);
+                if (!string.IsNullOrEmpty(avatarUrl))
+                    user.AvatarPath = avatarUrl;
             }
 
             // Update user entity with tracking info and SecurityStamp
@@ -123,13 +124,16 @@ public class UpdateProfileCommandHandler : IRequestHandler<UpdateProfileCommand,
                 {
                     try
                     {
-                        var fileService = _fileServiceFactory.CreateFileService();
-                        await fileService.DeleteFileAsync(oldAvatarPath, cancellationToken);
+                        var publicId = _cloudinaryService.GetPublicIdFromUrl(oldAvatarPath);
+                        if (publicId != null)
+                            await _cloudinaryService.DeleteAsync(publicId, cancellationToken);
+                        else
+                        {
+                            var fileService = _fileServiceFactory.CreateFileService();
+                            await fileService.DeleteFileAsync(oldAvatarPath, cancellationToken);
+                        }
                     }
-                    catch
-                    {
-                        // Log error if needed, but do not throw
-                    }
+                    catch { /* ignore */ }
                 }
             });
 

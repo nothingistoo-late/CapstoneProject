@@ -54,6 +54,8 @@ public class UpdateMapCommandHandler : IRequestHandler<UpdateMapCommand, Result>
         map.EditorialContent = req.EditorialContent;
         if (req.UnlockEditorialAfterStars.HasValue)
             map.UnlockEditorialAfterStars = req.UnlockEditorialAfterStars.Value;
+        if (req.AvatarUrl != null)
+            map.AvatarUrl = req.AvatarUrl;
         map.UpdateEntity(userId);
 
         if (req.Hints != null)

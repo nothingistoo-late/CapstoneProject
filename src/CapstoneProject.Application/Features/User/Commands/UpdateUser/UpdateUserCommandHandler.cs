@@ -19,19 +19,22 @@ public class UpdateUserCommandHandler : IRequestHandler<UpdateUserCommand, Resul
     private readonly IMapper _mapper;
     private readonly ICurrentUserService _currentUserService;
     private readonly IFileServiceFactory _fileServiceFactory;
+    private readonly ICloudinaryService _cloudinaryService;
 
     public UpdateUserCommandHandler(
         IIdentityService identityService,
         IUnitOfWork unitOfWork,
         IMapper mapper,
         ICurrentUserService currentUserService,
-        IFileServiceFactory fileServiceFactory)
+        IFileServiceFactory fileServiceFactory,
+        ICloudinaryService cloudinaryService)
     {
         _identityService = identityService;
         _unitOfWork = unitOfWork;
         _mapper = mapper;
         _currentUserService = currentUserService;
         _fileServiceFactory = fileServiceFactory;
+        _cloudinaryService = cloudinaryService;
     }
 
     public async Task<Result> Handle(UpdateUserCommand command, CancellationToken cancellationToken)
@@ -95,16 +98,16 @@ public class UpdateUserCommandHandler : IRequestHandler<UpdateUserCommand, Resul
             // Determine target role (new role if updating, otherwise current role)
             var targetRole = request.NewRole ?? currentRole;
 
-        // Upload new avatar if provided
+        // Upload new avatar if provided (Cloudinary)
         if (command.AvatarFile != null)
         {
-            var fileService = _fileServiceFactory.CreateFileService();
-            // Use timestamp to ensure unique filename
-            var uniqueFileName = $"{user.Id}_{DateTime.UtcNow.Ticks}_{Path.GetFileName(command.AvatarFile.FileName)}";
-            user.AvatarPath = await fileService.UploadFileAsync(
+            var avatarUrl = await _cloudinaryService.UploadImageAsync(
                 command.AvatarFile,
-                uniqueFileName,
-                "avatars");
+                "avatars",
+                $"user_{user.Id:N}",
+                cancellationToken);
+            if (!string.IsNullOrEmpty(avatarUrl))
+                user.AvatarPath = avatarUrl;
         }
                    
         using (var scope = new TransactionScope(
@@ -153,8 +156,14 @@ public class UpdateUserCommandHandler : IRequestHandler<UpdateUserCommand, Resul
                 {
                     try
                     {
-                        var fileService = _fileServiceFactory.CreateFileService();
-                        await fileService.DeleteFileAsync(oldAvatarPath);
+                        var publicId = _cloudinaryService.GetPublicIdFromUrl(oldAvatarPath);
+                        if (publicId != null)
+                            await _cloudinaryService.DeleteAsync(publicId, cancellationToken);
+                        else
+                        {
+                            var fileService = _fileServiceFactory.CreateFileService();
+                            await fileService.DeleteFileAsync(oldAvatarPath, cancellationToken);
+                        }
                     }
                     catch
                     {

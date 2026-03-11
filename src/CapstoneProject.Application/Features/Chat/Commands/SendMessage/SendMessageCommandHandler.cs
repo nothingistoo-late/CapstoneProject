@@ -21,6 +21,7 @@ public class SendMessageCommandHandler : IRequestHandler<SendMessageCommand, Res
     private readonly ICurrentUserService _currentUserService;
     private readonly IConversationService _conversationService;
     private readonly IChatBroadcastService _broadcastService;
+    private readonly IAvatarUrlResolverService _avatarUrlResolver;
     private readonly ILogger<SendMessageCommandHandler> _logger;
 
     public SendMessageCommandHandler(
@@ -28,12 +29,14 @@ public class SendMessageCommandHandler : IRequestHandler<SendMessageCommand, Res
         ICurrentUserService currentUserService,
         IConversationService conversationService,
         IChatBroadcastService broadcastService,
+        IAvatarUrlResolverService avatarUrlResolver,
         ILogger<SendMessageCommandHandler> logger)
     {
         _unitOfWork = unitOfWork;
         _currentUserService = currentUserService;
         _conversationService = conversationService;
         _broadcastService = broadcastService;
+        _avatarUrlResolver = avatarUrlResolver;
         _logger = logger;
     }
 
@@ -135,7 +138,7 @@ public class SendMessageCommandHandler : IRequestHandler<SendMessageCommand, Res
             ChatRoomId = messageWithSender.ChatRoomId,
             SenderId = messageWithSender.SenderId,
             SenderName = $"{messageWithSender.Sender.FirstName} {messageWithSender.Sender.LastName}".Trim(),
-            SenderAvatar = messageWithSender.Sender.AvatarPath,
+            SenderAvatar = _avatarUrlResolver.ResolveAvatarUrl(messageWithSender.Sender.AvatarPath),
             Content = messageWithSender.Content,
             MessageType = messageWithSender.MessageType,
             FilePath = messageWithSender.FilePath,

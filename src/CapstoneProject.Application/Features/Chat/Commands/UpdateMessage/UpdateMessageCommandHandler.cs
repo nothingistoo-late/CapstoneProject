@@ -15,15 +15,18 @@ public class UpdateMessageCommandHandler : IRequestHandler<UpdateMessageCommand,
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly ICurrentUserService _currentUserService;
+    private readonly IAvatarUrlResolverService _avatarUrlResolver;
     private readonly ILogger<UpdateMessageCommandHandler> _logger;
 
     public UpdateMessageCommandHandler(
         IUnitOfWork unitOfWork,
         ICurrentUserService currentUserService,
+        IAvatarUrlResolverService avatarUrlResolver,
         ILogger<UpdateMessageCommandHandler> logger)
     {
         _unitOfWork = unitOfWork;
         _currentUserService = currentUserService;
+        _avatarUrlResolver = avatarUrlResolver;
         _logger = logger;
     }
 
@@ -104,7 +107,7 @@ public class UpdateMessageCommandHandler : IRequestHandler<UpdateMessageCommand,
                 ChatRoomId = message.ChatRoomId,
                 SenderId = message.SenderId,
                 SenderName = $"{message.Sender.FirstName} {message.Sender.LastName}".Trim(),
-                SenderAvatar = message.Sender.AvatarPath,
+                SenderAvatar = _avatarUrlResolver.ResolveAvatarUrl(message.Sender.AvatarPath),
                 Content = message.Content,
                 MessageType = message.MessageType,
                 FilePath = message.FilePath,

@@ -18,19 +18,22 @@ public class CreateUserCommandHandler : IRequestHandler<CreateUserCommand, Resul
     private readonly IMapper _mapper;
     private readonly ICurrentUserService _currentUserService;
     private readonly IFileServiceFactory _fileServiceFactory;
+    private readonly ICloudinaryService _cloudinaryService;
 
     public CreateUserCommandHandler(
         IIdentityService identityService,
         IUnitOfWork unitOfWork,
         IMapper mapper,
         ICurrentUserService currentUserService,
-        IFileServiceFactory fileServiceFactory)
+        IFileServiceFactory fileServiceFactory,
+        ICloudinaryService cloudinaryService)
     {
         _identityService = identityService;
         _unitOfWork = unitOfWork;
         _mapper = mapper;
         _currentUserService = currentUserService;
         _fileServiceFactory = fileServiceFactory;
+        _cloudinaryService = cloudinaryService;
     }
 
     public async Task<Result> Handle(CreateUserCommand command, CancellationToken cancellationToken)
@@ -66,15 +69,16 @@ public class CreateUserCommandHandler : IRequestHandler<CreateUserCommand, Resul
             user.InitializeEntity(userId);
             user.Status = request.Status ?? EntityStatusEnum.Active;
 
-            // Upload avatar if provided
+            // Upload avatar if provided (Cloudinary) - user.Id not set yet, use temp prefix
             if (command.AvatarFile != null)
             {
-                var fileService = _fileServiceFactory.CreateFileService();
-                var fileName = $"{user.Id}_{Path.GetFileName(command.AvatarFile.FileName)}";
-                user.AvatarPath = await fileService.UploadFileAsync(
+                var avatarUrl = await _cloudinaryService.UploadImageAsync(
                     command.AvatarFile,
-                    fileName,
-                    "avatars");
+                    "avatars",
+                    $"new_{DateTime.UtcNow.Ticks}",
+                    cancellationToken);
+                if (!string.IsNullOrEmpty(avatarUrl))
+                    user.AvatarPath = avatarUrl;
             }
 
             using (var scope = new TransactionScope(

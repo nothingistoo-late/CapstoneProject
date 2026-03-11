@@ -3,6 +3,7 @@ using MediatR;
 using CapstoneProject.Application.Common.Enums;
 using CapstoneProject.Application.Common.Models;
 using CapstoneProject.Application.Commons.DTOs.Maps;
+using CapstoneProject.Application.Commons.Interfaces;
 using CapstoneProject.Application.Features.Maps.Commands.CreateMap;
 
 namespace CapstoneProject.Application.Features.Maps.Commands.CreateMapFromJsonFile;
@@ -10,8 +11,13 @@ namespace CapstoneProject.Application.Features.Maps.Commands.CreateMapFromJsonFi
 public class CreateMapFromJsonFileCommandHandler : IRequestHandler<CreateMapFromJsonFileCommand, Result<Guid>>
 {
     private readonly IMediator _mediator;
+    private readonly ICloudinaryService _cloudinaryService;
 
-    public CreateMapFromJsonFileCommandHandler(IMediator mediator) => _mediator = mediator;
+    public CreateMapFromJsonFileCommandHandler(IMediator mediator, ICloudinaryService cloudinaryService)
+    {
+        _mediator = mediator;
+        _cloudinaryService = cloudinaryService;
+    }
 
     public async Task<Result<Guid>> Handle(CreateMapFromJsonFileCommand command, CancellationToken cancellationToken)
     {
@@ -37,6 +43,16 @@ public class CreateMapFromJsonFileCommandHandler : IRequestHandler<CreateMapFrom
         if (tagIds == null)
             return Result<Guid>.Failure("TagIdsCsv contains invalid Guid(s).", ErrorCodeEnum.ValidationFailed);
 
+        string? avatarUrl = null;
+        if (command.AvatarFile != null && command.AvatarFile.Length > 0)
+        {
+            avatarUrl = await _cloudinaryService.UploadImageAsync(
+                command.AvatarFile,
+                "maps",
+                $"map_new_{DateTime.UtcNow.Ticks}",
+                cancellationToken);
+        }
+
         var createRequest = new CreateMapRequest
         {
             Title = input.Title,
@@ -48,7 +64,8 @@ public class CreateMapFromJsonFileCommandHandler : IRequestHandler<CreateMapFrom
             Price = input.Price,
             TagIds = tagIds,
             Hints = hints,
-            MapDetailJson = detailJson
+            MapDetailJson = detailJson,
+            AvatarUrl = avatarUrl
         };
 
         var result = await _mediator.Send(new CreateMapCommand(createRequest, command.AutoPublish), cancellationToken);

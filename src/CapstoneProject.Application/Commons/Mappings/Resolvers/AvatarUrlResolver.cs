@@ -21,15 +21,19 @@ public class AvatarUrlResolver : IValueResolver<AppUser, object, string?>
         if (string.IsNullOrEmpty(source.AvatarPath))
             return null;
 
+        // Cloudinary (hoặc URL đầy đủ) - trả về luôn
+        if (source.AvatarPath.StartsWith("http://", StringComparison.OrdinalIgnoreCase) ||
+            source.AvatarPath.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
+            return source.AvatarPath;
+
         try
         {
-            // Convert relative path to full URL
+            // Path local - convert to full URL
             var fileService = _fileServiceFactory.CreateFileService();
             return fileService.GetFileUrl(source.AvatarPath);
         }
         catch
         {
-            // If any error occurs, return the original path
             return source.AvatarPath;
         }
     }

@@ -20,17 +20,20 @@ public class AddMemberToRoomCommandHandler : IRequestHandler<AddMemberToRoomComm
     private readonly IConversationService _conversationService;
     private readonly ICurrentUserService _currentUserService;
     private readonly IUnitOfWork _unitOfWork;
+    private readonly IAvatarUrlResolverService _avatarUrlResolver;
     private readonly ILogger<AddMemberToRoomCommandHandler> _logger;
 
     public AddMemberToRoomCommandHandler(
         IConversationService conversationService,
         ICurrentUserService currentUserService,
         IUnitOfWork unitOfWork,
+        IAvatarUrlResolverService avatarUrlResolver,
         ILogger<AddMemberToRoomCommandHandler> logger)
     {
         _conversationService = conversationService;
         _currentUserService = currentUserService;
         _unitOfWork = unitOfWork;
+        _avatarUrlResolver = avatarUrlResolver;
         _logger = logger;
     }
 
@@ -79,7 +82,7 @@ public class AddMemberToRoomCommandHandler : IRequestHandler<AddMemberToRoomComm
                 Id = memberWithUser.Id,
                 UserId = memberWithUser.UserId,
                 UserName = $"{memberWithUser.User.FirstName} {memberWithUser.User.LastName}".Trim(),
-                AvatarPath = memberWithUser.User.AvatarPath,
+                AvatarPath = _avatarUrlResolver.ResolveAvatarUrl(memberWithUser.User.AvatarPath),
                 JoinedAt = memberWithUser.JoinedAt,
                 LeftAt = memberWithUser.LeftAt,
                 LastReadAt = memberWithUser.LastReadAt

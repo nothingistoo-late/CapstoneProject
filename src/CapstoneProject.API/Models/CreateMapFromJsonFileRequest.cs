@@ -16,4 +16,6 @@ public class CreateMapFromJsonFileRequest
     public string HintsJson { get; set; } = "[]";
     public string TagIdsCsv { get; set; } = string.Empty;
     public IFormFile MapDetailFile { get; set; } = null!;
+    /// <summary>Avatar map (ảnh, optional). Upload lên Cloudinary khi tạo map.</summary>
+    public IFormFile? AvatarFile { get; set; }
 }
