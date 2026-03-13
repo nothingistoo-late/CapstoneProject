@@ -27,6 +27,7 @@ public class GetMapByIdQueryHandler : IRequestHandler<GetMapByIdQuery, Result<Ma
             .Include(m => m.MapDetail)
             .Include(m => m.Hints)
             .Include(m => m.MapTags).ThenInclude(mt => mt.Tag)
+            .Include(m => m.Creator)
             .AsNoTracking()
             .FirstOrDefaultAsync(cancellationToken);
         if (map == null)
@@ -53,9 +54,10 @@ public class GetMapByIdQueryHandler : IRequestHandler<GetMapByIdQuery, Result<Ma
             Type = map.Type.ToString(),
             TimeLimitMs = map.TimeLimitMs,
             IsPublished = map.IsPublished,
-            MapStatus = map.MapStatus,
+            MapStatus = map.MapStatus.ToString(),
             Price = map.Price,
             CreatedByUserId = map.CreatedBy ?? Guid.Empty,
+            CreatedByUserName = map.Creator != null ? $"{map.Creator.FirstName} {map.Creator.LastName}".Trim() : null,
             EditorialContent = showEditorial ? map.EditorialContent : null,
             UnlockEditorialAfterStars = map.UnlockEditorialAfterStars,
             CreatedAt = map.CreatedAt,

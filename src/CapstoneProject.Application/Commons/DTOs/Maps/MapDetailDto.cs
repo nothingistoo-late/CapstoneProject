@@ -1,5 +1,4 @@
 using System.Text.Json;
-using CapstoneProject.Domain.Enums;
 
 namespace CapstoneProject.Application.Commons.DTOs.Maps;
 
@@ -13,9 +12,12 @@ public class MapDetailDto
     public string Type { get; set; } = string.Empty;
     public int TimeLimitMs { get; set; }
     public bool IsPublished { get; set; }
-    public MapStatusEnum MapStatus { get; set; }
+    /// <summary>Trạng thái map: Draft, PendingReview, Approved, Rejected, Published.</summary>
+    public string MapStatus { get; set; } = string.Empty;
     public decimal? Price { get; set; }
     public Guid CreatedByUserId { get; set; }
+    /// <summary>Tên người tạo map (FirstName + LastName).</summary>
+    public string? CreatedByUserName { get; set; }
     public string? EditorialContent { get; set; }
     public int UnlockEditorialAfterStars { get; set; }
     public DateTime? CreatedAt { get; set; }

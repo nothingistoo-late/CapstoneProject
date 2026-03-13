@@ -39,6 +39,7 @@ public static class QuackOrbitEntityConfiguration
     {
         e.Property(x => x.MapStatus).HasConversion<int>();
         e.HasIndex(x => x.CreatedBy);
+        e.HasOne(x => x.Creator).WithMany().HasForeignKey(x => x.CreatedBy).IsRequired(false);
         e.HasIndex(x => x.MapStatus);
         e.HasIndex(x => x.IsPublished);
         e.HasMany(x => x.Hints).WithOne(x => x.Map).HasForeignKey(x => x.MapId).OnDelete(DeleteBehavior.Cascade);

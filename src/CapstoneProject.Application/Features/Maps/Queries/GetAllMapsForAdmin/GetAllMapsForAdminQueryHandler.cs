@@ -19,6 +19,7 @@ public class GetAllMapsForAdminQueryHandler : IRequestHandler<GetAllMapsForAdmin
         var query = _unitOfWork.Repository<Map>().GetQueryable()
             .Where(m => !m.IsDeleted && m.Status == EntityStatusEnum.Active)
             .Include(m => m.MapTags).ThenInclude(mt => mt.Tag)
+            .Include(m => m.Creator)
             .AsNoTracking();
 
         var total = await query.CountAsync(cancellationToken);
@@ -45,9 +46,10 @@ public class GetAllMapsForAdminQueryHandler : IRequestHandler<GetAllMapsForAdmin
                 Type = m.Type.ToString(),
                 TimeLimitMs = m.TimeLimitMs,
                 IsPublished = m.IsPublished,
-                MapStatus = m.MapStatus,
+                MapStatus = m.MapStatus.ToString(),
                 Price = m.Price,
                 CreatedByUserId = m.CreatedBy ?? Guid.Empty,
+                CreatedByUserName = m.Creator != null ? $"{m.Creator.FirstName} {m.Creator.LastName}".Trim() : null,
                 CreatedAt = m.CreatedAt,
                 TagNames = m.MapTags.Select(t => t.Tag.Name).ToList(),
                 WinCondition = m.WinCondition,

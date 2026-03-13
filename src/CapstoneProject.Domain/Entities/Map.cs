@@ -23,6 +23,7 @@ public class Map : BaseEntity
     /// <summary>URL avatar của map (lưu trên Cloudinary).</summary>
     public string? AvatarUrl { get; set; }
 
+    public virtual AppUser? Creator { get; set; }
     public virtual ICollection<Hint> Hints { get; set; } = new List<Hint>();
     public virtual ICollection<MapTag> MapTags { get; set; } = new List<MapTag>();
     public virtual MapDetail MapDetail { get; set; } = null!;

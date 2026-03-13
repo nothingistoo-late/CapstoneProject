@@ -54,6 +54,7 @@ public class GetMyMapsQueryHandler : IRequestHandler<GetMyMapsQuery, Result<Pagi
         var query = mapRepo.GetQueryable()
             .Where(m => !m.IsDeleted && m.Status == EntityStatusEnum.Active && ownedMapIds.Contains(m.Id))
             .Include(m => m.MapTags).ThenInclude(mt => mt.Tag)
+            .Include(m => m.Creator)
             .AsNoTracking();
 
         var total = await query.CountAsync(cancellationToken);
@@ -78,9 +79,10 @@ public class GetMyMapsQueryHandler : IRequestHandler<GetMyMapsQuery, Result<Pagi
                 Type = m.Type.ToString(),
                 TimeLimitMs = m.TimeLimitMs,
                 IsPublished = m.IsPublished,
-                MapStatus = m.MapStatus,
+                MapStatus = m.MapStatus.ToString(),
                 Price = m.Price,
                 CreatedByUserId = m.CreatedBy ?? Guid.Empty,
+                CreatedByUserName = m.Creator != null ? $"{m.Creator.FirstName} {m.Creator.LastName}".Trim() : null,
                 IsAuthor = m.CreatedBy == userId.Value,
                 CreatedAt = m.CreatedAt,
                 TagNames = m.MapTags.Select(t => t.Tag.Name).ToList(),

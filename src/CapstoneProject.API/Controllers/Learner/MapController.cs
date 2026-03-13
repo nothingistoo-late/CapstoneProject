@@ -7,6 +7,7 @@ using CapstoneProject.Application.Features.Maps.Commands.SubmitMapForReview;
 using CapstoneProject.Application.Features.Maps.Commands.UpdateMap;
 using CapstoneProject.Application.Features.Maps.Commands.UploadMapAvatar;
 using CapstoneProject.Application.Features.Maps.Queries.GetMapById;
+using CapstoneProject.Application.Features.Maps.Queries.GetMapInfo;
 using CapstoneProject.Application.Features.Maps.Queries.GetMaps;
 using CapstoneProject.Application.Features.Maps.Queries.GetMyMaps;
 using CapstoneProject.Application.Features.Maps.Queries.GetTags;
@@ -152,6 +153,30 @@ public class LearnerMapController : ControllerBase
     public async Task<IActionResult> GetMapById(Guid id, [FromQuery] bool includeEditorialForUser = false)
     {
         var result = await _mediator.Send(new GetMapByIdQuery(id, includeEditorialForUser));
+        return StatusCode(result.GetHttpStatusCode(), result);
+    }
+
+    /// <summary>
+    /// Get map info only (metadata, no MapDetail / hints)
+    /// </summary>
+    /// <remarks>
+    /// Lấy chỉ thông tin map theo ID: title, description, difficulty, type, timeLimitMs, isPublished, mapStatus, price, createdByUserId, createdAt, tagNames, winCondition, avatarUrl. Không trả về MapDetail (JSON level), Hints, Editorial. Dùng khi chỉ cần metadata.
+    ///
+    /// **Route:** id (Guid, required): Map ID.
+    ///
+    /// **METHOD and path:** GET /api/learner/maps/{id}/info
+    /// </remarks>
+    /// <response code="200">Returns message and data (MapInfoDto).</response>
+    /// <response code="404">Map not found</response>
+    /// <response code="500">Internal server error</response>
+    [HttpGet("{id:guid}/info")]
+    [ProducesResponseType(typeof(Result<MapInfoDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(Result<MapInfoDto>), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(Result<MapInfoDto>), StatusCodes.Status500InternalServerError)]
+    [SwaggerOperation(Summary = "Thông tin map (metadata)", Description = "Returns map metadata only (no MapDetail JSON, no hints). Use for lightweight map info.", OperationId = "Learner_GetMapInfo", Tags = new[] { "Learner - Maps" })]
+    public async Task<IActionResult> GetMapInfo(Guid id)
+    {
+        var result = await _mediator.Send(new GetMapInfoQuery(id));
         return StatusCode(result.GetHttpStatusCode(), result);
     }
 

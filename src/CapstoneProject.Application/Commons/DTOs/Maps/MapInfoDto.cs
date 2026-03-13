@@ -1,12 +1,14 @@
 namespace CapstoneProject.Application.Commons.DTOs.Maps;
 
-public class MapListItemDto
+/// <summary>
+/// Thông tin map (metadata only), không bao gồm MapDetail (JSON), Hints, Editorial.
+/// </summary>
+public class MapInfoDto
 {
     public Guid Id { get; set; }
     public string Title { get; set; } = string.Empty;
     public string Description { get; set; } = string.Empty;
     public int Difficulty { get; set; }
-    /// <summary>Loại map: "Topdown" hoặc "Platform".</summary>
     public string Type { get; set; } = string.Empty;
     public int TimeLimitMs { get; set; }
     public bool IsPublished { get; set; }
@@ -16,11 +18,8 @@ public class MapListItemDto
     public Guid CreatedByUserId { get; set; }
     /// <summary>Tên người tạo map (FirstName + LastName).</summary>
     public string? CreatedByUserName { get; set; }
-    /// <summary>Người hiện tại có phải tác giả map không (CreatedBy).</summary>
-    public bool IsAuthor { get; set; }
     public DateTime? CreatedAt { get; set; }
     public List<string> TagNames { get; set; } = new();
     public int WinCondition { get; set; }
-    /// <summary>URL avatar map (Cloudinary).</summary>
     public string? AvatarUrl { get; set; }
 }

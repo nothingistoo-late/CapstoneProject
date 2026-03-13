@@ -19,6 +19,7 @@ public class GetMapsQueryHandler : IRequestHandler<GetMapsQuery, Result<Paginati
         var query = _unitOfWork.Repository<Map>().GetQueryable()
             .Where(m => !m.IsDeleted && m.Status == EntityStatusEnum.Active)
             .Include(m => m.MapTags).ThenInclude(mt => mt.Tag)
+            .Include(m => m.Creator)
             .AsNoTracking();
 
         // Status filter: if MapStatus provided use it; else if publishedOnly use Published only
@@ -61,9 +62,10 @@ public class GetMapsQueryHandler : IRequestHandler<GetMapsQuery, Result<Paginati
                 Type = m.Type.ToString(),
                 TimeLimitMs = m.TimeLimitMs,
                 IsPublished = m.IsPublished,
-                MapStatus = m.MapStatus,
+                MapStatus = m.MapStatus.ToString(),
                 Price = m.Price,
                 CreatedByUserId = m.CreatedBy ?? Guid.Empty,
+                CreatedByUserName = m.Creator != null ? $"{m.Creator.FirstName} {m.Creator.LastName}".Trim() : null,
                 CreatedAt = m.CreatedAt,
                 TagNames = m.MapTags.Select(t => t.Tag.Name).ToList(),
                 WinCondition = m.WinCondition,
