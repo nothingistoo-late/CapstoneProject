@@ -33,6 +33,15 @@ public static class QuackOrbitEntityConfiguration
         builder.Entity<UserMatchResult>(ConfigureUserMatchResult);
         builder.Entity<MapRating>(ConfigureMapRating);
         builder.Entity<MapReport>(ConfigureMapReport);
+        builder.Entity<MyMap>(ConfigureMyMap);
+    }
+
+    static void ConfigureMyMap(EntityTypeBuilder<MyMap> e)
+    {
+        e.HasIndex(x => new { x.UserId, x.MapId }).IsUnique();
+        e.HasIndex(x => x.MapId);
+        e.HasOne(x => x.Map).WithMany().HasForeignKey(x => x.MapId).OnDelete(DeleteBehavior.Cascade);
+        e.HasOne(x => x.User).WithMany().HasForeignKey(x => x.UserId).OnDelete(DeleteBehavior.Cascade);
     }
 
     static void ConfigureMap(EntityTypeBuilder<Map> e)

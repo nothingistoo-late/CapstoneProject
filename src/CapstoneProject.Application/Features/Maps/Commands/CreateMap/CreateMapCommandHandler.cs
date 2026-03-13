@@ -68,6 +68,10 @@ public class CreateMapCommandHandler : IRequestHandler<CreateMapCommand, Result<
         mapMap.InitializeEntity(userId);
         await _unitOfWork.Repository<MapDetail>().AddAsync(mapMap);
 
+        var myMap = new MyMap { MapId = map.Id, UserId = userId, IsAuthor = true };
+        myMap.InitializeEntity(userId);
+        await _unitOfWork.Repository<MyMap>().AddAsync(myMap);
+
         await _unitOfWork.SaveChangesAsync(cancellationToken);
         var message = command.AutoPublish
             ? "Map created and published successfully."

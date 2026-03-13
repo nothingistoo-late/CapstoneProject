@@ -27,24 +27,30 @@ public class GetMyMapsQueryHandler : IRequestHandler<GetMyMapsQuery, Result<Pagi
             return Result<PaginationResult<MapListItemDto>>.Failure("Authentication required. Please log in to view your maps.", ErrorCodeEnum.Unauthorized);
 
         var mapRepo = _unitOfWork.Repository<Map>();
+        var myMapRepo = _unitOfWork.Repository<MyMap>();
         var paymentRepo = _unitOfWork.Repository<PaymentRecord>();
 
-        // Map IDs: created by user
+        // Map IDs từ bảng MyMap (nguồn chính: tạo map, mua map, thêm map free)
+        var myMapIds = await myMapRepo.GetQueryable()
+            .Where(mm => !mm.IsDeleted && mm.UserId == userId.Value)
+            .Select(mm => mm.MapId)
+            .ToListAsync(cancellationToken);
+
+        // Backward compat: map do user tạo hoặc đã mua (trước khi có bảng MyMap)
         var createdMapIds = await mapRepo.GetQueryable()
             .Where(m => !m.IsDeleted && m.Status == EntityStatusEnum.Active && m.CreatedBy == userId.Value)
             .Select(m => m.Id)
             .ToListAsync(cancellationToken);
-
-        // Map IDs: purchased by user (PaymentRecord with MapId)
         var purchasedMapIds = await paymentRepo.GetQueryable()
-            .Where(p => p.UserId == userId.Value && p.MapId != null)
+            .Where(p => !p.IsDeleted && p.UserId == userId.Value && p.MapId != null)
             .Select(p => p.MapId!.Value)
             .Distinct()
             .ToListAsync(cancellationToken);
 
+        var allOwnedIds = myMapIds.Union(createdMapIds).Union(purchasedMapIds).Distinct().ToList();
         var ownedMapIds = request.IsAuthorOnly
-            ? createdMapIds.Distinct().ToList()
-            : createdMapIds.Union(purchasedMapIds).Distinct().ToList();
+            ? allOwnedIds.Where(id => createdMapIds.Contains(id)).ToList()
+            : allOwnedIds;
         if (ownedMapIds.Count == 0)
         {
             var empty = PaginationResult<MapListItemDto>.Success(new List<MapListItemDto>(), 1, request.PageSize, 0, "Retrieved successfully");

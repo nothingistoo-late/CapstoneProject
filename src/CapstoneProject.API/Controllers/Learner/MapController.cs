@@ -10,10 +10,12 @@ using CapstoneProject.Application.Features.Maps.Queries.GetMapById;
 using CapstoneProject.Application.Features.Maps.Queries.GetMapInfo;
 using CapstoneProject.Application.Features.Maps.Queries.GetMaps;
 using CapstoneProject.Application.Features.Maps.Queries.GetMyMaps;
+using CapstoneProject.Application.Features.Maps.Queries.GetMyMapList;
 using CapstoneProject.Application.Features.Maps.Queries.GetTags;
 using CapstoneProject.Application.Features.Maps.Queries.CheckMapOwnership;
 using CapstoneProject.Application.Features.Maps.Commands.UpdateMapFromJsonFile;
 using CapstoneProject.Application.Features.Maps.Commands.PublishMap;
+using CapstoneProject.Application.Features.Maps.Commands.AddMapToMyMaps;
 using CapstoneProject.Application.Common.Enums;
 using CapstoneProject.Domain.Enums;
 
@@ -100,6 +102,27 @@ public class LearnerMapController : ControllerBase
     }
 
     /// <summary>
+    /// Get list of maps from bảng MyMap (tự tạo, mua, thêm free). Filter isAuthor: null = lấy hết, true = chỉ map tự tạo, false = chỉ map mua/thêm vào.
+    /// </summary>
+    /// <remarks>
+    /// API mới lấy dữ liệu từ bảng MyMap. Không gửi isAuthor = lấy hết; isAuthor=true = chỉ map tự tạo (author); isAuthor=false = chỉ map đã mua hoặc thêm vào.
+    /// **Query:** pageNumber, pageSize, sortBy (CreatedAt, Title, Difficulty, TimeLimitMs), sortAscending, isAuthor (bool?, optional).
+    /// **METHOD and path:** GET /api/learner/maps/my-map-list
+    /// </remarks>
+    /// <response code="200">Paginated list of maps (MapListItemDto, isAuthor từ bảng MyMap).</response>
+    /// <response code="401">Unauthorized</response>
+    [HttpGet("my-map-list")]
+    [AuthorizeRoles(nameof(RoleEnum.Learner), nameof(RoleEnum.Admin), nameof(RoleEnum.Moderator))]
+    [ProducesResponseType(typeof(Result<PaginationResult<MapListItemDto>>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(Result<PaginationResult<MapListItemDto>>), StatusCodes.Status401Unauthorized)]
+    [SwaggerOperation(Summary = "Danh sách map từ bảng MyMap", Description = "Returns maps from MyMap table with filter isAuthor. null=all, true=author only, false=purchased/added only.", OperationId = "Learner_GetMyMapList", Tags = new[] { "Learner - Maps" })]
+    public async Task<IActionResult> GetMyMapList([FromQuery] GetMyMapListQuery query)
+    {
+        var result = await _mediator.Send(query);
+        return StatusCode(result.GetHttpStatusCode(), result);
+    }
+
+    /// <summary>
     /// Check if current user owns a map (created or purchased)
     /// </summary>
     /// <remarks>
@@ -124,6 +147,31 @@ public class LearnerMapController : ControllerBase
     public async Task<IActionResult> CheckMapOwnership(Guid id)
     {
         var result = await _mediator.Send(new CheckMapOwnershipQuery(id));
+        return StatusCode(result.GetHttpStatusCode(), result);
+    }
+
+    /// <summary>
+    /// Add a free map to current user's collection (MyMap). Only published free maps (price = 0 or null) can be added.
+    /// </summary>
+    /// <remarks>
+    /// Thêm map free vào bộ sưu tập của user. Chỉ áp dụng cho map đã published và có giá = 0 hoặc null. Nếu đã có trong bộ sưu tập thì trả về success.
+    /// **Route:** id (Guid): Map ID.
+    /// **METHOD and path:** POST /api/learner/maps/{id}/add-to-my-maps
+    /// </remarks>
+    /// <response code="200">Map added or already in collection.</response>
+    /// <response code="400">Map is paid or not published.</response>
+    /// <response code="401">Unauthorized</response>
+    /// <response code="404">Map not found</response>
+    [HttpPost("{id:guid}/add-to-my-maps")]
+    [AuthorizeRoles(nameof(RoleEnum.Learner), nameof(RoleEnum.Admin), nameof(RoleEnum.Moderator))]
+    [ProducesResponseType(typeof(Result), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(Result), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(Result), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(Result), StatusCodes.Status404NotFound)]
+    [SwaggerOperation(Summary = "Thêm map free vào bộ sưu tập", Description = "Add a published free map to current user's collection (MyMap). Only free maps allowed.", OperationId = "Learner_AddMapToMyMaps", Tags = new[] { "Learner - Maps" })]
+    public async Task<IActionResult> AddMapToMyMaps(Guid id)
+    {
+        var result = await _mediator.Send(new AddMapToMyMapsCommand(id));
         return StatusCode(result.GetHttpStatusCode(), result);
     }
 

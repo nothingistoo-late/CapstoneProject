@@ -50,6 +50,7 @@ public class CapstoneProjectDbContext : IdentityDbContext<AppUser, AppRole, Guid
     // QuackOrbit: Community & Safety
     public DbSet<MapRating> MapRatings { get; set; }
     public DbSet<MapReport> MapReports { get; set; }
+    public DbSet<MyMap> MyMaps { get; set; }
 
     // OrbitCoin: virtual currency
     public DbSet<UserWallet> UserWallets { get; set; }

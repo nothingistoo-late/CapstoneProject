@@ -36,14 +36,21 @@ public class CheckMapOwnershipQueryHandler : IRequestHandler<CheckMapOwnershipQu
 
         var isAuthor = map.CreatedBy.HasValue && map.CreatedBy.Value == userId.Value;
         var purchased = false;
+        var inMyMap = false;
         if (!isAuthor)
         {
             var paymentRepo = _unitOfWork.Repository<PaymentRecord>();
             purchased = await paymentRepo.GetQueryable()
                 .AnyAsync(p => !p.IsDeleted && p.UserId == userId.Value && p.MapId == request.MapId && p.PaymentStatus == PaymentStatusEnum.Completed, cancellationToken);
+            if (!purchased)
+            {
+                var myMapRepo = _unitOfWork.Repository<MyMap>();
+                inMyMap = await myMapRepo.GetQueryable()
+                    .AnyAsync(mm => !mm.IsDeleted && mm.UserId == userId.Value && mm.MapId == request.MapId, cancellationToken);
+            }
         }
 
-        dto.IsOwned = isAuthor || purchased;
+        dto.IsOwned = isAuthor || purchased || inMyMap;
         dto.IsAuthor = isAuthor;
         return Result<CheckMapOwnershipDto>.Success(dto);
     }

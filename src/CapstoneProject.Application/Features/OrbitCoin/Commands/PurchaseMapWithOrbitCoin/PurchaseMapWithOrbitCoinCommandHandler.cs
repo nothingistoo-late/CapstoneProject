@@ -85,6 +85,10 @@ public class PurchaseMapWithOrbitCoinCommandHandler : IRequestHandler<PurchaseMa
             };
             record.InitializeEntity(buyerUserId);
             await _unitOfWork.Repository<PaymentRecord>().AddAsync(record);
+
+            var myMap = new MyMap { MapId = map.Id, UserId = buyerUserId, IsAuthor = false };
+            myMap.InitializeEntity(buyerUserId);
+            await _unitOfWork.Repository<MyMap>().AddAsync(myMap);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
         }
 
