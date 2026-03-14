@@ -16,7 +16,7 @@ public class MapListItemDto
     public Guid CreatedByUserId { get; set; }
     /// <summary>Tên người tạo map (FirstName + LastName).</summary>
     public string? CreatedByUserName { get; set; }
-    /// <summary>Người hiện tại có phải tác giả map không (CreatedBy).</summary>
+    /// <summary>true nếu map do chính user đang gửi request tạo ra (Map.CreatedBy == currentUserId); false nếu user chỉ sở hữu (mua/thêm). Không dùng để kiểm tra sở hữu.</summary>
     public bool IsAuthor { get; set; }
     public DateTime? CreatedAt { get; set; }
     public List<string> TagNames { get; set; } = new();

@@ -89,6 +89,7 @@ public class GetMyMapsQueryHandler : IRequestHandler<GetMyMapsQuery, Result<Pagi
                 Price = m.Price,
                 CreatedByUserId = m.CreatedBy ?? Guid.Empty,
                 CreatedByUserName = m.Creator != null ? $"{m.Creator.FirstName} {m.Creator.LastName}".Trim() : null,
+                // IsAuthor = user đang gửi request có phải là người tạo map (CreatedBy), không phải kiểm tra sở hữu
                 IsAuthor = m.CreatedBy == userId.Value,
                 CreatedAt = m.CreatedAt,
                 TagNames = m.MapTags.Select(t => t.Tag.Name).ToList(),

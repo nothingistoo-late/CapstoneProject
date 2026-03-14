@@ -84,7 +84,7 @@ public class LearnerMapController : ControllerBase
     ///
     /// **Response item fields (MapListItemDto):**
     /// - id, title, description, difficulty, type, timeLimitMs, isPublished, mapStatus, price, createdByUserId, createdAt, tagNames, winCondition, avatarUrl
-    /// - isAuthor (bool): true nếu map do chính user hiện tại tạo (CreatedBy); false nếu chỉ là map đã mua.
+    /// - isAuthor (bool): true = map do chính user đang gửi request tạo ra (Map.CreatedBy); false = user chỉ sở hữu (mua/thêm). Dùng để phân biệt tác giả, không phải kiểm tra sở hữu.
     ///
     /// **METHOD and path:** GET /api/learner/maps/my-maps
     /// </remarks>

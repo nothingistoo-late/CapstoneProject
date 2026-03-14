@@ -174,6 +174,21 @@ public class GameLobbyController : ControllerBase
     public async Task<IActionResult> StartGame(Guid roomId)
     {
         var result = await _mediator.Send(new StartLobbyGameCommand(roomId));
+        if (result.IsSuccess && result.Data != null)
+        {
+            var groupName = $"{GameLobbyHub.RoomGroupPrefix}{roomId}";
+            await _hubContext.Clients.Group(groupName).SendAsync("GameStarted", new
+            {
+                result.Data.RoomId,
+                result.Data.MapId,
+                result.Data.RoomCode,
+                result.Data.TurnOrder,
+                result.Data.StartedAt,
+                result.Data.CurrentTurnIndex,
+                result.Data.CurrentPlayerId,
+                result.Data.RoundNumber
+            });
+        }
         return StatusCode(result.GetHttpStatusCode(), result);
     }
 
