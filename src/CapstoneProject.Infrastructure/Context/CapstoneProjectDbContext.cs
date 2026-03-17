@@ -56,6 +56,13 @@ public class CapstoneProjectDbContext : IdentityDbContext<AppUser, AppRole, Guid
     public DbSet<UserWallet> UserWallets { get; set; }
     public DbSet<OrbitCoinTransaction> OrbitCoinTransactions { get; set; }
 
+    // Learning Path (lộ trình học)
+    public DbSet<LearningGoal> LearningGoals { get; set; }
+    public DbSet<Concept> Concepts { get; set; }
+    public DbSet<LearningPathItem> LearningPathItems { get; set; }
+    public DbSet<UserLearningGoal> UserLearningGoals { get; set; }
+    public DbSet<UserConceptProgress> UserConceptProgresses { get; set; }
+
     protected override void OnModelCreating(ModelBuilder builder)
     {
         base.OnModelCreating(builder);

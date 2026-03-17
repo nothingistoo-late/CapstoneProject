@@ -9,6 +9,7 @@ using Microsoft.Extensions.Logging;
 using CapstoneProject.Infrastructure.Context;
 using CapstoneProject.Domain.Entities;
 using CapstoneProject.Domain.Enums;
+using CapstoneProject.Domain.Common;
 
 namespace CapstoneProject.API.Extensions;
 
@@ -397,7 +398,190 @@ public static class SeedingExtension
             logger.LogInformation("Seeded map: {Title} ({Description})", seedKey, description);
         }
 
+        // Seed Learning Goals (idempotent by Name) – lộ trình học
+        var learningGoalSeeds = new[]
+        {
+            new { Name = "Logic cơ bản", Description = "Làm quen với biến, phép toán, thứ tự thực thi và điều khiển luồng cơ bản.", SortOrder = 1 },
+            new { Name = "Điều kiện", Description = "Học cách dùng if/else, so sánh và rẽ nhánh trong chương trình.", SortOrder = 2 },
+            new { Name = "Vòng lặp", Description = "Làm chủ for, while và xử lý lặp để giải quyết bài toán.", SortOrder = 3 },
+            new { Name = "Giải quyết vấn đề", Description = "Kết hợp logic, điều kiện và vòng lặp để phân tích và giải bài toán.", SortOrder = 4 }
+        };
+
+        var existingGoalNames = await dbContext.LearningGoals
+            .AsNoTracking()
+            .Select(g => g.Name)
+            .ToListAsync();
+        var existingGoalSet = new HashSet<string>(existingGoalNames, StringComparer.OrdinalIgnoreCase);
+
+        foreach (var seed in learningGoalSeeds)
+        {
+            if (existingGoalSet.Contains(seed.Name))
+            {
+                logger.LogInformation("Learning goal already exists: {Name}", seed.Name);
+                continue;
+            }
+
+            var goal = new LearningGoal
+            {
+                Name = seed.Name,
+                Description = seed.Description,
+                SortOrder = seed.SortOrder,
+                CreatedAt = DateTime.UtcNow,
+                CreatedBy = existingAdmin?.Id,
+                Status = EntityStatusEnum.Active
+            };
+            goal.InitializeEntity(existingAdmin?.Id);
+            await dbContext.LearningGoals.AddAsync(goal);
+            await dbContext.SaveChangesAsync();
+            existingGoalSet.Add(seed.Name);
+            logger.LogInformation("Seeded learning goal: {Name}", seed.Name);
+        }
+
+        // Seed Concepts (idempotent by LearningGoalId + Name)
+        var goalsByName = await dbContext.LearningGoals
+            .Where(g => !g.IsDeleted)
+            .ToDictionaryAsync(g => g.Name, g => g.Id, StringComparer.OrdinalIgnoreCase);
+
+        var conceptSeeds = new[]
+        {
+            // Logic cơ bản
+            (GoalName: "Logic cơ bản", Name: "Biến là gì", Description: "Làm quen với biến và gán giá trị.", ContentKey: "variables", SortOrder: 1),
+            (GoalName: "Logic cơ bản", Name: "Phép toán", Description: "Các phép toán cơ bản: cộng, trừ, nhân, chia.", ContentKey: "operators", SortOrder: 2),
+            (GoalName: "Logic cơ bản", Name: "Thứ tự thực thi", Description: "Chương trình chạy từ trên xuống dưới, từ trái sang phải.", ContentKey: "execution-order", SortOrder: 3),
+            // Điều kiện
+            (GoalName: "Điều kiện", Name: "If-else", Description: "Rẽ nhánh theo điều kiện đúng/sai.", ContentKey: "if-else", SortOrder: 1),
+            (GoalName: "Điều kiện", Name: "So sánh", Description: "So sánh lớn hơn, nhỏ hơn, bằng.", ContentKey: "comparison", SortOrder: 2),
+            // Vòng lặp
+            (GoalName: "Vòng lặp", Name: "For loop", Description: "Vòng lặp với số lần xác định.", ContentKey: "for-loop", SortOrder: 1),
+            (GoalName: "Vòng lặp", Name: "While loop", Description: "Vòng lặp khi điều kiện còn đúng.", ContentKey: "while-loop", SortOrder: 2),
+            // Giải quyết vấn đề
+            (GoalName: "Giải quyết vấn đề", Name: "Phân tích bài toán", Description: "Đọc đề, tìm input/output, chia bước.", ContentKey: "problem-analysis", SortOrder: 1),
+            (GoalName: "Giải quyết vấn đề", Name: "Thuật toán cơ bản", Description: "Các bước giải quyết bài toán bằng code.", ContentKey: "basic-algorithm", SortOrder: 2)
+        };
+
+        var existingConceptKeys = await dbContext.Concepts
+            .Where(c => !c.IsDeleted)
+            .Select(c => new { c.LearningGoalId, c.Name })
+            .ToListAsync();
+        var existingConceptSet = new HashSet<(Guid, string)>(existingConceptKeys.Select(k => (k.LearningGoalId, k.Name)), new ConceptKeyComparer());
+
+        foreach (var (goalName, name, description, contentKey, sortOrder) in conceptSeeds)
+        {
+            if (!goalsByName.TryGetValue(goalName, out var goalId))
+                continue;
+            if (existingConceptSet.Contains((goalId, name)))
+            {
+                logger.LogInformation("Concept already exists: {GoalName} / {Name}", goalName, name);
+                continue;
+            }
+
+            var concept = new Concept
+            {
+                LearningGoalId = goalId,
+                Name = name,
+                Description = description,
+                ContentKey = contentKey,
+                SortOrder = sortOrder,
+                CreatedAt = DateTime.UtcNow,
+                CreatedBy = existingAdmin?.Id,
+                Status = EntityStatusEnum.Active
+            };
+            concept.InitializeEntity(existingAdmin?.Id);
+            await dbContext.Concepts.AddAsync(concept);
+            await dbContext.SaveChangesAsync();
+            existingConceptSet.Add((goalId, name));
+            logger.LogInformation("Seeded concept: {GoalName} / {Name}", goalName, name);
+        }
+
+        // Seed LearningPathItems (idempotent: skip row nếu (LearningGoalId, SortOrder) đã tồn tại)
+        var existingPathItemKeys = await dbContext.LearningPathItems
+            .Where(i => !i.IsDeleted)
+            .Select(i => new { i.LearningGoalId, i.SortOrder })
+            .ToListAsync();
+        var existingPathItemSet = new HashSet<(Guid, int)>(existingPathItemKeys.Select(k => (k.LearningGoalId, k.SortOrder)));
+
+        var conceptIdsByGoalAndName = await dbContext.Concepts
+            .Where(c => !c.IsDeleted)
+            .Select(c => new { c.LearningGoalId, c.Name, c.Id })
+            .ToListAsync();
+        var conceptIdLookup = conceptIdsByGoalAndName
+            .GroupBy(x => x.LearningGoalId)
+            .ToDictionary(g => g.Key, g => g.ToDictionary(x => x.Name, x => x.Id, StringComparer.OrdinalIgnoreCase));
+
+        var mapTitles = new[] { "level-platform-01", "level-topdown-1771989668367", "level-topdown-foreground-example" };
+        var mapsInList = await dbContext.Maps
+            .Where(m => !m.IsDeleted && mapTitles.Contains(m.Title))
+            .Select(m => new { m.Title, m.Id })
+            .ToListAsync();
+        var mapIdsByTitle = mapsInList
+            .GroupBy(m => m.Title, StringComparer.OrdinalIgnoreCase)
+            .ToDictionary(g => g.Key, g => g.First().Id, StringComparer.OrdinalIgnoreCase);
+
+        // (GoalName, ItemType, ConceptName?, MapTitle?, SortOrder)
+        var pathItemSeeds = new[]
+        {
+            (GoalName: "Logic cơ bản", ItemType: LearningPathItemTypeEnum.Concept, ConceptName: "Biến là gì", MapTitle: (string?)null, SortOrder: 1),
+            (GoalName: "Logic cơ bản", ItemType: LearningPathItemTypeEnum.Map, ConceptName: (string?)null, MapTitle: "level-platform-01", SortOrder: 2),
+            (GoalName: "Logic cơ bản", ItemType: LearningPathItemTypeEnum.Concept, ConceptName: "Phép toán", MapTitle: (string?)null, SortOrder: 3),
+            (GoalName: "Logic cơ bản", ItemType: LearningPathItemTypeEnum.Map, ConceptName: (string?)null, MapTitle: "level-topdown-1771989668367", SortOrder: 4),
+            (GoalName: "Logic cơ bản", ItemType: LearningPathItemTypeEnum.Concept, ConceptName: "Thứ tự thực thi", MapTitle: (string?)null, SortOrder: 5),
+            (GoalName: "Logic cơ bản", ItemType: LearningPathItemTypeEnum.Map, ConceptName: (string?)null, MapTitle: "level-topdown-foreground-example", SortOrder: 6),
+            (GoalName: "Điều kiện", ItemType: LearningPathItemTypeEnum.Concept, ConceptName: "If-else", MapTitle: (string?)null, SortOrder: 1),
+            (GoalName: "Điều kiện", ItemType: LearningPathItemTypeEnum.Map, ConceptName: (string?)null, MapTitle: "level-platform-01", SortOrder: 2),
+            (GoalName: "Điều kiện", ItemType: LearningPathItemTypeEnum.Concept, ConceptName: "So sánh", MapTitle: (string?)null, SortOrder: 3),
+            (GoalName: "Điều kiện", ItemType: LearningPathItemTypeEnum.Map, ConceptName: (string?)null, MapTitle: "level-topdown-1771989668367", SortOrder: 4),
+            (GoalName: "Vòng lặp", ItemType: LearningPathItemTypeEnum.Concept, ConceptName: "For loop", MapTitle: (string?)null, SortOrder: 1),
+            (GoalName: "Vòng lặp", ItemType: LearningPathItemTypeEnum.Map, ConceptName: (string?)null, MapTitle: "level-platform-01", SortOrder: 2),
+            (GoalName: "Vòng lặp", ItemType: LearningPathItemTypeEnum.Concept, ConceptName: "While loop", MapTitle: (string?)null, SortOrder: 3),
+            (GoalName: "Vòng lặp", ItemType: LearningPathItemTypeEnum.Map, ConceptName: (string?)null, MapTitle: "level-topdown-1771989668367", SortOrder: 4),
+            (GoalName: "Giải quyết vấn đề", ItemType: LearningPathItemTypeEnum.Concept, ConceptName: "Phân tích bài toán", MapTitle: (string?)null, SortOrder: 1),
+            (GoalName: "Giải quyết vấn đề", ItemType: LearningPathItemTypeEnum.Map, ConceptName: (string?)null, MapTitle: "level-platform-01", SortOrder: 2),
+            (GoalName: "Giải quyết vấn đề", ItemType: LearningPathItemTypeEnum.Concept, ConceptName: "Thuật toán cơ bản", MapTitle: (string?)null, SortOrder: 3),
+            (GoalName: "Giải quyết vấn đề", ItemType: LearningPathItemTypeEnum.Map, ConceptName: (string?)null, MapTitle: "level-topdown-1771989668367", SortOrder: 4)
+        };
+
+        foreach (var (goalName, itemType, conceptName, mapTitle, sortOrder) in pathItemSeeds)
+        {
+            if (!goalsByName.TryGetValue(goalName, out var goalId))
+                continue;
+            if (existingPathItemSet.Contains((goalId, sortOrder)))
+            {
+                logger.LogInformation("Path item already exists: {GoalName} SortOrder={SortOrder}", goalName, sortOrder);
+                continue;
+            }
+
+            Guid? conceptId = null;
+            Guid? mapId = null;
+            if (itemType == LearningPathItemTypeEnum.Concept && !string.IsNullOrEmpty(conceptName) && conceptIdLookup.TryGetValue(goalId, out var byName) && byName.TryGetValue(conceptName, out var cId))
+                conceptId = cId;
+            if (itemType == LearningPathItemTypeEnum.Map && !string.IsNullOrEmpty(mapTitle) && mapIdsByTitle.TryGetValue(mapTitle, out var mId))
+                mapId = mId;
+
+            var item = new LearningPathItem
+            {
+                LearningGoalId = goalId,
+                ItemType = itemType,
+                ConceptId = conceptId,
+                MapId = mapId,
+                SortOrder = sortOrder,
+                CreatedAt = DateTime.UtcNow,
+                CreatedBy = existingAdmin?.Id,
+                Status = EntityStatusEnum.Active
+            };
+            item.InitializeEntity(existingAdmin?.Id);
+            await dbContext.LearningPathItems.AddAsync(item);
+            await dbContext.SaveChangesAsync();
+            existingPathItemSet.Add((goalId, sortOrder));
+            logger.LogInformation("Seeded path item: {GoalName} SortOrder={SortOrder} {Type}", goalName, sortOrder, itemType);
+        }
+
         logger.LogInformation("Data seeding completed.");
+    }
+
+    private sealed class ConceptKeyComparer : IEqualityComparer<(Guid, string)>
+    {
+        public bool Equals((Guid, string) x, (Guid, string) y) => x.Item1 == y.Item1 && string.Equals(x.Item2, y.Item2, StringComparison.OrdinalIgnoreCase);
+        public int GetHashCode((Guid, string) obj) => HashCode.Combine(obj.Item1, obj.Item2.GetHashCode(StringComparison.OrdinalIgnoreCase));
     }
 }
 

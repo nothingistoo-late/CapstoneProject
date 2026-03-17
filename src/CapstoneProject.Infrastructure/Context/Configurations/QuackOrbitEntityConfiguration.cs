@@ -34,6 +34,47 @@ public static class QuackOrbitEntityConfiguration
         builder.Entity<MapRating>(ConfigureMapRating);
         builder.Entity<MapReport>(ConfigureMapReport);
         builder.Entity<MyMap>(ConfigureMyMap);
+        builder.Entity<LearningGoal>(ConfigureLearningGoal);
+        builder.Entity<Concept>(ConfigureConcept);
+        builder.Entity<LearningPathItem>(ConfigureLearningPathItem);
+        builder.Entity<UserLearningGoal>(ConfigureUserLearningGoal);
+        builder.Entity<UserConceptProgress>(ConfigureUserConceptProgress);
+    }
+
+    static void ConfigureLearningGoal(EntityTypeBuilder<LearningGoal> e)
+    {
+        e.HasIndex(x => x.SortOrder);
+        e.HasMany(x => x.Concepts).WithOne(x => x.LearningGoal).HasForeignKey(x => x.LearningGoalId).OnDelete(DeleteBehavior.Cascade);
+        e.HasMany(x => x.LearningPathItems).WithOne(x => x.LearningGoal).HasForeignKey(x => x.LearningGoalId).OnDelete(DeleteBehavior.Restrict);
+    }
+
+    static void ConfigureConcept(EntityTypeBuilder<Concept> e)
+    {
+        e.HasIndex(x => new { x.LearningGoalId, x.SortOrder });
+        e.HasOne(x => x.LearningGoal).WithMany(x => x.Concepts).HasForeignKey(x => x.LearningGoalId).OnDelete(DeleteBehavior.Cascade);
+    }
+
+    static void ConfigureLearningPathItem(EntityTypeBuilder<LearningPathItem> e)
+    {
+        e.Property(x => x.ItemType).HasConversion<int>();
+        e.HasIndex(x => new { x.LearningGoalId, x.SortOrder });
+        e.HasOne(x => x.LearningGoal).WithMany(x => x.LearningPathItems).HasForeignKey(x => x.LearningGoalId).OnDelete(DeleteBehavior.Restrict);
+        e.HasOne(x => x.Concept).WithMany().HasForeignKey(x => x.ConceptId).OnDelete(DeleteBehavior.SetNull);
+        e.HasOne(x => x.Map).WithMany().HasForeignKey(x => x.MapId).OnDelete(DeleteBehavior.SetNull);
+    }
+
+    static void ConfigureUserLearningGoal(EntityTypeBuilder<UserLearningGoal> e)
+    {
+        e.HasIndex(x => x.UserId).IsUnique();
+        e.HasOne(x => x.User).WithMany().HasForeignKey(x => x.UserId).OnDelete(DeleteBehavior.Cascade);
+        e.HasOne(x => x.LearningGoal).WithMany(x => x.UserLearningGoals).HasForeignKey(x => x.LearningGoalId).OnDelete(DeleteBehavior.Restrict);
+    }
+
+    static void ConfigureUserConceptProgress(EntityTypeBuilder<UserConceptProgress> e)
+    {
+        e.HasIndex(x => new { x.UserId, x.ConceptId }).IsUnique();
+        e.HasOne(x => x.User).WithMany().HasForeignKey(x => x.UserId).OnDelete(DeleteBehavior.Cascade);
+        e.HasOne(x => x.Concept).WithMany(x => x.UserConceptProgresses).HasForeignKey(x => x.ConceptId).OnDelete(DeleteBehavior.Cascade);
     }
 
     static void ConfigureMyMap(EntityTypeBuilder<MyMap> e)
