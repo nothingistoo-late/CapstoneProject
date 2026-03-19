@@ -31,6 +31,7 @@ public class CapstoneProjectDbContext : IdentityDbContext<AppUser, AppRole, Guid
     public DbSet<Submission> Submissions { get; set; }
     public DbSet<ExecutionsResult> ExecutionsResults { get; set; }
     public DbSet<UserMapResult> UserMapResults { get; set; }
+    public DbSet<UserMapPlayHistory> UserMapPlayHistories { get; set; }
     public DbSet<Achievement> Achievements { get; set; }
     public DbSet<UserAchievement> UserAchievements { get; set; }
     public DbSet<XpTransaction> XpTransactions { get; set; }

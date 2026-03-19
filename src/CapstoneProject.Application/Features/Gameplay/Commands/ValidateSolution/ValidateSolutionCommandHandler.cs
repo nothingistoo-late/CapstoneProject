@@ -63,7 +63,8 @@ public class ValidateSolutionCommandHandler : IRequestHandler<ValidateSolutionCo
             ResultStatus = statusEnum,
             Score = score,
             StepsUsed = stepsUsed,
-            BlocksUsed = blocksUsed
+            BlocksUsed = blocksUsed,
+            MatchId = command.Request.MatchId
         };
         submission.InitializeEntity(userId);
         await _unitOfWork.Repository<Submission>().AddAsync(submission);
@@ -104,6 +105,26 @@ public class ValidateSolutionCommandHandler : IRequestHandler<ValidateSolutionCo
             umr.UpdateEntity(userId);
             umrRepo.Update(umr);
         }
+
+        // Save play history (lưu mỗi lần submit/validate: single/lobby đều đi qua ValidateSolutionCommandHandler)
+        var history = new UserMapPlayHistory
+        {
+            UserId = userId,
+            MapId = map.Id,
+            PlayMode = command.Request.PlayMode,
+            RoomId = command.Request.RoomId,
+            MatchId = command.Request.MatchId,
+            StartTime = execResult.StartedAt ?? DateTime.UtcNow,
+            EndTime = execResult.FinishedAt,
+            IsCompleted = accepted,
+            Score = score,
+            Stars = stars,
+            SubmissionId = submission.Id,
+            ExecutionsResultId = execResult.Id,
+            Language = command.Request.Language
+        };
+        history.InitializeEntity(userId);
+        await _unitOfWork.Repository<UserMapPlayHistory>().AddAsync(history);
 
         if (accepted)
         {

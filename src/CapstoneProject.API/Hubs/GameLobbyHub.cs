@@ -379,7 +379,9 @@ public class GameLobbyHub : Hub
             MapId = gameInstance.MapId.Value,
             Language = language ?? "Blockly",
             AstSpec = astSpec,
-            BytecodeSpec = bytecodeSpec
+            BytecodeSpec = bytecodeSpec,
+            PlayMode = PlayModeEnum.Lobby,
+            RoomId = roomId
         };
         var validateResult = await _mediator.Send(new ValidateSolutionCommand(validateRequest));
         if (!validateResult.IsSuccess || validateResult.Data == null)

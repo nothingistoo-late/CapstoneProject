@@ -48,7 +48,9 @@ public class SubmitLobbySolutionCommandHandler : IRequestHandler<SubmitLobbySolu
             MapId = room.SelectedMapId.Value,
             Language = "Blockly",
             AstSpec = command.Request.AstSpec,
-            BytecodeSpec = command.Request.BytecodeSpec
+            BytecodeSpec = command.Request.BytecodeSpec,
+            PlayMode = PlayModeEnum.Lobby,
+            RoomId = command.RoomId
         };
         var validateResult = await _mediator.Send(new ValidateSolutionCommand(validateRequest), cancellationToken);
         if (!validateResult.IsSuccess || validateResult.Data == null)

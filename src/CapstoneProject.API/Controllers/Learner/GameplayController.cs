@@ -1,6 +1,7 @@
 using CapstoneProject.Application.Commons.DTOs.Gameplay;
 using CapstoneProject.Application.Features.Gameplay.Commands.ValidateSolution;
 using CapstoneProject.Application.Features.Gameplay.Queries.GetHintsForMap;
+using CapstoneProject.Application.Features.Gameplay.Queries.GetMyMapPlayHistory;
 using CapstoneProject.Application.Features.Gameplay.Queries.GetProgressDashboard;
 
 namespace CapstoneProject.API.Controllers.Learner;
@@ -27,6 +28,9 @@ public class LearnerGameplayController : ControllerBase
     /// - language (string, optional): Solution language. Default "Blockly".
     /// - astSpec (string, optional): AST specification (JSON). Use either astSpec or bytecodeSpec.
     /// - bytecodeSpec (string, optional): Bytecode specification. Use either astSpec or bytecodeSpec.
+    /// - playMode (string, optional): Single | Lobby | Competitive — dùng để ghi lịch sử chơi. Mặc định Single.
+    /// - roomId (Guid, optional): Room lobby (khi playMode = Lobby).
+    /// - matchId (Guid, optional): Match competitive (khi có submit server-side); lưu cả trên Submission.
     ///
     /// **METHOD and path:** POST /api/learner/gameplay/validate
     ///
@@ -48,6 +52,24 @@ public class LearnerGameplayController : ControllerBase
     public async Task<IActionResult> ValidateSolution([FromBody] ValidateSolutionRequest request)
     {
         var result = await _mediator.Send(new ValidateSolutionCommand(request));
+        return StatusCode(result.GetHttpStatusCode(), result);
+    }
+
+    /// <summary>Lịch sử chơi map của tôi (phân trang).</summary>
+    /// <remarks>
+    /// Trả về các lần validate/submit đã ghi (UserMapPlayHistories), sort theo StartTime mới nhất trước.
+    /// Query: pageNumber (default 1), pageSize (default 20, max 100), mapId (optional), playMode (optional: Single|Lobby|Competitive).
+    ///
+    /// **METHOD and path:** GET /api/learner/gameplay/my-play-history
+    /// </remarks>
+    [HttpGet("my-play-history")]
+    [AuthorizeRoles(nameof(RoleEnum.Learner), nameof(RoleEnum.Admin), nameof(RoleEnum.Moderator))]
+    [ProducesResponseType(typeof(Result<PaginationResult<MapPlayHistoryItemDto>>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(Result<PaginationResult<MapPlayHistoryItemDto>>), StatusCodes.Status401Unauthorized)]
+    [SwaggerOperation(Summary = "My map play history", Description = "Paginated play history for the current user.", OperationId = "Learner_GetMyMapPlayHistory", Tags = new[] { "Learner - Gameplay" })]
+    public async Task<IActionResult> GetMyMapPlayHistory([FromQuery] GetMyMapPlayHistoryQuery query)
+    {
+        var result = await _mediator.Send(query);
         return StatusCode(result.GetHttpStatusCode(), result);
     }
 

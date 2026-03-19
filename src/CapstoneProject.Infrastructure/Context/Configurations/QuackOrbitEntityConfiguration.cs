@@ -39,6 +39,7 @@ public static class QuackOrbitEntityConfiguration
         builder.Entity<LearningPathItem>(ConfigureLearningPathItem);
         builder.Entity<UserLearningGoal>(ConfigureUserLearningGoal);
         builder.Entity<UserConceptProgress>(ConfigureUserConceptProgress);
+        builder.Entity<UserMapPlayHistory>(ConfigureUserMapPlayHistory);
     }
 
     static void ConfigureLearningGoal(EntityTypeBuilder<LearningGoal> e)
@@ -149,6 +150,16 @@ public static class QuackOrbitEntityConfiguration
     static void ConfigureUserMapResult(EntityTypeBuilder<UserMapResult> e)
     {
         e.HasIndex(x => new { x.UserId, x.MapId }).IsUnique();
+    }
+
+    static void ConfigureUserMapPlayHistory(EntityTypeBuilder<UserMapPlayHistory> e)
+    {
+        e.Property(x => x.PlayMode).HasConversion<int>();
+        e.HasIndex(x => x.UserId);
+        e.HasIndex(x => x.MapId);
+        e.HasIndex(x => new { x.UserId, x.MapId, x.StartTime });
+        e.HasIndex(x => x.SubmissionId);
+        e.HasIndex(x => x.ExecutionsResultId);
     }
 
     static void ConfigureXpTransaction(EntityTypeBuilder<XpTransaction> e)
