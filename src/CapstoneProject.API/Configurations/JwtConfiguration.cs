@@ -40,6 +40,8 @@ public static class JwtConfiguration
                 "Please generate a longer key (at least 32 characters).", 
                 nameof(jwtKey));
         }
+        const string AllowExpiredScheme = "JwtBearerAllowExpired";
+
         services.AddAuthentication(options =>
         {
             options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -139,6 +141,22 @@ public static class JwtConfiguration
                     
                     return Task.CompletedTask;
                 }
+            };
+        })
+        .AddJwtBearer(AllowExpiredScheme, options =>
+        {
+            options.SaveToken = true;
+            options.RequireHttpsMetadata = requireHttps;
+            options.TokenValidationParameters = new TokenValidationParameters
+            {
+                ValidateIssuer = true,
+                ValidateAudience = true,
+                ValidIssuer = jwtIssuer,
+                ValidAudience = audience,
+                ValidateIssuerSigningKey = true,
+                IssuerSigningKey = new SymmetricSecurityKey(key),
+                ValidateLifetime = false, // Allow expired tokens for refresh-token endpoint only
+                ClockSkew = TimeSpan.Zero
             };
         });
         

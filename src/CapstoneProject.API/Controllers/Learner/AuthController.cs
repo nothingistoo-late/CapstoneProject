@@ -462,6 +462,7 @@ public class AuthController : ControllerBase
     /// <response code="403">Not a Learner</response>
     /// <response code="500">Internal server error</response>
     [HttpPost("refresh-token")]
+    [Microsoft.AspNetCore.Authorization.Authorize(AuthenticationSchemes = "JwtBearerAllowExpired")]
     [AuthorizeRoles(nameof(RoleEnum.Learner))]
     [ProducesResponseType(typeof(Result<ProfileResponse>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(Result<ProfileResponse>), StatusCodes.Status401Unauthorized)]

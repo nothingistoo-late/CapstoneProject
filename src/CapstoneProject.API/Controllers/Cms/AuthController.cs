@@ -195,6 +195,7 @@ public class AuthController : ControllerBase
     /// <response code="403">User is not a CMS member</response>
     /// <response code="500">Internal server error</response>
     [HttpPost("refresh-token")]
+    [Microsoft.AspNetCore.Authorization.Authorize(AuthenticationSchemes = "JwtBearerAllowExpired")]
     [AuthorizeRoles(nameof(RoleEnum.Admin), nameof(RoleEnum.Moderator))]
     [ProducesResponseType(typeof(Result<ProfileResponse>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(Result<ProfileResponse>), StatusCodes.Status401Unauthorized)]

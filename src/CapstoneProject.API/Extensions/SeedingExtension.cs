@@ -1,5 +1,7 @@
 using System.IO;
 using System.Text.Json;
+using System.Text;
+using System.Text.RegularExpressions;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -336,66 +338,80 @@ public static class SeedingExtension
             logger.LogInformation("Seeded payment method: PayOS.");
         }
 
-        // Seed demo maps from JSON files (idempotent by Title = filename without extension)
-        var seedMapFiles = new[] { "level-platform-01.json", "level-topdown-1771989668367.json", "level-topdown-foreground-example.json" };
         var env = scope.ServiceProvider.GetRequiredService<IWebHostEnvironment>();
-        var mapsSeedDir = Path.Combine(env.ContentRootPath, "SeedData", "Maps");
-        var adminId = existingAdmin?.Id ?? Guid.Empty;
-
-        foreach (var fileName in seedMapFiles)
+        var seedMapsFromSqlScript = configuration.GetSection("DataSeeding").GetValue<bool>("SeedMapsFromSqlScript");
+        if (seedMapsFromSqlScript)
         {
-            var path = Path.Combine(mapsSeedDir, fileName);
-            if (!File.Exists(path))
-            {
-                logger.LogWarning("Seed map file not found: {Path}", path);
-                continue;
-            }
+            var relativeScriptPath = configuration.GetSection("DataSeeding").GetValue<string>("MapsSqlScriptPath")?.Trim();
+            var scriptPath = !string.IsNullOrWhiteSpace(relativeScriptPath)
+                ? Path.GetFullPath(Path.Combine(env.ContentRootPath, relativeScriptPath))
+                : Path.GetFullPath(Path.Combine(env.ContentRootPath, "..", "..", "docs", "script_clean.sql"));
 
-            var seedKey = Path.GetFileNameWithoutExtension(fileName);
-            var exists = await dbContext.Maps.AnyAsync(m => m.Title == seedKey);
-            if (exists)
-            {
-                logger.LogInformation("Seed map already exists: {Title}", seedKey);
-                continue;
-            }
+            var systemUserId = existingAdmin?.Id ?? Guid.Empty;
+            await SeedMapsFromSqlScriptAsync(dbContext, scriptPath, systemUserId, logger);
+        }
+        else
+        {
+            // Seed demo maps from JSON files (idempotent by Title = filename without extension)
+            var seedMapFiles = new[] { "level-platform-01.json", "level-topdown-1771989668367.json", "level-topdown-foreground-example.json" };
+            var mapsSeedDir = Path.Combine(env.ContentRootPath, "SeedData", "Maps");
+            var adminId = existingAdmin?.Id ?? Guid.Empty;
 
-            var jsonContent = await File.ReadAllTextAsync(path);
-            string description = seedKey;
-            try
+            foreach (var fileName in seedMapFiles)
             {
-                using var doc = JsonDocument.Parse(jsonContent);
-                if (doc.RootElement.TryGetProperty("name", out var nameEl))
-                    description = nameEl.GetString() ?? seedKey;
-            }
-            catch
-            {
-                // keep description = seedKey
-            }
-
-            var map = new Map
-            {
-                Title = seedKey,
-                Description = description,
-                Difficulty = 1,
-                TimeLimitMs = 300000,
-                WinCondition = 1,
-                IsPublished = true,
-                MapStatus = MapStatusEnum.Published,
-                Price = 0,
-                CreatedAt = DateTime.UtcNow,
-                CreatedBy = adminId,
-                Status = EntityStatusEnum.Active,
-                MapDetail = new MapDetail
+                var path = Path.Combine(mapsSeedDir, fileName);
+                if (!File.Exists(path))
                 {
-                    JsonContent = jsonContent,
+                    logger.LogWarning("Seed map file not found: {Path}", path);
+                    continue;
+                }
+
+                var seedKey = Path.GetFileNameWithoutExtension(fileName);
+                var exists = await dbContext.Maps.AnyAsync(m => m.Title == seedKey);
+                if (exists)
+                {
+                    logger.LogInformation("Seed map already exists: {Title}", seedKey);
+                    continue;
+                }
+
+                var jsonContent = await File.ReadAllTextAsync(path);
+                string description = seedKey;
+                try
+                {
+                    using var doc = JsonDocument.Parse(jsonContent);
+                    if (doc.RootElement.TryGetProperty("name", out var nameEl))
+                        description = nameEl.GetString() ?? seedKey;
+                }
+                catch
+                {
+                    // keep description = seedKey
+                }
+
+                var map = new Map
+                {
+                    Title = seedKey,
+                    Description = description,
+                    Difficulty = 1,
+                    TimeLimitMs = 300000,
+                    WinCondition = 1,
+                    IsPublished = true,
+                    MapStatus = MapStatusEnum.Published,
+                    Price = 0,
                     CreatedAt = DateTime.UtcNow,
                     CreatedBy = adminId,
-                    Status = EntityStatusEnum.Active
-                }
-            };
-            await dbContext.Maps.AddAsync(map);
-            await dbContext.SaveChangesAsync();
-            logger.LogInformation("Seeded map: {Title} ({Description})", seedKey, description);
+                    Status = EntityStatusEnum.Active,
+                    MapDetail = new MapDetail
+                    {
+                        JsonContent = jsonContent,
+                        CreatedAt = DateTime.UtcNow,
+                        CreatedBy = adminId,
+                        Status = EntityStatusEnum.Active
+                    }
+                };
+                await dbContext.Maps.AddAsync(map);
+                await dbContext.SaveChangesAsync();
+                logger.LogInformation("Seeded map: {Title} ({Description})", seedKey, description);
+            }
         }
 
         // Seed Learning Goals (idempotent by Name) – lộ trình học
@@ -582,6 +598,194 @@ public static class SeedingExtension
     {
         public bool Equals((Guid, string) x, (Guid, string) y) => x.Item1 == y.Item1 && string.Equals(x.Item2, y.Item2, StringComparison.OrdinalIgnoreCase);
         public int GetHashCode((Guid, string) obj) => HashCode.Combine(obj.Item1, obj.Item2.GetHashCode(StringComparison.OrdinalIgnoreCase));
+    }
+
+    /// <summary>GUID user trong script_clean.sql dùng cho CreatedBy/UpdatedBy. Sẽ được thay bằng systemUserId khi seed.</summary>
+    private const string ScriptCreatedByUserIdLiteral = "29f8c7e0-11bb-46c1-327b-08de83cfc02d";
+
+    private static async Task SeedMapsFromSqlScriptAsync(CapstoneProjectDbContext dbContext, string scriptPath, Guid systemUserId, ILogger logger)
+    {
+        if (!File.Exists(scriptPath))
+        {
+            logger.LogWarning("Maps SQL script not found: {Path}", scriptPath);
+            return;
+        }
+
+        // Chỉ INSERT dữ liệu; không chạy DDL. Tags dùng sẵn đã seed bên ngoài (defaultTagNames); MapTags sẽ map TagId trong script sang Id tag trong DB theo Name.
+        var allowedTables = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+        {
+            "Maps",
+            "MapDetails",
+            "Hints",
+            "MapTags"
+        };
+
+        var inserts = ExtractInsertStatements(scriptPath, allowedTables).ToList();
+        if (inserts.Count == 0)
+        {
+            logger.LogWarning("No INSERT statements found for allowed tables in: {Path}", scriptPath);
+            return;
+        }
+
+        // Map TagId trong script -> Tag Id trong DB (theo Name). Tag trong DB đã seed trước (defaultTagNames).
+        var scriptTagIdToName = ExtractScriptTagIdToName(scriptPath);
+        var nameToCurrentTagId = await dbContext.Tags
+            .Where(t => !t.IsDeleted)
+            .ToDictionaryAsync(t => t.Name, t => t.Id.ToString("D"), StringComparer.OrdinalIgnoreCase);
+        var scriptTagIdToCurrentId = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var (scriptId, name) in scriptTagIdToName)
+        {
+            if (nameToCurrentTagId.TryGetValue(name, out var currentId))
+                scriptTagIdToCurrentId[scriptId] = currentId;
+        }
+
+        // Thứ tự: Maps, MapDetails, Hints, MapTags.
+        var tableOrder = new[] { "Maps", "MapDetails", "Hints", "MapTags" };
+        var orderIndex = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+        for (int i = 0; i < tableOrder.Length; i++)
+            orderIndex[tableOrder[i]] = i;
+        var ordered = inserts
+            .OrderBy(x => orderIndex.TryGetValue(x.Table, out var idx) ? idx : int.MaxValue)
+            .ThenBy(x => x.Table)
+            .ToList();
+
+        var systemUserIdStr = systemUserId.ToString("D");
+        // Thay CreatedBy/UpdatedBy trong script bằng systemUserId để tránh lỗi FK_Maps_Users_CreatedBy.
+        var scriptUserIdLiteral = $"N'{ScriptCreatedByUserIdLiteral}'";
+
+        logger.LogInformation("Seeding maps data from SQL script: {Path}. Statements: {Count}", scriptPath, ordered.Count);
+
+        int executed = 0;
+        int skipped = 0;
+
+        foreach (var item in ordered)
+        {
+            var table = item.Table;
+            var statement = item.Statement.Replace(scriptUserIdLiteral, $"N'{systemUserIdStr}'", StringComparison.OrdinalIgnoreCase);
+            var id = item.Id;
+            if (!allowedTables.Contains(table))
+                continue;
+
+            // MapTags: thay TagId trong script bằng Tag Id hiện có trong DB (theo Name) để dùng tag đã seed bên ngoài.
+            if (string.Equals(table, "MapTags", StringComparison.OrdinalIgnoreCase))
+            {
+                foreach (var (scriptTagId, currentTagId) in scriptTagIdToCurrentId)
+                    statement = statement.Replace($"N'{scriptTagId}'", $"N'{currentTagId}'", StringComparison.OrdinalIgnoreCase);
+            }
+
+            // ExecuteSqlRawAsync xem chuỗi là format string; JSON trong statement có { } nên phải escape để tránh FormatException.
+            var statementEscaped = statement.Replace("{", "{{").Replace("}", "}}");
+            var guarded = $@"
+IF NOT EXISTS (SELECT 1 FROM [dbo].[{table}] WHERE [Id] = N'{id}')
+BEGIN
+{statementEscaped}
+END";
+            var affected = await dbContext.Database.ExecuteSqlRawAsync(guarded);
+            if (affected > 0) executed++; else skipped++;
+        }
+
+        logger.LogInformation("Seed maps from SQL script done. Executed: {Executed}, Skipped: {Skipped}", executed, skipped);
+    }
+
+    private sealed class InsertStatementInfo
+    {
+        public string Table { get; set; } = string.Empty;
+        public string Id { get; set; } = string.Empty;
+        public string Statement { get; set; } = string.Empty;
+    }
+
+    /// <summary>Đọc script, lấy (TagId, Name) từ INSERT [dbo].[Tags] để map sang Tag Id trong DB.</summary>
+    private static List<(string TagId, string Name)> ExtractScriptTagIdToName(string scriptPath)
+    {
+        var list = new List<(string, string)>();
+        var tagInsertRegex = new Regex(@"^INSERT\s+\[dbo\]\.\[Tags\].*?VALUES\s*\(\s*N'(?<id>[0-9a-fA-F-]{36})'\s*,\s*N'(?<name>[^']*)'", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+        using var reader = new StreamReader(scriptPath, Encoding.UTF8, detectEncodingFromByteOrderMarks: true);
+        while (!reader.EndOfStream)
+        {
+            var line = reader.ReadLine() ?? string.Empty;
+            var trimmed = line.Trim();
+            if (!trimmed.StartsWith("INSERT [dbo].[Tags]", StringComparison.OrdinalIgnoreCase))
+                continue;
+            var m = tagInsertRegex.Match(trimmed);
+            if (m.Success)
+                list.Add((m.Groups["id"].Value, m.Groups["name"].Value));
+        }
+        return list;
+    }
+
+    private static IEnumerable<InsertStatementInfo> ExtractInsertStatements(string scriptPath, HashSet<string> allowedTables)
+    {
+        var idRegex = new Regex(@"VALUES\s*\(\s*N'(?<id>[0-9a-fA-F-]{36})'", RegexOptions.Compiled);
+        var tableRegex = new Regex(@"^INSERT\s+\[dbo\]\.\[(?<table>[^\]]+)\]", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+
+        using var reader = new StreamReader(scriptPath, Encoding.UTF8, detectEncodingFromByteOrderMarks: true);
+
+        var sb = new StringBuilder();
+        bool capturing = false;
+
+        while (!reader.EndOfStream)
+        {
+            var line = reader.ReadLine() ?? string.Empty;
+            var trimmed = line.Trim();
+
+            if (!capturing)
+            {
+                if (trimmed.StartsWith("INSERT [dbo].[", StringComparison.OrdinalIgnoreCase))
+                {
+                    var end = trimmed.IndexOf(']', "INSERT [dbo].[".Length);
+                    if (end > 0)
+                    {
+                        var table = trimmed.Substring("INSERT [dbo].[".Length, end - "INSERT [dbo].[".Length);
+                        if (allowedTables.Contains(table))
+                        {
+                            capturing = true;
+                            sb.Clear();
+                            sb.AppendLine(line);
+                        }
+                    }
+                }
+                continue;
+            }
+
+            if (string.Equals(trimmed, "GO", StringComparison.OrdinalIgnoreCase))
+            {
+                var stmt = sb.ToString().Trim();
+                if (!string.IsNullOrWhiteSpace(stmt))
+                {
+                    var tableMatch = tableRegex.Match(stmt);
+                    var idMatch = idRegex.Match(stmt);
+                    if (tableMatch.Success && idMatch.Success && allowedTables.Contains(tableMatch.Groups["table"].Value))
+                        yield return new InsertStatementInfo
+                        {
+                            Table = tableMatch.Groups["table"].Value,
+                            Id = idMatch.Groups["id"].Value,
+                            Statement = stmt
+                        };
+                }
+                capturing = false;
+                sb.Clear();
+                continue;
+            }
+
+            sb.AppendLine(line);
+        }
+
+        if (capturing)
+        {
+            var stmt = sb.ToString().Trim();
+            if (!string.IsNullOrWhiteSpace(stmt))
+            {
+                var tableMatch = tableRegex.Match(stmt);
+                var idMatch = idRegex.Match(stmt);
+                if (tableMatch.Success && idMatch.Success && allowedTables.Contains(tableMatch.Groups["table"].Value))
+                    yield return new InsertStatementInfo
+                    {
+                        Table = tableMatch.Groups["table"].Value,
+                        Id = idMatch.Groups["id"].Value,
+                        Statement = stmt
+                    };
+            }
+        }
     }
 }
 
