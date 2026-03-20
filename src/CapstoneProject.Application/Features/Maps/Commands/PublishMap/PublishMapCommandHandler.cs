@@ -28,8 +28,8 @@ public class PublishMapCommandHandler : IRequestHandler<PublishMapCommand, Resul
             return Result.Failure("Authentication required. Please log in to publish a map.", ErrorCodeEnum.Unauthorized);
 
         var roles = await _currentUserService.GetCurrentRolesAsync();
-        if (!roles.Contains(RoleEnum.Admin) && !roles.Contains(RoleEnum.Moderator))
-            return Result.Failure("You do not have permission to publish maps. Only Admin or Moderator can perform this action.", ErrorCodeEnum.Forbidden);
+        var isAdminOrModerator = roles.Contains(RoleEnum.Admin) || roles.Contains(RoleEnum.Moderator);
+        var isLearner = roles.Contains(RoleEnum.Learner);
 
         var mapRepo = _unitOfWork.Repository<Map>();
         var map = await mapRepo.GetQueryable().FirstOrDefaultAsync(m => m.Id == command.MapId && !m.IsDeleted, cancellationToken);
@@ -37,6 +37,18 @@ public class PublishMapCommandHandler : IRequestHandler<PublishMapCommand, Resul
             return Result.Failure($"Map not found with Id: {command.MapId}. The map may have been deleted or does not exist.", ErrorCodeEnum.NotFound);
         if (map.MapStatus != MapStatusEnum.Approved)
             return Result.Failure($"Map cannot be published. Expected status: Approved. Current status: {map.MapStatus}. Only approved maps can be published.", ErrorCodeEnum.InvalidOperation);
+
+        if (isAdminOrModerator)
+        {
+            // Staff can publish any approved map (Learner API or CMS).
+        }
+        else if (isLearner)
+        {
+            if (map.CreatedBy != userIdNullable.Value)
+                return Result.Failure("Only the author of this map can publish it.", ErrorCodeEnum.Forbidden);
+        }
+        else
+            return Result.Failure("You do not have permission to publish maps.", ErrorCodeEnum.Forbidden);
 
         map.MapStatus = MapStatusEnum.Published;
         map.IsPublished = true;
