@@ -338,7 +338,23 @@ public static class SeedingExtension
             logger.LogInformation("Seeded payment method: PayOS.");
         }
 
-        logger.LogInformation("Map seeding is skipped by configuration in code.");
+        // Seed maps từ file SQL (INSERT Maps/MapDetails/Hints/MapTags) — bật trong appsettings: DataSeeding:SeedMapsFromSqlScript
+        var env = scope.ServiceProvider.GetRequiredService<IWebHostEnvironment>();
+        var seedMapsFromSqlScript = configuration.GetSection("DataSeeding").GetValue<bool>("SeedMapsFromSqlScript");
+        if (seedMapsFromSqlScript)
+        {
+            var relativeScriptPath = configuration.GetSection("DataSeeding").GetValue<string>("MapsSqlScriptPath")?.Trim();
+            var scriptPath = !string.IsNullOrWhiteSpace(relativeScriptPath)
+                ? Path.GetFullPath(Path.Combine(env.ContentRootPath, relativeScriptPath))
+                : Path.GetFullPath(Path.Combine(env.ContentRootPath, "..", "..", "docs", "script_clean.sql"));
+
+            var systemUserId = existingAdmin?.Id ?? Guid.Empty;
+            await SeedMapsFromSqlScriptAsync(dbContext, scriptPath, systemUserId, logger);
+        }
+        else
+        {
+            logger.LogInformation("Map seeding from SQL script is disabled (DataSeeding:SeedMapsFromSqlScript=false).");
+        }
 
         // Seed Learning Goals (idempotent by Name) – lộ trình học
         var learningGoalSeeds = new[]
@@ -450,7 +466,23 @@ public static class SeedingExtension
             .GroupBy(x => x.LearningGoalId)
             .ToDictionary(g => g.Key, g => g.ToDictionary(x => x.Name, x => x.Id, StringComparer.OrdinalIgnoreCase));
 
-        var mapTitles = new[] { "level-platform-01", "level-topdown-1771989668367", "level-topdown-foreground-example" };
+        // Title phải khớp cột Maps.Title (vd. script_clean.sql / map đã publish). Gán map theo từng concept cho hợp lý.
+        var mapTitles = new[]
+        {
+            "Introduce variable",
+            "Mathematical operation",
+            "Platform movement tutorial",
+            "Introduce trap",
+            "More Box",
+            "Introduce for loop",
+            "Introduce while/do while loop",
+            "Basic top down map",
+            "Maze map",
+            // Legacy (nếu DB cũ chỉ có các map cũ)
+            "level-platform-01",
+            "level-topdown-1771989668367",
+            "level-topdown-foreground-example"
+        };
         var mapsInList = await dbContext.Maps
             .Where(m => !m.IsDeleted && mapTitles.Contains(m.Title))
             .Select(m => new { m.Title, m.Id })
@@ -459,27 +491,39 @@ public static class SeedingExtension
             .GroupBy(m => m.Title, StringComparer.OrdinalIgnoreCase)
             .ToDictionary(g => g.Key, g => g.First().Id, StringComparer.OrdinalIgnoreCase);
 
-        // (GoalName, ItemType, ConceptName?, MapTitle?, SortOrder)
+        static string? PickMapTitle(
+            string primary,
+            string fallbackLegacy1,
+            string fallbackLegacy2,
+            IReadOnlyDictionary<string, Guid> byTitle)
+        {
+            if (byTitle.ContainsKey(primary)) return primary;
+            if (byTitle.ContainsKey(fallbackLegacy1)) return fallbackLegacy1;
+            if (byTitle.ContainsKey(fallbackLegacy2)) return fallbackLegacy2;
+            return null;
+        }
+
+        // (GoalName, ItemType, ConceptName?, MapTitle?, SortOrder) — MapTitle ưu tiên map mới, fallback legacy nếu chưa seed SQL
         var pathItemSeeds = new[]
         {
             (GoalName: "Logic cơ bản", ItemType: LearningPathItemTypeEnum.Concept, ConceptName: "Biến là gì", MapTitle: (string?)null, SortOrder: 1),
-            (GoalName: "Logic cơ bản", ItemType: LearningPathItemTypeEnum.Map, ConceptName: (string?)null, MapTitle: "level-platform-01", SortOrder: 2),
+            (GoalName: "Logic cơ bản", ItemType: LearningPathItemTypeEnum.Map, ConceptName: (string?)null, MapTitle: PickMapTitle("Introduce variable", "level-platform-01", "level-topdown-1771989668367", mapIdsByTitle), SortOrder: 2),
             (GoalName: "Logic cơ bản", ItemType: LearningPathItemTypeEnum.Concept, ConceptName: "Phép toán", MapTitle: (string?)null, SortOrder: 3),
-            (GoalName: "Logic cơ bản", ItemType: LearningPathItemTypeEnum.Map, ConceptName: (string?)null, MapTitle: "level-topdown-1771989668367", SortOrder: 4),
+            (GoalName: "Logic cơ bản", ItemType: LearningPathItemTypeEnum.Map, ConceptName: (string?)null, MapTitle: PickMapTitle("Mathematical operation", "level-topdown-1771989668367", "level-platform-01", mapIdsByTitle), SortOrder: 4),
             (GoalName: "Logic cơ bản", ItemType: LearningPathItemTypeEnum.Concept, ConceptName: "Thứ tự thực thi", MapTitle: (string?)null, SortOrder: 5),
-            (GoalName: "Logic cơ bản", ItemType: LearningPathItemTypeEnum.Map, ConceptName: (string?)null, MapTitle: "level-topdown-foreground-example", SortOrder: 6),
+            (GoalName: "Logic cơ bản", ItemType: LearningPathItemTypeEnum.Map, ConceptName: (string?)null, MapTitle: PickMapTitle("Platform movement tutorial", "level-topdown-foreground-example", "level-platform-01", mapIdsByTitle), SortOrder: 6),
             (GoalName: "Điều kiện", ItemType: LearningPathItemTypeEnum.Concept, ConceptName: "If-else", MapTitle: (string?)null, SortOrder: 1),
-            (GoalName: "Điều kiện", ItemType: LearningPathItemTypeEnum.Map, ConceptName: (string?)null, MapTitle: "level-platform-01", SortOrder: 2),
+            (GoalName: "Điều kiện", ItemType: LearningPathItemTypeEnum.Map, ConceptName: (string?)null, MapTitle: PickMapTitle("Introduce trap", "level-platform-01", "level-topdown-1771989668367", mapIdsByTitle), SortOrder: 2),
             (GoalName: "Điều kiện", ItemType: LearningPathItemTypeEnum.Concept, ConceptName: "So sánh", MapTitle: (string?)null, SortOrder: 3),
-            (GoalName: "Điều kiện", ItemType: LearningPathItemTypeEnum.Map, ConceptName: (string?)null, MapTitle: "level-topdown-1771989668367", SortOrder: 4),
+            (GoalName: "Điều kiện", ItemType: LearningPathItemTypeEnum.Map, ConceptName: (string?)null, MapTitle: PickMapTitle("More Box", "level-topdown-1771989668367", "level-platform-01", mapIdsByTitle), SortOrder: 4),
             (GoalName: "Vòng lặp", ItemType: LearningPathItemTypeEnum.Concept, ConceptName: "For loop", MapTitle: (string?)null, SortOrder: 1),
-            (GoalName: "Vòng lặp", ItemType: LearningPathItemTypeEnum.Map, ConceptName: (string?)null, MapTitle: "level-platform-01", SortOrder: 2),
+            (GoalName: "Vòng lặp", ItemType: LearningPathItemTypeEnum.Map, ConceptName: (string?)null, MapTitle: PickMapTitle("Introduce for loop", "level-platform-01", "level-topdown-1771989668367", mapIdsByTitle), SortOrder: 2),
             (GoalName: "Vòng lặp", ItemType: LearningPathItemTypeEnum.Concept, ConceptName: "While loop", MapTitle: (string?)null, SortOrder: 3),
-            (GoalName: "Vòng lặp", ItemType: LearningPathItemTypeEnum.Map, ConceptName: (string?)null, MapTitle: "level-topdown-1771989668367", SortOrder: 4),
+            (GoalName: "Vòng lặp", ItemType: LearningPathItemTypeEnum.Map, ConceptName: (string?)null, MapTitle: PickMapTitle("Introduce while/do while loop", "level-topdown-1771989668367", "level-platform-01", mapIdsByTitle), SortOrder: 4),
             (GoalName: "Giải quyết vấn đề", ItemType: LearningPathItemTypeEnum.Concept, ConceptName: "Phân tích bài toán", MapTitle: (string?)null, SortOrder: 1),
-            (GoalName: "Giải quyết vấn đề", ItemType: LearningPathItemTypeEnum.Map, ConceptName: (string?)null, MapTitle: "level-platform-01", SortOrder: 2),
+            (GoalName: "Giải quyết vấn đề", ItemType: LearningPathItemTypeEnum.Map, ConceptName: (string?)null, MapTitle: PickMapTitle("Basic top down map", "level-topdown-1771989668367", "level-platform-01", mapIdsByTitle), SortOrder: 2),
             (GoalName: "Giải quyết vấn đề", ItemType: LearningPathItemTypeEnum.Concept, ConceptName: "Thuật toán cơ bản", MapTitle: (string?)null, SortOrder: 3),
-            (GoalName: "Giải quyết vấn đề", ItemType: LearningPathItemTypeEnum.Map, ConceptName: (string?)null, MapTitle: "level-topdown-1771989668367", SortOrder: 4)
+            (GoalName: "Giải quyết vấn đề", ItemType: LearningPathItemTypeEnum.Map, ConceptName: (string?)null, MapTitle: PickMapTitle("Maze map", "level-platform-01", "level-topdown-foreground-example", mapIdsByTitle), SortOrder: 4)
         };
 
         foreach (var (goalName, itemType, conceptName, mapTitle, sortOrder) in pathItemSeeds)

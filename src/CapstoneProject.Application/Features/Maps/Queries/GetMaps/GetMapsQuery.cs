@@ -9,6 +9,10 @@ public class GetMapsQuery : IRequest<Result<PaginationResult<MapListItemDto>>>
 {
     public int PageNumber { get; set; } = 1;
     public int PageSize { get; set; } = 20;
+    /// <summary>
+    /// When 1–3: difficulty <b>tier</b> (learner + CMS): 1 = Easy (DB 1), 2 = Medium (DB 2 or 4), 3 = Hard (DB 3 or 5).
+    /// Any other value: exact match on <c>Difficulty</c>.
+    /// </summary>
     public int? Difficulty { get; set; }
     public Guid? TagId { get; set; }
     /// <summary>Filter by map type: 0 = Topdown, 1 = Platform. Null = all.</summary>
