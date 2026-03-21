@@ -1,3 +1,4 @@
+using System.Linq;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
@@ -85,7 +86,11 @@ public class GameLobbyController : ControllerBase
     {
         var result = await _mediator.Send(new CreateLobbyRoomCommand(request));
         if (result.IsSuccess && result.Data != null)
+        {
+            await BroadcastLobbyListToAllAsync();
+            await BroadcastRoomUpdatedToGroupAsync(result.Data.RoomId);
             return Created(string.Empty, result);
+        }
         return StatusCode(result.GetHttpStatusCode(), result);
     }
 
@@ -118,6 +123,11 @@ public class GameLobbyController : ControllerBase
     public async Task<IActionResult> JoinRoom([FromBody] JoinLobbyRoomRequest request)
     {
         var result = await _mediator.Send(new JoinLobbyRoomCommand(request));
+        if (result.IsSuccess && result.Data != null)
+        {
+            await BroadcastLobbyListToAllAsync();
+            await BroadcastRoomUpdatedToGroupAsync(result.Data.RoomId);
+        }
         return StatusCode(result.GetHttpStatusCode(), result);
     }
 
@@ -283,6 +293,11 @@ public class GameLobbyController : ControllerBase
     public async Task<IActionResult> LeaveRoom(Guid roomId)
     {
         var result = await _mediator.Send(new LeaveLobbyRoomCommand(roomId));
+        if (result.IsSuccess)
+        {
+            await BroadcastLobbyListToAllAsync();
+            await BroadcastRoomUpdatedToGroupAsync(roomId);
+        }
         return StatusCode(result.GetHttpStatusCode(), result);
     }
 
@@ -345,5 +360,44 @@ public class GameLobbyController : ControllerBase
     {
         var result = await _mediator.Send(new SetLobbyRoomMapCommand(roomId, request));
         return StatusCode(result.GetHttpStatusCode(), result);
+    }
+
+    /// <summary>Đồng bộ danh sách phòng mở với mọi client đang xem lobby (REST không gọi Hub trước đây).</summary>
+    private async Task BroadcastLobbyListToAllAsync()
+    {
+        var list = await _mediator.Send(new GetLobbyRoomsQuery());
+        if (!list.IsSuccess || list.Data == null) return;
+        var payload = list.Data.Select(r => new
+        {
+            r.RoomId,
+            r.RoomCode,
+            r.HostId,
+            r.CurrentPlayerCount,
+            r.MaxPlayers,
+            Status = r.Status.ToString(),
+            r.IsLocked,
+            r.SelectedMapId
+        }).ToList();
+        await _hubContext.Clients.Group(GameLobbyHub.LobbyGroupName).SendAsync("LobbyRoomList", payload);
+    }
+
+    private async Task BroadcastRoomUpdatedToGroupAsync(Guid roomId)
+    {
+        var roomResult = await _mediator.Send(new GetLobbyRoomQuery(roomId));
+        if (!roomResult.IsSuccess || roomResult.Data == null) return;
+        var r = roomResult.Data;
+        var dto = new
+        {
+            r.RoomId,
+            r.RoomCode,
+            r.HostId,
+            CurrentPlayerCount = r.CurrentPlayerCount,
+            r.MaxPlayers,
+            Status = r.Status.ToString(),
+            r.IsLocked,
+            r.SelectedMapId,
+            Players = r.Players.Select(p => new { p.PlayerId, p.IsReady, p.IsHost }).ToList()
+        };
+        await _hubContext.Clients.Group($"{GameLobbyHub.RoomGroupPrefix}{roomId}").SendAsync("RoomUpdated", dto);
     }
 }

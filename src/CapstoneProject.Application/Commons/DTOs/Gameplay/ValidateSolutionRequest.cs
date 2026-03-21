@@ -17,4 +17,16 @@ public class ValidateSolutionRequest
 
     /// <summary>Match id (nếu competitive có server-side submit).</summary>
     public Guid? MatchId { get; set; }
+
+    /// <summary>Kết quả chạy engine (client): thắng/thua — dùng để chấm điểm lobby thay vì đo độ dài AST.</summary>
+    public bool? IsWin { get; set; }
+
+    /// <summary>Số bước thực tế từ engine (client).</summary>
+    public int? ClientStepsUsed { get; set; }
+
+    /// <summary>Số block đã dùng (client).</summary>
+    public int? ClientBlocksUsed { get; set; }
+
+    /// <summary>Thời gian chơi (giây), client.</summary>
+    public double? ClientElapsedSeconds { get; set; }
 }

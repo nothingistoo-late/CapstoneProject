@@ -15,9 +15,12 @@ public class ValidateSolutionCommandValidator : AbstractValidator<ValidateSoluti
             RuleFor(x => x.Request!.Language)
                 .NotEmpty().WithMessage("Language is required.")
                 .MaximumLength(50).WithMessage("Language must not exceed 50 characters.");
-            RuleFor(x => x.Request)
-                .Must(r => !string.IsNullOrEmpty(r!.AstSpec) || !string.IsNullOrEmpty(r!.BytecodeSpec))
-                .WithMessage("Either AstSpec or BytecodeSpec must be provided.");
+            When(x => x.Request!.IsWin != false, () =>
+            {
+                RuleFor(x => x.Request)
+                    .Must(r => !string.IsNullOrEmpty(r!.AstSpec) || !string.IsNullOrEmpty(r!.BytecodeSpec))
+                    .WithMessage("Either AstSpec or BytecodeSpec must be provided.");
+            });
         });
     }
 }

@@ -50,14 +50,18 @@ public class SubmitLobbySolutionCommandHandler : IRequestHandler<SubmitLobbySolu
             AstSpec = command.Request.AstSpec,
             BytecodeSpec = command.Request.BytecodeSpec,
             PlayMode = PlayModeEnum.Lobby,
-            RoomId = command.RoomId
+            RoomId = command.RoomId,
+            IsWin = command.Request.IsWin,
+            ClientStepsUsed = command.Request.StepsUsed,
+            ClientBlocksUsed = command.Request.BlocksUsed,
+            ClientElapsedSeconds = command.Request.Time
         };
         var validateResult = await _mediator.Send(new ValidateSolutionCommand(validateRequest), cancellationToken);
         if (!validateResult.IsSuccess || validateResult.Data == null)
             return Result<SubmitGameResponse>.Failure(validateResult.Message ?? "Validation failed.", ErrorCodeEnum.ValidationFailed);
 
-        // Ưu tiên dùng Score/StepsUsed/BlocksUsed client gửi lên; không gửi thì dùng kết quả từ ValidateSolution
-        var score = command.Request.Score ?? validateResult.Data.Score ?? 0;
+        // Điểm chỉ từ server (ValidateSolution) — không tin Score client.
+        var score = validateResult.Data.Score ?? 0;
         var status = validateResult.Data.Status.ToString();
         var (recordSuccess, recordError, ranking) = _roomManager.RecordSubmission(
             command.RoomId, userId, score, status, validateResult.Data.SubmissionId);

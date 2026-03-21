@@ -475,7 +475,7 @@ public class LearnerMapController : ControllerBase
     /// Submit map for review
     /// </summary>
     /// <remarks>
-    /// Submits a Draft map for moderator review. Author only. Requires Bearer token.
+    /// Submits a Draft map for moderator review. Author only (CreatedBy = current user). Bearer: Learner, Admin, or Moderator.
     ///
     /// **Route:** id (Guid, required): Map ID.
     ///
@@ -490,12 +490,12 @@ public class LearnerMapController : ControllerBase
     /// <response code="403">Forbidden (not author)</response>
     /// <response code="500">Internal server error</response>
     [HttpPost("{id:guid}/submit")]
-    [AuthorizeRoles(nameof(RoleEnum.Learner))]
+    [AuthorizeRoles(nameof(RoleEnum.Learner), nameof(RoleEnum.Admin), nameof(RoleEnum.Moderator))]
     [ProducesResponseType(typeof(Result), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(Result), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(Result), StatusCodes.Status403Forbidden)]
     [ProducesResponseType(typeof(Result), StatusCodes.Status500InternalServerError)]
-    [SwaggerOperation(Summary = "Submit map for review", Description = "Submits draft map for moderator review. Author only. Requires Bearer token.", OperationId = "Learner_SubmitMapForReview", Tags = new[] { "Learner - Maps" })]
+    [SwaggerOperation(Summary = "Submit map for review", Description = "Submits draft map for moderator review. Author only. Bearer: Learner, Admin, or Moderator.", OperationId = "Learner_SubmitMapForReview", Tags = new[] { "Learner - Maps" })]
     public async Task<IActionResult> SubmitMapForReview(Guid id)
     {
         var result = await _mediator.Send(new SubmitMapForReviewCommand(id));

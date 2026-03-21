@@ -7,9 +7,15 @@ public class SubmissionSubmitRequest
 {
     public string? AstSpec { get; set; }
     public string? BytecodeSpec { get; set; }
+
+    /// <summary>Không dùng để override điểm server — giữ tương thích JSON cũ; điểm luôn từ ValidateSolution.</summary>
     public int? Score { get; set; }
+
     public int? StepsUsed { get; set; }
     public int? BlocksUsed { get; set; }
+
+    /// <summary>Thắng/thua theo engine — bắt buộc cho chấm điểm lobby đúng.</summary>
+    public bool? IsWin { get; set; }
     /// <summary>Thời gian (giây) hoặc milliseconds tùy client — thời gian chơi / thời gian nộp.</summary>
     public double? Time { get; set; }
 }

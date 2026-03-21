@@ -9,7 +9,7 @@ public class SubmitLobbySolutionCommandValidator : AbstractValidator<SubmitLobby
     {
         RuleFor(x => x.Request)
             .NotNull().WithMessage("Request body is required.");
-        When(x => x.Request != null, () =>
+        When(x => x.Request != null && x.Request.IsWin != false, () =>
         {
             RuleFor(x => x.Request!)
                 .Must(r => !string.IsNullOrWhiteSpace(r.AstSpec) || !string.IsNullOrWhiteSpace(r.BytecodeSpec))

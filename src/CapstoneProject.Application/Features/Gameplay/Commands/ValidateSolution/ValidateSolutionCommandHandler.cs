@@ -1,3 +1,4 @@
+using System.Text.Json;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using CapstoneProject.Application.Common.Enums;
@@ -40,18 +41,26 @@ public class ValidateSolutionCommandHandler : IRequestHandler<ValidateSolutionCo
         if (map.MapDetail == null)
             return Result<ValidateSolutionResultDto>.Failure("Map data not found", ErrorCodeEnum.ValidationFailed);
 
-        // Placeholder: chấp nhận khi có ít nhất một trong AstSpec hoặc BytecodeSpec hợp lệ. Thực tế cần chạy engine/block interpreter để chấm đúng.
         var ast = command.Request.AstSpec?.Trim() ?? string.Empty;
         var bytecode = command.Request.BytecodeSpec?.Trim() ?? string.Empty;
-        var stepsUsed = ast.Length;
-        var blocksUsed = bytecode.Length;
-        const int maxSteps = 10000;
-        const int minLength = 2; // ít nhất phải có nội dung thật (không chấp nhận 1 ký tự rác)
-        var hasValidInput = ast.Length >= minLength || bytecode.Length >= minLength;
-        var accepted = hasValidInput && stepsUsed <= maxSteps && blocksUsed <= maxSteps;
-        var statusEnum = accepted ? SubmissionStatusEnum.Accepted : SubmissionStatusEnum.WrongAnswer;
-        var score = accepted ? Math.Max(0, 100 - stepsUsed / 50) : 0; // càng nhiều step càng trừ điểm
-        var stars = accepted ? (score >= 90 ? 3 : score >= 60 ? 2 : 1) : 0;
+
+        int score;
+        int stars;
+        SubmissionStatusEnum statusEnum;
+        bool accepted;
+        int stepsUsedForSubmission;
+        int blocksUsedForSubmission;
+
+        if (HasEngineMetrics(command.Request))
+        {
+            (score, stars, statusEnum, accepted, stepsUsedForSubmission, blocksUsedForSubmission) =
+                ScoreFromEngineMetrics(command.Request, map.MapDetail.JsonContent, ast, bytecode);
+        }
+        else
+        {
+            (score, stars, statusEnum, accepted, stepsUsedForSubmission, blocksUsedForSubmission) =
+                ScoreFromLegacyPlaceholder(ast, bytecode);
+        }
 
         var submission = new Submission
         {
@@ -62,8 +71,8 @@ public class ValidateSolutionCommandHandler : IRequestHandler<ValidateSolutionCo
             BytecodeSpec = command.Request.BytecodeSpec,
             ResultStatus = statusEnum,
             Score = score,
-            StepsUsed = stepsUsed,
-            BlocksUsed = blocksUsed,
+            StepsUsed = stepsUsedForSubmission,
+            BlocksUsed = blocksUsedForSubmission,
             MatchId = command.Request.MatchId
         };
         submission.InitializeEntity(userId);
@@ -106,7 +115,6 @@ public class ValidateSolutionCommandHandler : IRequestHandler<ValidateSolutionCo
             umrRepo.Update(umr);
         }
 
-        // Save play history (lưu mỗi lần submit/validate: single/lobby đều đi qua ValidateSolutionCommandHandler)
         var history = new UserMapPlayHistory
         {
             UserId = userId,
@@ -136,7 +144,6 @@ public class ValidateSolutionCommandHandler : IRequestHandler<ValidateSolutionCo
 
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-        // Map response DTO từ entity Submission đã lưu (đúng diagram: SubmissionId, Status, Score, StepsUsed, BlocksUsed)
         var dto = new ValidateSolutionResultDto
         {
             SubmissionId = submission.Id,
@@ -148,5 +155,113 @@ public class ValidateSolutionCommandHandler : IRequestHandler<ValidateSolutionCo
             Message = accepted ? "Accepted" : "Wrong answer or constraint violation"
         };
         return Result<ValidateSolutionResultDto>.Success(dto);
+    }
+
+    /// <summary>Client gửi IsWin (+ metrics) — chấm giống logic sao trên UI (thời gian / bước / block).</summary>
+    private static bool HasEngineMetrics(ValidateSolutionRequest r) => r.IsWin.HasValue;
+
+    private static (int score, int stars, SubmissionStatusEnum status, bool accepted, int stepsUsed, int blocksUsed) ScoreFromEngineMetrics(
+        ValidateSolutionRequest req,
+        string mapJsonContent,
+        string ast,
+        string bytecode)
+    {
+        var stepsUsed = req.ClientStepsUsed ?? ast.Length;
+        var blocksUsed = req.ClientBlocksUsed ?? bytecode.Length;
+
+        if (req.IsWin != true)
+        {
+            return (0, 0, SubmissionStatusEnum.WrongAnswer, false, stepsUsed, blocksUsed);
+        }
+
+        var limits = ParseMissionLimits(mapJsonContent);
+        var elapsed = req.ClientElapsedSeconds ?? 0;
+        var starCount = ComputeStarCount(elapsed, stepsUsed, blocksUsed, limits);
+        var s = ScoreFromWinAndStars(true, starCount);
+        return (s, starCount, SubmissionStatusEnum.Accepted, true, stepsUsed, blocksUsed);
+    }
+
+    /// <summary>Placeholder cũ: không được tin — AST rỗng <c>[]</c> vẫn bị tính ~100 điểm; thêm chặn trivial.</summary>
+    private static (int score, int stars, SubmissionStatusEnum status, bool accepted, int stepsUsed, int blocksUsed) ScoreFromLegacyPlaceholder(
+        string ast,
+        string bytecode)
+    {
+        var stepsUsed = ast.Length;
+        var blocksUsed = bytecode.Length;
+        const int maxSteps = 10000;
+        const int minLength = 2;
+        var trivial = IsTrivialEmptyAst(ast) && bytecode.Length < minLength;
+        var hasValidInput = (ast.Length >= minLength || bytecode.Length >= minLength) && !trivial;
+        var accepted = hasValidInput && stepsUsed <= maxSteps && blocksUsed <= maxSteps;
+        var statusEnum = accepted ? SubmissionStatusEnum.Accepted : SubmissionStatusEnum.WrongAnswer;
+        var score = accepted ? Math.Max(0, 100 - stepsUsed / 50) : 0;
+        var stars = accepted ? (score >= 90 ? 3 : score >= 60 ? 2 : 1) : 0;
+        return (score, stars, statusEnum, accepted, stepsUsed, blocksUsed);
+    }
+
+    private static bool IsTrivialEmptyAst(string ast)
+    {
+        if (string.IsNullOrWhiteSpace(ast)) return true;
+        var t = ast.Trim();
+        return t is "[]" or "{}" or "null";
+    }
+
+    private readonly record struct MissionLimits(double TimeLimitSeconds, double EstimatedSteps, double BlockLimit);
+
+    private static MissionLimits ParseMissionLimits(string? json)
+    {
+        var inf = double.PositiveInfinity;
+        if (string.IsNullOrWhiteSpace(json))
+            return new MissionLimits(inf, inf, inf);
+        try
+        {
+            using var doc = JsonDocument.Parse(json);
+            var root = doc.RootElement;
+            if (root.ValueKind != JsonValueKind.Object)
+                return new MissionLimits(inf, inf, inf);
+
+            var mapConfig = root.TryGetProperty("mapConfig", out var mc) ? mc : root;
+            double time = inf, steps = inf, blocks = inf;
+
+            if (mapConfig.TryGetProperty("timeLimitSeconds", out var t) && t.ValueKind == JsonValueKind.Number)
+                time = t.GetDouble();
+            if (mapConfig.TryGetProperty("estimatedSteps", out var es) && es.ValueKind == JsonValueKind.Number)
+                steps = es.GetDouble();
+
+            if (root.TryGetProperty("blockConstraints", out var bc) &&
+                bc.TryGetProperty("blockLimit", out var bl) &&
+                bl.ValueKind == JsonValueKind.Number)
+                blocks = bl.GetDouble();
+
+            return new MissionLimits(time, steps, blocks);
+        }
+        catch
+        {
+            return new MissionLimits(inf, inf, inf);
+        }
+    }
+
+    /// <summary>Giống GameResultsModal: 0–3 sao theo time / steps / block so với limit map.</summary>
+    private static int ComputeStarCount(double elapsedSeconds, int steps, int blocks, MissionLimits lim)
+    {
+        if (lim.TimeLimitSeconds >= double.PositiveInfinity &&
+            lim.EstimatedSteps >= double.PositiveInfinity &&
+            lim.BlockLimit >= double.PositiveInfinity)
+        {
+            return 1;
+        }
+
+        var s = 0;
+        if (elapsedSeconds <= lim.TimeLimitSeconds) s++;
+        if (steps <= lim.EstimatedSteps) s++;
+        if (blocks <= lim.BlockLimit) s++;
+        return s;
+    }
+
+    /// <summary>Thắng: 10 + 30*stars (max 100), khớp UI (0 sao vẫn pass level thì 10 điểm).</summary>
+    private static int ScoreFromWinAndStars(bool isWin, int stars)
+    {
+        if (!isWin) return 0;
+        return Math.Min(100, 10 + stars * 30);
     }
 }

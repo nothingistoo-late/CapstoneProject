@@ -12,9 +12,12 @@ public class GameInstance
     public Guid RoomId { get; set; }
     public string RoomCode { get; set; } = string.Empty;
     public Guid? MapId { get; set; }
-    public IReadOnlyList<LobbyPlayer> Players { get; set; } = Array.Empty<LobbyPlayer>();
+    /// <summary>Danh sách người chơi còn trong phòng (cập nhật khi có người thoát giữa game).</summary>
+    public List<LobbyPlayer> Players { get; set; } = new();
+
     public object? GameState { get; set; }
-    public IReadOnlyList<Guid> TurnOrder { get; set; } = Array.Empty<Guid>();
+
+    public List<Guid> TurnOrder { get; set; } = new();
     public DateTime StartedAt { get; set; } = DateTime.UtcNow;
     /// <summary>Per-player submission result (score, status). Filled when player submits.</summary>
     public ConcurrentDictionary<Guid, PlayerGameResult> PlayerResults { get; } = new();

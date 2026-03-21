@@ -342,7 +342,15 @@ public class GameLobbyHub : Hub
     }
 
     /// <summary>Submit solution for the current game. Server validates with room map, records score; when all have submitted, broadcasts RankingUpdated to the room.</summary>
-    public async Task SubmitSolution(Guid roomId, string? astSpec, string? bytecodeSpec, string? language = null)
+    public async Task SubmitSolution(
+        Guid roomId,
+        string? astSpec,
+        string? bytecodeSpec,
+        string? language = null,
+        bool? isWin = null,
+        int? stepsUsed = null,
+        int? blocksUsed = null,
+        double? timeSeconds = null)
     {
         if (!TryGetUserId(out var userId))
         {
@@ -381,7 +389,11 @@ public class GameLobbyHub : Hub
             AstSpec = astSpec,
             BytecodeSpec = bytecodeSpec,
             PlayMode = PlayModeEnum.Lobby,
-            RoomId = roomId
+            RoomId = roomId,
+            IsWin = isWin,
+            ClientStepsUsed = stepsUsed,
+            ClientBlocksUsed = blocksUsed,
+            ClientElapsedSeconds = timeSeconds
         };
         var validateResult = await _mediator.Send(new ValidateSolutionCommand(validateRequest));
         if (!validateResult.IsSuccess || validateResult.Data == null)
