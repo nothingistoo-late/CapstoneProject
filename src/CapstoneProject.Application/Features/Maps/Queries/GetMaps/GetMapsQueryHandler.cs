@@ -30,15 +30,7 @@ public class GetMapsQueryHandler : IRequestHandler<GetMapsQuery, Result<Paginati
         if (request.Difficulty.HasValue)
         {
             var d = request.Difficulty.Value;
-            // Learner sends tier codes 1/2/3 — same as CMS / Map Editor: 1=Easy, 2=Medium, 3=Hard (DB column Difficulty).
-            // 4–5 are valid in validators; map to medium/hard to match FE difficultyDisplay.
-            query = d switch
-            {
-                1 => query.Where(m => m.Difficulty == 1),
-                2 => query.Where(m => m.Difficulty == 2 || m.Difficulty == 4),
-                3 => query.Where(m => m.Difficulty == 3 || m.Difficulty == 5),
-                _ => query.Where(m => m.Difficulty == d),
-            };
+            query = query.Where(m => m.Difficulty == d);
         }
         if (request.Type.HasValue) query = query.Where(m => m.Type == request.Type.Value);
         if (request.TagId.HasValue) query = query.Where(m => m.MapTags.Any(t => t.TagId == request.TagId.Value));
