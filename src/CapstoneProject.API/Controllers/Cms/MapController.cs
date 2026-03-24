@@ -45,7 +45,7 @@ public class CmsMapController : ControllerBase
     /// - mapStatus (int?, optional): 0=Draft, 1=PendingReview, 2=Approved, 3=Rejected, 4=Published.
     /// - publishedOnly (bool?, optional): true = only published; ignored when mapStatus is set.
     /// - createdByUserId (Guid?, optional): Lọc theo user tạo map.
-    /// - difficulty (int?, optional): 0=Easy, 1=Medium, 2=Hard.
+    /// - difficulty (int?, optional): Difficulty level (1-5).
     /// - tagId (Guid?, optional): Lọc theo tag.
     /// - search (string, optional): Tìm trong title, description.
     /// - minPrice (decimal?, optional): Chỉ map có giá &gt;= minPrice (null/0 = free).

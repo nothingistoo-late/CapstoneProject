@@ -46,7 +46,7 @@ public class LearnerMapController : ControllerBase
     /// - pageSize (int, optional): Items per page. Default 20.
     /// - publishedOnly (bool?, optional): true = only published maps (catalog). Ignored when mapStatus is set. Default true.
     /// - mapStatus (int?, optional): Filter by map status: 0=Draft, 1=PendingReview, 2=Approved, 3=Rejected, 4=Published. When set, publishedOnly is ignored.
-    /// - difficulty (int?, optional): Filter by difficulty (e.g. 0=Easy, 1=Medium, 2=Hard).
+    /// - difficulty (int?, optional): Filter by difficulty level (1-5).
     /// - type (int?, optional): Filter by map type: 0=Topdown, 1=Platform.
     /// - tagId (Guid?, optional): Filter by tag ID.
     /// - search (string, optional): Search in title and description.
@@ -237,7 +237,7 @@ public class LearnerMapController : ControllerBase
     /// **Body (JSON):**
     /// - title (string, required): Map title.
     /// - description (string, required): Map description.
-    /// - difficulty (int, required): Difficulty level (e.g. 0=Easy, 1=Medium, 2=Hard).
+    /// - difficulty (int, required): Difficulty level (1-5).
     /// - timeLimitMs (int, required): Time limit in milliseconds.
     /// - winCondition (int, required): Win condition value stored in Map metadata.
     /// - price (decimal?, optional): Price for paid map; null = free.
@@ -281,7 +281,7 @@ public class LearnerMapController : ControllerBase
     /// **Body (multipart/form-data):**
     /// - title (string, required): Tiêu đề map.
     /// - description (string, required): Mô tả.
-    /// - difficulty (int, required): Độ khó (0=Easy, 1=Medium, 2=Hard).
+    /// - difficulty (int, required): Độ khó (1-5).
     /// - timeLimitMs (int, required): Thời gian giới hạn (ms).
     /// - winCondition (int, required): Điều kiện thắng (metadata).
     /// - price (decimal?, optional): Giá; null = miễn phí.
@@ -346,7 +346,7 @@ public class LearnerMapController : ControllerBase
     /// **Body (JSON):**
     /// - title (string, required): Map title.
     /// - description (string, required): Map description.
-    /// - difficulty (int, required): Difficulty (0=Easy, 1=Medium, 2=Hard).
+    /// - difficulty (int, required): Difficulty (1-5).
     /// - timeLimitMs (int, required): Time limit in ms.
     /// - winCondition (int, required): Win condition value stored in Map metadata.
     /// - price (decimal?, optional): Price; null = free.
@@ -392,7 +392,7 @@ public class LearnerMapController : ControllerBase
     /// **Body (multipart/form-data):**
     /// - title (string, required): Tiêu đề map.
     /// - description (string, required): Mô tả.
-    /// - difficulty (int, required): Độ khó (0=Easy, 1=Medium, 2=Hard).
+    /// - difficulty (int, required): Độ khó (1-5).
     /// - timeLimitMs (int, required): Thời gian giới hạn (ms).
     /// - winCondition (int, required): Điều kiện thắng (metadata).
     /// - price (decimal?, optional): Giá; null = miễn phí.
