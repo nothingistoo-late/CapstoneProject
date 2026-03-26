@@ -5,6 +5,7 @@ using CapstoneProject.Infrastructure;
 using CapstoneProject.Infrastructure.Configurations;
 using CapstoneProject.Infrastructure.Filters;
 using Hangfire;
+using Microsoft.AspNetCore.HttpOverrides;
 
 namespace CapstoneProject.API.Configurations;
 
@@ -25,6 +26,13 @@ public static class ServiceConfiguration
         
         builder.Services.AddEndpointsApiExplorer();        // Custom Swagger configuration with tagging and styling
         builder.Services.AddSwaggerConfiguration();
+
+        builder.Services.Configure<ForwardedHeadersOptions>(options =>
+        {
+            options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+            options.KnownNetworks.Clear();
+            options.KnownProxies.Clear();
+        });
 
         // Cross-cutting concerns
         builder.AddLoggingConfiguration();
@@ -56,11 +64,16 @@ public static class ServiceConfiguration
     /// </summary>
     public static WebApplication ConfigurePipeline(this WebApplication app)
     {
+        app.UseForwardedHeaders();
+
+        var swaggerInProd = app.Configuration.GetValue("Swagger:EnabledInProduction", false);
+        if (app.Environment.IsDevelopment() || swaggerInProd)
+        {
+            app.UseSwaggerConfiguration(app.Environment);
+        }
+
         if (app.Environment.IsDevelopment())
         {
-            // Use custom Swagger configuration with styling and tagging
-            app.UseSwaggerConfiguration(app.Environment);
-
             var hangfireEnabled = app.Configuration.GetValue("Hangfire:Enabled", true);
             if (hangfireEnabled)
             {
@@ -74,18 +87,13 @@ public static class ServiceConfiguration
             }
         }
 
-        // Enable CORS FIRST - Must be before UseHttpsRedirection to avoid preflight redirect issues
         app.UseCorsConfiguration();
         
         // Enable static files for Swagger custom CSS
         app.UseStaticFiles();
         
-        // HTTPS Redirection - Only in production or when HTTPS is configured
-        // In development, this can cause CORS preflight issues
-        if (!app.Environment.IsDevelopment())
-        {
-            app.UseHttpsRedirection();
-        }
+        // TLS terminates at Koyeb / reverse proxy; Kestrel only serves HTTP in the container.
+        // UseHttpsRedirection() here caused "Failed to determine the https port" and is unnecessary.
 
         // API-specific middlewares (exception handling, JWT, etc.)
         app.UseApiConfiguration();
