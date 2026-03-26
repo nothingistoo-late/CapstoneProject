@@ -23,7 +23,7 @@ public static class LoggingConfiguration
             ["Microsoft.EntityFrameworkCore.Database.Command"] = LogLevel.None,
             // Set higher threshold for other EF messages
             ["Microsoft.EntityFrameworkCore"] = LogLevel.Warning,
-            ["Microsoft.Data.SqlClient"] = LogLevel.Warning
+            ["Npgsql"] = LogLevel.Warning
         };
         
         // Add completely excluded categories
@@ -65,7 +65,7 @@ public static class LoggingConfiguration
             ["Microsoft.EntityFrameworkCore.Database.Command"] = LogLevel.None,
             // Set higher threshold for other EF messages
             ["Microsoft.EntityFrameworkCore"] = LogLevel.Warning,
-            ["Microsoft.Data.SqlClient"] = LogLevel.Warning
+            ["Npgsql"] = LogLevel.Warning
         };
         
         // Add completely excluded categories

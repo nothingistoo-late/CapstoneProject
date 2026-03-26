@@ -2,7 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Configuration;
-using Microsoft.Data.SqlClient;
+using Npgsql;
 using CapstoneProject.Infrastructure.Context;
 
 namespace CapstoneProject.API.Extensions;
@@ -26,9 +26,17 @@ public static class MigrationExtension
 
             logger.LogInformation("Starting CapstoneProject database migrations...");
 
+            var runMigrationsOnStartup = configuration.GetValue("Database:RunMigrationsOnStartup", true);
+            if (!runMigrationsOnStartup)
+            {
+                logger.LogInformation("Skipping database migrations on startup (Database:RunMigrationsOnStartup=false).");
+                return;
+            }
+
             // Step 1: Đảm bảo database được tạo nếu chưa tồn tại
             var connectionString = configuration.GetConnectionString("DefaultConnection");
-            if (!string.IsNullOrEmpty(connectionString))
+            var autoCreateDatabase = configuration.GetValue("Database:AutoCreate", false);
+            if (autoCreateDatabase && !string.IsNullOrEmpty(connectionString))
             {
                 await EnsureDatabaseExistsAsync(connectionString, logger);
             }
@@ -85,34 +93,56 @@ public static class MigrationExtension
     }
 
     /// <summary>
-    /// Đảm bảo database tồn tại, tạo nếu chưa có
+    /// Đảm bảo database tồn tại, tạo nếu chưa có (PostgreSQL)
     /// </summary>
     private static async Task EnsureDatabaseExistsAsync(string connectionString, ILogger logger)
     {
         try
         {
-            var builder = new SqlConnectionStringBuilder(connectionString);
-            var databaseName = builder.InitialCatalog;
-            builder.InitialCatalog = "master";
-            var masterConnectionString = builder.ConnectionString;
+            var builder = new NpgsqlConnectionStringBuilder(connectionString);
+            var databaseName = builder.Database;
+            if (string.IsNullOrEmpty(databaseName))
+            {
+                throw new InvalidOperationException("Database name is missing in the connection string.");
+            }
 
-            using var connection = new SqlConnection(masterConnectionString);
+            // Hosted Postgres poolers (Supabase 6543, Neon pooler host, …) typically cannot CREATE DATABASE.
+            // CREATE DATABASE is typically not allowed and can hang/fail.
+            if (builder.Port == 6543 || (builder.Host ?? string.Empty).Contains("pooler", StringComparison.OrdinalIgnoreCase))
+            {
+                logger.LogInformation(
+                    "Skipping database auto-create check (pooler detected). Using existing database '{DatabaseName}'.",
+                    databaseName);
+                return;
+            }
+
+            // Add explicit timeouts to avoid startup hangs
+            builder.Timeout = Math.Max(builder.Timeout, 10);
+            builder.CommandTimeout = Math.Max(builder.CommandTimeout, 10);
+
+            builder.Database = "postgres";
+            var adminConnectionString = builder.ConnectionString;
+
+            await using var connection = new NpgsqlConnection(adminConnectionString);
             await connection.OpenAsync();
 
-            var command = connection.CreateCommand();
-            command.CommandText = $@"
-                IF NOT EXISTS (SELECT name FROM sys.databases WHERE name = N'{databaseName}')
-                BEGIN
-                    CREATE DATABASE [{databaseName}]
-                    PRINT 'Database [{databaseName}] created successfully'
-                END
-                ELSE
-                BEGIN
-                    PRINT 'Database [{databaseName}] already exists'
-                END";
+            await using (var checkCmd = new NpgsqlCommand(
+                             "SELECT 1 FROM pg_database WHERE datname = @name",
+                             connection))
+            {
+                checkCmd.Parameters.AddWithValue("name", databaseName);
+                var exists = await checkCmd.ExecuteScalarAsync();
+                if (exists != null)
+                {
+                    logger.LogInformation("Database '{DatabaseName}' already exists", databaseName);
+                    return;
+                }
+            }
 
-            await command.ExecuteNonQueryAsync();
-            logger.LogInformation("Database '{DatabaseName}' exists or was created successfully", databaseName);
+            var escaped = databaseName.Replace("\"", "\"\"");
+            await using var createCmd = new NpgsqlCommand($"CREATE DATABASE \"{escaped}\"", connection);
+            await createCmd.ExecuteNonQueryAsync();
+            logger.LogInformation("Database '{DatabaseName}' created successfully", databaseName);
         }
         catch (Exception ex)
         {
@@ -184,4 +214,3 @@ public static class MigrationExtension
         }
     }
 }
-

@@ -40,10 +40,10 @@ public static class InfrastructureDependencyInjection
         // Configure database contexts
         services.AddDbContextPool<CapstoneProjectDbContext>(options =>
         {
-            options.UseSqlServer(connectionString, sql =>
+            options.UseNpgsql(connectionString, npgsql =>
             {
-                sql.MigrationsAssembly(typeof(CapstoneProjectDbContext).Assembly.FullName);
-                sql.CommandTimeout(30);
+                npgsql.MigrationsAssembly(typeof(CapstoneProjectDbContext).Assembly.FullName);
+                npgsql.CommandTimeout(30);
             });
             options.ConfigureWarnings(warnings =>
                 warnings.Ignore(CoreEventId.FirstWithoutOrderByAndFilterWarning));

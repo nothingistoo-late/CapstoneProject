@@ -343,6 +343,7 @@ public static class SeedingExtension
         var seedMapsFromSqlScript = configuration.GetSection("DataSeeding").GetValue<bool>("SeedMapsFromSqlScript");
         if (seedMapsFromSqlScript)
         {
+            // Neon / Postgres pooler (host thường có "-pooler") vẫn chạy seed SQL được; chỉ tắt bằng DataSeeding:SeedMapsFromSqlScript=false nếu cần.
             var relativeScriptPath = configuration.GetSection("DataSeeding").GetValue<string>("MapsSqlScriptPath")?.Trim();
             var scriptPath = !string.IsNullOrWhiteSpace(relativeScriptPath)
                 ? Path.GetFullPath(Path.Combine(env.ContentRootPath, relativeScriptPath))
@@ -351,7 +352,7 @@ public static class SeedingExtension
             var systemUserId = existingAdmin?.Id ?? Guid.Empty;
             await SeedMapsFromSqlScriptAsync(dbContext, scriptPath, systemUserId, logger);
         }
-        else
+        if (!seedMapsFromSqlScript)
         {
             logger.LogInformation("Map seeding from SQL script is disabled (DataSeeding:SeedMapsFromSqlScript=false).");
         }
@@ -590,7 +591,14 @@ public static class SeedingExtension
             "MapTags"
         };
 
-        var inserts = ExtractInsertStatements(scriptPath, allowedTables).ToList();
+        var sourceOrder = 0;
+        var inserts = ExtractInsertStatements(scriptPath, allowedTables)
+            .Select(s =>
+            {
+                s.SourceOrder = sourceOrder++;
+                return s;
+            })
+            .ToList();
         if (inserts.Count == 0)
         {
             logger.LogWarning("No INSERT statements found for allowed tables in: {Path}", scriptPath);
@@ -617,6 +625,7 @@ public static class SeedingExtension
         var ordered = inserts
             .OrderBy(x => orderIndex.TryGetValue(x.Table, out var idx) ? idx : int.MaxValue)
             .ThenBy(x => x.Table)
+            .ThenBy(x => x.SourceOrder)
             .ToList();
 
         var systemUserIdStr = systemUserId.ToString("D");
@@ -628,30 +637,66 @@ public static class SeedingExtension
         int executed = 0;
         int skipped = 0;
 
-        foreach (var item in ordered)
+        async Task RunOneInsertAsync(InsertStatementInfo item)
         {
             var table = item.Table;
             var statement = item.Statement.Replace(scriptUserIdLiteral, $"N'{systemUserIdStr}'", StringComparison.OrdinalIgnoreCase);
             var id = item.Id;
             if (!allowedTables.Contains(table))
-                continue;
+                return;
 
-            // MapTags: thay TagId trong script bằng Tag Id hiện có trong DB (theo Name) để dùng tag đã seed bên ngoài.
             if (string.Equals(table, "MapTags", StringComparison.OrdinalIgnoreCase))
             {
                 foreach (var (scriptTagId, currentTagId) in scriptTagIdToCurrentId)
                     statement = statement.Replace($"N'{scriptTagId}'", $"N'{currentTagId}'", StringComparison.OrdinalIgnoreCase);
             }
 
-            // ExecuteSqlRawAsync xem chuỗi là format string; JSON trong statement có { } nên phải escape để tránh FormatException.
-            var statementEscaped = statement.Replace("{", "{{").Replace("}", "}}");
-            var guarded = $@"
-IF NOT EXISTS (SELECT 1 FROM [dbo].[{table}] WHERE [Id] = N'{id}')
-BEGIN
-{statementEscaped}
-END";
-            var affected = await dbContext.Database.ExecuteSqlRawAsync(guarded);
+            string pgSql;
+            try
+            {
+                pgSql = SqlServerToPostgreSqlInsertConverter.ConvertInsertStatement(statement);
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Không chuyển được INSERT sang PostgreSQL (bảng {Table}, Id {Id}).", table, id);
+                skipped++;
+                return;
+            }
+
+            var statementEscaped = pgSql.Replace("{", "{{").Replace("}", "}}");
+            var affected = await dbContext.Database.ExecuteSqlRawAsync(statementEscaped);
             if (affected > 0) executed++; else skipped++;
+        }
+
+        // Pha 1: Maps trước (FK MapDetails/Hints/MapTags trỏ MapId).
+        foreach (var item in ordered.Where(x => string.Equals(x.Table, "Maps", StringComparison.OrdinalIgnoreCase)))
+            await RunOneInsertAsync(item);
+
+        var mapIds = (await dbContext.Maps.AsNoTracking().Select(m => m.Id).ToListAsync()).ToHashSet();
+
+        // Pha 2: MapDetails, Hints, MapTags — bỏ qua nếu MapId chưa có (script thiếu map cha hoặc insert map lỗi trước đó).
+        foreach (var item in ordered.Where(x => !string.Equals(x.Table, "Maps", StringComparison.OrdinalIgnoreCase)))
+        {
+            var mapIdMatch = ChildInsertMapIdRegex.Match(item.Statement);
+            if (!mapIdMatch.Success || !Guid.TryParse(mapIdMatch.Groups["mapId"].Value, out var fkMapId))
+            {
+                logger.LogWarning("Bỏ qua {Table} Id {RowId}: không đọc được MapId từ VALUES.", item.Table, item.Id);
+                skipped++;
+                continue;
+            }
+
+            if (!mapIds.Contains(fkMapId))
+            {
+                logger.LogWarning(
+                    "Bỏ qua {Table} Id {RowId}: MapId {MapId} không tồn tại trong bảng Maps (thiếu INSERT map hoặc map chưa vào DB).",
+                    item.Table,
+                    item.Id,
+                    fkMapId);
+                skipped++;
+                continue;
+            }
+
+            await RunOneInsertAsync(item);
         }
 
         logger.LogInformation("Seed maps from SQL script done. Executed: {Executed}, Skipped: {Skipped}", executed, skipped);
@@ -662,7 +707,14 @@ END";
         public string Table { get; set; } = string.Empty;
         public string Id { get; set; } = string.Empty;
         public string Statement { get; set; } = string.Empty;
+        /// <summary>Thứ tự xuất hiện trong file script (ổn định khi sort theo bảng).</summary>
+        public int SourceOrder { get; set; }
     }
+
+    /// <summary>MapDetails / Hints / MapTags: cột thứ 2 sau VALUES là MapId (N'guid').</summary>
+    private static readonly Regex ChildInsertMapIdRegex = new(
+        @"VALUES\s*\(\s*N'(?<rowId>[0-9a-fA-F-]{36})'\s*,\s*N'(?<mapId>[0-9a-fA-F-]{36})'",
+        RegexOptions.IgnoreCase | RegexOptions.Singleline | RegexOptions.Compiled);
 
     /// <summary>Đọc script, lấy (TagId, Name) từ INSERT [dbo].[Tags] để map sang Tag Id trong DB.</summary>
     private static List<(string TagId, string Name)> ExtractScriptTagIdToName(string scriptPath)
@@ -693,68 +745,80 @@ END";
         var sb = new StringBuilder();
         bool capturing = false;
 
+        static InsertStatementInfo? TryBuild(string stmt, Regex tableRegex, Regex idRegex, HashSet<string> allowedTables)
+        {
+            if (string.IsNullOrWhiteSpace(stmt))
+                return null;
+
+            var tableMatch = tableRegex.Match(stmt);
+            var idMatch = idRegex.Match(stmt);
+            if (tableMatch.Success && idMatch.Success && allowedTables.Contains(tableMatch.Groups["table"].Value))
+                return new InsertStatementInfo
+                {
+                    Table = tableMatch.Groups["table"].Value,
+                    Id = idMatch.Groups["id"].Value,
+                    Statement = stmt
+                };
+            return null;
+        }
+
         while (!reader.EndOfStream)
         {
             var line = reader.ReadLine() ?? string.Empty;
             var trimmed = line.Trim();
 
-            if (!capturing)
-            {
-                if (trimmed.StartsWith("INSERT [dbo].[", StringComparison.OrdinalIgnoreCase))
-                {
-                    var end = trimmed.IndexOf(']', "INSERT [dbo].[".Length);
-                    if (end > 0)
-                    {
-                        var table = trimmed.Substring("INSERT [dbo].[".Length, end - "INSERT [dbo].[".Length);
-                        if (allowedTables.Contains(table))
-                        {
-                            capturing = true;
-                            sb.Clear();
-                            sb.AppendLine(line);
-                        }
-                    }
-                }
-                continue;
-            }
-
+            // "GO" luôn kết thúc statement hiện tại (nếu có).
             if (string.Equals(trimmed, "GO", StringComparison.OrdinalIgnoreCase))
             {
-                var stmt = sb.ToString().Trim();
-                if (!string.IsNullOrWhiteSpace(stmt))
+                if (capturing)
                 {
-                    var tableMatch = tableRegex.Match(stmt);
-                    var idMatch = idRegex.Match(stmt);
-                    if (tableMatch.Success && idMatch.Success && allowedTables.Contains(tableMatch.Groups["table"].Value))
-                        yield return new InsertStatementInfo
-                        {
-                            Table = tableMatch.Groups["table"].Value,
-                            Id = idMatch.Groups["id"].Value,
-                            Statement = stmt
-                        };
+                    var item = TryBuild(sb.ToString().Trim(), tableRegex, idRegex, allowedTables);
+                    if (item is not null) yield return item;
+                    sb.Clear();
                 }
+
                 capturing = false;
-                sb.Clear();
                 continue;
             }
 
-            sb.AppendLine(line);
+            // Nhiều đoạn trong script không có GO giữa các INSERT (đặc biệt block Maps).
+            // Vì vậy khi gặp 1 dòng INSERT mới, flush statement trước đó và bắt đầu statement mới.
+            if (trimmed.StartsWith("INSERT [dbo].[", StringComparison.OrdinalIgnoreCase))
+            {
+                if (capturing)
+                {
+                    var item = TryBuild(sb.ToString().Trim(), tableRegex, idRegex, allowedTables);
+                    if (item is not null) yield return item;
+                    sb.Clear();
+                }
+
+                var end = trimmed.IndexOf(']', "INSERT [dbo].[".Length);
+                if (end > 0)
+                {
+                    var table = trimmed.Substring("INSERT [dbo].[".Length, end - "INSERT [dbo].[".Length);
+                    if (allowedTables.Contains(table))
+                    {
+                        capturing = true;
+                        sb.AppendLine(line);
+                    }
+                    else
+                    {
+                        capturing = false;
+                        sb.Clear();
+                    }
+                }
+
+                continue;
+            }
+
+            if (capturing)
+                sb.AppendLine(line);
         }
 
         if (capturing)
         {
-            var stmt = sb.ToString().Trim();
-            if (!string.IsNullOrWhiteSpace(stmt))
-            {
-                var tableMatch = tableRegex.Match(stmt);
-                var idMatch = idRegex.Match(stmt);
-                if (tableMatch.Success && idMatch.Success && allowedTables.Contains(tableMatch.Groups["table"].Value))
-                    yield return new InsertStatementInfo
-                    {
-                        Table = tableMatch.Groups["table"].Value,
-                        Id = idMatch.Groups["id"].Value,
-                        Statement = stmt
-                    };
-            }
+            var item = TryBuild(sb.ToString().Trim(), tableRegex, idRegex, allowedTables);
+            if (item is not null) yield return item;
         }
     }
 }

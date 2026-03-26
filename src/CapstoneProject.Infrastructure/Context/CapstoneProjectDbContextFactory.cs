@@ -1,6 +1,5 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
-using Microsoft.EntityFrameworkCore.Migrations.Operations;
 using Microsoft.Extensions.Configuration;
 
 namespace CapstoneProject.Infrastructure.Context;
@@ -11,13 +10,14 @@ public class CapstoneProjectDbContextFactory : IDesignTimeDbContextFactory<Capst
     {
        var optionsBuilder = new DbContextOptionsBuilder<CapstoneProjectDbContext>();
         
-        // Đọc connection string từ appsettings.json của WebApp
+        // Design-time : lire la connection string depuis le projet API (chemin relatif au répertoire courant du tool EF).
         var webAppPath = Path.Combine(Directory.GetCurrentDirectory(), "..", "CapstoneProject.API");
         
         var configuration = new ConfigurationBuilder()
             .SetBasePath(webAppPath)
-            .AddJsonFile("appsettings.json", optional: false, reloadOnChange: false)
+            .AddJsonFile("appsettings.json", optional: true, reloadOnChange: false)
             .AddJsonFile("appsettings.Development.json", optional: true, reloadOnChange: false)
+            .AddEnvironmentVariables()
             .Build();
 
         var connectionString = configuration.GetConnectionString("DefaultConnection");
@@ -25,18 +25,18 @@ public class CapstoneProjectDbContextFactory : IDesignTimeDbContextFactory<Capst
         if (string.IsNullOrEmpty(connectionString))
         {
             throw new InvalidOperationException(
-                "Connection string 'DefaultConnection' not found. Make sure appsettings.json exists in CapstoneProject.API project.");
+                "Connection string 'DefaultConnection' not found. Set ConnectionStrings__DefaultConnection or add appsettings.json in CapstoneProject.API.");
         }
 
-        optionsBuilder.UseSqlServer(
+        optionsBuilder.UseNpgsql(
             connectionString,
-            sqlOptions =>
+            npgsqlOptions =>
             {
-                sqlOptions.EnableRetryOnFailure(
+                npgsqlOptions.EnableRetryOnFailure(
                     maxRetryCount: 3,
                     maxRetryDelay: TimeSpan.FromSeconds(30),
-                    errorNumbersToAdd: null);
-                sqlOptions.MigrationsAssembly(typeof(CapstoneProjectDbContext).Assembly.FullName);
+                    errorCodesToAdd: null);
+                npgsqlOptions.MigrationsAssembly(typeof(CapstoneProjectDbContext).Assembly.FullName);
             });
 
         return new CapstoneProjectDbContext(optionsBuilder.Options);

@@ -203,7 +203,7 @@ public static class QuackOrbitEntityConfiguration
     {
         e.Property(x => x.RoomStatus).HasConversion<int>();
         e.HasIndex(x => x.MatchId);
-        e.HasIndex(x => x.Code).IsUnique().HasFilter("[Code] IS NOT NULL");
+        e.HasIndex(x => x.Code).IsUnique().HasFilter("\"Code\" IS NOT NULL");
         e.HasMany(x => x.RoomParticipants).WithOne(x => x.Room).HasForeignKey(x => x.RoomId).OnDelete(DeleteBehavior.Cascade);
     }
 

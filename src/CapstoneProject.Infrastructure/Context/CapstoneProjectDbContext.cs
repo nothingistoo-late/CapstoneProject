@@ -86,7 +86,7 @@ public class CapstoneProjectDbContext : IdentityDbContext<AppUser, AppRole, Guid
             // Performance indexes
             entity.HasIndex(x => x.Status);
             entity.HasIndex(x => x.JoiningAt);
-            entity.HasIndex(x => x.LastLoginAt).HasFilter("LastLoginAt IS NOT NULL");
+            entity.HasIndex(x => x.LastLoginAt).HasFilter("\"LastLoginAt\" IS NOT NULL");
             entity.HasIndex(x => new { x.Status, x.JoiningAt });
         });
 

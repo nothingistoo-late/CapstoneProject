@@ -1,11 +1,10 @@
 using System.Net;
 using System.Text.Json;
-using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
+using Npgsql;
 using CapstoneProject.Application.Common.Enums;
 using CapstoneProject.Application.Common.Exceptions;
 using CapstoneProject.Application.Common.Models;
-using Microsoft.EntityFrameworkCore.Metadata.Internal;
 
 namespace CapstoneProject.API.Middlewares;
 
@@ -129,7 +128,7 @@ public class GlobalExceptionHandlingMiddleware
                 null
             ),
             
-            SqlException sqlEx => HandleDatabaseException(sqlEx),
+            PostgresException pgEx => HandlePostgresException(pgEx),
             DbUpdateException dbEx => HandleDatabaseException(dbEx),
             
             TimeoutException => (
@@ -169,62 +168,73 @@ public class GlobalExceptionHandlingMiddleware
         };
     }
     
+    private (HttpStatusCode, ErrorCodeEnum, string, List<string>?) HandlePostgresException(PostgresException pgEx)
+    {
+        // https://www.postgresql.org/docs/current/errcodes-appendix.html
+        return pgEx.SqlState switch
+        {
+            "08000" or "08003" or "08006" or "08001" or "57P01" or "57P02" or "57P03" => (
+                HttpStatusCode.ServiceUnavailable,
+                ErrorCodeEnum.DatabaseError,
+                "Database service temporarily unavailable",
+                null
+            ),
+
+            "28P01" or "28000" => (
+                HttpStatusCode.ServiceUnavailable,
+                ErrorCodeEnum.DatabaseError,
+                "Database authentication failed",
+                null
+            ),
+
+            "23503" or "23514" or "23502" => (
+                HttpStatusCode.Conflict,
+                ErrorCodeEnum.ResourceConflict,
+                "Operation violates data constraints",
+                null
+            ),
+
+            "23505" => (
+                HttpStatusCode.Conflict,
+                ErrorCodeEnum.DuplicateEntry,
+                "Duplicate entry found",
+                null
+            ),
+
+            "57014" or "55P03" => (
+                HttpStatusCode.RequestTimeout,
+                ErrorCodeEnum.DatabaseError,
+                "Database request timeout",
+                null
+            ),
+
+            "53300" => (
+                HttpStatusCode.ServiceUnavailable,
+                ErrorCodeEnum.DatabaseError,
+                "Database service temporarily unavailable",
+                null
+            ),
+
+            _ => (
+                HttpStatusCode.InternalServerError,
+                ErrorCodeEnum.DatabaseError,
+                "Database operation failed",
+                null
+            )
+        };
+    }
+
     private (HttpStatusCode, ErrorCodeEnum, string, List<string>?) HandleDatabaseException(Exception exception)
     {
         return exception switch
         {
-            SqlException sqlEx => sqlEx.Number switch
-            {
-                2 or 53 or 121 or 232 or 258 or 1231 or 1232 => (
-                    HttpStatusCode.ServiceUnavailable,
-                    ErrorCodeEnum.DatabaseError,
-                    "Database service temporarily unavailable",
-                    null
-                ),
-                
-                18456 or 18486 or 18487 or 18488 => (
-                    HttpStatusCode.ServiceUnavailable,
-                    ErrorCodeEnum.DatabaseError,
-                    "Database authentication failed",
-                    null
-                ),
-                
-                547 => (
-                    HttpStatusCode.Conflict,
-                    ErrorCodeEnum.ResourceConflict,
-                    "Operation violates data constraints",
-                    null
-                ),
-                
-                2627 or 2601 => (
-                    HttpStatusCode.Conflict,
-                    ErrorCodeEnum.DuplicateEntry,
-                    "Duplicate entry found",
-                    null
-                ),
-                
-                -2 => (
-                    HttpStatusCode.RequestTimeout,
-                    ErrorCodeEnum.DatabaseError,
-                    "Database request timeout",
-                    null
-                ),
-                
-                _ => (
-                    HttpStatusCode.InternalServerError,
-                    ErrorCodeEnum.DatabaseError,
-                    "Database operation failed",
-                    null
-                )
-            },
-            
             DbUpdateException => (
                 HttpStatusCode.Conflict,
                 ErrorCodeEnum.ResourceConflict,
                 "Data update conflict occurred",
                 null
             ),
-            
+
             _ => (
                 HttpStatusCode.InternalServerError,
                 ErrorCodeEnum.DatabaseError,

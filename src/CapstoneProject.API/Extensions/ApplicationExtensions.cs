@@ -21,13 +21,21 @@ public static class ApplicationExtensions
             logger.LogInformation("Applying main database migrations...");
             await app.ApplyMigrationsAsync(logger);
             
-            // Step 2: Configure Hangfire storage (uses main database)
-            logger.LogInformation("Configuring Hangfire storage...");
-            await app.Services.ConfigureHangfireStorageAsync(app.Configuration);
-            
-            // Step 3: Initialize Hangfire recurring jobs
-            logger.LogInformation("Initializing Hangfire jobs...");
-            app.Services.UseHangfireConfiguration(app.Configuration);
+            var hangfireEnabled = app.Configuration.GetValue("Hangfire:Enabled", true);
+            if (hangfireEnabled)
+            {
+                // Step 2: Configure Hangfire storage (uses main database)
+                logger.LogInformation("Configuring Hangfire storage...");
+                await app.Services.ConfigureHangfireStorageAsync(app.Configuration);
+                
+                // Step 3: Initialize Hangfire recurring jobs
+                logger.LogInformation("Initializing Hangfire jobs...");
+                app.Services.UseHangfireConfiguration(app.Configuration);
+            }
+            else
+            {
+                logger.LogInformation("Hangfire is disabled (Hangfire:Enabled=false).");
+            }
             
             logger.LogInformation("Database migrations completed successfully");
         }
@@ -37,9 +45,10 @@ public static class ApplicationExtensions
             throw;
         }
         
-        if (app.Environment.IsDevelopment())
+        var seedOnStartup = app.Configuration.GetValue("DataSeeding:RunOnStartup", false);
+        if (app.Environment.IsDevelopment() || seedOnStartup)
         {
-            // Step 3: Seed initial data (only in development)
+            // Seed initial data (development or explicitly enabled)
             logger.LogInformation("Seeding initial data...");
             await app.SeedInitialDataAsync(logger);
         }

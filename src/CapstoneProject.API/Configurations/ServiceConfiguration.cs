@@ -38,9 +38,6 @@ public static class ServiceConfiguration
         builder.Services.AddApplication();
         builder.Services.AddInfrastructure(builder.Configuration);
 
-        // Hangfire background jobs
-        builder.Services.AddHangfireServices(builder.Configuration);
-
         // API layer services (filters, middlewares, validation, etc.)
         builder.Services.AddApiServices(builder.Configuration);
 
@@ -63,14 +60,18 @@ public static class ServiceConfiguration
         {
             // Use custom Swagger configuration with styling and tagging
             app.UseSwaggerConfiguration(app.Environment);
-            
-            // Hangfire Dashboard (Development only - no auth required)
-            app.UseHangfireDashboard("/hangfire", new DashboardOptions
+
+            var hangfireEnabled = app.Configuration.GetValue("Hangfire:Enabled", true);
+            if (hangfireEnabled)
             {
-                Authorization = new[] { new HangfireDashboardAuthorizationFilter() },
-                StatsPollingInterval = 2000,
-                DisplayStorageConnectionString = false
-            });
+                // Hangfire Dashboard (Development only - no auth required)
+                app.UseHangfireDashboard("/hangfire", new DashboardOptions
+                {
+                    Authorization = new[] { new HangfireDashboardAuthorizationFilter() },
+                    StatsPollingInterval = 2000,
+                    DisplayStorageConnectionString = false
+                });
+            }
         }
 
         // Enable CORS FIRST - Must be before UseHttpsRedirection to avoid preflight redirect issues

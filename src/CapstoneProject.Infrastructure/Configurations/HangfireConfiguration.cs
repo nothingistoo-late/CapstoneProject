@@ -1,10 +1,10 @@
 using Hangfire;
-using Hangfire.SqlServer;
+using Hangfire.PostgreSql;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using Microsoft.Data.SqlClient;
+using Npgsql;
 using CapstoneProject.Application.Commons.Interfaces;
 using CapstoneProject.Infrastructure.Services;
 
@@ -22,7 +22,7 @@ public static class HangfireConfiguration
         services.AddLogging(builder =>
         {
             builder.AddFilter("Hangfire", LogLevel.Warning);
-            builder.AddFilter("Hangfire.SqlServer", LogLevel.Warning);
+            builder.AddFilter("Hangfire.PostgreSql", LogLevel.Warning);
             builder.AddFilter("Hangfire.Processing", LogLevel.Warning);
         });
 
@@ -34,12 +34,24 @@ public static class HangfireConfiguration
             throw new InvalidOperationException("DefaultConnection string is required for Hangfire");
         }
 
+        var prepareSchemaIfNecessary = configuration.GetValue("Hangfire:PrepareSchemaIfNecessary", true);
+        try
+        {
+            var b = new NpgsqlConnectionStringBuilder(connectionString);
+            if (b.Port == 6543 || (b.Host ?? string.Empty).Contains("pooler", StringComparison.OrdinalIgnoreCase))
+            {
+                // PgBouncer/poolers often don't work well with schema prep / DDL at startup.
+                prepareSchemaIfNecessary = false;
+            }
+        }
+        catch
+        {
+            // ignore parsing errors; fallback to config value
+        }
+
         // Get Hangfire settings from configuration
-        var commandBatchMaxTimeout = configuration.GetValue("Hangfire:CommandBatchMaxTimeout", 300);
         var slidingInvisibilityTimeout = configuration.GetValue("Hangfire:SlidingInvisibilityTimeout", 300);
         var queuePollInterval = configuration.GetValue("Hangfire:QueuePollInterval", 0);
-        var useRecommendedIsolationLevel = configuration.GetValue("Hangfire:UseRecommendedIsolationLevel", true);
-        var disableGlobalLocks = configuration.GetValue("Hangfire:DisableGlobalLocks", true);
 
         // Get retry settings
         var retryAttempts = configuration.GetValue("Hangfire:Retry:Attempts", 3);
@@ -47,20 +59,26 @@ public static class HangfireConfiguration
         var retryDelaySecond = configuration.GetValue("Hangfire:Retry:DelayInSeconds:Second", 300);
         var retryDelayThird = configuration.GetValue("Hangfire:Retry:DelayInSeconds:Third", 600);
 
+        var storageOptions = new PostgreSqlStorageOptions
+        {
+            PrepareSchemaIfNecessary = prepareSchemaIfNecessary,
+            QueuePollInterval = queuePollInterval > 0
+                ? TimeSpan.FromSeconds(queuePollInterval)
+                : TimeSpan.FromSeconds(15),
+            InvisibilityTimeout = slidingInvisibilityTimeout > 0
+                ? TimeSpan.FromSeconds(slidingInvisibilityTimeout)
+                : TimeSpan.FromMinutes(30),
+            UseSlidingInvisibilityTimeout = slidingInvisibilityTimeout > 0,
+        };
+
         // Add Hangfire services
         services.AddHangfire(config => config
             .SetDataCompatibilityLevel(CompatibilityLevel.Version_170)
             .UseSimpleAssemblyNameTypeSerializer()
             .UseRecommendedSerializerSettings()
-            .UseSqlServerStorage(connectionString, new SqlServerStorageOptions
-            {
-                CommandBatchMaxTimeout = TimeSpan.FromSeconds(commandBatchMaxTimeout),
-                SlidingInvisibilityTimeout = TimeSpan.FromSeconds(slidingInvisibilityTimeout),
-                QueuePollInterval = TimeSpan.FromSeconds(queuePollInterval),
-                UseRecommendedIsolationLevel = useRecommendedIsolationLevel,
-                DisableGlobalLocks = disableGlobalLocks,
-                PrepareSchemaIfNecessary = true,
-            })
+            .UsePostgreSqlStorage(
+                bootstrap => bootstrap.UseNpgsqlConnection(connectionString),
+                storageOptions)
             .UseFilter(new AutomaticRetryAttribute 
             { 
                 Attempts = retryAttempts,
@@ -115,9 +133,7 @@ public static class HangfireConfiguration
             // Database should already exist from migration step, but check anyway
             if (!await CheckHangfireDatabaseExistsAsync(connectionString, databaseName, logger))
             {
-                logger.LogWarning("Main database '{DatabaseName}' does not exist yet. Hangfire will create tables when needed.", databaseName);
-                // Don't throw - Hangfire can work with database that will be created
-                // The PrepareSchemaIfNecessary option will handle table creation
+                logger.LogWarning("Main database '{DatabaseName}' does not exist yet.", databaseName);
             }
             else
             {
@@ -132,27 +148,31 @@ public static class HangfireConfiguration
     }
 
     /// <summary>
-    /// Kiểm tra database Hangfire có tồn tại không
+    /// Kiểm tra database có tồn tại không
     /// </summary>
     private static async Task<bool> CheckHangfireDatabaseExistsAsync(string connectionString, string databaseName, ILogger logger)
     {
         try
         {
-            var builder = new SqlConnectionStringBuilder(connectionString);
-            var masterConnectionString = builder.ConnectionString.Replace(builder.InitialCatalog, "master");
+            var builder = new NpgsqlConnectionStringBuilder(connectionString)
+            {
+                Database = "postgres"
+            };
             
-            using var connection = new SqlConnection(masterConnectionString);
+            await using var connection = new NpgsqlConnection(builder.ConnectionString);
             await connection.OpenAsync();
             
-            var command = new SqlCommand($"SELECT COUNT(*) FROM sys.databases WHERE name = '{databaseName}'", connection);
+            await using var command = new NpgsqlCommand(
+                "SELECT 1 FROM pg_database WHERE datname = @name",
+                connection);
+            command.Parameters.AddWithValue("name", databaseName);
             var result = await command.ExecuteScalarAsync();
-            var count = result != null ? (int)result : 0;
             
-            return count > 0;
+            return result != null;
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Error checking Hangfire database existence");
+            logger.LogError(ex, "Error checking database existence");
             return false;
         }
     }
@@ -162,8 +182,8 @@ public static class HangfireConfiguration
     /// </summary>
     private static string ExtractDatabaseName(string connectionString)
     {
-        var builder = new SqlConnectionStringBuilder(connectionString);
-        return builder.InitialCatalog;
+        var builder = new NpgsqlConnectionStringBuilder(connectionString);
+        return builder.Database ?? throw new InvalidOperationException("Database name missing in connection string.");
     }
 
     /// <summary>
