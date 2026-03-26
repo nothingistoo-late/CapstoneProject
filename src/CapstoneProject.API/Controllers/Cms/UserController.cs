@@ -109,8 +109,8 @@ public class UserController : ControllerBase
     ///
     /// **Form (multipart/form-data):**
     /// - firstName (string, required), lastName (string, required), email (string, required), password (string, required).
-    /// - phoneNumber (string, optional), role (RoleEnum, required): e.g. Learner=0, Admin=1, Moderator=2.
-    /// - status (EntityStatusEnum?, optional): Active=0, Inactive=1. Defaults to Active.
+    /// - phoneNumber (string, optional), role (RoleEnum, required): e.g. Admin=0, Learner=1, Moderator=2.
+    /// - status (EntityStatusEnum?, optional): Inactive=0, Active=1. Defaults to Active.
     /// - avatarFile (file, optional): Avatar image.
     ///
     /// **METHOD and path:** POST /api/cms/users

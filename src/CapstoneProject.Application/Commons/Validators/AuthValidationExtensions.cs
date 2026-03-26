@@ -14,7 +14,8 @@ public static class AuthValidationExtensions
     {
         return ruleBuilder
             .NotEmpty().WithMessage("Email is required")
-            .EmailAddress().WithMessage("Invalid email format");
+            .Must(email => string.IsNullOrWhiteSpace(email) || new System.ComponentModel.DataAnnotations.EmailAddressAttribute().IsValid(email))
+            .WithMessage("Invalid email format");
     }
 
     /// <summary>

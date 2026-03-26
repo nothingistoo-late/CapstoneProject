@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using CapstoneProject.Domain.Entities;
 using CapstoneProject.Domain.Enums;
@@ -32,7 +32,7 @@ public static class UserExtension
                 u.Status == EntityStatusEnum.Active && 
                 u.RefreshToken != null &&
                 u.RefreshTokenExpiryTime > CapstoneProject.Domain.Common.VietnamDateTime.DbNow &&
-                (!u.LockoutEnd.HasValue || u.LockoutEnd.Value <= CapstoneProject.Domain.Common.VietnamDateTime.DbNow));
+                (!u.LockoutEnd.HasValue || u.LockoutEnd.Value <= CapstoneProject.Domain.Common.VietnamDateTime.UtcNowOffset));
     }
 
     /// <summary>
@@ -57,7 +57,7 @@ public static class UserExtension
                 u.Status == EntityStatusEnum.Active && 
                 u.RefreshToken != null &&
                 u.RefreshTokenExpiryTime > CapstoneProject.Domain.Common.VietnamDateTime.DbNow &&
-                (!u.LockoutEnd.HasValue || u.LockoutEnd.Value <= CapstoneProject.Domain.Common.VietnamDateTime.DbNow));
+                (!u.LockoutEnd.HasValue || u.LockoutEnd.Value <= CapstoneProject.Domain.Common.VietnamDateTime.UtcNowOffset));
 
         if (user == null)
         {
@@ -97,7 +97,7 @@ public static class UserExtension
                 u.Status == EntityStatusEnum.Active && 
                 u.RefreshToken != null &&
                 u.RefreshTokenExpiryTime > CapstoneProject.Domain.Common.VietnamDateTime.DbNow &&
-                (!u.LockoutEnd.HasValue || u.LockoutEnd.Value <= CapstoneProject.Domain.Common.VietnamDateTime.DbNow));
+                (!u.LockoutEnd.HasValue || u.LockoutEnd.Value <= CapstoneProject.Domain.Common.VietnamDateTime.UtcNowOffset));
 
         if (user == null)
         {

@@ -1,4 +1,4 @@
-﻿using System.Security.Claims;
+using System.Security.Claims;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -150,7 +150,7 @@ public class CurrentUserService : ICurrentUserService
                 u.Status == EntityStatusEnum.Active && 
                 u.RefreshToken != null &&
                 u.RefreshTokenExpiryTime > CapstoneProject.Domain.Common.VietnamDateTime.DbNow &&
-                (!u.LockoutEnd.HasValue || u.LockoutEnd.Value <= CapstoneProject.Domain.Common.VietnamDateTime.DbNow));
+                (!u.LockoutEnd.HasValue || u.LockoutEnd.Value <= CapstoneProject.Domain.Common.VietnamDateTime.UtcNowOffset));
 
         return _cachedUser;
     }
