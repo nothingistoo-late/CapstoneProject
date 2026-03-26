@@ -9,7 +9,7 @@ public class AppUser : IdentityUser<Guid>, IEntityLike
     public string FirstName { get; set; } = string.Empty;
     public string LastName { get; set; } = string.Empty;
     public DateTime? LastLoginAt { get; set; }
-    public DateTime JoiningAt { get; set; } = CapstoneProject.Domain.Common.VietnamDateTime.Now;
+    public DateTime JoiningAt { get; set; } = CapstoneProject.Domain.Common.VietnamDateTime.DbNow;
     public string? RefreshToken { get; set; }
     public DateTime? RefreshTokenExpiryTime { get; set; }
     public string? AvatarPath { get; set; }
@@ -22,3 +22,5 @@ public class AppUser : IdentityUser<Guid>, IEntityLike
     public Guid? UpdatedBy { get; set; }
     public EntityStatusEnum Status { get; set; }
 }
+
+

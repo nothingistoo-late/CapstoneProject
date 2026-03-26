@@ -80,7 +80,7 @@ public class PurchaseMapWithOrbitCoinCommandHandler : IRequestHandler<PurchaseMa
                 MapId = map.Id,
                 Amount = amount,
                 PaymentStatus = PaymentStatusEnum.Completed,
-                PaidAt = CapstoneProject.Domain.Common.VietnamDateTime.Now,
+                PaidAt = CapstoneProject.Domain.Common.VietnamDateTime.DbNow,
                 PaymentId = orbitCoinPayment.Id
             };
             record.InitializeEntity(buyerUserId);
@@ -95,4 +95,6 @@ public class PurchaseMapWithOrbitCoinCommandHandler : IRequestHandler<PurchaseMa
         return Result.Success("Map purchased with OrbitCoin. Platform fee is deducted from seller.");
     }
 }
+
+
 

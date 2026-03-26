@@ -60,7 +60,7 @@ public class ConversationService : IConversationService
                 RoomType = ChatRoomTypeEnum.Private,
                 Name = null, // No name for private chats
                 CreatedBy = user1Id,
-                CreatedAt = CapstoneProject.Domain.Common.VietnamDateTime.Now,
+                CreatedAt = CapstoneProject.Domain.Common.VietnamDateTime.DbNow,
                 Status = EntityStatusEnum.Active,
                 IsClosed = false
             };
@@ -73,9 +73,9 @@ public class ConversationService : IConversationService
             {
                 ChatRoomId = conversation.Id,
                 UserId = user1Id,
-                JoinedAt = CapstoneProject.Domain.Common.VietnamDateTime.Now,
+                JoinedAt = CapstoneProject.Domain.Common.VietnamDateTime.DbNow,
                 CreatedBy = user1Id,
-                CreatedAt = CapstoneProject.Domain.Common.VietnamDateTime.Now,
+                CreatedAt = CapstoneProject.Domain.Common.VietnamDateTime.DbNow,
                 Status = EntityStatusEnum.Active
             };
 
@@ -83,9 +83,9 @@ public class ConversationService : IConversationService
             {
                 ChatRoomId = conversation.Id,
                 UserId = user2Id,
-                JoinedAt = CapstoneProject.Domain.Common.VietnamDateTime.Now,
+                JoinedAt = CapstoneProject.Domain.Common.VietnamDateTime.DbNow,
                 CreatedBy = user1Id,
-                CreatedAt = CapstoneProject.Domain.Common.VietnamDateTime.Now,
+                CreatedAt = CapstoneProject.Domain.Common.VietnamDateTime.DbNow,
                 Status = EntityStatusEnum.Active
             };
 
@@ -137,7 +137,7 @@ public class ConversationService : IConversationService
                 RoomType = ChatRoomTypeEnum.TemporaryGroup,
                 Name = name.Trim(),
                 CreatedBy = createdByUserId,
-                CreatedAt = CapstoneProject.Domain.Common.VietnamDateTime.Now,
+                CreatedAt = CapstoneProject.Domain.Common.VietnamDateTime.DbNow,
                 Status = EntityStatusEnum.Active,
                 IsClosed = false
             };
@@ -151,9 +151,9 @@ public class ConversationService : IConversationService
             {
                 ChatRoomId = conversation.Id,
                 UserId = createdByUserId,
-                JoinedAt = CapstoneProject.Domain.Common.VietnamDateTime.Now,
+                JoinedAt = CapstoneProject.Domain.Common.VietnamDateTime.DbNow,
                 CreatedBy = createdByUserId,
-                CreatedAt = CapstoneProject.Domain.Common.VietnamDateTime.Now,
+                CreatedAt = CapstoneProject.Domain.Common.VietnamDateTime.DbNow,
                 Status = EntityStatusEnum.Active
             };
 
@@ -229,8 +229,8 @@ public class ConversationService : IConversationService
                 
                 // Reactivate if previously left
                 existingMember.LeftAt = null;
-                existingMember.JoinedAt = CapstoneProject.Domain.Common.VietnamDateTime.Now;
-                existingMember.UpdatedAt = CapstoneProject.Domain.Common.VietnamDateTime.Now;
+                existingMember.JoinedAt = CapstoneProject.Domain.Common.VietnamDateTime.DbNow;
+                existingMember.UpdatedAt = CapstoneProject.Domain.Common.VietnamDateTime.DbNow;
                 memberRepo.Update(existingMember);
                 await _unitOfWork.SaveChangesAsync(cancellationToken);
                 
@@ -250,9 +250,9 @@ public class ConversationService : IConversationService
             {
                 ChatRoomId = conversationId,
                 UserId = userId,
-                JoinedAt = CapstoneProject.Domain.Common.VietnamDateTime.Now,
+                JoinedAt = CapstoneProject.Domain.Common.VietnamDateTime.DbNow,
                 CreatedBy = userId,
-                CreatedAt = CapstoneProject.Domain.Common.VietnamDateTime.Now,
+                CreatedAt = CapstoneProject.Domain.Common.VietnamDateTime.DbNow,
                 Status = EntityStatusEnum.Active
             };
 
@@ -433,4 +433,6 @@ public class ConversationService : IConversationService
         }
     }
 }
+
+
 

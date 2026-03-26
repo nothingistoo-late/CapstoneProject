@@ -37,7 +37,7 @@ public class LoginCommandHandler : IRequestHandler<LoginCommand, Result<AuthResp
             var (refreshToken, refreshTokenExpiryTime) = _jwtService.GenerateRefreshTokenWithExpiration();
             user.RefreshToken = refreshToken;
             user.RefreshTokenExpiryTime = refreshTokenExpiryTime;
-            user.LastLoginAt = CapstoneProject.Domain.Common.VietnamDateTime.Now;
+            user.LastLoginAt = CapstoneProject.Domain.Common.VietnamDateTime.DbNow;
             user.UpdateEntity(user.Id);
             await _identityService.UpdateUserAsync(user);
             //generate jwt token
@@ -58,3 +58,5 @@ public class LoginCommandHandler : IRequestHandler<LoginCommand, Result<AuthResp
         }
     }
 }
+
+

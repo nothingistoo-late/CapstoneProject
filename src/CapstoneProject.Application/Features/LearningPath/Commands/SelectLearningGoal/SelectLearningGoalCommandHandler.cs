@@ -38,8 +38,8 @@ public class SelectLearningGoalCommandHandler : IRequestHandler<SelectLearningGo
         if (existing != null)
         {
             existing.LearningGoalId = request.LearningGoalId;
-            existing.SelectedAt = CapstoneProject.Domain.Common.VietnamDateTime.Now;
-            existing.UpdatedAt = CapstoneProject.Domain.Common.VietnamDateTime.Now;
+            existing.SelectedAt = CapstoneProject.Domain.Common.VietnamDateTime.DbNow;
+            existing.UpdatedAt = CapstoneProject.Domain.Common.VietnamDateTime.DbNow;
             existing.UpdatedBy = userId;
             repo.Update(existing);
         }
@@ -49,7 +49,7 @@ public class SelectLearningGoalCommandHandler : IRequestHandler<SelectLearningGo
             {
                 UserId = userId.Value,
                 LearningGoalId = request.LearningGoalId,
-                SelectedAt = CapstoneProject.Domain.Common.VietnamDateTime.Now
+                SelectedAt = CapstoneProject.Domain.Common.VietnamDateTime.DbNow
             };
             userGoal.InitializeEntity(userId);
             await repo.AddAsync(userGoal);
@@ -59,4 +59,6 @@ public class SelectLearningGoalCommandHandler : IRequestHandler<SelectLearningGo
         return Result.Success("Learning goal selected. Your path has been updated.");
     }
 }
+
+
 

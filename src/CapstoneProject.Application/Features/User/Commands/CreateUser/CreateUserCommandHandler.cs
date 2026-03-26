@@ -75,7 +75,7 @@ public class CreateUserCommandHandler : IRequestHandler<CreateUserCommand, Resul
                 var avatarUrl = await _cloudinaryService.UploadImageAsync(
                     command.AvatarFile,
                     "avatars",
-                    $"new_{CapstoneProject.Domain.Common.VietnamDateTime.Now.Ticks}",
+                    $"new_{CapstoneProject.Domain.Common.VietnamDateTime.DbNow.Ticks}",
                     cancellationToken);
                 if (!string.IsNullOrEmpty(avatarUrl))
                     user.AvatarPath = avatarUrl;
@@ -118,3 +118,5 @@ public class CreateUserCommandHandler : IRequestHandler<CreateUserCommand, Resul
         }
     }
 }
+
+

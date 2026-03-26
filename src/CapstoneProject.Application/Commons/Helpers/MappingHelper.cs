@@ -7,7 +7,7 @@ public static class MappingHelper
 {
     /// <summary>
     /// Ignore audit fields (CreatedAt, CreatedBy, UpdatedAt, UpdatedBy) when mapping from Request to Entity.
-    /// BE assigns these from ICurrentUserService and CapstoneProject.Domain.Common.VietnamDateTime.Now in handlers via InitializeEntity/UpdateEntity.
+    /// BE assigns these from ICurrentUserService and CapstoneProject.Domain.Common.VietnamDateTime.DbNow in handlers via InitializeEntity/UpdateEntity.
     /// </summary>
     public static IMappingExpression<TSource, TDestination> IgnoreAuditFields<TSource, TDestination>(
         this IMappingExpression<TSource, TDestination> mappingExpression)
@@ -86,4 +86,6 @@ public static class MappingHelper
             .ForMember(dest => dest.LastLoginAt, opt => opt.Ignore());
     }
 }
+
+
 

@@ -52,7 +52,7 @@ public class JoinRoomCommandHandler : IRequestHandler<JoinRoomCommand, Result<Jo
         {
             RoomId = room.Id,
             UserId = userId,
-            JoinedAt = CapstoneProject.Domain.Common.VietnamDateTime.Now,
+            JoinedAt = CapstoneProject.Domain.Common.VietnamDateTime.DbNow,
             IsOwner = false,
             IsReady = false
         };
@@ -71,4 +71,6 @@ public class JoinRoomCommandHandler : IRequestHandler<JoinRoomCommand, Result<Jo
         });
     }
 }
+
+
 

@@ -110,8 +110,10 @@ public class CreateTemporaryGroupConversationCommandHandler : IRequestHandler<Cr
                 JoinedAt = m.JoinedAt,
                 LastReadAt = m.LastReadAt
             }).ToList(),
-            CreatedAt = conversation.CreatedAt ?? CapstoneProject.Domain.Common.VietnamDateTime.Now
+            CreatedAt = conversation.CreatedAt ?? CapstoneProject.Domain.Common.VietnamDateTime.DbNow
         };
     }
 }
+
+
 

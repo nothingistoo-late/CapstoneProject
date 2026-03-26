@@ -58,7 +58,7 @@ public class CompetitiveHub : Hub
             UserId = userId,
             AstSpec = astSpec,
             BytecodeSpec = bytecodeSpec,
-            At = CapstoneProject.Domain.Common.VietnamDateTime.Now
+            At = CapstoneProject.Domain.Common.VietnamDateTime.DbNow
         });
     }
 
@@ -69,4 +69,6 @@ public class CompetitiveHub : Hub
         await Clients.Group(groupName).SendAsync("RankingUpdated", ranking);
     }
 }
+
+
 

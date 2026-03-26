@@ -1,4 +1,4 @@
-﻿namespace CapstoneProject.Domain.Common;
+namespace CapstoneProject.Domain.Common;
 
 public static class VietnamDateTime
 {
@@ -27,8 +27,18 @@ public static class VietnamDateTime
         }
     }
 
-    public static DateTime Now => TimeZoneInfo.ConvertTimeFromUtc(CapstoneProject.Domain.Common.VietnamDateTime.Now, VietnamTimeZone);
+    // For persistence to PostgreSQL "timestamp without time zone" (local Vietnam time).
+    // Npgsql expects DateTime.Kind == Unspecified for this PostgreSQL type.
+    public static DateTime DbNow => DateTime.SpecifyKind(VietnamNow, DateTimeKind.Unspecified);
 
-    public static DateTimeOffset NowOffset => new(Now, TimeSpan.FromHours(7));
+    // For display/presentation in Vietnam timezone.
+    public static DateTime VietnamNow => TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, VietnamTimeZone);
+
+    // Keep UTC helpers for cases that truly need UTC.
+    public static DateTime UtcNow => DateTime.UtcNow;
+
+    public static DateTimeOffset UtcNowOffset => DateTimeOffset.UtcNow;
+
+    public static DateTimeOffset VietnamNowOffset => new(VietnamNow, TimeSpan.FromHours(7));
 }
 

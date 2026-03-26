@@ -12,7 +12,7 @@ public class ChatRoomMember : BaseEntity
 {
     public Guid ChatRoomId { get; set; }
     public Guid UserId { get; set; }
-    public DateTime JoinedAt { get; set; } = CapstoneProject.Domain.Common.VietnamDateTime.Now;
+    public DateTime JoinedAt { get; set; } = CapstoneProject.Domain.Common.VietnamDateTime.DbNow;
     public DateTime? LeftAt { get; set; }
     public DateTime? LastReadAt { get; set; }
     
@@ -23,8 +23,10 @@ public class ChatRoomMember : BaseEntity
     public bool IsActive() => LeftAt == null;
     public void Leave()
     {
-        LeftAt = CapstoneProject.Domain.Common.VietnamDateTime.Now;
-        UpdatedAt = CapstoneProject.Domain.Common.VietnamDateTime.Now;
+        LeftAt = CapstoneProject.Domain.Common.VietnamDateTime.DbNow;
+        UpdatedAt = CapstoneProject.Domain.Common.VietnamDateTime.DbNow;
     }
 }
+
+
 

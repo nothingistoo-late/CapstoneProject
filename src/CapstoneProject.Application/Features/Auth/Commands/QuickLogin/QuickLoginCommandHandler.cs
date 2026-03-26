@@ -1,4 +1,4 @@
-﻿using System.Transactions;
+using System.Transactions;
 using MediatR;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
@@ -64,7 +64,7 @@ public class QuickLoginCommandHandler : IRequestHandler<QuickLoginCommand, Resul
             }
 
             // Generate random user info for testing
-            var timestamp = CapstoneProject.Domain.Common.VietnamDateTime.NowOffset.ToUnixTimeMilliseconds();
+            var timestamp = CapstoneProject.Domain.Common.VietnamDateTime.UtcNowOffset.ToUnixTimeMilliseconds();
             var guid = Guid.NewGuid().ToString("N")[..8]; // First 8 chars of GUID
             var randomEmail = $"test-{timestamp}-{guid}@quicklogin.test";
             var randomFirstName = $"User{guid[..4].ToUpper()}"; // First 4 chars as name
@@ -81,7 +81,7 @@ public class QuickLoginCommandHandler : IRequestHandler<QuickLoginCommand, Resul
                 UserName = randomEmail,
                 FirstName = randomFirstName,
                 LastName = randomLastName,
-                JoiningAt = CapstoneProject.Domain.Common.VietnamDateTime.Now,
+                JoiningAt = CapstoneProject.Domain.Common.VietnamDateTime.DbNow,
                 Status = EntityStatusEnum.Active
             };
             user.InitializeEntity(user.Id);
@@ -137,4 +137,6 @@ public class QuickLoginCommandHandler : IRequestHandler<QuickLoginCommand, Resul
         }
     }
 }
+
+
 

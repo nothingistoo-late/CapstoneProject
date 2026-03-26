@@ -38,7 +38,7 @@ public class ChatBroadcastService : IChatBroadcastService
             {
                 ConversationId = conversationId,
                 ClosedBy = closedByUserId,
-                ClosedAt = CapstoneProject.Domain.Common.VietnamDateTime.Now
+                ClosedAt = CapstoneProject.Domain.Common.VietnamDateTime.DbNow
             };
 
             await _hubContext.Clients.Group($"Conversation_{conversationId}").SendAsync("ConversationClosed", notification);
@@ -50,4 +50,6 @@ public class ChatBroadcastService : IChatBroadcastService
         }
     }
 }
+
+
 

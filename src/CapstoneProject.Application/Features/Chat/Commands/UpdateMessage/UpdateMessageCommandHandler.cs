@@ -94,9 +94,9 @@ public class UpdateMessageCommandHandler : IRequestHandler<UpdateMessageCommand,
 
             message.Content = command.Content.Trim();
             message.IsEdited = true;
-            message.EditedAt = CapstoneProject.Domain.Common.VietnamDateTime.Now;
+            message.EditedAt = CapstoneProject.Domain.Common.VietnamDateTime.DbNow;
             message.UpdatedBy = currentUserId;
-            message.UpdatedAt = CapstoneProject.Domain.Common.VietnamDateTime.Now;
+            message.UpdatedAt = CapstoneProject.Domain.Common.VietnamDateTime.DbNow;
 
             messageRepo.Update(message);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
@@ -117,7 +117,7 @@ public class UpdateMessageCommandHandler : IRequestHandler<UpdateMessageCommand,
                 IsEdited = message.IsEdited,
                 EditedAt = message.EditedAt,
                 IsDeleted = message.IsDeleted,
-                CreatedAt = message.CreatedAt ?? CapstoneProject.Domain.Common.VietnamDateTime.Now
+                CreatedAt = message.CreatedAt ?? CapstoneProject.Domain.Common.VietnamDateTime.DbNow
             };
 
             return Result<MessageResponse>.Success(response);
@@ -134,4 +134,6 @@ public class UpdateMessageCommandHandler : IRequestHandler<UpdateMessageCommand,
         }
     }
 }
+
+
 

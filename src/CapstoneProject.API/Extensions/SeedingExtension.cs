@@ -60,7 +60,7 @@ public static class SeedingExtension
                     Name = roleName,
                     NormalizedName = roleName.ToUpperInvariant(),
                     Status = EntityStatusEnum.Active,
-                    CreatedAt = CapstoneProject.Domain.Common.VietnamDateTime.Now
+                    CreatedAt = CapstoneProject.Domain.Common.VietnamDateTime.DbNow
                 };
                 var roleResult = await roleManager.CreateAsync(role);
                 if (!roleResult.Succeeded)
@@ -94,8 +94,8 @@ public static class SeedingExtension
                 EmailConfirmed = true,
                 FirstName = "System",
                 LastName = "Admin",
-                JoiningAt = CapstoneProject.Domain.Common.VietnamDateTime.Now,
-                CreatedAt = CapstoneProject.Domain.Common.VietnamDateTime.Now,
+                JoiningAt = CapstoneProject.Domain.Common.VietnamDateTime.DbNow,
+                CreatedAt = CapstoneProject.Domain.Common.VietnamDateTime.DbNow,
                 Status = EntityStatusEnum.Active
             };
 
@@ -147,8 +147,8 @@ public static class SeedingExtension
                     EmailConfirmed = true,
                     FirstName = "Demo",
                     LastName = "User",
-                    JoiningAt = CapstoneProject.Domain.Common.VietnamDateTime.Now,
-                    CreatedAt = CapstoneProject.Domain.Common.VietnamDateTime.Now,
+                    JoiningAt = CapstoneProject.Domain.Common.VietnamDateTime.DbNow,
+                    CreatedAt = CapstoneProject.Domain.Common.VietnamDateTime.DbNow,
                     Status = EntityStatusEnum.Active
                 };
 
@@ -228,7 +228,7 @@ public static class SeedingExtension
             .Select(name => new Tag
             {
                 Name = name,
-                CreatedAt = CapstoneProject.Domain.Common.VietnamDateTime.Now,
+                CreatedAt = CapstoneProject.Domain.Common.VietnamDateTime.DbNow,
                 CreatedBy = existingAdmin?.Id ?? Guid.Empty,
                 Status = EntityStatusEnum.Active
             })
@@ -283,7 +283,7 @@ public static class SeedingExtension
             var existing = existingPackages.FirstOrDefault(p => p.Name.Equals(seed.Name, StringComparison.OrdinalIgnoreCase));
             if (existing == null)
             {
-                seed.CreatedAt = CapstoneProject.Domain.Common.VietnamDateTime.Now;
+                seed.CreatedAt = CapstoneProject.Domain.Common.VietnamDateTime.DbNow;
                 seed.CreatedBy = existingAdmin?.Id ?? Guid.Empty;
                 seed.Status = EntityStatusEnum.Active;
                 await dbContext.Packages.AddAsync(seed);
@@ -294,7 +294,7 @@ public static class SeedingExtension
                 existing.Limit = seed.Limit;
                 existing.Price = seed.Price;
                 existing.FeaturesSpec = seed.FeaturesSpec;
-                existing.UpdatedAt = CapstoneProject.Domain.Common.VietnamDateTime.Now;
+                existing.UpdatedAt = CapstoneProject.Domain.Common.VietnamDateTime.DbNow;
                 existing.UpdatedBy = existingAdmin?.Id ?? Guid.Empty;
                 if (existing.Status != EntityStatusEnum.Active)
                     existing.Status = EntityStatusEnum.Active;
@@ -312,7 +312,7 @@ public static class SeedingExtension
                 Code = "OrbitCoin",
                 Name = "OrbitCoin",
                 Description = "Virtual currency (in-platform)",
-                CreatedAt = CapstoneProject.Domain.Common.VietnamDateTime.Now,
+                CreatedAt = CapstoneProject.Domain.Common.VietnamDateTime.DbNow,
                 CreatedBy = existingAdmin?.Id ?? Guid.Empty,
                 Status = EntityStatusEnum.Active
             };
@@ -329,7 +329,7 @@ public static class SeedingExtension
                 Code = "PayOS",
                 Name = "PayOS",
                 Description = "User top-up via PayOS",
-                CreatedAt = CapstoneProject.Domain.Common.VietnamDateTime.Now,
+                CreatedAt = CapstoneProject.Domain.Common.VietnamDateTime.DbNow,
                 CreatedBy = existingAdmin?.Id ?? Guid.Empty,
                 Status = EntityStatusEnum.Active
             };
@@ -385,7 +385,7 @@ public static class SeedingExtension
                 Name = seed.Name,
                 Description = seed.Description,
                 SortOrder = seed.SortOrder,
-                CreatedAt = CapstoneProject.Domain.Common.VietnamDateTime.Now,
+                CreatedAt = CapstoneProject.Domain.Common.VietnamDateTime.DbNow,
                 CreatedBy = existingAdmin?.Id,
                 Status = EntityStatusEnum.Active
             };
@@ -441,7 +441,7 @@ public static class SeedingExtension
                 Description = description,
                 ContentKey = contentKey,
                 SortOrder = sortOrder,
-                CreatedAt = CapstoneProject.Domain.Common.VietnamDateTime.Now,
+                CreatedAt = CapstoneProject.Domain.Common.VietnamDateTime.DbNow,
                 CreatedBy = existingAdmin?.Id,
                 Status = EntityStatusEnum.Active
             };
@@ -551,7 +551,7 @@ public static class SeedingExtension
                 ConceptId = conceptId,
                 MapId = mapId,
                 SortOrder = sortOrder,
-                CreatedAt = CapstoneProject.Domain.Common.VietnamDateTime.Now,
+                CreatedAt = CapstoneProject.Domain.Common.VietnamDateTime.DbNow,
                 CreatedBy = existingAdmin?.Id,
                 Status = EntityStatusEnum.Active
             };
@@ -822,6 +822,8 @@ public static class SeedingExtension
         }
     }
 }
+
+
 
 
 

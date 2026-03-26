@@ -140,7 +140,7 @@ public class GetRecommendationsQueryHandler : IRequestHandler<GetRecommendations
             return Result<RecommendationResultDto>.Success(new RecommendationResultDto(), "Retrieved successfully");
 
         // Preload user play history for these maps (single batch)
-        var nowUtc = CapstoneProject.Domain.Common.VietnamDateTime.Now;
+        var nowUtc = CapstoneProject.Domain.Common.VietnamDateTime.DbNow;
         var recentFrom = nowUtc.AddDays(-7);
         var relevantMapIds = mapById.Keys.ToList();
 
@@ -329,5 +329,7 @@ public class GetRecommendationsQueryHandler : IRequestHandler<GetRecommendations
         }, "Retrieved successfully");
     }
 }
+
+
 
 

@@ -63,10 +63,10 @@ public class DeleteMessageCommandHandler : IRequestHandler<DeleteMessageCommand,
             }
 
             message.IsDeleted = true;
-            message.DeletedAt = CapstoneProject.Domain.Common.VietnamDateTime.Now;
+            message.DeletedAt = CapstoneProject.Domain.Common.VietnamDateTime.DbNow;
             message.DeletedBy = currentUserId;
             message.UpdatedBy = currentUserId;
-            message.UpdatedAt = CapstoneProject.Domain.Common.VietnamDateTime.Now;
+            message.UpdatedAt = CapstoneProject.Domain.Common.VietnamDateTime.DbNow;
 
             messageRepo.Update(message);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
@@ -87,4 +87,6 @@ public class DeleteMessageCommandHandler : IRequestHandler<DeleteMessageCommand,
         }
     }
 }
+
+
 

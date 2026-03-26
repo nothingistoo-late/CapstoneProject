@@ -49,7 +49,7 @@ public static class DateTimeHelper
     /// <returns>Current DateTime in Vietnam timezone</returns>
     public static DateTime GetVietNamTime()
     {
-        return CapstoneProject.Domain.Common.VietnamDateTime.Now;
+        return CapstoneProject.Domain.Common.VietnamDateTime.VietnamNow;
     }
 
     /// <summary>
@@ -109,5 +109,6 @@ public static class DateTimeHelper
         return VietnamTimeZone;
     }
 }
+
 
 

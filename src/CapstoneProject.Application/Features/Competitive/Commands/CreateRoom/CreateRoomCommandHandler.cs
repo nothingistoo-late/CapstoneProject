@@ -48,7 +48,7 @@ public class CreateRoomCommandHandler : IRequestHandler<CreateRoomCommand, Resul
         {
             RoomId = room.Id,
             UserId = userId,
-            JoinedAt = CapstoneProject.Domain.Common.VietnamDateTime.Now,
+            JoinedAt = CapstoneProject.Domain.Common.VietnamDateTime.DbNow,
             IsOwner = true,
             IsReady = false
         };
@@ -60,4 +60,6 @@ public class CreateRoomCommandHandler : IRequestHandler<CreateRoomCommand, Resul
         return Result<CreateRoomResultDto>.Success(new CreateRoomResultDto { RoomId = room.Id, RoomCode = code });
     }
 }
+
+
 

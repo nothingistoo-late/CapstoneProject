@@ -215,7 +215,7 @@ public class RoomManager : IRoomManager
                 CurrentPlayerId = firstPlayerId,
                 RoundNumber = 1
             },
-            StartedAt = CapstoneProject.Domain.Common.VietnamDateTime.Now
+            StartedAt = CapstoneProject.Domain.Common.VietnamDateTime.DbNow
         };
         _gameInstances[roomId] = gameInstance;
 
@@ -287,7 +287,7 @@ public class RoomManager : IRoomManager
             PlayerId = playerId,
             Score = score,
             Status = status ?? string.Empty,
-            SubmittedAt = CapstoneProject.Domain.Common.VietnamDateTime.Now,
+            SubmittedAt = CapstoneProject.Domain.Common.VietnamDateTime.DbNow,
             SubmissionId = submissionId
         };
 
@@ -349,4 +349,6 @@ public class RoomManager : IRoomManager
         return sb.ToString();
     }
 }
+
+
 

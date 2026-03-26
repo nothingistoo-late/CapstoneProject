@@ -82,8 +82,8 @@ public class GoogleLoginCommandHandler : IRequestHandler<GoogleLoginCommand, Res
                 EmailConfirmed = true,
                 FirstName = name ?? email.Split('@')[0],
                 LastName = "",
-                JoiningAt = CapstoneProject.Domain.Common.VietnamDateTime.Now,
-                CreatedAt = CapstoneProject.Domain.Common.VietnamDateTime.Now,
+                JoiningAt = CapstoneProject.Domain.Common.VietnamDateTime.DbNow,
+                CreatedAt = CapstoneProject.Domain.Common.VietnamDateTime.DbNow,
                 Status = Domain.Enums.EntityStatusEnum.Active
             };
             var password = Guid.NewGuid().ToString("N") + "Aa1!"; // Identity requires password
@@ -107,7 +107,7 @@ public class GoogleLoginCommandHandler : IRequestHandler<GoogleLoginCommand, Res
             }
         }
 
-        user.LastLoginAt = CapstoneProject.Domain.Common.VietnamDateTime.Now;
+        user.LastLoginAt = CapstoneProject.Domain.Common.VietnamDateTime.DbNow;
         await _identityService.UpdateUserAsync(user);
 
         var (token, roles, _, expiresAt) = _jwtService.GenerateJwtTokenWithExpiration(user);
@@ -120,4 +120,6 @@ public class GoogleLoginCommandHandler : IRequestHandler<GoogleLoginCommand, Res
         return Result<AuthResponse>.Success(authResponse, "Login with Google successfully.");
     }
 }
+
+
 

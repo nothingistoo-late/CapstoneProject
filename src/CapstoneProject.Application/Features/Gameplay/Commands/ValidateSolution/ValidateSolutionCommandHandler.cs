@@ -81,8 +81,8 @@ public class ValidateSolutionCommandHandler : IRequestHandler<ValidateSolutionCo
         var execResult = new ExecutionsResult
         {
             SubmissionId = submission.Id,
-            StartedAt = CapstoneProject.Domain.Common.VietnamDateTime.Now,
-            FinishedAt = CapstoneProject.Domain.Common.VietnamDateTime.Now,
+            StartedAt = CapstoneProject.Domain.Common.VietnamDateTime.DbNow,
+            FinishedAt = CapstoneProject.Domain.Common.VietnamDateTime.DbNow,
             IsDeterministic = true,
             ResultSpec = accepted ? "{\"win\":true}" : "{\"win\":false}"
         };
@@ -100,7 +100,7 @@ public class ValidateSolutionCommandHandler : IRequestHandler<ValidateSolutionCo
                 BestScore = score,
                 BestStars = stars,
                 Attempts = 1,
-                LastPlayedAt = CapstoneProject.Domain.Common.VietnamDateTime.Now
+                LastPlayedAt = CapstoneProject.Domain.Common.VietnamDateTime.DbNow
             };
             umr.InitializeEntity(userId);
             await umrRepo.AddAsync(umr);
@@ -108,7 +108,7 @@ public class ValidateSolutionCommandHandler : IRequestHandler<ValidateSolutionCo
         else
         {
             umr.Attempts++;
-            umr.LastPlayedAt = CapstoneProject.Domain.Common.VietnamDateTime.Now;
+            umr.LastPlayedAt = CapstoneProject.Domain.Common.VietnamDateTime.DbNow;
             if (score > umr.BestScore) umr.BestScore = score;
             if (stars > umr.BestStars) umr.BestStars = stars;
             umr.UpdateEntity(userId);
@@ -122,7 +122,7 @@ public class ValidateSolutionCommandHandler : IRequestHandler<ValidateSolutionCo
             PlayMode = command.Request.PlayMode,
             RoomId = command.Request.RoomId,
             MatchId = command.Request.MatchId,
-            StartTime = execResult.StartedAt ?? CapstoneProject.Domain.Common.VietnamDateTime.Now,
+            StartTime = execResult.StartedAt ?? CapstoneProject.Domain.Common.VietnamDateTime.DbNow,
             EndTime = execResult.FinishedAt,
             IsCompleted = accepted,
             Score = score,
@@ -265,4 +265,6 @@ public class ValidateSolutionCommandHandler : IRequestHandler<ValidateSolutionCo
         return Math.Min(100, 10 + stars * 30);
     }
 }
+
+
 

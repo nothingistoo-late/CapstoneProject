@@ -51,7 +51,7 @@ public class CreateDepositOrderCommandHandler : IRequestHandler<CreateDepositOrd
             return Result<CreateDepositOrderResult>.Failure("Amount too small for conversion.", ErrorCodeEnum.ValidationFailed);
 
         // Unique order code for PayOS (int)
-        var orderCode = Math.Abs((int)(CapstoneProject.Domain.Common.VietnamDateTime.Now.Ticks / 10 % int.MaxValue));
+        var orderCode = Math.Abs((int)(CapstoneProject.Domain.Common.VietnamDateTime.DbNow.Ticks / 10 % int.MaxValue));
         if (orderCode <= 0) orderCode = 1;
 
         var record = new PaymentRecord
@@ -89,4 +89,6 @@ public class CreateDepositOrderCommandHandler : IRequestHandler<CreateDepositOrd
             "Redirect user to CheckoutUrl to complete payment.");
     }
 }
+
+
 

@@ -22,7 +22,7 @@ public class UserMappingProfile : Profile
         // CreateUserRequest -> AppUser (audit set in handler via InitializeEntity; Status defaulted in handler)
         CreateMap<CreateUserRequest, AppUser>()
             .ForMember(dest => dest.UserName, opt => opt.MapFrom(src => src.Email))
-            .ForMember(dest => dest.JoiningAt, opt => opt.MapFrom(src => CapstoneProject.Domain.Common.VietnamDateTime.Now))
+            .ForMember(dest => dest.JoiningAt, opt => opt.MapFrom(src => CapstoneProject.Domain.Common.VietnamDateTime.DbNow))
             .ForMember(dest => dest.EmailConfirmed, opt => opt.MapFrom(src => true))
             .ForMember(dest => dest.AvatarPath, opt => opt.Ignore())
             .ForMember(dest => dest.Status, opt => opt.Ignore()) // set in handler: request.Status ?? Active
@@ -39,4 +39,6 @@ public class UserMappingProfile : Profile
             .IgnoreAuditFields();
     }
 }
+
+
 

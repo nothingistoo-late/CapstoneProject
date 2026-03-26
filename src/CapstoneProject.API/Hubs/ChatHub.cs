@@ -60,7 +60,7 @@ public class ChatHub : Hub
             {
                 UserId = userId,
                 ConversationId = conversationId,
-                Timestamp = CapstoneProject.Domain.Common.VietnamDateTime.Now
+                Timestamp = CapstoneProject.Domain.Common.VietnamDateTime.DbNow
             });
         }
     }
@@ -94,7 +94,7 @@ public class ChatHub : Hub
                 UserId = userId,
                 ConversationId = conversationId,
                 IsTyping = isTyping,
-                Timestamp = CapstoneProject.Domain.Common.VietnamDateTime.Now
+                Timestamp = CapstoneProject.Domain.Common.VietnamDateTime.DbNow
             });
         }
     }
@@ -123,7 +123,7 @@ public static class ChatHubExtensions
         {
             ConversationId = conversationId,
             ClosedBy = closedByUserId,
-            ClosedAt = CapstoneProject.Domain.Common.VietnamDateTime.Now
+            ClosedAt = CapstoneProject.Domain.Common.VietnamDateTime.DbNow
         });
         
         // Also notify via user groups for users who might not be in the conversation group
@@ -131,7 +131,7 @@ public static class ChatHubExtensions
         {
             ConversationId = conversationId,
             ClosedBy = closedByUserId,
-            ClosedAt = CapstoneProject.Domain.Common.VietnamDateTime.Now
+            ClosedAt = CapstoneProject.Domain.Common.VietnamDateTime.DbNow
         });
     }
 
@@ -144,7 +144,7 @@ public static class ChatHubExtensions
         {
             UserId = userId,
             ConversationId = conversationId,
-            Timestamp = CapstoneProject.Domain.Common.VietnamDateTime.Now
+            Timestamp = CapstoneProject.Domain.Common.VietnamDateTime.DbNow
         });
     }
 
@@ -157,8 +157,10 @@ public static class ChatHubExtensions
         {
             UserId = userId,
             ConversationId = conversationId,
-            Timestamp = CapstoneProject.Domain.Common.VietnamDateTime.Now
+            Timestamp = CapstoneProject.Domain.Common.VietnamDateTime.DbNow
         });
     }
 }
+
+
 

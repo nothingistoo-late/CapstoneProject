@@ -40,8 +40,8 @@ public class CompleteConceptCommandHandler : IRequestHandler<CompleteConceptComm
             if (existing.IsCompleted)
                 return Result.Success("Concept already completed.");
             existing.IsCompleted = true;
-            existing.CompletedAt = CapstoneProject.Domain.Common.VietnamDateTime.Now;
-            existing.UpdatedAt = CapstoneProject.Domain.Common.VietnamDateTime.Now;
+            existing.CompletedAt = CapstoneProject.Domain.Common.VietnamDateTime.DbNow;
+            existing.UpdatedAt = CapstoneProject.Domain.Common.VietnamDateTime.DbNow;
             existing.UpdatedBy = userId;
             repo.Update(existing);
         }
@@ -52,7 +52,7 @@ public class CompleteConceptCommandHandler : IRequestHandler<CompleteConceptComm
                 UserId = userId.Value,
                 ConceptId = request.ConceptId,
                 IsCompleted = true,
-                CompletedAt = CapstoneProject.Domain.Common.VietnamDateTime.Now
+                CompletedAt = CapstoneProject.Domain.Common.VietnamDateTime.DbNow
             };
             progress.InitializeEntity(userId);
             await repo.AddAsync(progress);
@@ -62,4 +62,6 @@ public class CompleteConceptCommandHandler : IRequestHandler<CompleteConceptComm
         return Result.Success("Concept completed. Next item in your path is now unlocked.");
     }
 }
+
+
 

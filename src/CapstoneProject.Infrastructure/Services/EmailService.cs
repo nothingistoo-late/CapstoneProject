@@ -77,7 +77,7 @@ public class EmailService : IEmailService
                             Channel = NotificationChannelEnum.Email,
                             Success = true,
                             Message = "Email queued for delivery. Note: Delivery confirmation requires bounce handling.",
-                            Timestamp = CapstoneProject.Domain.Common.VietnamDateTime.Now
+                            Timestamp = CapstoneProject.Domain.Common.VietnamDateTime.DbNow
                         }
                     }
                 };
@@ -99,7 +99,7 @@ public class EmailService : IEmailService
                         Success = false,
                         Message = "Failed to send email",
                         ErrorMessage = ex.Message,
-                        Timestamp = CapstoneProject.Domain.Common.VietnamDateTime.Now
+                        Timestamp = CapstoneProject.Domain.Common.VietnamDateTime.DbNow
                     }
                 }
             };
@@ -175,3 +175,5 @@ public class EmailService : IEmailService
     }
 
 } 
+
+

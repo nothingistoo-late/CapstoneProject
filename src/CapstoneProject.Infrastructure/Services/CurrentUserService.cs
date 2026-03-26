@@ -149,8 +149,8 @@ public class CurrentUserService : ICurrentUserService
                 u.Id == userGuid && 
                 u.Status == EntityStatusEnum.Active && 
                 u.RefreshToken != null &&
-                u.RefreshTokenExpiryTime > CapstoneProject.Domain.Common.VietnamDateTime.Now &&
-                (!u.LockoutEnd.HasValue || u.LockoutEnd.Value <= CapstoneProject.Domain.Common.VietnamDateTime.Now));
+                u.RefreshTokenExpiryTime > CapstoneProject.Domain.Common.VietnamDateTime.DbNow &&
+                (!u.LockoutEnd.HasValue || u.LockoutEnd.Value <= CapstoneProject.Domain.Common.VietnamDateTime.DbNow));
 
         return _cachedUser;
     }
@@ -179,3 +179,5 @@ public class CurrentUserService : ICurrentUserService
         return roles;
     }
 }
+
+

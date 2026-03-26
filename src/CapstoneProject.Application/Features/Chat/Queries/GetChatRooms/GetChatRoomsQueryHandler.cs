@@ -135,9 +135,9 @@ public class GetChatRoomsQueryHandler : IRequestHandler<GetChatRoomsQuery, Resul
                         MessageType = lastMessage.MessageType,
                         SenderName = $"{lastMessage.Sender.FirstName} {lastMessage.Sender.LastName}".Trim(),
                         SenderAvatar = _avatarUrlResolver.ResolveAvatarUrl(lastMessage.Sender.AvatarPath),
-                        CreatedAt = lastMessage.CreatedAt ?? CapstoneProject.Domain.Common.VietnamDateTime.Now
+                        CreatedAt = lastMessage.CreatedAt ?? CapstoneProject.Domain.Common.VietnamDateTime.DbNow
                     } : null,
-                    CreatedAt = room.CreatedAt ?? CapstoneProject.Domain.Common.VietnamDateTime.Now
+                    CreatedAt = room.CreatedAt ?? CapstoneProject.Domain.Common.VietnamDateTime.DbNow
                 });
             }
 
@@ -156,4 +156,6 @@ public class GetChatRoomsQueryHandler : IRequestHandler<GetChatRoomsQuery, Resul
         }
     }
 }
+
+
 

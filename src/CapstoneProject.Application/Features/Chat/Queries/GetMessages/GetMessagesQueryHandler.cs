@@ -132,7 +132,7 @@ public class GetMessagesQueryHandler : IRequestHandler<GetMessagesQuery, Result<
             IsEdited = m.IsEdited,
             EditedAt = m.EditedAt,
             IsDeleted = m.IsDeleted,
-            CreatedAt = m.CreatedAt ?? CapstoneProject.Domain.Common.VietnamDateTime.Now,
+            CreatedAt = m.CreatedAt ?? CapstoneProject.Domain.Common.VietnamDateTime.DbNow,
             ReadBy = m.MessageReads.Select(mr => new MessageReadResponse
             {
                 UserId = mr.UserId,
@@ -156,4 +156,6 @@ public class GetMessagesQueryHandler : IRequestHandler<GetMessagesQuery, Result<
         }
     }
 }
+
+
 

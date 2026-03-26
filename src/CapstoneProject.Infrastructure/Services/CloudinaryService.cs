@@ -32,7 +32,7 @@ public class CloudinaryService : ICloudinaryService
         var prefix = string.IsNullOrEmpty(_settings.FolderPrefix) ? folder : $"{_settings.FolderPrefix}/{folder}";
         var publicId = string.IsNullOrEmpty(publicIdPrefix)
             ? $"{prefix}/{Guid.NewGuid():N}"
-            : $"{prefix}/{publicIdPrefix}_{CapstoneProject.Domain.Common.VietnamDateTime.Now.Ticks}";
+            : $"{prefix}/{publicIdPrefix}_{CapstoneProject.Domain.Common.VietnamDateTime.DbNow.Ticks}";
 
         try
         {
@@ -86,4 +86,6 @@ public class CloudinaryService : ICloudinaryService
         return match.Success ? match.Groups[1].Value : null;
     }
 }
+
+
 

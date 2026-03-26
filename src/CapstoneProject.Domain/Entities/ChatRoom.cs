@@ -34,10 +34,12 @@ public class ChatRoom : BaseEntity
     public void Close(Guid closedByUserId)
     {
         IsClosed = true;
-        ClosedAt = CapstoneProject.Domain.Common.VietnamDateTime.Now;
+        ClosedAt = CapstoneProject.Domain.Common.VietnamDateTime.DbNow;
         ClosedBy = closedByUserId;
-        UpdatedAt = CapstoneProject.Domain.Common.VietnamDateTime.Now;
+        UpdatedAt = CapstoneProject.Domain.Common.VietnamDateTime.DbNow;
         UpdatedBy = closedByUserId;
     }
 }
+
+
 

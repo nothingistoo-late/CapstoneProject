@@ -34,7 +34,7 @@ public class NotificationChannelResult
     public string? ErrorMessage { get; set; }
     public string? ExternalMessageId { get; set; } // FCMMessageId, EmailId, etc.
     public string? DeviceToken { get; set; } // For Firebase
-    public DateTime Timestamp { get; set; } = CapstoneProject.Domain.Common.VietnamDateTime.Now;
+    public DateTime Timestamp { get; set; } = CapstoneProject.Domain.Common.VietnamDateTime.DbNow;
     public Dictionary<string, string>? Metadata { get; set; }
 }
 
@@ -47,3 +47,5 @@ public class RecipientInfo
     public List<string> DeviceTokens { get; set; } = new();
     public Dictionary<string, string>? CustomData { get; set; }
 }
+
+

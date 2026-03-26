@@ -5,7 +5,7 @@ public static class EntityExtension
     public static void InitializeEntity(this IEntityLike entity, Guid? userId = null)
     {
         entity.Id = entity.Id == Guid.Empty ? Guid.NewGuid() : entity.Id;
-        entity.CreatedAt = CapstoneProject.Domain.Common.VietnamDateTime.Now;
+        entity.CreatedAt = CapstoneProject.Domain.Common.VietnamDateTime.DbNow;
         entity.CreatedBy = userId ?? Guid.Empty; //Guid.Empty is for system
     }
 
@@ -17,7 +17,7 @@ public static class EntityExtension
             entity.CreatedBy = oldEntity.CreatedBy;
         }
         
-        entity.UpdatedAt = CapstoneProject.Domain.Common.VietnamDateTime.Now;
+        entity.UpdatedAt = CapstoneProject.Domain.Common.VietnamDateTime.DbNow;
         entity.UpdatedBy = userId ?? Guid.Empty;
     }
 
@@ -26,7 +26,7 @@ public static class EntityExtension
         if (entity is BaseEntity baseEntity)
         {
             baseEntity.IsDeleted = true;
-            baseEntity.DeletedAt = CapstoneProject.Domain.Common.VietnamDateTime.Now;
+            baseEntity.DeletedAt = CapstoneProject.Domain.Common.VietnamDateTime.DbNow;
             baseEntity.DeletedBy = userId ?? Guid.Empty;
         }
     }
@@ -39,7 +39,7 @@ public static class EntityExtension
             baseEntity.DeletedAt = null;
             baseEntity.DeletedBy = null;
         }
-        entity.UpdatedAt = CapstoneProject.Domain.Common.VietnamDateTime.Now;
+        entity.UpdatedAt = CapstoneProject.Domain.Common.VietnamDateTime.DbNow;
         entity.UpdatedBy = userId ?? Guid.Empty;
     }
 
@@ -49,7 +49,7 @@ public static class EntityExtension
     public static void DeactivateUser(this IEntityLike entity, Guid? userId = null)
     {
         entity.Status = Enums.EntityStatusEnum.Inactive;
-        entity.UpdatedAt = CapstoneProject.Domain.Common.VietnamDateTime.Now;
+        entity.UpdatedAt = CapstoneProject.Domain.Common.VietnamDateTime.DbNow;
         entity.UpdatedBy = userId ?? Guid.Empty;
     }
 
@@ -59,7 +59,9 @@ public static class EntityExtension
     public static void ReactivateUser(this IEntityLike entity, Guid? userId = null)
     {
         entity.Status = Enums.EntityStatusEnum.Active;
-        entity.UpdatedAt = CapstoneProject.Domain.Common.VietnamDateTime.Now;
+        entity.UpdatedAt = CapstoneProject.Domain.Common.VietnamDateTime.DbNow;
         entity.UpdatedBy = userId ?? Guid.Empty;
     }
 }
+
+

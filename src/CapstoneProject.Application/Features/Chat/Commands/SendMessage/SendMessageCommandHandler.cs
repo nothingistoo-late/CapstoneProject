@@ -102,7 +102,7 @@ public class SendMessageCommandHandler : IRequestHandler<SendMessageCommand, Res
             FileSize = request.FileSize,
             ReplyToMessageId = request.ReplyToMessageId,
             CreatedBy = currentUserId,
-            CreatedAt = CapstoneProject.Domain.Common.VietnamDateTime.Now,
+            CreatedAt = CapstoneProject.Domain.Common.VietnamDateTime.DbNow,
             Status = EntityStatusEnum.Active
         };
 
@@ -111,9 +111,9 @@ public class SendMessageCommandHandler : IRequestHandler<SendMessageCommand, Res
         // Update conversation last message
         var conversationRepo = _unitOfWork.Repository<ChatRoom>();
         conversation.LastMessageId = message.Id;
-        conversation.LastMessageAt = CapstoneProject.Domain.Common.VietnamDateTime.Now;
+        conversation.LastMessageAt = CapstoneProject.Domain.Common.VietnamDateTime.DbNow;
         conversation.UpdatedBy = currentUserId;
-        conversation.UpdatedAt = CapstoneProject.Domain.Common.VietnamDateTime.Now;
+        conversation.UpdatedAt = CapstoneProject.Domain.Common.VietnamDateTime.DbNow;
         conversationRepo.Update(conversation);
 
         await _unitOfWork.SaveChangesAsync(cancellationToken);
@@ -154,7 +154,7 @@ public class SendMessageCommandHandler : IRequestHandler<SendMessageCommand, Res
             IsEdited = messageWithSender.IsEdited,
             EditedAt = messageWithSender.EditedAt,
             IsDeleted = messageWithSender.IsDeleted,
-            CreatedAt = messageWithSender.CreatedAt ?? CapstoneProject.Domain.Common.VietnamDateTime.Now
+            CreatedAt = messageWithSender.CreatedAt ?? CapstoneProject.Domain.Common.VietnamDateTime.DbNow
         };
 
             // Broadcast message via SignalR
@@ -182,4 +182,6 @@ public class SendMessageCommandHandler : IRequestHandler<SendMessageCommand, Res
         }
     }
 }
+
+
 

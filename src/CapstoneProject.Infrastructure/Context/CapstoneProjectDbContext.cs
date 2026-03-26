@@ -179,5 +179,18 @@ public class CapstoneProjectDbContext : IdentityDbContext<AppUser, AppRole, Guid
 
         // Gọi cấu hình chung cho BaseEntity (if any BaseEntity-derived entities are added later)
         BaseEntityConfigurationHelper.ConfigureBaseEntities(builder);
+
+        // Store all DateTime columns as "timestamp without time zone" (Vietnam local time).
+        // DateTimeOffset stays as timestamptz.
+        foreach (var entityType in builder.Model.GetEntityTypes())
+        {
+            foreach (var property in entityType.GetProperties())
+            {
+                if (property.ClrType == typeof(DateTime) || property.ClrType == typeof(DateTime?))
+                {
+                    property.SetColumnType("timestamp without time zone");
+                }
+            }
+        }
     }
 }

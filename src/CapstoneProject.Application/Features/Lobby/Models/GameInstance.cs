@@ -18,8 +18,10 @@ public class GameInstance
     public object? GameState { get; set; }
 
     public List<Guid> TurnOrder { get; set; } = new();
-    public DateTime StartedAt { get; set; } = CapstoneProject.Domain.Common.VietnamDateTime.Now;
+    public DateTime StartedAt { get; set; } = CapstoneProject.Domain.Common.VietnamDateTime.DbNow;
     /// <summary>Per-player submission result (score, status). Filled when player submits.</summary>
     public ConcurrentDictionary<Guid, PlayerGameResult> PlayerResults { get; } = new();
 }
+
+
 

@@ -110,8 +110,10 @@ public class CreatePrivateConversationCommandHandler : IRequestHandler<CreatePri
                 JoinedAt = m.JoinedAt,
                 LastReadAt = m.LastReadAt
             }).ToList(),
-            CreatedAt = conversation.CreatedAt ?? CapstoneProject.Domain.Common.VietnamDateTime.Now
+            CreatedAt = conversation.CreatedAt ?? CapstoneProject.Domain.Common.VietnamDateTime.DbNow
         };
     }
 }
+
+
 

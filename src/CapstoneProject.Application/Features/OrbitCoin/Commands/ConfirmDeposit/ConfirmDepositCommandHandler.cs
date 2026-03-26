@@ -65,10 +65,12 @@ public class ConfirmDepositCommandHandler : IRequestHandler<ConfirmDepositComman
             return Result.Failure(error ?? "Credit failed.", ErrorCodeEnum.InvalidOperation);
 
         record.PaymentStatus = PaymentStatusEnum.Completed;
-        record.PaidAt = CapstoneProject.Domain.Common.VietnamDateTime.Now;
+        record.PaidAt = CapstoneProject.Domain.Common.VietnamDateTime.DbNow;
         _unitOfWork.Repository<PaymentRecord>().Update(record);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
         return Result.Success("Deposit confirmed. OrbitCoin has been credited.");
     }
 }
+
+
 

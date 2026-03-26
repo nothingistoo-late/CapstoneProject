@@ -42,7 +42,7 @@ public class BatchDismissReportsCommandHandler : IRequestHandler<BatchDismissRep
         {
             r.ReportStatus = ReportStatusEnum.Dismissed;
             r.ReviewedBy = userIdNullable!.Value;
-            r.ReviewedAt = CapstoneProject.Domain.Common.VietnamDateTime.Now;
+            r.ReviewedAt = CapstoneProject.Domain.Common.VietnamDateTime.DbNow;
             r.ReviewNote = command.ReviewNote;
             r.UpdateEntity(userIdNullable.Value);
             repo.Update(r);
@@ -53,4 +53,6 @@ public class BatchDismissReportsCommandHandler : IRequestHandler<BatchDismissRep
         return Result<BatchReportResultDto>.Success(dto, $"Dismissed {dto.SuccessCount} report(s).");
     }
 }
+
+
 

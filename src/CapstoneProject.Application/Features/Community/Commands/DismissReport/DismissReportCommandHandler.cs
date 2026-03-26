@@ -36,7 +36,7 @@ public class DismissReportCommandHandler : IRequestHandler<DismissReportCommand,
 
         report.ReportStatus = ReportStatusEnum.Dismissed;
         report.ReviewedBy = userIdNullable!.Value;
-        report.ReviewedAt = CapstoneProject.Domain.Common.VietnamDateTime.Now;
+        report.ReviewedAt = CapstoneProject.Domain.Common.VietnamDateTime.DbNow;
         report.ReviewNote = command.ReviewNote;
         report.UpdateEntity(userIdNullable.Value);
         _unitOfWork.Repository<MapReport>().Update(report);
@@ -44,4 +44,6 @@ public class DismissReportCommandHandler : IRequestHandler<DismissReportCommand,
         return Result.Success("Report dismissed.");
     }
 }
+
+
 

@@ -50,16 +50,17 @@ public static class BaseEntityConfigurationHelper
         // Default values for audit fields
         modelBuilder.Entity(entityType)
             .Property<DateTime?>("CreatedAt")
-            .HasDefaultValueSql("CURRENT_TIMESTAMP")
-            .HasColumnType("timestamp with time zone");
+            // Store "Vietnam local time" without timezone in DB.
+            .HasDefaultValueSql("(now() AT TIME ZONE 'Asia/Ho_Chi_Minh')")
+            .HasColumnType("timestamp without time zone");
             
         modelBuilder.Entity(entityType)
             .Property<DateTime?>("UpdatedAt")
-            .HasColumnType("timestamp with time zone");
+            .HasColumnType("timestamp without time zone");
         
         modelBuilder.Entity(entityType)
             .Property<DateTime?>("DeletedAt")
-            .HasColumnType("timestamp with time zone");
+            .HasColumnType("timestamp without time zone");
             
         modelBuilder.Entity(entityType)
             .Property<bool>("IsDeleted")

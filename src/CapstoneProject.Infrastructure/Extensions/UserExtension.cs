@@ -31,8 +31,8 @@ public static class UserExtension
                 u.Id == userId && 
                 u.Status == EntityStatusEnum.Active && 
                 u.RefreshToken != null &&
-                u.RefreshTokenExpiryTime > CapstoneProject.Domain.Common.VietnamDateTime.Now &&
-                (!u.LockoutEnd.HasValue || u.LockoutEnd.Value <= CapstoneProject.Domain.Common.VietnamDateTime.Now));
+                u.RefreshTokenExpiryTime > CapstoneProject.Domain.Common.VietnamDateTime.DbNow &&
+                (!u.LockoutEnd.HasValue || u.LockoutEnd.Value <= CapstoneProject.Domain.Common.VietnamDateTime.DbNow));
     }
 
     /// <summary>
@@ -56,8 +56,8 @@ public static class UserExtension
                 u.Id == userId && 
                 u.Status == EntityStatusEnum.Active && 
                 u.RefreshToken != null &&
-                u.RefreshTokenExpiryTime > CapstoneProject.Domain.Common.VietnamDateTime.Now &&
-                (!u.LockoutEnd.HasValue || u.LockoutEnd.Value <= CapstoneProject.Domain.Common.VietnamDateTime.Now));
+                u.RefreshTokenExpiryTime > CapstoneProject.Domain.Common.VietnamDateTime.DbNow &&
+                (!u.LockoutEnd.HasValue || u.LockoutEnd.Value <= CapstoneProject.Domain.Common.VietnamDateTime.DbNow));
 
         if (user == null)
         {
@@ -96,8 +96,8 @@ public static class UserExtension
                 u.Id == userId && 
                 u.Status == EntityStatusEnum.Active && 
                 u.RefreshToken != null &&
-                u.RefreshTokenExpiryTime > CapstoneProject.Domain.Common.VietnamDateTime.Now &&
-                (!u.LockoutEnd.HasValue || u.LockoutEnd.Value <= CapstoneProject.Domain.Common.VietnamDateTime.Now));
+                u.RefreshTokenExpiryTime > CapstoneProject.Domain.Common.VietnamDateTime.DbNow &&
+                (!u.LockoutEnd.HasValue || u.LockoutEnd.Value <= CapstoneProject.Domain.Common.VietnamDateTime.DbNow));
 
         if (user == null)
         {
@@ -115,3 +115,5 @@ public static class UserExtension
         return (true, userId, userRoles, user);
     }
 }
+
+

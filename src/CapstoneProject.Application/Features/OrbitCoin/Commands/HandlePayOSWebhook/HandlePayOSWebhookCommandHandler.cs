@@ -69,11 +69,13 @@ public class HandlePayOSWebhookCommandHandler : IRequestHandler<HandlePayOSWebho
         }
 
         record.PaymentStatus = PaymentStatusEnum.Completed;
-        record.PaidAt = CapstoneProject.Domain.Common.VietnamDateTime.Now;
+        record.PaidAt = CapstoneProject.Domain.Common.VietnamDateTime.DbNow;
         _unitOfWork.Repository<PaymentRecord>().Update(record);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
         _logger.LogInformation("PayOS webhook: credited userId={UserId} amount={Amount} OrbitCoin for orderCode={OrderCode}.", record.UserId, record.Amount, verified.OrderCode);
         return true;
     }
 }
+
+
 
