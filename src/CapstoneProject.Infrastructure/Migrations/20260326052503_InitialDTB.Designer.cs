@@ -12,7 +12,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace CapstoneProject.Infrastructure.Migrations
 {
     [DbContext(typeof(CapstoneProjectDbContext))]
-    [Migration("20260326042251_InitialDTB")]
+    [Migration("20260326052503_InitialDTB")]
     partial class InitialDTB
     {
         /// <inheritdoc />
