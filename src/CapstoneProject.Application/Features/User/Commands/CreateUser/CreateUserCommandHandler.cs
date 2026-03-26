@@ -1,4 +1,4 @@
-using System.Transactions;
+﻿using System.Transactions;
 using AutoMapper;
 using MediatR;
 using CapstoneProject.Application.Common.Enums;
@@ -75,7 +75,7 @@ public class CreateUserCommandHandler : IRequestHandler<CreateUserCommand, Resul
                 var avatarUrl = await _cloudinaryService.UploadImageAsync(
                     command.AvatarFile,
                     "avatars",
-                    $"new_{DateTime.UtcNow.Ticks}",
+                    $"new_{CapstoneProject.Domain.Common.VietnamDateTime.Now.Ticks}",
                     cancellationToken);
                 if (!string.IsNullOrEmpty(avatarUrl))
                     user.AvatarPath = avatarUrl;

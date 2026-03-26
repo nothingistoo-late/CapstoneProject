@@ -1,4 +1,4 @@
-using MediatR;
+﻿using MediatR;
 using Microsoft.EntityFrameworkCore;
 using CapstoneProject.Application.Common.Enums;
 using CapstoneProject.Application.Common.Interfaces;
@@ -36,7 +36,7 @@ public class DismissReportCommandHandler : IRequestHandler<DismissReportCommand,
 
         report.ReportStatus = ReportStatusEnum.Dismissed;
         report.ReviewedBy = userIdNullable!.Value;
-        report.ReviewedAt = DateTime.UtcNow;
+        report.ReviewedAt = CapstoneProject.Domain.Common.VietnamDateTime.Now;
         report.ReviewNote = command.ReviewNote;
         report.UpdateEntity(userIdNullable.Value);
         _unitOfWork.Repository<MapReport>().Update(report);
@@ -44,3 +44,4 @@ public class DismissReportCommandHandler : IRequestHandler<DismissReportCommand,
         return Result.Success("Report dismissed.");
     }
 }
+

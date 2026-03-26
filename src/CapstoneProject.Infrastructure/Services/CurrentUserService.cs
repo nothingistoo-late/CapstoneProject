@@ -1,4 +1,4 @@
-using System.Security.Claims;
+﻿using System.Security.Claims;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -56,19 +56,19 @@ public class CurrentUserService : ICurrentUserService
     /// </summary>
     public async Task<(bool isValid, Guid? userId)> IsUserValidAsync()
     {
-        // Kiểm tra nếu không có UserId hoặc không thể parse thành Guid
+        // Kiá»ƒm tra náº¿u khÃ´ng cÃ³ UserId hoáº·c khÃ´ng thá»ƒ parse thÃ nh Guid
         if (string.IsNullOrEmpty(UserId) || !Guid.TryParse(UserId, out var userGuid))
         {
             return (isValid: false, userId: null);
         }
 
-        // Sử dụng cache để tránh query nhiều lần trong cùng request
+        // Sá»­ dá»¥ng cache Ä‘á»ƒ trÃ¡nh query nhiá»u láº§n trong cÃ¹ng request
         if (_cachedValidation.HasValue)
         {
             return (isValid: _cachedValidation.Value, userId: _cachedValidation.Value ? userGuid : null);
         }
 
-        // Query database để kiểm tra user
+        // Query database Ä‘á»ƒ kiá»ƒm tra user
         _cachedValidation = await _userManager.IsUserValidAsync(userGuid);
         return (isValid: _cachedValidation.Value, userId: _cachedValidation.Value ? userGuid : null);
     }
@@ -88,19 +88,19 @@ public class CurrentUserService : ICurrentUserService
     /// </summary>
     public async Task<(bool isValid, Guid? userId, IList<RoleEnum> roles)> ValidateUserWithRolesAsync()
     {
-        // Kiểm tra nếu không có UserId hoặc không thể parse thành Guid
+        // Kiá»ƒm tra náº¿u khÃ´ng cÃ³ UserId hoáº·c khÃ´ng thá»ƒ parse thÃ nh Guid
         if (string.IsNullOrEmpty(UserId) || !Guid.TryParse(UserId, out var userGuid))
         {
             return (isValid: false, userId: null, roles: new List<RoleEnum>());
         }
 
-        // Sử dụng cache để tránh query nhiều lần trong cùng request
+        // Sá»­ dá»¥ng cache Ä‘á»ƒ trÃ¡nh query nhiá»u láº§n trong cÃ¹ng request
         if (_cachedValidationWithRoles.HasValue)
         {
             return _cachedValidationWithRoles.Value;
         }
 
-        // Query database để lấy thông tin user và roles hiện tại
+        // Query database Ä‘á»ƒ láº¥y thÃ´ng tin user vÃ  roles hiá»‡n táº¡i
         _cachedValidationWithRoles = await _userManager.ValidateUserWithRolesAsync(userGuid);
         return _cachedValidationWithRoles.Value;
     }
@@ -110,19 +110,19 @@ public class CurrentUserService : ICurrentUserService
     /// </summary>
     public async Task<(bool isValid, Guid? userId, IList<RoleEnum> roles, AppUser? user)> ValidateUserWithRolesAndEntityAsync()
     {
-        // Kiểm tra nếu không có UserId hoặc không thể parse thành Guid
+        // Kiá»ƒm tra náº¿u khÃ´ng cÃ³ UserId hoáº·c khÃ´ng thá»ƒ parse thÃ nh Guid
         if (string.IsNullOrEmpty(UserId) || !Guid.TryParse(UserId, out var userGuid))
         {
             return (isValid: false, userId: null, roles: new List<RoleEnum>(), user: null);
         }
 
-        // Sử dụng cache để tránh query nhiều lần trong cùng request
+        // Sá»­ dá»¥ng cache Ä‘á»ƒ trÃ¡nh query nhiá»u láº§n trong cÃ¹ng request
         if (_cachedValidationWithRolesAndEntity.HasValue)
         {
             return _cachedValidationWithRolesAndEntity.Value;
         }
 
-        // Query database để lấy thông tin user, roles và user entity trong một lần
+        // Query database Ä‘á»ƒ láº¥y thÃ´ng tin user, roles vÃ  user entity trong má»™t láº§n
         _cachedValidationWithRolesAndEntity = await _userManager.ValidateUserWithRolesAndEntityAsync(userGuid);
         return _cachedValidationWithRolesAndEntity.Value;
     }
@@ -142,15 +142,15 @@ public class CurrentUserService : ICurrentUserService
             return null;
         }
 
-        // Query database để lấy user entity
+        // Query database Ä‘á»ƒ láº¥y user entity
         _cachedUser = await _userManager.Users
             .AsNoTracking()
             .FirstOrDefaultAsync(u =>
                 u.Id == userGuid && 
                 u.Status == EntityStatusEnum.Active && 
                 u.RefreshToken != null &&
-                u.RefreshTokenExpiryTime > DateTime.UtcNow &&
-                (!u.LockoutEnd.HasValue || u.LockoutEnd.Value <= DateTime.UtcNow));
+                u.RefreshTokenExpiryTime > CapstoneProject.Domain.Common.VietnamDateTime.Now &&
+                (!u.LockoutEnd.HasValue || u.LockoutEnd.Value <= CapstoneProject.Domain.Common.VietnamDateTime.Now));
 
         return _cachedUser;
     }
@@ -167,7 +167,7 @@ public class CurrentUserService : ICurrentUserService
         
         var claims = _httpContextAccessor.HttpContext.User.Claims;
         
-        // Lấy tất cả roles từ claims và convert sang RoleEnum
+        // Láº¥y táº¥t cáº£ roles tá»« claims vÃ  convert sang RoleEnum
         var roles = claims
             .Where(c => ROLE_CLAIM_TYPES.Contains(c.Type))
             .Select(c => c.Value)

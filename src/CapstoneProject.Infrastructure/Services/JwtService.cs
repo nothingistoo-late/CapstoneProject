@@ -1,4 +1,4 @@
-using System.IdentityModel.Tokens.Jwt;
+﻿using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
@@ -52,7 +52,7 @@ public class JwtService : IJwtService
             issuer: _jwtSettings.Issuer,
             audience: _jwtSettings.Audience,
             claims: claims,
-            expires: DateTime.UtcNow.AddMinutes(_jwtSettings.ExpiresInMinutes),
+            expires: CapstoneProject.Domain.Common.VietnamDateTime.Now.AddMinutes(_jwtSettings.ExpiresInMinutes),
             signingCredentials: creds
         );
 
@@ -65,7 +65,7 @@ public class JwtService : IJwtService
     public (string token, List<string> roles, int expiresInMinutes, DateTime expiresAt) GenerateJwtTokenWithExpiration(AppUser user, string? requestOrigin = null)
     {
         var (token, roles) = GenerateJwtToken(user, requestOrigin);
-        var expiresAt = DateTime.UtcNow.AddMinutes(_jwtSettings.ExpiresInMinutes);
+        var expiresAt = CapstoneProject.Domain.Common.VietnamDateTime.Now.AddMinutes(_jwtSettings.ExpiresInMinutes);
         return (token, roles, _jwtSettings.ExpiresInMinutes, expiresAt);
     }
 
@@ -85,7 +85,7 @@ public class JwtService : IJwtService
         var randomNumber = new byte[64];
         using var rng = RandomNumberGenerator.Create();
         rng.GetBytes(randomNumber);
-        return (Convert.ToBase64String(randomNumber), DateTime.UtcNow.AddDays(_jwtSettings.RefreshTokenExpiresInDays));
+        return (Convert.ToBase64String(randomNumber), CapstoneProject.Domain.Common.VietnamDateTime.Now.AddDays(_jwtSettings.RefreshTokenExpiresInDays));
     }
 
     /// <summary>
@@ -155,7 +155,7 @@ public class JwtService : IJwtService
         var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
         // Create token
-        var expiresAt = DateTime.UtcNow.AddMinutes(_jwtSettings.ExpiresInMinutes);
+        var expiresAt = CapstoneProject.Domain.Common.VietnamDateTime.Now.AddMinutes(_jwtSettings.ExpiresInMinutes);
         var token = new JwtSecurityToken(
             issuer: _jwtSettings.Issuer,
             audience: _jwtSettings.Audience,

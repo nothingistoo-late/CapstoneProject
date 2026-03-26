@@ -1,4 +1,4 @@
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using CapstoneProject.Application.Commons.Interfaces;
 using CapstoneProject.Domain.Entities;
 using CapstoneProject.Domain.Enums;
@@ -71,7 +71,7 @@ public class OrbitCoinService : IOrbitCoinService
             return (false, "Credit amount must be positive.");
         var wallet = await GetOrCreateWalletAsync(userId, cancellationToken);
         wallet.Balance += amount;
-        wallet.UpdatedAt = DateTime.UtcNow;
+        wallet.UpdatedAt = CapstoneProject.Domain.Common.VietnamDateTime.Now;
         wallet.UpdatedBy = createdBy;
         var tx = new OrbitCoinTransaction
         {
@@ -84,7 +84,7 @@ public class OrbitCoinService : IOrbitCoinService
             FeeAmount = feeAmount,
             BalanceAfter = wallet.Balance,
             Note = note,
-            CreatedAt = DateTime.UtcNow,
+            CreatedAt = CapstoneProject.Domain.Common.VietnamDateTime.Now,
             CreatedBy = createdBy
         };
         _db.OrbitCoinTransactions.Add(tx);
@@ -110,7 +110,7 @@ public class OrbitCoinService : IOrbitCoinService
         if (wallet.Balance < totalDebit)
             return (false, "Insufficient OrbitCoin balance.");
         wallet.Balance -= totalDebit;
-        wallet.UpdatedAt = DateTime.UtcNow;
+        wallet.UpdatedAt = CapstoneProject.Domain.Common.VietnamDateTime.Now;
         wallet.UpdatedBy = createdBy;
         var tx = new OrbitCoinTransaction
         {
@@ -123,7 +123,7 @@ public class OrbitCoinService : IOrbitCoinService
             FeeAmount = feeAmount,
             BalanceAfter = wallet.Balance,
             Note = note,
-            CreatedAt = DateTime.UtcNow,
+            CreatedAt = CapstoneProject.Domain.Common.VietnamDateTime.Now,
             CreatedBy = createdBy
         };
         _db.OrbitCoinTransactions.Add(tx);
@@ -152,9 +152,9 @@ public class OrbitCoinService : IOrbitCoinService
         var sellerWallet = await GetOrCreateWalletAsync(sellerUserId, cancellationToken);
 
         buyerWallet.Balance -= totalCharge;
-        buyerWallet.UpdatedAt = DateTime.UtcNow;
+        buyerWallet.UpdatedAt = CapstoneProject.Domain.Common.VietnamDateTime.Now;
         sellerWallet.Balance += amount;
-        sellerWallet.UpdatedAt = DateTime.UtcNow;
+        sellerWallet.UpdatedAt = CapstoneProject.Domain.Common.VietnamDateTime.Now;
 
         var buyerTx = new OrbitCoinTransaction
         {
@@ -167,7 +167,7 @@ public class OrbitCoinService : IOrbitCoinService
             FeeAmount = feeAmount,
             BalanceAfter = buyerWallet.Balance,
             Note = note,
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = CapstoneProject.Domain.Common.VietnamDateTime.Now
         };
         var sellerTx = new OrbitCoinTransaction
         {
@@ -180,7 +180,7 @@ public class OrbitCoinService : IOrbitCoinService
             FeeAmount = 0,
             BalanceAfter = sellerWallet.Balance,
             Note = note,
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = CapstoneProject.Domain.Common.VietnamDateTime.Now
         };
         _db.OrbitCoinTransactions.Add(buyerTx);
         _db.OrbitCoinTransactions.Add(sellerTx);
@@ -215,9 +215,9 @@ public class OrbitCoinService : IOrbitCoinService
         var sellerWallet = await GetOrCreateWalletAsync(sellerUserId, cancellationToken);
 
         buyerWallet.Balance -= amount;
-        buyerWallet.UpdatedAt = DateTime.UtcNow;
+        buyerWallet.UpdatedAt = CapstoneProject.Domain.Common.VietnamDateTime.Now;
         sellerWallet.Balance += sellerReceives;
-        sellerWallet.UpdatedAt = DateTime.UtcNow;
+        sellerWallet.UpdatedAt = CapstoneProject.Domain.Common.VietnamDateTime.Now;
 
         var buyerTx = new OrbitCoinTransaction
         {
@@ -230,7 +230,7 @@ public class OrbitCoinService : IOrbitCoinService
             FeeAmount = 0,
             BalanceAfter = buyerWallet.Balance,
             Note = note,
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = CapstoneProject.Domain.Common.VietnamDateTime.Now
         };
         var sellerTx = new OrbitCoinTransaction
         {
@@ -243,7 +243,7 @@ public class OrbitCoinService : IOrbitCoinService
             FeeAmount = feeAmount,
             BalanceAfter = sellerWallet.Balance,
             Note = note,
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = CapstoneProject.Domain.Common.VietnamDateTime.Now
         };
         _db.OrbitCoinTransactions.Add(buyerTx);
         _db.OrbitCoinTransactions.Add(sellerTx);
@@ -262,7 +262,7 @@ public class OrbitCoinService : IOrbitCoinService
             Id = Guid.NewGuid(),
             UserId = userId,
             Balance = 0,
-            CreatedAt = DateTime.UtcNow,
+            CreatedAt = CapstoneProject.Domain.Common.VietnamDateTime.Now,
             Status = EntityStatusEnum.Active
         };
         _db.UserWallets.Add(wallet);
@@ -270,3 +270,4 @@ public class OrbitCoinService : IOrbitCoinService
         return wallet;
     }
 }
+

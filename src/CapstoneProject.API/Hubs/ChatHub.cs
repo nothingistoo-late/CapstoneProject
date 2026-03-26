@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.SignalR;
+﻿using Microsoft.AspNetCore.SignalR;
 using Microsoft.AspNetCore.Authorization;
 using CapstoneProject.Application.Common.Interfaces;
 
@@ -60,7 +60,7 @@ public class ChatHub : Hub
             {
                 UserId = userId,
                 ConversationId = conversationId,
-                Timestamp = DateTime.UtcNow
+                Timestamp = CapstoneProject.Domain.Common.VietnamDateTime.Now
             });
         }
     }
@@ -94,7 +94,7 @@ public class ChatHub : Hub
                 UserId = userId,
                 ConversationId = conversationId,
                 IsTyping = isTyping,
-                Timestamp = DateTime.UtcNow
+                Timestamp = CapstoneProject.Domain.Common.VietnamDateTime.Now
             });
         }
     }
@@ -123,7 +123,7 @@ public static class ChatHubExtensions
         {
             ConversationId = conversationId,
             ClosedBy = closedByUserId,
-            ClosedAt = DateTime.UtcNow
+            ClosedAt = CapstoneProject.Domain.Common.VietnamDateTime.Now
         });
         
         // Also notify via user groups for users who might not be in the conversation group
@@ -131,7 +131,7 @@ public static class ChatHubExtensions
         {
             ConversationId = conversationId,
             ClosedBy = closedByUserId,
-            ClosedAt = DateTime.UtcNow
+            ClosedAt = CapstoneProject.Domain.Common.VietnamDateTime.Now
         });
     }
 
@@ -144,7 +144,7 @@ public static class ChatHubExtensions
         {
             UserId = userId,
             ConversationId = conversationId,
-            Timestamp = DateTime.UtcNow
+            Timestamp = CapstoneProject.Domain.Common.VietnamDateTime.Now
         });
     }
 
@@ -157,7 +157,8 @@ public static class ChatHubExtensions
         {
             UserId = userId,
             ConversationId = conversationId,
-            Timestamp = DateTime.UtcNow
+            Timestamp = CapstoneProject.Domain.Common.VietnamDateTime.Now
         });
     }
 }
+

@@ -1,4 +1,4 @@
-using AutoMapper;
+﻿using AutoMapper;
 using MediatR;
 using Microsoft.Extensions.Logging;
 using CapstoneProject.Application.Common.DTOs.Auth;
@@ -37,7 +37,7 @@ public class LoginCommandHandler : IRequestHandler<LoginCommand, Result<AuthResp
             var (refreshToken, refreshTokenExpiryTime) = _jwtService.GenerateRefreshTokenWithExpiration();
             user.RefreshToken = refreshToken;
             user.RefreshTokenExpiryTime = refreshTokenExpiryTime;
-            user.LastLoginAt = DateTime.UtcNow;
+            user.LastLoginAt = CapstoneProject.Domain.Common.VietnamDateTime.Now;
             user.UpdateEntity(user.Id);
             await _identityService.UpdateUserAsync(user);
             //generate jwt token

@@ -1,4 +1,4 @@
-using System.Collections.Concurrent;
+﻿using System.Collections.Concurrent;
 using System.Linq;
 using System.Text;
 using CapstoneProject.Application.Commons.DTOs.Lobby;
@@ -149,7 +149,7 @@ public class RoomManager : IRoomManager
             return (true, null, null);
         }
 
-        // Host rời (Waiting hoặc đang chơi): chuyển host cho người còn lại
+        // Host rá»i (Waiting hoáº·c Ä‘ang chÆ¡i): chuyá»ƒn host cho ngÆ°á»i cÃ²n láº¡i
         if (room.HostId == playerId)
         {
             foreach (var p in room.Players.Values) p.IsHost = false;
@@ -158,7 +158,7 @@ public class RoomManager : IRoomManager
             nextHost.IsHost = true;
         }
 
-        // Đang chơi: gỡ người rời khỏi GameInstance để ranking chỉ cần nộp đủ số người còn lại
+        // Äang chÆ¡i: gá»¡ ngÆ°á»i rá»i khá»i GameInstance Ä‘á»ƒ ranking chá»‰ cáº§n ná»™p Ä‘á»§ sá»‘ ngÆ°á»i cÃ²n láº¡i
         if (room.Status == RoomStatusEnum.Playing && _gameInstances.TryGetValue(roomId, out var gi))
         {
             var stillIn = gi.Players.Where(p => room.Players.ContainsKey(p.PlayerId)).ToList();
@@ -215,7 +215,7 @@ public class RoomManager : IRoomManager
                 CurrentPlayerId = firstPlayerId,
                 RoundNumber = 1
             },
-            StartedAt = DateTime.UtcNow
+            StartedAt = CapstoneProject.Domain.Common.VietnamDateTime.Now
         };
         _gameInstances[roomId] = gameInstance;
 
@@ -287,7 +287,7 @@ public class RoomManager : IRoomManager
             PlayerId = playerId,
             Score = score,
             Status = status ?? string.Empty,
-            SubmittedAt = DateTime.UtcNow,
+            SubmittedAt = CapstoneProject.Domain.Common.VietnamDateTime.Now,
             SubmissionId = submissionId
         };
 
@@ -349,3 +349,4 @@ public class RoomManager : IRoomManager
         return sb.ToString();
     }
 }
+

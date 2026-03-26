@@ -1,11 +1,11 @@
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
 using CapstoneProject.Application.Common.Interfaces;
 
 namespace CapstoneProject.API.Hubs;
 
 /// <summary>
-/// SignalR Hub cho chế độ thi đấu: phòng 2-8 người, nộp bài, xếp hạng real-time.
+/// SignalR Hub cho cháº¿ Ä‘á»™ thi Ä‘áº¥u: phÃ²ng 2-8 ngÆ°á»i, ná»™p bÃ i, xáº¿p háº¡ng real-time.
 /// </summary>
 [Authorize]
 public class CompetitiveHub : Hub
@@ -27,7 +27,7 @@ public class CompetitiveHub : Hub
         await base.OnConnectedAsync();
     }
 
-    /// <summary>Tham gia phòng thi đấu (client gọi sau khi có RoomCode từ API JoinRoom).</summary>
+    /// <summary>Tham gia phÃ²ng thi Ä‘áº¥u (client gá»i sau khi cÃ³ RoomCode tá»« API JoinRoom).</summary>
     public async Task JoinRoom(string roomCode)
     {
         var userId = _currentUserService.UserId;
@@ -38,7 +38,7 @@ public class CompetitiveHub : Hub
         await Clients.Group(groupName).SendAsync("UserJoinedRoom", new { UserId = userId, ConnectionId = Context.ConnectionId });
     }
 
-    /// <summary>Rời phòng.</summary>
+    /// <summary>Rá»i phÃ²ng.</summary>
     public async Task LeaveRoom(string roomCode)
     {
         var groupName = $"Room_{roomCode}";
@@ -47,7 +47,7 @@ public class CompetitiveHub : Hub
         await Clients.Group(groupName).SendAsync("UserLeftRoom", new { UserId = userId });
     }
 
-    /// <summary>Nộp giải pháp trong phòng (server sẽ đánh giá và broadcast ranking).</summary>
+    /// <summary>Ná»™p giáº£i phÃ¡p trong phÃ²ng (server sáº½ Ä‘Ã¡nh giÃ¡ vÃ  broadcast ranking).</summary>
     public async Task SubmitSolution(string roomCode, string astSpec, string? bytecodeSpec)
     {
         var userId = _currentUserService.UserId;
@@ -58,14 +58,15 @@ public class CompetitiveHub : Hub
             UserId = userId,
             AstSpec = astSpec,
             BytecodeSpec = bytecodeSpec,
-            At = DateTime.UtcNow
+            At = CapstoneProject.Domain.Common.VietnamDateTime.Now
         });
     }
 
-    /// <summary>Server gửi bảng xếp hạng (gọi từ API sau khi chấm xong).</summary>
+    /// <summary>Server gá»­i báº£ng xáº¿p háº¡ng (gá»i tá»« API sau khi cháº¥m xong).</summary>
     public async Task BroadcastRanking(string roomCode, object ranking)
     {
         var groupName = $"Room_{roomCode}";
         await Clients.Group(groupName).SendAsync("RankingUpdated", ranking);
     }
 }
+

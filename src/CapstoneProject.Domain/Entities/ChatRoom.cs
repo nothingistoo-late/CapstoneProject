@@ -1,4 +1,4 @@
-using CapstoneProject.Domain.Common;
+﻿using CapstoneProject.Domain.Common;
 using CapstoneProject.Domain.Enums;
 
 namespace CapstoneProject.Domain.Entities;
@@ -34,9 +34,10 @@ public class ChatRoom : BaseEntity
     public void Close(Guid closedByUserId)
     {
         IsClosed = true;
-        ClosedAt = DateTime.UtcNow;
+        ClosedAt = CapstoneProject.Domain.Common.VietnamDateTime.Now;
         ClosedBy = closedByUserId;
-        UpdatedAt = DateTime.UtcNow;
+        UpdatedAt = CapstoneProject.Domain.Common.VietnamDateTime.Now;
         UpdatedBy = closedByUserId;
     }
 }
+

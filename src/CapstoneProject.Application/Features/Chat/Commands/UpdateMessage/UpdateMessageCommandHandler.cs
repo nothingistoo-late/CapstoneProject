@@ -1,4 +1,4 @@
-using MediatR;
+﻿using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using CapstoneProject.Application.Commons.DTOs.Chat;
@@ -94,9 +94,9 @@ public class UpdateMessageCommandHandler : IRequestHandler<UpdateMessageCommand,
 
             message.Content = command.Content.Trim();
             message.IsEdited = true;
-            message.EditedAt = DateTime.UtcNow;
+            message.EditedAt = CapstoneProject.Domain.Common.VietnamDateTime.Now;
             message.UpdatedBy = currentUserId;
-            message.UpdatedAt = DateTime.UtcNow;
+            message.UpdatedAt = CapstoneProject.Domain.Common.VietnamDateTime.Now;
 
             messageRepo.Update(message);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
@@ -117,7 +117,7 @@ public class UpdateMessageCommandHandler : IRequestHandler<UpdateMessageCommand,
                 IsEdited = message.IsEdited,
                 EditedAt = message.EditedAt,
                 IsDeleted = message.IsDeleted,
-                CreatedAt = message.CreatedAt ?? DateTime.UtcNow
+                CreatedAt = message.CreatedAt ?? CapstoneProject.Domain.Common.VietnamDateTime.Now
             };
 
             return Result<MessageResponse>.Success(response);
@@ -134,3 +134,4 @@ public class UpdateMessageCommandHandler : IRequestHandler<UpdateMessageCommand,
         }
     }
 }
+

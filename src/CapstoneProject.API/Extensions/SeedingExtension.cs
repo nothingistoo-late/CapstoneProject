@@ -1,4 +1,4 @@
-using System.IO;
+﻿using System.IO;
 using System.Text.Json;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -60,7 +60,7 @@ public static class SeedingExtension
                     Name = roleName,
                     NormalizedName = roleName.ToUpperInvariant(),
                     Status = EntityStatusEnum.Active,
-                    CreatedAt = DateTime.UtcNow
+                    CreatedAt = CapstoneProject.Domain.Common.VietnamDateTime.Now
                 };
                 var roleResult = await roleManager.CreateAsync(role);
                 if (!roleResult.Succeeded)
@@ -94,8 +94,8 @@ public static class SeedingExtension
                 EmailConfirmed = true,
                 FirstName = "System",
                 LastName = "Admin",
-                JoiningAt = DateTime.UtcNow,
-                CreatedAt = DateTime.UtcNow,
+                JoiningAt = CapstoneProject.Domain.Common.VietnamDateTime.Now,
+                CreatedAt = CapstoneProject.Domain.Common.VietnamDateTime.Now,
                 Status = EntityStatusEnum.Active
             };
 
@@ -147,8 +147,8 @@ public static class SeedingExtension
                     EmailConfirmed = true,
                     FirstName = "Demo",
                     LastName = "User",
-                    JoiningAt = DateTime.UtcNow,
-                    CreatedAt = DateTime.UtcNow,
+                    JoiningAt = CapstoneProject.Domain.Common.VietnamDateTime.Now,
+                    CreatedAt = CapstoneProject.Domain.Common.VietnamDateTime.Now,
                     Status = EntityStatusEnum.Active
                 };
 
@@ -228,7 +228,7 @@ public static class SeedingExtension
             .Select(name => new Tag
             {
                 Name = name,
-                CreatedAt = DateTime.UtcNow,
+                CreatedAt = CapstoneProject.Domain.Common.VietnamDateTime.Now,
                 CreatedBy = existingAdmin?.Id ?? Guid.Empty,
                 Status = EntityStatusEnum.Active
             })
@@ -283,7 +283,7 @@ public static class SeedingExtension
             var existing = existingPackages.FirstOrDefault(p => p.Name.Equals(seed.Name, StringComparison.OrdinalIgnoreCase));
             if (existing == null)
             {
-                seed.CreatedAt = DateTime.UtcNow;
+                seed.CreatedAt = CapstoneProject.Domain.Common.VietnamDateTime.Now;
                 seed.CreatedBy = existingAdmin?.Id ?? Guid.Empty;
                 seed.Status = EntityStatusEnum.Active;
                 await dbContext.Packages.AddAsync(seed);
@@ -294,7 +294,7 @@ public static class SeedingExtension
                 existing.Limit = seed.Limit;
                 existing.Price = seed.Price;
                 existing.FeaturesSpec = seed.FeaturesSpec;
-                existing.UpdatedAt = DateTime.UtcNow;
+                existing.UpdatedAt = CapstoneProject.Domain.Common.VietnamDateTime.Now;
                 existing.UpdatedBy = existingAdmin?.Id ?? Guid.Empty;
                 if (existing.Status != EntityStatusEnum.Active)
                     existing.Status = EntityStatusEnum.Active;
@@ -312,7 +312,7 @@ public static class SeedingExtension
                 Code = "OrbitCoin",
                 Name = "OrbitCoin",
                 Description = "Virtual currency (in-platform)",
-                CreatedAt = DateTime.UtcNow,
+                CreatedAt = CapstoneProject.Domain.Common.VietnamDateTime.Now,
                 CreatedBy = existingAdmin?.Id ?? Guid.Empty,
                 Status = EntityStatusEnum.Active
             };
@@ -329,7 +329,7 @@ public static class SeedingExtension
                 Code = "PayOS",
                 Name = "PayOS",
                 Description = "User top-up via PayOS",
-                CreatedAt = DateTime.UtcNow,
+                CreatedAt = CapstoneProject.Domain.Common.VietnamDateTime.Now,
                 CreatedBy = existingAdmin?.Id ?? Guid.Empty,
                 Status = EntityStatusEnum.Active
             };
@@ -338,12 +338,12 @@ public static class SeedingExtension
             logger.LogInformation("Seeded payment method: PayOS.");
         }
 
-        // Seed maps từ file SQL (INSERT Maps/MapDetails/Hints/MapTags) — bật trong appsettings: DataSeeding:SeedMapsFromSqlScript
+        // Seed maps tá»« file SQL (INSERT Maps/MapDetails/Hints/MapTags) â€” báº­t trong appsettings: DataSeeding:SeedMapsFromSqlScript
         var env = scope.ServiceProvider.GetRequiredService<IWebHostEnvironment>();
         var seedMapsFromSqlScript = configuration.GetSection("DataSeeding").GetValue<bool>("SeedMapsFromSqlScript");
         if (seedMapsFromSqlScript)
         {
-            // Neon / Postgres pooler (host thường có "-pooler") vẫn chạy seed SQL được; chỉ tắt bằng DataSeeding:SeedMapsFromSqlScript=false nếu cần.
+            // Neon / Postgres pooler (host thÆ°á»ng cÃ³ "-pooler") váº«n cháº¡y seed SQL Ä‘Æ°á»£c; chá»‰ táº¯t báº±ng DataSeeding:SeedMapsFromSqlScript=false náº¿u cáº§n.
             var relativeScriptPath = configuration.GetSection("DataSeeding").GetValue<string>("MapsSqlScriptPath")?.Trim();
             var scriptPath = !string.IsNullOrWhiteSpace(relativeScriptPath)
                 ? Path.GetFullPath(Path.Combine(env.ContentRootPath, relativeScriptPath))
@@ -357,13 +357,13 @@ public static class SeedingExtension
             logger.LogInformation("Map seeding from SQL script is disabled (DataSeeding:SeedMapsFromSqlScript=false).");
         }
 
-        // Seed Learning Goals (idempotent by Name) – lộ trình học
+        // Seed Learning Goals (idempotent by Name) â€“ lá»™ trÃ¬nh há»c
         var learningGoalSeeds = new[]
         {
-            new { Name = "Logic cơ bản", Description = "Làm quen với biến, phép toán, thứ tự thực thi và điều khiển luồng cơ bản.", SortOrder = 1 },
-            new { Name = "Điều kiện", Description = "Học cách dùng if/else, so sánh và rẽ nhánh trong chương trình.", SortOrder = 2 },
-            new { Name = "Vòng lặp", Description = "Làm chủ for, while và xử lý lặp để giải quyết bài toán.", SortOrder = 3 },
-            new { Name = "Giải quyết vấn đề", Description = "Kết hợp logic, điều kiện và vòng lặp để phân tích và giải bài toán.", SortOrder = 4 }
+            new { Name = "Logic cÆ¡ báº£n", Description = "LÃ m quen vá»›i biáº¿n, phÃ©p toÃ¡n, thá»© tá»± thá»±c thi vÃ  Ä‘iá»u khiá»ƒn luá»“ng cÆ¡ báº£n.", SortOrder = 1 },
+            new { Name = "Äiá»u kiá»‡n", Description = "Há»c cÃ¡ch dÃ¹ng if/else, so sÃ¡nh vÃ  ráº½ nhÃ¡nh trong chÆ°Æ¡ng trÃ¬nh.", SortOrder = 2 },
+            new { Name = "VÃ²ng láº·p", Description = "LÃ m chá»§ for, while vÃ  xá»­ lÃ½ láº·p Ä‘á»ƒ giáº£i quyáº¿t bÃ i toÃ¡n.", SortOrder = 3 },
+            new { Name = "Giáº£i quyáº¿t váº¥n Ä‘á»", Description = "Káº¿t há»£p logic, Ä‘iá»u kiá»‡n vÃ  vÃ²ng láº·p Ä‘á»ƒ phÃ¢n tÃ­ch vÃ  giáº£i bÃ i toÃ¡n.", SortOrder = 4 }
         };
 
         var existingGoalNames = await dbContext.LearningGoals
@@ -385,7 +385,7 @@ public static class SeedingExtension
                 Name = seed.Name,
                 Description = seed.Description,
                 SortOrder = seed.SortOrder,
-                CreatedAt = DateTime.UtcNow,
+                CreatedAt = CapstoneProject.Domain.Common.VietnamDateTime.Now,
                 CreatedBy = existingAdmin?.Id,
                 Status = EntityStatusEnum.Active
             };
@@ -403,19 +403,19 @@ public static class SeedingExtension
 
         var conceptSeeds = new[]
         {
-            // Logic cơ bản
-            (GoalName: "Logic cơ bản", Name: "Biến là gì", Description: "Làm quen với biến và gán giá trị.", ContentKey: "variables", SortOrder: 1),
-            (GoalName: "Logic cơ bản", Name: "Phép toán", Description: "Các phép toán cơ bản: cộng, trừ, nhân, chia.", ContentKey: "operators", SortOrder: 2),
-            (GoalName: "Logic cơ bản", Name: "Thứ tự thực thi", Description: "Chương trình chạy từ trên xuống dưới, từ trái sang phải.", ContentKey: "execution-order", SortOrder: 3),
-            // Điều kiện
-            (GoalName: "Điều kiện", Name: "If-else", Description: "Rẽ nhánh theo điều kiện đúng/sai.", ContentKey: "if-else", SortOrder: 1),
-            (GoalName: "Điều kiện", Name: "So sánh", Description: "So sánh lớn hơn, nhỏ hơn, bằng.", ContentKey: "comparison", SortOrder: 2),
-            // Vòng lặp
-            (GoalName: "Vòng lặp", Name: "For loop", Description: "Vòng lặp với số lần xác định.", ContentKey: "for-loop", SortOrder: 1),
-            (GoalName: "Vòng lặp", Name: "While loop", Description: "Vòng lặp khi điều kiện còn đúng.", ContentKey: "while-loop", SortOrder: 2),
-            // Giải quyết vấn đề
-            (GoalName: "Giải quyết vấn đề", Name: "Phân tích bài toán", Description: "Đọc đề, tìm input/output, chia bước.", ContentKey: "problem-analysis", SortOrder: 1),
-            (GoalName: "Giải quyết vấn đề", Name: "Thuật toán cơ bản", Description: "Các bước giải quyết bài toán bằng code.", ContentKey: "basic-algorithm", SortOrder: 2)
+            // Logic cÆ¡ báº£n
+            (GoalName: "Logic cÆ¡ báº£n", Name: "Biáº¿n lÃ  gÃ¬", Description: "LÃ m quen vá»›i biáº¿n vÃ  gÃ¡n giÃ¡ trá»‹.", ContentKey: "variables", SortOrder: 1),
+            (GoalName: "Logic cÆ¡ báº£n", Name: "PhÃ©p toÃ¡n", Description: "CÃ¡c phÃ©p toÃ¡n cÆ¡ báº£n: cá»™ng, trá»«, nhÃ¢n, chia.", ContentKey: "operators", SortOrder: 2),
+            (GoalName: "Logic cÆ¡ báº£n", Name: "Thá»© tá»± thá»±c thi", Description: "ChÆ°Æ¡ng trÃ¬nh cháº¡y tá»« trÃªn xuá»‘ng dÆ°á»›i, tá»« trÃ¡i sang pháº£i.", ContentKey: "execution-order", SortOrder: 3),
+            // Äiá»u kiá»‡n
+            (GoalName: "Äiá»u kiá»‡n", Name: "If-else", Description: "Ráº½ nhÃ¡nh theo Ä‘iá»u kiá»‡n Ä‘Ãºng/sai.", ContentKey: "if-else", SortOrder: 1),
+            (GoalName: "Äiá»u kiá»‡n", Name: "So sÃ¡nh", Description: "So sÃ¡nh lá»›n hÆ¡n, nhá» hÆ¡n, báº±ng.", ContentKey: "comparison", SortOrder: 2),
+            // VÃ²ng láº·p
+            (GoalName: "VÃ²ng láº·p", Name: "For loop", Description: "VÃ²ng láº·p vá»›i sá»‘ láº§n xÃ¡c Ä‘á»‹nh.", ContentKey: "for-loop", SortOrder: 1),
+            (GoalName: "VÃ²ng láº·p", Name: "While loop", Description: "VÃ²ng láº·p khi Ä‘iá»u kiá»‡n cÃ²n Ä‘Ãºng.", ContentKey: "while-loop", SortOrder: 2),
+            // Giáº£i quyáº¿t váº¥n Ä‘á»
+            (GoalName: "Giáº£i quyáº¿t váº¥n Ä‘á»", Name: "PhÃ¢n tÃ­ch bÃ i toÃ¡n", Description: "Äá»c Ä‘á», tÃ¬m input/output, chia bÆ°á»›c.", ContentKey: "problem-analysis", SortOrder: 1),
+            (GoalName: "Giáº£i quyáº¿t váº¥n Ä‘á»", Name: "Thuáº­t toÃ¡n cÆ¡ báº£n", Description: "CÃ¡c bÆ°á»›c giáº£i quyáº¿t bÃ i toÃ¡n báº±ng code.", ContentKey: "basic-algorithm", SortOrder: 2)
         };
 
         var existingConceptKeys = await dbContext.Concepts
@@ -441,7 +441,7 @@ public static class SeedingExtension
                 Description = description,
                 ContentKey = contentKey,
                 SortOrder = sortOrder,
-                CreatedAt = DateTime.UtcNow,
+                CreatedAt = CapstoneProject.Domain.Common.VietnamDateTime.Now,
                 CreatedBy = existingAdmin?.Id,
                 Status = EntityStatusEnum.Active
             };
@@ -452,7 +452,7 @@ public static class SeedingExtension
             logger.LogInformation("Seeded concept: {GoalName} / {Name}", goalName, name);
         }
 
-        // Seed LearningPathItems (idempotent: skip row nếu (LearningGoalId, SortOrder) đã tồn tại)
+        // Seed LearningPathItems (idempotent: skip row náº¿u (LearningGoalId, SortOrder) Ä‘Ã£ tá»“n táº¡i)
         var existingPathItemKeys = await dbContext.LearningPathItems
             .Where(i => !i.IsDeleted)
             .Select(i => new { i.LearningGoalId, i.SortOrder })
@@ -467,7 +467,7 @@ public static class SeedingExtension
             .GroupBy(x => x.LearningGoalId)
             .ToDictionary(g => g.Key, g => g.ToDictionary(x => x.Name, x => x.Id, StringComparer.OrdinalIgnoreCase));
 
-        // Title phải khớp cột Maps.Title (vd. script_clean.sql / map đã publish). Gán map theo từng concept cho hợp lý.
+        // Title pháº£i khá»›p cá»™t Maps.Title (vd. script_clean.sql / map Ä‘Ã£ publish). GÃ¡n map theo tá»«ng concept cho há»£p lÃ½.
         var mapTitles = new[]
         {
             "Introduce variable",
@@ -479,7 +479,7 @@ public static class SeedingExtension
             "Introduce while/do while loop",
             "Basic top down map",
             "Maze map",
-            // Legacy (nếu DB cũ chỉ có các map cũ)
+            // Legacy (náº¿u DB cÅ© chá»‰ cÃ³ cÃ¡c map cÅ©)
             "level-platform-01",
             "level-topdown-1771989668367",
             "level-topdown-foreground-example"
@@ -504,27 +504,27 @@ public static class SeedingExtension
             return null;
         }
 
-        // (GoalName, ItemType, ConceptName?, MapTitle?, SortOrder) — MapTitle ưu tiên map mới, fallback legacy nếu chưa seed SQL
+        // (GoalName, ItemType, ConceptName?, MapTitle?, SortOrder) â€” MapTitle Æ°u tiÃªn map má»›i, fallback legacy náº¿u chÆ°a seed SQL
         var pathItemSeeds = new[]
         {
-            (GoalName: "Logic cơ bản", ItemType: LearningPathItemTypeEnum.Concept, ConceptName: "Biến là gì", MapTitle: (string?)null, SortOrder: 1),
-            (GoalName: "Logic cơ bản", ItemType: LearningPathItemTypeEnum.Map, ConceptName: (string?)null, MapTitle: PickMapTitle("Introduce variable", "level-platform-01", "level-topdown-1771989668367", mapIdsByTitle), SortOrder: 2),
-            (GoalName: "Logic cơ bản", ItemType: LearningPathItemTypeEnum.Concept, ConceptName: "Phép toán", MapTitle: (string?)null, SortOrder: 3),
-            (GoalName: "Logic cơ bản", ItemType: LearningPathItemTypeEnum.Map, ConceptName: (string?)null, MapTitle: PickMapTitle("Mathematical operation", "level-topdown-1771989668367", "level-platform-01", mapIdsByTitle), SortOrder: 4),
-            (GoalName: "Logic cơ bản", ItemType: LearningPathItemTypeEnum.Concept, ConceptName: "Thứ tự thực thi", MapTitle: (string?)null, SortOrder: 5),
-            (GoalName: "Logic cơ bản", ItemType: LearningPathItemTypeEnum.Map, ConceptName: (string?)null, MapTitle: PickMapTitle("Platform movement tutorial", "level-topdown-foreground-example", "level-platform-01", mapIdsByTitle), SortOrder: 6),
-            (GoalName: "Điều kiện", ItemType: LearningPathItemTypeEnum.Concept, ConceptName: "If-else", MapTitle: (string?)null, SortOrder: 1),
-            (GoalName: "Điều kiện", ItemType: LearningPathItemTypeEnum.Map, ConceptName: (string?)null, MapTitle: PickMapTitle("Introduce trap", "level-platform-01", "level-topdown-1771989668367", mapIdsByTitle), SortOrder: 2),
-            (GoalName: "Điều kiện", ItemType: LearningPathItemTypeEnum.Concept, ConceptName: "So sánh", MapTitle: (string?)null, SortOrder: 3),
-            (GoalName: "Điều kiện", ItemType: LearningPathItemTypeEnum.Map, ConceptName: (string?)null, MapTitle: PickMapTitle("More Box", "level-topdown-1771989668367", "level-platform-01", mapIdsByTitle), SortOrder: 4),
-            (GoalName: "Vòng lặp", ItemType: LearningPathItemTypeEnum.Concept, ConceptName: "For loop", MapTitle: (string?)null, SortOrder: 1),
-            (GoalName: "Vòng lặp", ItemType: LearningPathItemTypeEnum.Map, ConceptName: (string?)null, MapTitle: PickMapTitle("Introduce for loop", "level-platform-01", "level-topdown-1771989668367", mapIdsByTitle), SortOrder: 2),
-            (GoalName: "Vòng lặp", ItemType: LearningPathItemTypeEnum.Concept, ConceptName: "While loop", MapTitle: (string?)null, SortOrder: 3),
-            (GoalName: "Vòng lặp", ItemType: LearningPathItemTypeEnum.Map, ConceptName: (string?)null, MapTitle: PickMapTitle("Introduce while/do while loop", "level-topdown-1771989668367", "level-platform-01", mapIdsByTitle), SortOrder: 4),
-            (GoalName: "Giải quyết vấn đề", ItemType: LearningPathItemTypeEnum.Concept, ConceptName: "Phân tích bài toán", MapTitle: (string?)null, SortOrder: 1),
-            (GoalName: "Giải quyết vấn đề", ItemType: LearningPathItemTypeEnum.Map, ConceptName: (string?)null, MapTitle: PickMapTitle("Basic top down map", "level-topdown-1771989668367", "level-platform-01", mapIdsByTitle), SortOrder: 2),
-            (GoalName: "Giải quyết vấn đề", ItemType: LearningPathItemTypeEnum.Concept, ConceptName: "Thuật toán cơ bản", MapTitle: (string?)null, SortOrder: 3),
-            (GoalName: "Giải quyết vấn đề", ItemType: LearningPathItemTypeEnum.Map, ConceptName: (string?)null, MapTitle: PickMapTitle("Maze map", "level-platform-01", "level-topdown-foreground-example", mapIdsByTitle), SortOrder: 4)
+            (GoalName: "Logic cÆ¡ báº£n", ItemType: LearningPathItemTypeEnum.Concept, ConceptName: "Biáº¿n lÃ  gÃ¬", MapTitle: (string?)null, SortOrder: 1),
+            (GoalName: "Logic cÆ¡ báº£n", ItemType: LearningPathItemTypeEnum.Map, ConceptName: (string?)null, MapTitle: PickMapTitle("Introduce variable", "level-platform-01", "level-topdown-1771989668367", mapIdsByTitle), SortOrder: 2),
+            (GoalName: "Logic cÆ¡ báº£n", ItemType: LearningPathItemTypeEnum.Concept, ConceptName: "PhÃ©p toÃ¡n", MapTitle: (string?)null, SortOrder: 3),
+            (GoalName: "Logic cÆ¡ báº£n", ItemType: LearningPathItemTypeEnum.Map, ConceptName: (string?)null, MapTitle: PickMapTitle("Mathematical operation", "level-topdown-1771989668367", "level-platform-01", mapIdsByTitle), SortOrder: 4),
+            (GoalName: "Logic cÆ¡ báº£n", ItemType: LearningPathItemTypeEnum.Concept, ConceptName: "Thá»© tá»± thá»±c thi", MapTitle: (string?)null, SortOrder: 5),
+            (GoalName: "Logic cÆ¡ báº£n", ItemType: LearningPathItemTypeEnum.Map, ConceptName: (string?)null, MapTitle: PickMapTitle("Platform movement tutorial", "level-topdown-foreground-example", "level-platform-01", mapIdsByTitle), SortOrder: 6),
+            (GoalName: "Äiá»u kiá»‡n", ItemType: LearningPathItemTypeEnum.Concept, ConceptName: "If-else", MapTitle: (string?)null, SortOrder: 1),
+            (GoalName: "Äiá»u kiá»‡n", ItemType: LearningPathItemTypeEnum.Map, ConceptName: (string?)null, MapTitle: PickMapTitle("Introduce trap", "level-platform-01", "level-topdown-1771989668367", mapIdsByTitle), SortOrder: 2),
+            (GoalName: "Äiá»u kiá»‡n", ItemType: LearningPathItemTypeEnum.Concept, ConceptName: "So sÃ¡nh", MapTitle: (string?)null, SortOrder: 3),
+            (GoalName: "Äiá»u kiá»‡n", ItemType: LearningPathItemTypeEnum.Map, ConceptName: (string?)null, MapTitle: PickMapTitle("More Box", "level-topdown-1771989668367", "level-platform-01", mapIdsByTitle), SortOrder: 4),
+            (GoalName: "VÃ²ng láº·p", ItemType: LearningPathItemTypeEnum.Concept, ConceptName: "For loop", MapTitle: (string?)null, SortOrder: 1),
+            (GoalName: "VÃ²ng láº·p", ItemType: LearningPathItemTypeEnum.Map, ConceptName: (string?)null, MapTitle: PickMapTitle("Introduce for loop", "level-platform-01", "level-topdown-1771989668367", mapIdsByTitle), SortOrder: 2),
+            (GoalName: "VÃ²ng láº·p", ItemType: LearningPathItemTypeEnum.Concept, ConceptName: "While loop", MapTitle: (string?)null, SortOrder: 3),
+            (GoalName: "VÃ²ng láº·p", ItemType: LearningPathItemTypeEnum.Map, ConceptName: (string?)null, MapTitle: PickMapTitle("Introduce while/do while loop", "level-topdown-1771989668367", "level-platform-01", mapIdsByTitle), SortOrder: 4),
+            (GoalName: "Giáº£i quyáº¿t váº¥n Ä‘á»", ItemType: LearningPathItemTypeEnum.Concept, ConceptName: "PhÃ¢n tÃ­ch bÃ i toÃ¡n", MapTitle: (string?)null, SortOrder: 1),
+            (GoalName: "Giáº£i quyáº¿t váº¥n Ä‘á»", ItemType: LearningPathItemTypeEnum.Map, ConceptName: (string?)null, MapTitle: PickMapTitle("Basic top down map", "level-topdown-1771989668367", "level-platform-01", mapIdsByTitle), SortOrder: 2),
+            (GoalName: "Giáº£i quyáº¿t váº¥n Ä‘á»", ItemType: LearningPathItemTypeEnum.Concept, ConceptName: "Thuáº­t toÃ¡n cÆ¡ báº£n", MapTitle: (string?)null, SortOrder: 3),
+            (GoalName: "Giáº£i quyáº¿t váº¥n Ä‘á»", ItemType: LearningPathItemTypeEnum.Map, ConceptName: (string?)null, MapTitle: PickMapTitle("Maze map", "level-platform-01", "level-topdown-foreground-example", mapIdsByTitle), SortOrder: 4)
         };
 
         foreach (var (goalName, itemType, conceptName, mapTitle, sortOrder) in pathItemSeeds)
@@ -551,7 +551,7 @@ public static class SeedingExtension
                 ConceptId = conceptId,
                 MapId = mapId,
                 SortOrder = sortOrder,
-                CreatedAt = DateTime.UtcNow,
+                CreatedAt = CapstoneProject.Domain.Common.VietnamDateTime.Now,
                 CreatedBy = existingAdmin?.Id,
                 Status = EntityStatusEnum.Active
             };
@@ -571,7 +571,7 @@ public static class SeedingExtension
         public int GetHashCode((Guid, string) obj) => HashCode.Combine(obj.Item1, obj.Item2.GetHashCode(StringComparison.OrdinalIgnoreCase));
     }
 
-    /// <summary>GUID user trong script_clean.sql dùng cho CreatedBy/UpdatedBy. Sẽ được thay bằng systemUserId khi seed.</summary>
+    /// <summary>GUID user trong script_clean.sql dÃ¹ng cho CreatedBy/UpdatedBy. Sáº½ Ä‘Æ°á»£c thay báº±ng systemUserId khi seed.</summary>
     private const string ScriptCreatedByUserIdLiteral = "29f8c7e0-11bb-46c1-327b-08de83cfc02d";
 
     private static async Task SeedMapsFromSqlScriptAsync(CapstoneProjectDbContext dbContext, string scriptPath, Guid systemUserId, ILogger logger)
@@ -582,7 +582,7 @@ public static class SeedingExtension
             return;
         }
 
-        // Chỉ INSERT dữ liệu; không chạy DDL. Tags dùng sẵn đã seed bên ngoài (defaultTagNames); MapTags sẽ map TagId trong script sang Id tag trong DB theo Name.
+        // Chá»‰ INSERT dá»¯ liá»‡u; khÃ´ng cháº¡y DDL. Tags dÃ¹ng sáºµn Ä‘Ã£ seed bÃªn ngoÃ i (defaultTagNames); MapTags sáº½ map TagId trong script sang Id tag trong DB theo Name.
         var allowedTables = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
         {
             "Maps",
@@ -605,7 +605,7 @@ public static class SeedingExtension
             return;
         }
 
-        // Map TagId trong script -> Tag Id trong DB (theo Name). Tag trong DB đã seed trước (defaultTagNames).
+        // Map TagId trong script -> Tag Id trong DB (theo Name). Tag trong DB Ä‘Ã£ seed trÆ°á»›c (defaultTagNames).
         var scriptTagIdToName = ExtractScriptTagIdToName(scriptPath);
         var nameToCurrentTagId = await dbContext.Tags
             .Where(t => !t.IsDeleted)
@@ -617,7 +617,7 @@ public static class SeedingExtension
                 scriptTagIdToCurrentId[scriptId] = currentId;
         }
 
-        // Thứ tự: Maps, MapDetails, Hints, MapTags.
+        // Thá»© tá»±: Maps, MapDetails, Hints, MapTags.
         var tableOrder = new[] { "Maps", "MapDetails", "Hints", "MapTags" };
         var orderIndex = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
         for (int i = 0; i < tableOrder.Length; i++)
@@ -629,7 +629,7 @@ public static class SeedingExtension
             .ToList();
 
         var systemUserIdStr = systemUserId.ToString("D");
-        // Thay CreatedBy/UpdatedBy trong script bằng systemUserId để tránh lỗi FK_Maps_Users_CreatedBy.
+        // Thay CreatedBy/UpdatedBy trong script báº±ng systemUserId Ä‘á»ƒ trÃ¡nh lá»—i FK_Maps_Users_CreatedBy.
         var scriptUserIdLiteral = $"N'{ScriptCreatedByUserIdLiteral}'";
 
         logger.LogInformation("Seeding maps data from SQL script: {Path}. Statements: {Count}", scriptPath, ordered.Count);
@@ -658,7 +658,7 @@ public static class SeedingExtension
             }
             catch (Exception ex)
             {
-                logger.LogError(ex, "Không chuyển được INSERT sang PostgreSQL (bảng {Table}, Id {Id}).", table, id);
+                logger.LogError(ex, "KhÃ´ng chuyá»ƒn Ä‘Æ°á»£c INSERT sang PostgreSQL (báº£ng {Table}, Id {Id}).", table, id);
                 skipped++;
                 return;
             }
@@ -668,19 +668,19 @@ public static class SeedingExtension
             if (affected > 0) executed++; else skipped++;
         }
 
-        // Pha 1: Maps trước (FK MapDetails/Hints/MapTags trỏ MapId).
+        // Pha 1: Maps trÆ°á»›c (FK MapDetails/Hints/MapTags trá» MapId).
         foreach (var item in ordered.Where(x => string.Equals(x.Table, "Maps", StringComparison.OrdinalIgnoreCase)))
             await RunOneInsertAsync(item);
 
         var mapIds = (await dbContext.Maps.AsNoTracking().Select(m => m.Id).ToListAsync()).ToHashSet();
 
-        // Pha 2: MapDetails, Hints, MapTags — bỏ qua nếu MapId chưa có (script thiếu map cha hoặc insert map lỗi trước đó).
+        // Pha 2: MapDetails, Hints, MapTags â€” bá» qua náº¿u MapId chÆ°a cÃ³ (script thiáº¿u map cha hoáº·c insert map lá»—i trÆ°á»›c Ä‘Ã³).
         foreach (var item in ordered.Where(x => !string.Equals(x.Table, "Maps", StringComparison.OrdinalIgnoreCase)))
         {
             var mapIdMatch = ChildInsertMapIdRegex.Match(item.Statement);
             if (!mapIdMatch.Success || !Guid.TryParse(mapIdMatch.Groups["mapId"].Value, out var fkMapId))
             {
-                logger.LogWarning("Bỏ qua {Table} Id {RowId}: không đọc được MapId từ VALUES.", item.Table, item.Id);
+                logger.LogWarning("Bá» qua {Table} Id {RowId}: khÃ´ng Ä‘á»c Ä‘Æ°á»£c MapId tá»« VALUES.", item.Table, item.Id);
                 skipped++;
                 continue;
             }
@@ -688,7 +688,7 @@ public static class SeedingExtension
             if (!mapIds.Contains(fkMapId))
             {
                 logger.LogWarning(
-                    "Bỏ qua {Table} Id {RowId}: MapId {MapId} không tồn tại trong bảng Maps (thiếu INSERT map hoặc map chưa vào DB).",
+                    "Bá» qua {Table} Id {RowId}: MapId {MapId} khÃ´ng tá»“n táº¡i trong báº£ng Maps (thiáº¿u INSERT map hoáº·c map chÆ°a vÃ o DB).",
                     item.Table,
                     item.Id,
                     fkMapId);
@@ -707,16 +707,16 @@ public static class SeedingExtension
         public string Table { get; set; } = string.Empty;
         public string Id { get; set; } = string.Empty;
         public string Statement { get; set; } = string.Empty;
-        /// <summary>Thứ tự xuất hiện trong file script (ổn định khi sort theo bảng).</summary>
+        /// <summary>Thá»© tá»± xuáº¥t hiá»‡n trong file script (á»•n Ä‘á»‹nh khi sort theo báº£ng).</summary>
         public int SourceOrder { get; set; }
     }
 
-    /// <summary>MapDetails / Hints / MapTags: cột thứ 2 sau VALUES là MapId (N'guid').</summary>
+    /// <summary>MapDetails / Hints / MapTags: cá»™t thá»© 2 sau VALUES lÃ  MapId (N'guid').</summary>
     private static readonly Regex ChildInsertMapIdRegex = new(
         @"VALUES\s*\(\s*N'(?<rowId>[0-9a-fA-F-]{36})'\s*,\s*N'(?<mapId>[0-9a-fA-F-]{36})'",
         RegexOptions.IgnoreCase | RegexOptions.Singleline | RegexOptions.Compiled);
 
-    /// <summary>Đọc script, lấy (TagId, Name) từ INSERT [dbo].[Tags] để map sang Tag Id trong DB.</summary>
+    /// <summary>Äá»c script, láº¥y (TagId, Name) tá»« INSERT [dbo].[Tags] Ä‘á»ƒ map sang Tag Id trong DB.</summary>
     private static List<(string TagId, string Name)> ExtractScriptTagIdToName(string scriptPath)
     {
         var list = new List<(string, string)>();
@@ -767,7 +767,7 @@ public static class SeedingExtension
             var line = reader.ReadLine() ?? string.Empty;
             var trimmed = line.Trim();
 
-            // "GO" luôn kết thúc statement hiện tại (nếu có).
+            // "GO" luÃ´n káº¿t thÃºc statement hiá»‡n táº¡i (náº¿u cÃ³).
             if (string.Equals(trimmed, "GO", StringComparison.OrdinalIgnoreCase))
             {
                 if (capturing)
@@ -781,8 +781,8 @@ public static class SeedingExtension
                 continue;
             }
 
-            // Nhiều đoạn trong script không có GO giữa các INSERT (đặc biệt block Maps).
-            // Vì vậy khi gặp 1 dòng INSERT mới, flush statement trước đó và bắt đầu statement mới.
+            // Nhiá»u Ä‘oáº¡n trong script khÃ´ng cÃ³ GO giá»¯a cÃ¡c INSERT (Ä‘áº·c biá»‡t block Maps).
+            // VÃ¬ váº­y khi gáº·p 1 dÃ²ng INSERT má»›i, flush statement trÆ°á»›c Ä‘Ã³ vÃ  báº¯t Ä‘áº§u statement má»›i.
             if (trimmed.StartsWith("INSERT [dbo].[", StringComparison.OrdinalIgnoreCase))
             {
                 if (capturing)
@@ -822,5 +822,6 @@ public static class SeedingExtension
         }
     }
 }
+
 
 

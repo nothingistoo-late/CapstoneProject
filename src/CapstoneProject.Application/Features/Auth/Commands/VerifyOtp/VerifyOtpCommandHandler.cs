@@ -1,4 +1,4 @@
-using System.Linq.Expressions;
+﻿using System.Linq.Expressions;
 using System.Transactions;
 using AutoMapper;
 using MediatR;
@@ -121,7 +121,7 @@ public class VerifyOtpCommandHandler : IRequestHandler<VerifyOtpCommand, Result<
         var (refreshToken, refreshTokenExpiryTime) = _jwtService.GenerateRefreshTokenWithExpiration();
         user.RefreshToken = refreshToken;
         user.RefreshTokenExpiryTime = refreshTokenExpiryTime;
-        user.LastLoginAt = DateTime.UtcNow;
+        user.LastLoginAt = CapstoneProject.Domain.Common.VietnamDateTime.Now;
         user.UpdateEntity(user.Id);
         await _identityService.UpdateUserAsync(user);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
@@ -166,3 +166,4 @@ public class VerifyOtpCommandHandler : IRequestHandler<VerifyOtpCommand, Result<
         return Result<AuthResponse>.Success(null!, "Password reset successfully.");
     }
 }
+

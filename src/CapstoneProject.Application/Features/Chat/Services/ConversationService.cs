@@ -1,4 +1,4 @@
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using CapstoneProject.Application.Commons.Interfaces;
 using CapstoneProject.Application.Common.Interfaces;
@@ -60,7 +60,7 @@ public class ConversationService : IConversationService
                 RoomType = ChatRoomTypeEnum.Private,
                 Name = null, // No name for private chats
                 CreatedBy = user1Id,
-                CreatedAt = DateTime.UtcNow,
+                CreatedAt = CapstoneProject.Domain.Common.VietnamDateTime.Now,
                 Status = EntityStatusEnum.Active,
                 IsClosed = false
             };
@@ -73,9 +73,9 @@ public class ConversationService : IConversationService
             {
                 ChatRoomId = conversation.Id,
                 UserId = user1Id,
-                JoinedAt = DateTime.UtcNow,
+                JoinedAt = CapstoneProject.Domain.Common.VietnamDateTime.Now,
                 CreatedBy = user1Id,
-                CreatedAt = DateTime.UtcNow,
+                CreatedAt = CapstoneProject.Domain.Common.VietnamDateTime.Now,
                 Status = EntityStatusEnum.Active
             };
 
@@ -83,9 +83,9 @@ public class ConversationService : IConversationService
             {
                 ChatRoomId = conversation.Id,
                 UserId = user2Id,
-                JoinedAt = DateTime.UtcNow,
+                JoinedAt = CapstoneProject.Domain.Common.VietnamDateTime.Now,
                 CreatedBy = user1Id,
-                CreatedAt = DateTime.UtcNow,
+                CreatedAt = CapstoneProject.Domain.Common.VietnamDateTime.Now,
                 Status = EntityStatusEnum.Active
             };
 
@@ -137,7 +137,7 @@ public class ConversationService : IConversationService
                 RoomType = ChatRoomTypeEnum.TemporaryGroup,
                 Name = name.Trim(),
                 CreatedBy = createdByUserId,
-                CreatedAt = DateTime.UtcNow,
+                CreatedAt = CapstoneProject.Domain.Common.VietnamDateTime.Now,
                 Status = EntityStatusEnum.Active,
                 IsClosed = false
             };
@@ -151,9 +151,9 @@ public class ConversationService : IConversationService
             {
                 ChatRoomId = conversation.Id,
                 UserId = createdByUserId,
-                JoinedAt = DateTime.UtcNow,
+                JoinedAt = CapstoneProject.Domain.Common.VietnamDateTime.Now,
                 CreatedBy = createdByUserId,
-                CreatedAt = DateTime.UtcNow,
+                CreatedAt = CapstoneProject.Domain.Common.VietnamDateTime.Now,
                 Status = EntityStatusEnum.Active
             };
 
@@ -229,8 +229,8 @@ public class ConversationService : IConversationService
                 
                 // Reactivate if previously left
                 existingMember.LeftAt = null;
-                existingMember.JoinedAt = DateTime.UtcNow;
-                existingMember.UpdatedAt = DateTime.UtcNow;
+                existingMember.JoinedAt = CapstoneProject.Domain.Common.VietnamDateTime.Now;
+                existingMember.UpdatedAt = CapstoneProject.Domain.Common.VietnamDateTime.Now;
                 memberRepo.Update(existingMember);
                 await _unitOfWork.SaveChangesAsync(cancellationToken);
                 
@@ -250,9 +250,9 @@ public class ConversationService : IConversationService
             {
                 ChatRoomId = conversationId,
                 UserId = userId,
-                JoinedAt = DateTime.UtcNow,
+                JoinedAt = CapstoneProject.Domain.Common.VietnamDateTime.Now,
                 CreatedBy = userId,
-                CreatedAt = DateTime.UtcNow,
+                CreatedAt = CapstoneProject.Domain.Common.VietnamDateTime.Now,
                 Status = EntityStatusEnum.Active
             };
 
@@ -433,3 +433,4 @@ public class ConversationService : IConversationService
         }
     }
 }
+

@@ -1,4 +1,4 @@
-using System.Text.Json;
+﻿using System.Text.Json;
 using MediatR;
 using CapstoneProject.Application.Common.Enums;
 using CapstoneProject.Application.Common.Models;
@@ -49,7 +49,7 @@ public class CreateMapFromJsonFileCommandHandler : IRequestHandler<CreateMapFrom
             avatarUrl = await _cloudinaryService.UploadImageAsync(
                 command.AvatarFile,
                 "maps",
-                $"map_new_{DateTime.UtcNow.Ticks}",
+                $"map_new_{CapstoneProject.Domain.Common.VietnamDateTime.Now.Ticks}",
                 cancellationToken);
         }
 
@@ -122,3 +122,4 @@ public class CreateMapFromJsonFileCommandHandler : IRequestHandler<CreateMapFrom
         return list;
     }
 }
+

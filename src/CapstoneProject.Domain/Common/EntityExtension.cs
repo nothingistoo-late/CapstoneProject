@@ -1,11 +1,11 @@
-namespace CapstoneProject.Domain.Common;
+﻿namespace CapstoneProject.Domain.Common;
 
 public static class EntityExtension
 {
     public static void InitializeEntity(this IEntityLike entity, Guid? userId = null)
     {
         entity.Id = entity.Id == Guid.Empty ? Guid.NewGuid() : entity.Id;
-        entity.CreatedAt = DateTime.UtcNow;
+        entity.CreatedAt = CapstoneProject.Domain.Common.VietnamDateTime.Now;
         entity.CreatedBy = userId ?? Guid.Empty; //Guid.Empty is for system
     }
 
@@ -17,7 +17,7 @@ public static class EntityExtension
             entity.CreatedBy = oldEntity.CreatedBy;
         }
         
-        entity.UpdatedAt = DateTime.UtcNow;
+        entity.UpdatedAt = CapstoneProject.Domain.Common.VietnamDateTime.Now;
         entity.UpdatedBy = userId ?? Guid.Empty;
     }
 
@@ -26,7 +26,7 @@ public static class EntityExtension
         if (entity is BaseEntity baseEntity)
         {
             baseEntity.IsDeleted = true;
-            baseEntity.DeletedAt = DateTime.UtcNow;
+            baseEntity.DeletedAt = CapstoneProject.Domain.Common.VietnamDateTime.Now;
             baseEntity.DeletedBy = userId ?? Guid.Empty;
         }
     }
@@ -39,7 +39,7 @@ public static class EntityExtension
             baseEntity.DeletedAt = null;
             baseEntity.DeletedBy = null;
         }
-        entity.UpdatedAt = DateTime.UtcNow;
+        entity.UpdatedAt = CapstoneProject.Domain.Common.VietnamDateTime.Now;
         entity.UpdatedBy = userId ?? Guid.Empty;
     }
 
@@ -49,7 +49,7 @@ public static class EntityExtension
     public static void DeactivateUser(this IEntityLike entity, Guid? userId = null)
     {
         entity.Status = Enums.EntityStatusEnum.Inactive;
-        entity.UpdatedAt = DateTime.UtcNow;
+        entity.UpdatedAt = CapstoneProject.Domain.Common.VietnamDateTime.Now;
         entity.UpdatedBy = userId ?? Guid.Empty;
     }
 
@@ -59,7 +59,7 @@ public static class EntityExtension
     public static void ReactivateUser(this IEntityLike entity, Guid? userId = null)
     {
         entity.Status = Enums.EntityStatusEnum.Active;
-        entity.UpdatedAt = DateTime.UtcNow;
+        entity.UpdatedAt = CapstoneProject.Domain.Common.VietnamDateTime.Now;
         entity.UpdatedBy = userId ?? Guid.Empty;
     }
 }

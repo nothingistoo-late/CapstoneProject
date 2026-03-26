@@ -1,4 +1,4 @@
-using CapstoneProject.Application.Common.Enums;
+﻿using CapstoneProject.Application.Common.Enums;
 using CapstoneProject.Application.Common.Interfaces;
 using CapstoneProject.Application.Common.Models;
 using CapstoneProject.Application.Features.Recommendations.DTOs;
@@ -22,7 +22,7 @@ public class GetRecommendationsQueryHandler : IRequestHandler<GetRecommendations
 
     public async Task<Result<RecommendationResultDto>> Handle(GetRecommendationsQuery request, CancellationToken cancellationToken)
     {
-        // Controller đã chặn bằng AuthorizeRoles, nhưng vẫn validate lại để trả ErrorCode consistent.
+        // Controller Ä‘Ã£ cháº·n báº±ng AuthorizeRoles, nhÆ°ng váº«n validate láº¡i Ä‘á»ƒ tráº£ ErrorCode consistent.
         var (isValid, userId) = await _currentUserService.IsUserValidAsync();
         if (!isValid || !userId.HasValue)
             return Result<RecommendationResultDto>.Failure("Authentication required.", ErrorCodeEnum.Unauthorized);
@@ -140,7 +140,7 @@ public class GetRecommendationsQueryHandler : IRequestHandler<GetRecommendations
             return Result<RecommendationResultDto>.Success(new RecommendationResultDto(), "Retrieved successfully");
 
         // Preload user play history for these maps (single batch)
-        var nowUtc = DateTime.UtcNow;
+        var nowUtc = CapstoneProject.Domain.Common.VietnamDateTime.Now;
         var recentFrom = nowUtc.AddDays(-7);
         var relevantMapIds = mapById.Keys.ToList();
 
@@ -329,4 +329,5 @@ public class GetRecommendationsQueryHandler : IRequestHandler<GetRecommendations
         }, "Retrieved successfully");
     }
 }
+
 

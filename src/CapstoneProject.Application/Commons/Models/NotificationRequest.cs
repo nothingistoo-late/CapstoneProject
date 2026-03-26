@@ -1,4 +1,4 @@
-using CapstoneProject.Application.Common.Enums;
+﻿using CapstoneProject.Application.Common.Enums;
 
 namespace CapstoneProject.Application.Common.Models;
 
@@ -34,7 +34,7 @@ public class NotificationChannelResult
     public string? ErrorMessage { get; set; }
     public string? ExternalMessageId { get; set; } // FCMMessageId, EmailId, etc.
     public string? DeviceToken { get; set; } // For Firebase
-    public DateTime Timestamp { get; set; } = DateTime.UtcNow;
+    public DateTime Timestamp { get; set; } = CapstoneProject.Domain.Common.VietnamDateTime.Now;
     public Dictionary<string, string>? Metadata { get; set; }
 }
 

@@ -1,4 +1,4 @@
-using System.Transactions;
+﻿using System.Transactions;
 using MediatR;
 using Microsoft.Extensions.Logging;
 using CapstoneProject.Application.Common.DTOs.Auth;
@@ -82,8 +82,8 @@ public class GoogleLoginCommandHandler : IRequestHandler<GoogleLoginCommand, Res
                 EmailConfirmed = true,
                 FirstName = name ?? email.Split('@')[0],
                 LastName = "",
-                JoiningAt = DateTime.UtcNow,
-                CreatedAt = DateTime.UtcNow,
+                JoiningAt = CapstoneProject.Domain.Common.VietnamDateTime.Now,
+                CreatedAt = CapstoneProject.Domain.Common.VietnamDateTime.Now,
                 Status = Domain.Enums.EntityStatusEnum.Active
             };
             var password = Guid.NewGuid().ToString("N") + "Aa1!"; // Identity requires password
@@ -107,7 +107,7 @@ public class GoogleLoginCommandHandler : IRequestHandler<GoogleLoginCommand, Res
             }
         }
 
-        user.LastLoginAt = DateTime.UtcNow;
+        user.LastLoginAt = CapstoneProject.Domain.Common.VietnamDateTime.Now;
         await _identityService.UpdateUserAsync(user);
 
         var (token, roles, _, expiresAt) = _jwtService.GenerateJwtTokenWithExpiration(user);
@@ -120,3 +120,4 @@ public class GoogleLoginCommandHandler : IRequestHandler<GoogleLoginCommand, Res
         return Result<AuthResponse>.Success(authResponse, "Login with Google successfully.");
     }
 }
+

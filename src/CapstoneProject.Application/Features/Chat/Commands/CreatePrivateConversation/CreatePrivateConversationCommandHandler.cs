@@ -1,4 +1,4 @@
-using AutoMapper;
+﻿using AutoMapper;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -110,7 +110,8 @@ public class CreatePrivateConversationCommandHandler : IRequestHandler<CreatePri
                 JoinedAt = m.JoinedAt,
                 LastReadAt = m.LastReadAt
             }).ToList(),
-            CreatedAt = conversation.CreatedAt ?? DateTime.UtcNow
+            CreatedAt = conversation.CreatedAt ?? CapstoneProject.Domain.Common.VietnamDateTime.Now
         };
     }
 }
+

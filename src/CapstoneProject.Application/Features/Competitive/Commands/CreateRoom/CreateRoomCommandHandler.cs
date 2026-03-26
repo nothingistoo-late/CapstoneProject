@@ -1,4 +1,4 @@
-using MediatR;
+﻿using MediatR;
 using Microsoft.EntityFrameworkCore;
 using CapstoneProject.Application.Common.Enums;
 using CapstoneProject.Application.Common.Interfaces;
@@ -48,7 +48,7 @@ public class CreateRoomCommandHandler : IRequestHandler<CreateRoomCommand, Resul
         {
             RoomId = room.Id,
             UserId = userId,
-            JoinedAt = DateTime.UtcNow,
+            JoinedAt = CapstoneProject.Domain.Common.VietnamDateTime.Now,
             IsOwner = true,
             IsReady = false
         };
@@ -60,3 +60,4 @@ public class CreateRoomCommandHandler : IRequestHandler<CreateRoomCommand, Resul
         return Result<CreateRoomResultDto>.Success(new CreateRoomResultDto { RoomId = room.Id, RoomCode = code });
     }
 }
+

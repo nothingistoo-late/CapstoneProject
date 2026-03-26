@@ -1,4 +1,4 @@
-using MediatR;
+﻿using MediatR;
 using Microsoft.EntityFrameworkCore;
 using CapstoneProject.Application.Common.Enums;
 using CapstoneProject.Application.Common.Interfaces;
@@ -40,8 +40,8 @@ public class CompleteConceptCommandHandler : IRequestHandler<CompleteConceptComm
             if (existing.IsCompleted)
                 return Result.Success("Concept already completed.");
             existing.IsCompleted = true;
-            existing.CompletedAt = DateTime.UtcNow;
-            existing.UpdatedAt = DateTime.UtcNow;
+            existing.CompletedAt = CapstoneProject.Domain.Common.VietnamDateTime.Now;
+            existing.UpdatedAt = CapstoneProject.Domain.Common.VietnamDateTime.Now;
             existing.UpdatedBy = userId;
             repo.Update(existing);
         }
@@ -52,7 +52,7 @@ public class CompleteConceptCommandHandler : IRequestHandler<CompleteConceptComm
                 UserId = userId.Value,
                 ConceptId = request.ConceptId,
                 IsCompleted = true,
-                CompletedAt = DateTime.UtcNow
+                CompletedAt = CapstoneProject.Domain.Common.VietnamDateTime.Now
             };
             progress.InitializeEntity(userId);
             await repo.AddAsync(progress);
@@ -62,3 +62,4 @@ public class CompleteConceptCommandHandler : IRequestHandler<CompleteConceptComm
         return Result.Success("Concept completed. Next item in your path is now unlocked.");
     }
 }
+

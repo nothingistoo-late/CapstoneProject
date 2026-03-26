@@ -1,4 +1,4 @@
-using CapstoneProject.Domain.Common;
+﻿using CapstoneProject.Domain.Common;
 using CapstoneProject.Domain.Enums;
 using Microsoft.AspNetCore.Identity;
 
@@ -9,7 +9,7 @@ public class AppUser : IdentityUser<Guid>, IEntityLike
     public string FirstName { get; set; } = string.Empty;
     public string LastName { get; set; } = string.Empty;
     public DateTime? LastLoginAt { get; set; }
-    public DateTime JoiningAt { get; set; } = DateTime.UtcNow;
+    public DateTime JoiningAt { get; set; } = CapstoneProject.Domain.Common.VietnamDateTime.Now;
     public string? RefreshToken { get; set; }
     public DateTime? RefreshTokenExpiryTime { get; set; }
     public string? AvatarPath { get; set; }

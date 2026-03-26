@@ -1,4 +1,4 @@
-using System.Text.RegularExpressions;
+﻿using System.Text.RegularExpressions;
 using CloudinaryDotNet;
 using CloudinaryDotNet.Actions;
 using Microsoft.AspNetCore.Http;
@@ -32,7 +32,7 @@ public class CloudinaryService : ICloudinaryService
         var prefix = string.IsNullOrEmpty(_settings.FolderPrefix) ? folder : $"{_settings.FolderPrefix}/{folder}";
         var publicId = string.IsNullOrEmpty(publicIdPrefix)
             ? $"{prefix}/{Guid.NewGuid():N}"
-            : $"{prefix}/{publicIdPrefix}_{DateTime.UtcNow.Ticks}";
+            : $"{prefix}/{publicIdPrefix}_{CapstoneProject.Domain.Common.VietnamDateTime.Now.Ticks}";
 
         try
         {
@@ -86,3 +86,4 @@ public class CloudinaryService : ICloudinaryService
         return match.Success ? match.Groups[1].Value : null;
     }
 }
+

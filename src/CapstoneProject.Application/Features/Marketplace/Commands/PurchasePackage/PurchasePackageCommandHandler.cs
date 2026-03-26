@@ -1,4 +1,4 @@
-using MediatR;
+﻿using MediatR;
 using Microsoft.EntityFrameworkCore;
 using CapstoneProject.Application.Common.Enums;
 using CapstoneProject.Application.Common.Interfaces;
@@ -64,14 +64,14 @@ public class PurchasePackageCommandHandler : IRequestHandler<PurchasePackageComm
             PackageId = pkg.Id,
             Amount = pkg.Price,
             PaymentStatus = PaymentStatusEnum.Completed,
-            PaidAt = DateTime.UtcNow,
+            PaidAt = CapstoneProject.Domain.Common.VietnamDateTime.Now,
             PaymentId = orbitCoinPayment?.Id
         };
         record.InitializeEntity(userId);
         await _unitOfWork.Repository<PaymentRecord>().AddAsync(record);
 
         var remaining = pkg.Limit ?? 1;
-        var expiresAt = DateTime.UtcNow.AddDays(pkg.DurationDays);
+        var expiresAt = CapstoneProject.Domain.Common.VietnamDateTime.Now.AddDays(pkg.DurationDays);
         var userPkg = new UserPackage
         {
             UserId = userId,
@@ -86,3 +86,4 @@ public class PurchasePackageCommandHandler : IRequestHandler<PurchasePackageComm
         return Result<Guid>.Success(record.Id, "Package purchased with OrbitCoin.");
     }
 }
+

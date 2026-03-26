@@ -1,4 +1,4 @@
-using CapstoneProject.Application.Commons.Interfaces;
+﻿using CapstoneProject.Application.Commons.Interfaces;
 using CapstoneProject.Application.Common.Interfaces;
 using CapstoneProject.Domain.Common;
 using CapstoneProject.Domain.Entities;
@@ -34,7 +34,7 @@ public class QuickLoginCleanupService : IQuickLoginCleanupService
         {
             _logger.LogInformation("Starting cleanup of inactive QuickLogin users (inactive for {Days} days)", daysInactive);
 
-            var cutoffDate = DateTime.UtcNow.AddDays(-daysInactive);
+            var cutoffDate = CapstoneProject.Domain.Common.VietnamDateTime.Now.AddDays(-daysInactive);
             
             // Get all QuickLogin users that haven't logged in for the specified days
             // Or never logged in and created before cutoff date
@@ -99,7 +99,7 @@ public class QuickLoginCleanupService : IQuickLoginCleanupService
         {
             _logger.LogInformation("Starting cleanup of old QuickLogin users (older than {Days} days)", daysOld);
 
-            var cutoffDate = DateTime.UtcNow.AddDays(-daysOld);
+            var cutoffDate = CapstoneProject.Domain.Common.VietnamDateTime.Now.AddDays(-daysOld);
             
             // Get all QuickLogin users created before the cutoff date
             var quickLoginUsers = await _unitOfWork.Repository<AppUser>()
@@ -158,3 +158,4 @@ public class QuickLoginCleanupService : IQuickLoginCleanupService
         }
     }
 }
+

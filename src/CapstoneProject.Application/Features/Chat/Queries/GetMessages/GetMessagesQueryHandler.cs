@@ -1,4 +1,4 @@
-using MediatR;
+﻿using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using CapstoneProject.Application.Commons.DTOs.Chat;
@@ -132,7 +132,7 @@ public class GetMessagesQueryHandler : IRequestHandler<GetMessagesQuery, Result<
             IsEdited = m.IsEdited,
             EditedAt = m.EditedAt,
             IsDeleted = m.IsDeleted,
-            CreatedAt = m.CreatedAt ?? DateTime.UtcNow,
+            CreatedAt = m.CreatedAt ?? CapstoneProject.Domain.Common.VietnamDateTime.Now,
             ReadBy = m.MessageReads.Select(mr => new MessageReadResponse
             {
                 UserId = mr.UserId,
@@ -156,3 +156,4 @@ public class GetMessagesQueryHandler : IRequestHandler<GetMessagesQuery, Result<
         }
     }
 }
+

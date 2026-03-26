@@ -1,4 +1,4 @@
-using System.Collections.Concurrent;
+﻿using System.Collections.Concurrent;
 using System.Security.Cryptography;
 using System.Text.Json;
 using Microsoft.Extensions.Logging;
@@ -30,7 +30,7 @@ namespace CapstoneProject.Infrastructure.Services
         {
             try
             {
-                var now = DateTime.UtcNow;
+                var now = CapstoneProject.Domain.Common.VietnamDateTime.Now;
                 var expiredKeys = _cache.Where(exk => exk.Value.ExpiresAt <= now).Select(exk => exk.Key).ToList();
                 var removedCount = 0;
                 foreach (var key in expiredKeys)
@@ -80,8 +80,8 @@ namespace CapstoneProject.Infrastructure.Services
                     Contact = contact,
                     OtpCode = otpCode,
                     Channel = channel,
-                    ExpiresAt = DateTime.UtcNow.AddMinutes(_otpSettings.ExpirationMinutes),
-                    CreatedAt = DateTime.UtcNow,
+                    ExpiresAt = CapstoneProject.Domain.Common.VietnamDateTime.Now.AddMinutes(_otpSettings.ExpirationMinutes),
+                    CreatedAt = CapstoneProject.Domain.Common.VietnamDateTime.Now,
                     AttemptCount = 0,
                     MaxAttempts = _otpSettings.MaxAttempts,
                     IsVerified = false,
@@ -118,7 +118,7 @@ namespace CapstoneProject.Infrastructure.Services
             {
                 rng.GetBytes(bytes);
                 int digit = Math.Abs(BitConverter.ToInt32(bytes, 0)) % 10;
-                chars[i] = (char)('0' + digit); // chuyển số thành ký tự trực tiếp
+                chars[i] = (char)('0' + digit); // chuyá»ƒn sá»‘ thÃ nh kÃ½ tá»± trá»±c tiáº¿p
             }
 
             return new string(chars);
@@ -140,7 +140,7 @@ namespace CapstoneProject.Infrastructure.Services
             var cacheKey = GenerateCacheKey(contact, type);
             if (_cache.TryGetValue(cacheKey, out var cacheItem))
             {
-                if (cacheItem.ExpiresAt > DateTime.UtcNow)
+                if (cacheItem.ExpiresAt > CapstoneProject.Domain.Common.VietnamDateTime.Now)
                 {
                     // Item is still valid
                     return cacheItem;
@@ -167,17 +167,17 @@ namespace CapstoneProject.Infrastructure.Services
         public TimeSpan GetRemainingTime(string contact, OtpTypeEnum type)
         {
             var cacheItem = GetOtpData(contact, type);
-            if (cacheItem == null || cacheItem.ExpiresAt <= DateTime.UtcNow)
+            if (cacheItem == null || cacheItem.ExpiresAt <= CapstoneProject.Domain.Common.VietnamDateTime.Now)
                 return TimeSpan.Zero;
 
-            return cacheItem.ExpiresAt - DateTime.UtcNow;
+            return cacheItem.ExpiresAt - CapstoneProject.Domain.Common.VietnamDateTime.Now;
 
         }
 
         public bool IsOtpExpired(string contact, OtpTypeEnum type)
         {
             var cacheItem = GetOtpData(contact, type);
-            return cacheItem == null || cacheItem.ExpiresAt <= DateTime.UtcNow;
+            return cacheItem == null || cacheItem.ExpiresAt <= CapstoneProject.Domain.Common.VietnamDateTime.Now;
         }
 
         public void RemoveOtp(string contact, OtpTypeEnum type)
@@ -228,7 +228,7 @@ namespace CapstoneProject.Infrastructure.Services
                     };
                 }
 
-                // if (cacheItem.ExpiresAt <= DateTime.UtcNow)
+                // if (cacheItem.ExpiresAt <= CapstoneProject.Domain.Common.VietnamDateTime.Now)
                 // {
                 //     RemoveOtp(contact, type);
                 //     _logger.LogWarning("OTP for {Contact} with type {Type} has expired", contact, type);
@@ -298,7 +298,7 @@ namespace CapstoneProject.Infrastructure.Services
 
         private (bool IsAllowed, string Reason) CheckRateLimiting(string contact, OtpTypeEnum type)
         {
-            var now = DateTime.UtcNow;
+            var now = CapstoneProject.Domain.Common.VietnamDateTime.Now;
             var trackerKey = $"otp_requests_{type.ToString().ToLowerInvariant()}_{contact.ToLowerInvariant()}";
             
             // Get rate limiting settings based on OTP type
@@ -351,7 +351,7 @@ namespace CapstoneProject.Infrastructure.Services
 
         private void TrackOtpRequest(string contact, OtpTypeEnum type)
         {
-            var now = DateTime.UtcNow;
+            var now = CapstoneProject.Domain.Common.VietnamDateTime.Now;
             var trackerKey = $"otp_requests_{type.ToString().ToLowerInvariant()}_{contact.ToLowerInvariant()}";
             
             // Get rate limiting settings based on OTP type
@@ -383,7 +383,7 @@ namespace CapstoneProject.Infrastructure.Services
         {
             try
             {
-                var now = DateTime.UtcNow;
+                var now = CapstoneProject.Domain.Common.VietnamDateTime.Now;
                 var expiredKeys = _requestTrackers.Where(kvp =>
                 {
                     var tracker = kvp.Value;
@@ -430,7 +430,7 @@ namespace CapstoneProject.Infrastructure.Services
 
         public (bool IsBlocked, TimeSpan? RemainingTime) GetRateLimitStatus(string contact)
         {
-            var now = DateTime.UtcNow;
+            var now = CapstoneProject.Domain.Common.VietnamDateTime.Now;
             
             // Check both Registration and PasswordReset trackers
             foreach (var otpType in new[] { OtpTypeEnum.Registration, OtpTypeEnum.PasswordReset })

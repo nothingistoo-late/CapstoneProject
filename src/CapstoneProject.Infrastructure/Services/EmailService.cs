@@ -1,4 +1,4 @@
-using System.Net.Mail;
+﻿using System.Net.Mail;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using CapstoneProject.Application.Common.Enums;
@@ -77,7 +77,7 @@ public class EmailService : IEmailService
                             Channel = NotificationChannelEnum.Email,
                             Success = true,
                             Message = "Email queued for delivery. Note: Delivery confirmation requires bounce handling.",
-                            Timestamp = DateTime.UtcNow
+                            Timestamp = CapstoneProject.Domain.Common.VietnamDateTime.Now
                         }
                     }
                 };
@@ -99,7 +99,7 @@ public class EmailService : IEmailService
                         Success = false,
                         Message = "Failed to send email",
                         ErrorMessage = ex.Message,
-                        Timestamp = DateTime.UtcNow
+                        Timestamp = CapstoneProject.Domain.Common.VietnamDateTime.Now
                     }
                 }
             };

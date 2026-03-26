@@ -1,4 +1,4 @@
-using AutoMapper;
+﻿using AutoMapper;
 using CapstoneProject.Application.Common.DTOs.Auth;
 using CapstoneProject.Application.Commons.Helpers;
 using CapstoneProject.Application.Commons.Mappings.Resolvers;
@@ -15,7 +15,7 @@ public class AuthMappingProfile : Profile
         CreateMap<RegisterRequest, AppUser>()
             .ForMember(dest => dest.UserName, opt => opt.MapFrom(src => src.Email))
             .ForMember(dest => dest.Status, opt => opt.MapFrom(src => EntityStatusEnum.Active))
-            .ForMember(dest => dest.JoiningAt, opt => opt.MapFrom(src => DateTime.UtcNow))
+            .ForMember(dest => dest.JoiningAt, opt => opt.MapFrom(src => CapstoneProject.Domain.Common.VietnamDateTime.Now))
             .ForMember(dest => dest.EmailConfirmed, opt => opt.MapFrom(src => true))
             .ForMember(dest => dest.AvatarPath, opt => opt.Ignore())
             .ForMember(dest => dest.Gender, opt => opt.MapFrom(src => src.Gender))

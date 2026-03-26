@@ -1,4 +1,4 @@
-using MediatR;
+﻿using MediatR;
 using Microsoft.EntityFrameworkCore;
 using CapstoneProject.Application.Common.Enums;
 using CapstoneProject.Application.Common.Interfaces;
@@ -38,8 +38,8 @@ public class SelectLearningGoalCommandHandler : IRequestHandler<SelectLearningGo
         if (existing != null)
         {
             existing.LearningGoalId = request.LearningGoalId;
-            existing.SelectedAt = DateTime.UtcNow;
-            existing.UpdatedAt = DateTime.UtcNow;
+            existing.SelectedAt = CapstoneProject.Domain.Common.VietnamDateTime.Now;
+            existing.UpdatedAt = CapstoneProject.Domain.Common.VietnamDateTime.Now;
             existing.UpdatedBy = userId;
             repo.Update(existing);
         }
@@ -49,7 +49,7 @@ public class SelectLearningGoalCommandHandler : IRequestHandler<SelectLearningGo
             {
                 UserId = userId.Value,
                 LearningGoalId = request.LearningGoalId,
-                SelectedAt = DateTime.UtcNow
+                SelectedAt = CapstoneProject.Domain.Common.VietnamDateTime.Now
             };
             userGoal.InitializeEntity(userId);
             await repo.AddAsync(userGoal);
@@ -59,3 +59,4 @@ public class SelectLearningGoalCommandHandler : IRequestHandler<SelectLearningGo
         return Result.Success("Learning goal selected. Your path has been updated.");
     }
 }
+

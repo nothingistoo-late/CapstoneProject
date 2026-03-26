@@ -1,4 +1,4 @@
-using MediatR;
+﻿using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using CapstoneProject.Application.Commons.DTOs.Chat;
@@ -102,7 +102,7 @@ public class SendMessageCommandHandler : IRequestHandler<SendMessageCommand, Res
             FileSize = request.FileSize,
             ReplyToMessageId = request.ReplyToMessageId,
             CreatedBy = currentUserId,
-            CreatedAt = DateTime.UtcNow,
+            CreatedAt = CapstoneProject.Domain.Common.VietnamDateTime.Now,
             Status = EntityStatusEnum.Active
         };
 
@@ -111,9 +111,9 @@ public class SendMessageCommandHandler : IRequestHandler<SendMessageCommand, Res
         // Update conversation last message
         var conversationRepo = _unitOfWork.Repository<ChatRoom>();
         conversation.LastMessageId = message.Id;
-        conversation.LastMessageAt = DateTime.UtcNow;
+        conversation.LastMessageAt = CapstoneProject.Domain.Common.VietnamDateTime.Now;
         conversation.UpdatedBy = currentUserId;
-        conversation.UpdatedAt = DateTime.UtcNow;
+        conversation.UpdatedAt = CapstoneProject.Domain.Common.VietnamDateTime.Now;
         conversationRepo.Update(conversation);
 
         await _unitOfWork.SaveChangesAsync(cancellationToken);
@@ -154,7 +154,7 @@ public class SendMessageCommandHandler : IRequestHandler<SendMessageCommand, Res
             IsEdited = messageWithSender.IsEdited,
             EditedAt = messageWithSender.EditedAt,
             IsDeleted = messageWithSender.IsDeleted,
-            CreatedAt = messageWithSender.CreatedAt ?? DateTime.UtcNow
+            CreatedAt = messageWithSender.CreatedAt ?? CapstoneProject.Domain.Common.VietnamDateTime.Now
         };
 
             // Broadcast message via SignalR
@@ -182,3 +182,4 @@ public class SendMessageCommandHandler : IRequestHandler<SendMessageCommand, Res
         }
     }
 }
+

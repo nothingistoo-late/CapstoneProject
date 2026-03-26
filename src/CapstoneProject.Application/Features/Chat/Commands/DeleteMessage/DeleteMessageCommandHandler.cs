@@ -1,4 +1,4 @@
-using MediatR;
+﻿using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using CapstoneProject.Application.Commons.Interfaces;
@@ -63,10 +63,10 @@ public class DeleteMessageCommandHandler : IRequestHandler<DeleteMessageCommand,
             }
 
             message.IsDeleted = true;
-            message.DeletedAt = DateTime.UtcNow;
+            message.DeletedAt = CapstoneProject.Domain.Common.VietnamDateTime.Now;
             message.DeletedBy = currentUserId;
             message.UpdatedBy = currentUserId;
-            message.UpdatedAt = DateTime.UtcNow;
+            message.UpdatedAt = CapstoneProject.Domain.Common.VietnamDateTime.Now;
 
             messageRepo.Update(message);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
@@ -87,3 +87,4 @@ public class DeleteMessageCommandHandler : IRequestHandler<DeleteMessageCommand,
         }
     }
 }
+

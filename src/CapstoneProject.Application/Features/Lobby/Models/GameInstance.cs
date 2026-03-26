@@ -1,4 +1,4 @@
-using System.Collections.Concurrent;
+﻿using System.Collections.Concurrent;
 using CapstoneProject.Application.Commons.DTOs.Lobby;
 
 namespace CapstoneProject.Application.Features.Lobby.Models;
@@ -12,13 +12,14 @@ public class GameInstance
     public Guid RoomId { get; set; }
     public string RoomCode { get; set; } = string.Empty;
     public Guid? MapId { get; set; }
-    /// <summary>Danh sách người chơi còn trong phòng (cập nhật khi có người thoát giữa game).</summary>
+    /// <summary>Danh sÃ¡ch ngÆ°á»i chÆ¡i cÃ²n trong phÃ²ng (cáº­p nháº­t khi cÃ³ ngÆ°á»i thoÃ¡t giá»¯a game).</summary>
     public List<LobbyPlayer> Players { get; set; } = new();
 
     public object? GameState { get; set; }
 
     public List<Guid> TurnOrder { get; set; } = new();
-    public DateTime StartedAt { get; set; } = DateTime.UtcNow;
+    public DateTime StartedAt { get; set; } = CapstoneProject.Domain.Common.VietnamDateTime.Now;
     /// <summary>Per-player submission result (score, status). Filled when player submits.</summary>
     public ConcurrentDictionary<Guid, PlayerGameResult> PlayerResults { get; } = new();
 }
+

@@ -1,4 +1,4 @@
-using MediatR;
+﻿using MediatR;
 using Microsoft.EntityFrameworkCore;
 using CapstoneProject.Application.Common.Enums;
 using CapstoneProject.Application.Common.Interfaces;
@@ -58,16 +58,17 @@ public class ConfirmDepositCommandHandler : IRequestHandler<ConfirmDepositComman
             "Payment",
             record.Id,
             feeAmount: 0,
-            $"Nạp OrbitCoin qua PayOS (order {orderCode})",
+            $"Náº¡p OrbitCoin qua PayOS (order {orderCode})",
             null,
             cancellationToken);
         if (!success)
             return Result.Failure(error ?? "Credit failed.", ErrorCodeEnum.InvalidOperation);
 
         record.PaymentStatus = PaymentStatusEnum.Completed;
-        record.PaidAt = DateTime.UtcNow;
+        record.PaidAt = CapstoneProject.Domain.Common.VietnamDateTime.Now;
         _unitOfWork.Repository<PaymentRecord>().Update(record);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
         return Result.Success("Deposit confirmed. OrbitCoin has been credited.");
     }
 }
+

@@ -1,4 +1,4 @@
-using MediatR;
+﻿using MediatR;
 using Microsoft.EntityFrameworkCore;
 using CapstoneProject.Application.Common.Enums;
 using CapstoneProject.Application.Common.Interfaces;
@@ -29,8 +29,8 @@ public class GetPaymentReportQueryHandler : IRequestHandler<GetPaymentReportQuer
         if (!roles.Contains(RoleEnum.Admin))
             return Result<PaymentReportDto>.Failure("You do not have permission to view payment reports. Only Admin can access this report.", ErrorCodeEnum.Forbidden);
 
-        var from = request.From ?? DateTime.UtcNow.AddYears(-1);
-        var to = request.To ?? DateTime.UtcNow;
+        var from = request.From ?? CapstoneProject.Domain.Common.VietnamDateTime.Now.AddYears(-1);
+        var to = request.To ?? CapstoneProject.Domain.Common.VietnamDateTime.Now;
         var query = _unitOfWork.Repository<PaymentRecord>().GetQueryable()
             .Where(pr => !pr.IsDeleted && pr.PaymentStatus == PaymentStatusEnum.Completed && pr.PaidAt >= from && pr.PaidAt <= to);
 
@@ -48,3 +48,4 @@ public class GetPaymentReportQueryHandler : IRequestHandler<GetPaymentReportQuer
         return Result<PaymentReportDto>.Success(new PaymentReportDto { TotalAmount = totalAmount, TotalCount = totalCount, Items = items });
     }
 }
+

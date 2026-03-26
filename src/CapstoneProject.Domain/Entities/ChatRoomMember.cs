@@ -1,4 +1,4 @@
-using CapstoneProject.Domain.Common;
+﻿using CapstoneProject.Domain.Common;
 using CapstoneProject.Domain.Enums;
 
 namespace CapstoneProject.Domain.Entities;
@@ -12,7 +12,7 @@ public class ChatRoomMember : BaseEntity
 {
     public Guid ChatRoomId { get; set; }
     public Guid UserId { get; set; }
-    public DateTime JoinedAt { get; set; } = DateTime.UtcNow;
+    public DateTime JoinedAt { get; set; } = CapstoneProject.Domain.Common.VietnamDateTime.Now;
     public DateTime? LeftAt { get; set; }
     public DateTime? LastReadAt { get; set; }
     
@@ -23,7 +23,8 @@ public class ChatRoomMember : BaseEntity
     public bool IsActive() => LeftAt == null;
     public void Leave()
     {
-        LeftAt = DateTime.UtcNow;
-        UpdatedAt = DateTime.UtcNow;
+        LeftAt = CapstoneProject.Domain.Common.VietnamDateTime.Now;
+        UpdatedAt = CapstoneProject.Domain.Common.VietnamDateTime.Now;
     }
 }
+

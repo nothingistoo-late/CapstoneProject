@@ -1,4 +1,4 @@
-using MediatR;
+﻿using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using CapstoneProject.Application.Common.Interfaces;
@@ -59,7 +59,7 @@ public class HandlePayOSWebhookCommandHandler : IRequestHandler<HandlePayOSWebho
             "Payment",
             record.Id,
             feeAmount: 0,
-            $"Nạp OrbitCoin qua PayOS (order {verified.OrderCode})",
+            $"Náº¡p OrbitCoin qua PayOS (order {verified.OrderCode})",
             null,
             cancellationToken);
         if (!success)
@@ -69,10 +69,11 @@ public class HandlePayOSWebhookCommandHandler : IRequestHandler<HandlePayOSWebho
         }
 
         record.PaymentStatus = PaymentStatusEnum.Completed;
-        record.PaidAt = DateTime.UtcNow;
+        record.PaidAt = CapstoneProject.Domain.Common.VietnamDateTime.Now;
         _unitOfWork.Repository<PaymentRecord>().Update(record);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
         _logger.LogInformation("PayOS webhook: credited userId={UserId} amount={Amount} OrbitCoin for orderCode={OrderCode}.", record.UserId, record.Amount, verified.OrderCode);
         return true;
     }
 }
+

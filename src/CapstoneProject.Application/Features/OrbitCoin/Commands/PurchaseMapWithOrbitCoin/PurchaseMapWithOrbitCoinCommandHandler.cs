@@ -1,4 +1,4 @@
-using MediatR;
+﻿using MediatR;
 using Microsoft.EntityFrameworkCore;
 using CapstoneProject.Application.Common.Enums;
 using CapstoneProject.Application.Common.Interfaces;
@@ -52,7 +52,7 @@ public class PurchaseMapWithOrbitCoinCommandHandler : IRequestHandler<PurchaseMa
         var amount = map.Price.Value;
         var feeAmount = Math.Round(amount * (PlatformFeePercent / 100m), 4);
 
-        // Người mua trả đúng giá map; người bán nhận = giá - phí (người bán chịu phí)
+        // NgÆ°á»i mua tráº£ Ä‘Ãºng giÃ¡ map; ngÆ°á»i bÃ¡n nháº­n = giÃ¡ - phÃ­ (ngÆ°á»i bÃ¡n chá»‹u phÃ­)
         var (success, error) = await _orbitCoinService.TransferWithSellerFeeAsync(
             buyerUserId,
             sellerUserId,
@@ -80,7 +80,7 @@ public class PurchaseMapWithOrbitCoinCommandHandler : IRequestHandler<PurchaseMa
                 MapId = map.Id,
                 Amount = amount,
                 PaymentStatus = PaymentStatusEnum.Completed,
-                PaidAt = DateTime.UtcNow,
+                PaidAt = CapstoneProject.Domain.Common.VietnamDateTime.Now,
                 PaymentId = orbitCoinPayment.Id
             };
             record.InitializeEntity(buyerUserId);
@@ -95,3 +95,4 @@ public class PurchaseMapWithOrbitCoinCommandHandler : IRequestHandler<PurchaseMa
         return Result.Success("Map purchased with OrbitCoin. Platform fee is deducted from seller.");
     }
 }
+

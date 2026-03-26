@@ -1,4 +1,4 @@
-using MediatR;
+﻿using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using CapstoneProject.Application.Commons.DTOs.Chat;
@@ -135,9 +135,9 @@ public class GetChatRoomsQueryHandler : IRequestHandler<GetChatRoomsQuery, Resul
                         MessageType = lastMessage.MessageType,
                         SenderName = $"{lastMessage.Sender.FirstName} {lastMessage.Sender.LastName}".Trim(),
                         SenderAvatar = _avatarUrlResolver.ResolveAvatarUrl(lastMessage.Sender.AvatarPath),
-                        CreatedAt = lastMessage.CreatedAt ?? DateTime.UtcNow
+                        CreatedAt = lastMessage.CreatedAt ?? CapstoneProject.Domain.Common.VietnamDateTime.Now
                     } : null,
-                    CreatedAt = room.CreatedAt ?? DateTime.UtcNow
+                    CreatedAt = room.CreatedAt ?? CapstoneProject.Domain.Common.VietnamDateTime.Now
                 });
             }
 
@@ -156,3 +156,4 @@ public class GetChatRoomsQueryHandler : IRequestHandler<GetChatRoomsQuery, Resul
         }
     }
 }
+

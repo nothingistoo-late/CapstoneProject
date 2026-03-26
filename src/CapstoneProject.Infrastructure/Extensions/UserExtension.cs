@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Identity;
+﻿using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using CapstoneProject.Domain.Entities;
 using CapstoneProject.Domain.Enums;
@@ -31,8 +31,8 @@ public static class UserExtension
                 u.Id == userId && 
                 u.Status == EntityStatusEnum.Active && 
                 u.RefreshToken != null &&
-                u.RefreshTokenExpiryTime > DateTime.UtcNow &&
-                (!u.LockoutEnd.HasValue || u.LockoutEnd.Value <= DateTime.UtcNow));
+                u.RefreshTokenExpiryTime > CapstoneProject.Domain.Common.VietnamDateTime.Now &&
+                (!u.LockoutEnd.HasValue || u.LockoutEnd.Value <= CapstoneProject.Domain.Common.VietnamDateTime.Now));
     }
 
     /// <summary>
@@ -56,15 +56,15 @@ public static class UserExtension
                 u.Id == userId && 
                 u.Status == EntityStatusEnum.Active && 
                 u.RefreshToken != null &&
-                u.RefreshTokenExpiryTime > DateTime.UtcNow &&
-                (!u.LockoutEnd.HasValue || u.LockoutEnd.Value <= DateTime.UtcNow));
+                u.RefreshTokenExpiryTime > CapstoneProject.Domain.Common.VietnamDateTime.Now &&
+                (!u.LockoutEnd.HasValue || u.LockoutEnd.Value <= CapstoneProject.Domain.Common.VietnamDateTime.Now));
 
         if (user == null)
         {
             return (false, null, new List<RoleEnum>());
         }
 
-        // Lấy roles hiện tại từ database (luôn up-to-date)
+        // Láº¥y roles hiá»‡n táº¡i tá»« database (luÃ´n up-to-date)
         var userRoleStrings = await userManager.GetRolesAsync(user);
         var userRoles = userRoleStrings
             .Where(roleString => Enum.TryParse<RoleEnum>(roleString, true, out _))
@@ -96,15 +96,15 @@ public static class UserExtension
                 u.Id == userId && 
                 u.Status == EntityStatusEnum.Active && 
                 u.RefreshToken != null &&
-                u.RefreshTokenExpiryTime > DateTime.UtcNow &&
-                (!u.LockoutEnd.HasValue || u.LockoutEnd.Value <= DateTime.UtcNow));
+                u.RefreshTokenExpiryTime > CapstoneProject.Domain.Common.VietnamDateTime.Now &&
+                (!u.LockoutEnd.HasValue || u.LockoutEnd.Value <= CapstoneProject.Domain.Common.VietnamDateTime.Now));
 
         if (user == null)
         {
             return (false, null, new List<RoleEnum>(), null);
         }
 
-        // Lấy roles hiện tại từ database (luôn up-to-date)
+        // Láº¥y roles hiá»‡n táº¡i tá»« database (luÃ´n up-to-date)
         var userRoleStrings = await userManager.GetRolesAsync(user);
         var userRoles = userRoleStrings
             .Where(roleString => Enum.TryParse<RoleEnum>(roleString, true, out _))

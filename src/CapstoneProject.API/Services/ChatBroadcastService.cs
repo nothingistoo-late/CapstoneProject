@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.SignalR;
+﻿using Microsoft.AspNetCore.SignalR;
 using CapstoneProject.API.Hubs;
 using CapstoneProject.Application.Commons.DTOs.Chat;
 using CapstoneProject.Application.Commons.Interfaces;
@@ -38,7 +38,7 @@ public class ChatBroadcastService : IChatBroadcastService
             {
                 ConversationId = conversationId,
                 ClosedBy = closedByUserId,
-                ClosedAt = DateTime.UtcNow
+                ClosedAt = CapstoneProject.Domain.Common.VietnamDateTime.Now
             };
 
             await _hubContext.Clients.Group($"Conversation_{conversationId}").SendAsync("ConversationClosed", notification);
@@ -50,3 +50,4 @@ public class ChatBroadcastService : IChatBroadcastService
         }
     }
 }
+

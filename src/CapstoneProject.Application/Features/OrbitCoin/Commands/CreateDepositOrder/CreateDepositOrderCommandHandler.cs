@@ -1,4 +1,4 @@
-using MediatR;
+﻿using MediatR;
 using Microsoft.EntityFrameworkCore;
 using CapstoneProject.Application.Common.Enums;
 using CapstoneProject.Application.Common.Interfaces;
@@ -51,7 +51,7 @@ public class CreateDepositOrderCommandHandler : IRequestHandler<CreateDepositOrd
             return Result<CreateDepositOrderResult>.Failure("Amount too small for conversion.", ErrorCodeEnum.ValidationFailed);
 
         // Unique order code for PayOS (int)
-        var orderCode = Math.Abs((int)(DateTime.UtcNow.Ticks / 10 % int.MaxValue));
+        var orderCode = Math.Abs((int)(CapstoneProject.Domain.Common.VietnamDateTime.Now.Ticks / 10 % int.MaxValue));
         if (orderCode <= 0) orderCode = 1;
 
         var record = new PaymentRecord
@@ -71,7 +71,7 @@ public class CreateDepositOrderCommandHandler : IRequestHandler<CreateDepositOrd
 
         var returnUrl = _depositSettings.ReturnUrlBase.TrimEnd('/') + "?orderId=" + record.Id;
         var cancelUrl = _depositSettings.CancelUrlBase.TrimEnd('/') + "?orderId=" + record.Id;
-        var description = $"Nạp {request.AmountOrbitCoin} OrbitCoin";
+        var description = $"Náº¡p {request.AmountOrbitCoin} OrbitCoin";
 
         var (checkoutUrl, error) = await _payOSService.CreatePaymentLinkAsync(
             orderCode,
@@ -89,3 +89,4 @@ public class CreateDepositOrderCommandHandler : IRequestHandler<CreateDepositOrd
             "Redirect user to CheckoutUrl to complete payment.");
     }
 }
+
