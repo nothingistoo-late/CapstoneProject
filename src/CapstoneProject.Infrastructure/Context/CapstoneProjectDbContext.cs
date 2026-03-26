@@ -52,6 +52,9 @@ public class CapstoneProjectDbContext : IdentityDbContext<AppUser, AppRole, Guid
     public DbSet<MapRating> MapRatings { get; set; }
     public DbSet<MapReport> MapReports { get; set; }
     public DbSet<MyMap> MyMaps { get; set; }
+    public DbSet<Complaint> Complaints { get; set; }
+    public DbSet<ComplaintMessage> ComplaintMessages { get; set; }
+    public DbSet<ComplaintStatusHistory> ComplaintStatusHistories { get; set; }
 
     // OrbitCoin: virtual currency
     public DbSet<UserWallet> UserWallets { get; set; }

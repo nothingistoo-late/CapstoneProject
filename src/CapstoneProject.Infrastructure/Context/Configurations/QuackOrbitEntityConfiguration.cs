@@ -33,6 +33,9 @@ public static class QuackOrbitEntityConfiguration
         builder.Entity<UserMatchResult>(ConfigureUserMatchResult);
         builder.Entity<MapRating>(ConfigureMapRating);
         builder.Entity<MapReport>(ConfigureMapReport);
+        builder.Entity<Complaint>(ConfigureComplaint);
+        builder.Entity<ComplaintMessage>(ConfigureComplaintMessage);
+        builder.Entity<ComplaintStatusHistory>(ConfigureComplaintStatusHistory);
         builder.Entity<MyMap>(ConfigureMyMap);
         builder.Entity<LearningGoal>(ConfigureLearningGoal);
         builder.Entity<Concept>(ConfigureConcept);
@@ -228,5 +231,59 @@ public static class QuackOrbitEntityConfiguration
         e.HasIndex(x => x.MapId);
         e.HasIndex(x => x.ReportStatus);
         e.HasOne(r => r.Map).WithMany().HasForeignKey(r => r.MapId).OnDelete(DeleteBehavior.Restrict);
+    }
+
+    static void ConfigureComplaint(EntityTypeBuilder<Complaint> e)
+    {
+        e.Property(x => x.ComplaintStatus).HasConversion<int>();
+
+        e.HasIndex(x => x.UserId);
+        e.HasIndex(x => x.ComplaintStatus);
+        e.HasIndex(x => x.CreatedAt);
+        e.HasIndex(x => new { x.ComplaintStatus, x.CreatedAt });
+
+        e.HasOne(x => x.User)
+            .WithMany()
+            .HasForeignKey(x => x.UserId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        e.HasMany(x => x.Messages)
+            .WithOne(x => x.Complaint)
+            .HasForeignKey(x => x.ComplaintId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        e.HasMany(x => x.StatusHistories)
+            .WithOne(x => x.Complaint)
+            .HasForeignKey(x => x.ComplaintId)
+            .OnDelete(DeleteBehavior.Cascade);
+    }
+
+    static void ConfigureComplaintMessage(EntityTypeBuilder<ComplaintMessage> e)
+    {
+        e.HasIndex(x => x.ComplaintId);
+        e.HasIndex(x => x.SenderId);
+        e.HasIndex(x => x.CreatedAt);
+        e.HasIndex(x => new { x.ComplaintId, x.CreatedAt });
+
+        e.HasOne(x => x.Sender)
+            .WithMany()
+            .HasForeignKey(x => x.SenderId)
+            .OnDelete(DeleteBehavior.Restrict);
+    }
+
+    static void ConfigureComplaintStatusHistory(EntityTypeBuilder<ComplaintStatusHistory> e)
+    {
+        e.Property(x => x.FromStatus).HasConversion<int>();
+        e.Property(x => x.ToStatus).HasConversion<int>();
+
+        e.HasIndex(x => x.ComplaintId);
+        e.HasIndex(x => x.ChangedBy);
+        e.HasIndex(x => x.ChangedAt);
+        e.HasIndex(x => new { x.ComplaintId, x.ChangedAt });
+
+        e.HasOne(x => x.ChangedByUser)
+            .WithMany()
+            .HasForeignKey(x => x.ChangedBy)
+            .OnDelete(DeleteBehavior.Restrict);
     }
 }
