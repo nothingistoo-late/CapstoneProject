@@ -1,4 +1,4 @@
-﻿using MediatR;
+using MediatR;
 using Microsoft.EntityFrameworkCore;
 using CapstoneProject.Application.Common.Enums;
 using CapstoneProject.Application.Common.Interfaces;
@@ -35,17 +35,18 @@ public class GetPaymentReportQueryHandler : IRequestHandler<GetPaymentReportQuer
             .Where(pr => !pr.IsDeleted && pr.PaymentStatus == PaymentStatusEnum.Completed && pr.PaidAt >= from && pr.PaidAt <= to);
 
         var totalAmount = await query.SumAsync(pr => pr.Amount, cancellationToken);
+        var totalAmountVnd = await query.SumAsync(pr => pr.AmountVnd ?? 0, cancellationToken);
         var totalCount = await query.CountAsync(cancellationToken);
 
         var groupBy = request.GroupBy ?? "Day";
         List<PaymentReportItemDto> items = groupBy.ToLowerInvariant() switch
         {
-            "year" => await query.GroupBy(pr => pr.PaidAt!.Value.Year).Select(g => new PaymentReportItemDto { Period = g.Key.ToString(), Amount = g.Sum(pr => pr.Amount), Count = g.Count() }).OrderBy(x => x.Period).ToListAsync(cancellationToken),
-            "month" => await query.GroupBy(pr => new { pr.PaidAt!.Value.Year, pr.PaidAt.Value.Month }).Select(g => new PaymentReportItemDto { Period = $"{g.Key.Year}-{g.Key.Month:D2}", Amount = g.Sum(pr => pr.Amount), Count = g.Count() }).OrderBy(x => x.Period).ToListAsync(cancellationToken),
-            _ => await query.GroupBy(pr => pr.PaidAt!.Value.Date).Select(g => new PaymentReportItemDto { Period = g.Key.ToString("yyyy-MM-dd"), Amount = g.Sum(pr => pr.Amount), Count = g.Count() }).OrderBy(x => x.Period).ToListAsync(cancellationToken)
+            "year" => await query.GroupBy(pr => pr.PaidAt!.Value.Year).Select(g => new PaymentReportItemDto { Period = g.Key.ToString(), Amount = g.Sum(pr => pr.Amount), AmountVnd = g.Sum(pr => pr.AmountVnd ?? 0), Count = g.Count() }).OrderBy(x => x.Period).ToListAsync(cancellationToken),
+            "month" => await query.GroupBy(pr => new { pr.PaidAt!.Value.Year, pr.PaidAt.Value.Month }).Select(g => new PaymentReportItemDto { Period = $"{g.Key.Year}-{g.Key.Month:D2}", Amount = g.Sum(pr => pr.Amount), AmountVnd = g.Sum(pr => pr.AmountVnd ?? 0), Count = g.Count() }).OrderBy(x => x.Period).ToListAsync(cancellationToken),
+            _ => await query.GroupBy(pr => pr.PaidAt!.Value.Date).Select(g => new PaymentReportItemDto { Period = g.Key.ToString("yyyy-MM-dd"), Amount = g.Sum(pr => pr.Amount), AmountVnd = g.Sum(pr => pr.AmountVnd ?? 0), Count = g.Count() }).OrderBy(x => x.Period).ToListAsync(cancellationToken)
         };
 
-        return Result<PaymentReportDto>.Success(new PaymentReportDto { TotalAmount = totalAmount, TotalCount = totalCount, Items = items });
+        return Result<PaymentReportDto>.Success(new PaymentReportDto { TotalAmount = totalAmount, TotalAmountVnd = totalAmountVnd, TotalCount = totalCount, Items = items });
     }
 }
 

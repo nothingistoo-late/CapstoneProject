@@ -13,6 +13,8 @@ public class PaymentRecord : BaseEntity
     public Guid? MapId { get; set; }
     public Guid? PaymentId { get; set; }
     public decimal Amount { get; set; }
+    /// <summary>Số tiền thật (VND) cho đơn nạp qua cổng thanh toán, null với giao dịch không dùng VND.</summary>
+    public long? AmountVnd { get; set; }
     public PaymentStatusEnum PaymentStatus { get; set; }
     public DateTime? PaidAt { get; set; }
     public string? ExternalId { get; set; }

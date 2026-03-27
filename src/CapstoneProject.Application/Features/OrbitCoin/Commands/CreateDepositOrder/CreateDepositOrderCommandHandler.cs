@@ -1,4 +1,4 @@
-﻿using MediatR;
+using MediatR;
 using Microsoft.EntityFrameworkCore;
 using CapstoneProject.Application.Common.Enums;
 using CapstoneProject.Application.Common.Interfaces;
@@ -61,6 +61,7 @@ public class CreateDepositOrderCommandHandler : IRequestHandler<CreateDepositOrd
             MapId = null,
             PaymentId = payOSPayment.Id,
             Amount = request.AmountOrbitCoin,
+            AmountVnd = amountVnd,
             PaymentStatus = PaymentStatusEnum.Pending,
             PaidAt = null,
             ExternalId = orderCode.ToString()
@@ -85,7 +86,7 @@ public class CreateDepositOrderCommandHandler : IRequestHandler<CreateDepositOrd
             return Result<CreateDepositOrderResult>.Failure(error ?? "Could not create payment link.", ErrorCodeEnum.InvalidOperation);
 
         return Result<CreateDepositOrderResult>.Success(
-            new CreateDepositOrderResult { OrderId = record.Id, CheckoutUrl = checkoutUrl },
+            new CreateDepositOrderResult { OrderId = record.Id, AmountVnd = amountVnd, CheckoutUrl = checkoutUrl },
             "Redirect user to CheckoutUrl to complete payment.");
     }
 }

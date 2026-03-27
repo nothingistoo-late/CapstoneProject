@@ -25,6 +25,7 @@ public class MapDetailDto
     public JsonElement? MapDetailJson { get; set; }
     public List<HintItemDto> Hints { get; set; } = new();
     public List<string> TagNames { get; set; } = new();
+    public List<string> LearnedTags { get; set; } = new();
     public int WinCondition { get; set; }
     /// <summary>URL avatar map (Cloudinary).</summary>
     public string? AvatarUrl { get; set; }

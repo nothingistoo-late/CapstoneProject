@@ -71,7 +71,14 @@ public interface IOrbitCoinService
 public class OrbitCoinTransactionDto
 {
     public Guid Id { get; set; }
+    /// <summary>
+    /// OrbitCoin amount of the transaction.
+    /// </summary>
     public decimal Amount { get; set; }
+    /// <summary>
+    /// Real-money value in VND when this transaction is linked to a payment; otherwise null.
+    /// </summary>
+    public long? AmountVnd { get; set; }
     public CoinTransactionTypeEnum TransactionType { get; set; }
     public string? RelatedEntityType { get; set; }
     public Guid? RelatedEntityId { get; set; }

@@ -1,4 +1,4 @@
-﻿using MediatR;
+using MediatR;
 using Microsoft.EntityFrameworkCore;
 using CapstoneProject.Application.Common.Enums;
 using CapstoneProject.Application.Common.Interfaces;
@@ -58,7 +58,7 @@ public class ConfirmDepositCommandHandler : IRequestHandler<ConfirmDepositComman
             "Payment",
             record.Id,
             feeAmount: 0,
-            $"Náº¡p OrbitCoin qua PayOS (order {orderCode})",
+            $"Nạp OrbitCoin qua PayOS (order {orderCode})",
             null,
             cancellationToken);
         if (!success)

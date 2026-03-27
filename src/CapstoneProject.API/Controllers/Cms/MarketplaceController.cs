@@ -172,7 +172,7 @@ public class CmsMarketplaceController : ControllerBase
 
     /// <summary>Payment report (by date range, groupBy).</summary>
     /// <remarks>
-    /// Returns payment report. Query: from, to (date), groupBy (Day|Month|Year). Admin only.
+    /// Returns payment report. Query: from, to (date), groupBy (Day|Month|Year). Includes both OrbitCoin amount and VND amount fields. Admin only.
     ///
     /// **Query:**
     /// - from (DateTime?, optional): Start date.
@@ -188,7 +188,7 @@ public class CmsMarketplaceController : ControllerBase
     [ProducesResponseType(typeof(Result<PaymentReportDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(Result), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(Result), StatusCodes.Status403Forbidden)]
-    [SwaggerOperation(Summary = "Payment report", Description = "Returns payment report. Query: from, to (date), groupBy (Day|Month|Year). Admin only.", OperationId = "Cms_GetPaymentReport", Tags = new[] { "CMS - Marketplace" })]
+    [SwaggerOperation(Summary = "Payment report", Description = "Returns payment report. Query: from, to (date), groupBy (Day|Month|Year). Response includes totalAmount/amount (OrbitCoin) and totalAmountVnd/amountVnd (VND). Admin only.", OperationId = "Cms_GetPaymentReport", Tags = new[] { "CMS - Marketplace" })]
     public async Task<IActionResult> GetPaymentReport([FromQuery] DateTime? from, [FromQuery] DateTime? to, [FromQuery] string? groupBy = "Day")
     {
         var result = await _mediator.Send(new GetPaymentReportQuery(from, to, groupBy));

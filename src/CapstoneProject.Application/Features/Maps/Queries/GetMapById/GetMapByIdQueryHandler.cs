@@ -33,6 +33,10 @@ public class GetMapByIdQueryHandler : IRequestHandler<GetMapByIdQuery, Result<Ma
         if (map == null)
             return Result<MapDetailDto>.Failure($"Map not found with Id: {request.MapId}.", ErrorCodeEnum.NotFound);
 
+        var learnedTagNameMap = await _unitOfWork.Repository<Tag>().GetQueryable()
+            .Where(t => map.LearnedTags.Contains(t.Id))
+            .ToDictionaryAsync(t => t.Id, t => t.Name, cancellationToken);
+
         bool showEditorial = false;
         if (request.IncludeEditorialForUser)
         {
@@ -64,6 +68,9 @@ public class GetMapByIdQueryHandler : IRequestHandler<GetMapByIdQuery, Result<Ma
             MapDetailJson = ParseMapDetailJson(map.MapDetail?.JsonContent),
             Hints = map.Hints.OrderBy(h => h.OrderNo).Select(h => new HintItemDto { OrderNo = h.OrderNo, Content = h.Content }).ToList(),
             TagNames = map.MapTags.Select(t => t.Tag.Name).ToList(),
+            LearnedTags = map.LearnedTags
+                .Select(id => learnedTagNameMap.TryGetValue(id, out var name) ? name : id.ToString())
+                .ToList(),
             WinCondition = map.WinCondition,
             AvatarUrl = map.AvatarUrl
         };

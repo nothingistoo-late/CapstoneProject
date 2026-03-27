@@ -54,7 +54,7 @@ public class LearnerOrbitCoinController : ControllerBase
     ///
     /// **Example request:** GET /api/learner/orbitcoin/transactions?pageNumber=1&amp;pageSize=20
     /// </remarks>
-    /// <response code="200">Returns message and data (items, totalCount, pageNumber, pageSize).</response>
+    /// <response code="200">Returns message and data (items, totalCount, pageNumber, pageSize). Each item includes amount (OrbitCoin) and amountVnd (real money if available).</response>
     /// <response code="401">Unauthorized</response>
     /// <response code="500">Internal server error</response>
     [HttpGet("transactions")]
@@ -82,7 +82,7 @@ public class LearnerOrbitCoinController : ControllerBase
     ///
     /// **Example request body:** { "amountOrbitCoin": 100 }
     /// </remarks>
-    /// <response code="200">Returns message and data (orderId, checkoutUrl). Redirect user to checkoutUrl.</response>
+    /// <response code="200">Returns message and data (orderId, amountVnd, checkoutUrl). Redirect user to checkoutUrl.</response>
     /// <response code="400">Invalid amount</response>
     /// <response code="401">Unauthorized</response>
     /// <response code="500">Internal server error</response>
@@ -92,7 +92,7 @@ public class LearnerOrbitCoinController : ControllerBase
     [ProducesResponseType(typeof(Result<CreateDepositOrderResult>), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(Result<CreateDepositOrderResult>), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(Result<CreateDepositOrderResult>), StatusCodes.Status500InternalServerError)]
-    [SwaggerOperation(Summary = "Create deposit order (PayOS)", Description = "Creates deposit order and returns PayOS checkout URL. Body: amountOrbitCoin. User pays at URL; webhook credits OrbitCoin.", OperationId = "Learner_CreateDepositOrder", Tags = new[] { "Learner - OrbitCoin" })]
+    [SwaggerOperation(Summary = "Create deposit order (PayOS)", Description = "Creates deposit order and returns PayOS checkout URL. Response data includes orderId, amountVnd, checkoutUrl. Body: amountOrbitCoin. User pays at URL; webhook credits OrbitCoin.", OperationId = "Learner_CreateDepositOrder", Tags = new[] { "Learner - OrbitCoin" })]
     public async Task<IActionResult> CreateDepositOrder([FromBody] CreateDepositOrderRequest request)
     {
         var result = await _mediator.Send(new CreateDepositOrderCommand(request.AmountOrbitCoin));

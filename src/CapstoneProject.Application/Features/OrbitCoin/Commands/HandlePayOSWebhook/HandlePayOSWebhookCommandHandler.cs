@@ -1,4 +1,4 @@
-﻿using MediatR;
+using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using CapstoneProject.Application.Common.Interfaces;
@@ -59,7 +59,7 @@ public class HandlePayOSWebhookCommandHandler : IRequestHandler<HandlePayOSWebho
             "Payment",
             record.Id,
             feeAmount: 0,
-            $"Náº¡p OrbitCoin qua PayOS (order {verified.OrderCode})",
+            $"Nạp OrbitCoin qua PayOS (order {verified.OrderCode})",
             null,
             cancellationToken);
         if (!success)

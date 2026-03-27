@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using CapstoneProject.Application.Commons.Interfaces;
 using CapstoneProject.Domain.Entities;
 using CapstoneProject.Domain.Enums;
@@ -37,13 +37,32 @@ public class OrbitCoinService : IOrbitCoinService
         var total = await query.CountAsync(cancellationToken);
         var page = Math.Max(1, pageNumber);
         var size = Math.Clamp(pageSize, 1, 100);
-        var items = await query
+        var txPage = await query
             .Skip((page - 1) * size)
             .Take(size)
+            .ToListAsync(cancellationToken);
+
+        var relatedPaymentIds = txPage
+            .Where(t => string.Equals(t.RelatedEntityType, "Payment", StringComparison.OrdinalIgnoreCase) && t.RelatedEntityId.HasValue)
+            .Select(t => t.RelatedEntityId!.Value)
+            .Distinct()
+            .ToList();
+
+        var paymentAmountVndMap = relatedPaymentIds.Count == 0
+            ? new Dictionary<Guid, long?>()
+            : await _db.PaymentRecords
+                .AsNoTracking()
+                .Where(p => relatedPaymentIds.Contains(p.Id))
+                .ToDictionaryAsync(p => p.Id, p => p.AmountVnd, cancellationToken);
+
+        var items = txPage
             .Select(t => new OrbitCoinTransactionDto
             {
                 Id = t.Id,
                 Amount = t.Amount,
+                AmountVnd = t.RelatedEntityId.HasValue && paymentAmountVndMap.TryGetValue(t.RelatedEntityId.Value, out var amountVnd)
+                    ? amountVnd
+                    : null,
                 TransactionType = t.TransactionType,
                 RelatedEntityType = t.RelatedEntityType,
                 RelatedEntityId = t.RelatedEntityId,
@@ -52,7 +71,7 @@ public class OrbitCoinService : IOrbitCoinService
                 Note = t.Note,
                 CreatedAt = t.CreatedAt
             })
-            .ToListAsync(cancellationToken);
+            .ToList();
         return (items, total);
     }
 
