@@ -1,4 +1,4 @@
-﻿using System.Text.Json;
+using System.Text.Json;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using CapstoneProject.Application.Common.Enums;
@@ -6,6 +6,7 @@ using CapstoneProject.Application.Common.Interfaces;
 using CapstoneProject.Application.Common.Models;
 using CapstoneProject.Application.Commons.DTOs.Gameplay;
 using CapstoneProject.Application.Commons.Interfaces;
+using CapstoneProject.Application.Commons.Models.Xp;
 using CapstoneProject.Domain.Common;
 using CapstoneProject.Domain.Entities;
 using CapstoneProject.Domain.Enums;
@@ -20,11 +21,13 @@ public class ValidateSolutionCommandHandler : IRequestHandler<ValidateSolutionCo
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly ICurrentUserService _currentUserService;
+    private readonly IXpEngineService _xpEngineService;
 
-    public ValidateSolutionCommandHandler(IUnitOfWork unitOfWork, ICurrentUserService currentUserService)
+    public ValidateSolutionCommandHandler(IUnitOfWork unitOfWork, ICurrentUserService currentUserService, IXpEngineService xpEngineService)
     {
         _unitOfWork = unitOfWork;
         _currentUserService = currentUserService;
+        _xpEngineService = xpEngineService;
     }
 
     public async Task<Result<ValidateSolutionResultDto>> Handle(ValidateSolutionCommand command, CancellationToken cancellationToken)
@@ -137,9 +140,72 @@ public class ValidateSolutionCommandHandler : IRequestHandler<ValidateSolutionCo
         if (accepted)
         {
             var xpDelta = 10 + stars * 5;
-            var xp = new XpTransaction { UserId = userId, MapId = map.Id, Delta = xpDelta, Reason = "Map completed" };
-            xp.InitializeEntity(userId);
-            await _unitOfWork.Repository<XpTransaction>().AddAsync(xp);
+            var xpResult = await _xpEngineService.GrantXpAsync(new XpGrantInput
+            {
+                UserId = userId,
+                RequestedXp = xpDelta,
+                SourceType = XpSourceTypeEnum.MapSolve,
+                SourceId = map.Id,
+                IdempotencyKey = $"xp:mapsolve:{userId}:{map.Id}:{submission.Id}",
+                Reason = "Map completed",
+                Metadata = $"{{\"stars\":{stars},\"score\":{score}}}"
+            }, cancellationToken);
+            if (!xpResult.IsSuccess)
+                return Result<ValidateSolutionResultDto>.Failure(xpResult.Message ?? "Failed to grant XP.", ErrorCodeEnum.DatabaseError);
+
+            var selectedGoal = await _unitOfWork.Repository<UserLearningGoal>().GetQueryable()
+                .Where(ug => ug.UserId == userId && !ug.IsDeleted)
+                .OrderByDescending(ug => ug.SelectedAt)
+                .Select(ug => ug.LearningGoalId)
+                .FirstOrDefaultAsync(cancellationToken);
+
+            if (selectedGoal != Guid.Empty)
+            {
+                var goalItems = await _unitOfWork.Repository<LearningPathItem>().GetQueryable()
+                    .Where(i => i.LearningGoalId == selectedGoal && !i.IsDeleted)
+                    .Select(i => new { i.ItemType, i.ConceptId, i.MapId })
+                    .ToListAsync(cancellationToken);
+
+                if (goalItems.Any(i => i.MapId == map.Id))
+                {
+                    var conceptIdsInGoal = goalItems.Where(i => i.ConceptId.HasValue).Select(i => i.ConceptId!.Value).ToHashSet();
+                    var mapIdsInGoal = goalItems.Where(i => i.MapId.HasValue).Select(i => i.MapId!.Value).ToHashSet();
+
+                    var completedConceptIds = await _unitOfWork.Repository<UserConceptProgress>().GetQueryable()
+                        .Where(p => p.UserId == userId && !p.IsDeleted && p.IsCompleted && conceptIdsInGoal.Contains(p.ConceptId))
+                        .Select(p => p.ConceptId)
+                        .ToListAsync(cancellationToken);
+                    var completedConceptSet = completedConceptIds.ToHashSet();
+
+                    var completedMapIds = await _unitOfWork.Repository<UserMapResult>().GetQueryable()
+                        .Where(r => r.UserId == userId && !r.IsDeleted && r.BestStars >= 1 && mapIdsInGoal.Contains(r.MapId))
+                        .Select(r => r.MapId)
+                        .ToListAsync(cancellationToken);
+                    completedMapIds.Add(map.Id);
+                    var completedMapSet = completedMapIds.ToHashSet();
+
+                    var isLearningPathCompleted = goalItems.All(i =>
+                        i.ItemType == LearningPathItemTypeEnum.Concept
+                            ? i.ConceptId.HasValue && completedConceptSet.Contains(i.ConceptId.Value)
+                            : i.MapId.HasValue && completedMapSet.Contains(i.MapId.Value));
+
+                    if (isLearningPathCompleted)
+                    {
+                        var pathXpResult = await _xpEngineService.GrantXpAsync(new XpGrantInput
+                        {
+                            UserId = userId,
+                            RequestedXp = 0,
+                            SourceType = XpSourceTypeEnum.LearningPathComplete,
+                            SourceId = selectedGoal,
+                            IdempotencyKey = $"xp:learningpath:{userId}:{selectedGoal}",
+                            Reason = "Learning path completed",
+                            Metadata = $"{{\"learningGoalId\":\"{selectedGoal}\"}}"
+                        }, cancellationToken);
+                        if (!pathXpResult.IsSuccess)
+                            return Result<ValidateSolutionResultDto>.Failure(pathXpResult.Message ?? "Failed to grant learning path XP.", ErrorCodeEnum.DatabaseError);
+                    }
+                }
+            }
         }
 
         await _unitOfWork.SaveChangesAsync(cancellationToken);

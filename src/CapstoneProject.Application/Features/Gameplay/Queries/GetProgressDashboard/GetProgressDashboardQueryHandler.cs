@@ -27,9 +27,11 @@ public class GetProgressDashboardQueryHandler : IRequestHandler<GetProgressDashb
             return Result<ProgressDashboardDto>.Failure("Authentication required. Please log in to view your progress dashboard.", ErrorCodeEnum.Unauthorized);
         var userId = userIdNullable.Value;
 
-        var totalXp = await _unitOfWork.Repository<XpTransaction>().GetQueryable()
-            .Where(x => x.UserId == userId && !x.IsDeleted)
-            .SumAsync(x => x.Delta, cancellationToken);
+        var user = await _unitOfWork.Repository<AppUser>().GetQueryable()
+            .FirstOrDefaultAsync(x => x.Id == userId, cancellationToken);
+        if (user == null)
+            return Result<ProgressDashboardDto>.Failure("User not found.", ErrorCodeEnum.NotFound);
+        var totalXp = user.CurrentXp;
 
         var umrRepo = _unitOfWork.Repository<UserMapResult>();
         var mapRepo = _unitOfWork.Repository<Map>();

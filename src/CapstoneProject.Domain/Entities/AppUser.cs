@@ -1,4 +1,4 @@
-﻿using CapstoneProject.Domain.Common;
+using CapstoneProject.Domain.Common;
 using CapstoneProject.Domain.Enums;
 using Microsoft.AspNetCore.Identity;
 
@@ -16,6 +16,8 @@ public class AppUser : IdentityUser<Guid>, IEntityLike
     public GenderEnum? Gender { get; set; }
     public DateTime? DateOfBirth { get; set; }
     public string? Bio { get; set; }
+    public int CurrentXp { get; set; } = 0;
+    public int CurrentLevel { get; set; } = 1;
     public DateTime? CreatedAt { get; set; }
     public Guid? CreatedBy { get; set; }
     public DateTime? UpdatedAt { get; set; }

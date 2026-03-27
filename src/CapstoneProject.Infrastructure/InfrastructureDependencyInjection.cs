@@ -149,6 +149,13 @@ public static class InfrastructureDependencyInjection
 
         // OrbitCoin virtual currency
         services.AddScoped<IOrbitCoinService, OrbitCoinService>();
+        services.AddScoped<IXpEngineService, XpEngineService>();
+        services.AddScoped<IXpPolicy, Services.XpPolicies.BaseRewardPolicy>();
+        services.AddScoped<IXpPolicy, Services.XpPolicies.DailyCapPolicy>();
+        services.AddScoped<IXpPolicy, Services.XpPolicies.BonusPolicy>();
+        services.AddScoped<IXpPolicy, Services.XpPolicies.StreakPolicy>();
+        services.AddScoped<IXpPolicy, Services.XpPolicies.FirstWinOfDayPolicy>();
+        services.AddScoped<IXpPolicy, Services.XpPolicies.EventBoostPolicy>();
 
         // PayOS (user top-up)
         services.Configure<PayOSSettings>(configuration.GetSection(PayOSSettings.SectionName));

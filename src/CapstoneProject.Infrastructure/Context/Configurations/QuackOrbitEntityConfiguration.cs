@@ -23,6 +23,9 @@ public static class QuackOrbitEntityConfiguration
         builder.Entity<ExecutionsResult>(ConfigureExecutionsResult);
         builder.Entity<UserMapResult>(ConfigureUserMapResult);
         builder.Entity<XpTransaction>(ConfigureXpTransaction);
+        builder.Entity<LevelThreshold>(ConfigureLevelThreshold);
+        builder.Entity<XpPolicyConfig>(ConfigureXpPolicyConfig);
+        builder.Entity<XpSourceConfig>(ConfigureXpSourceConfig);
         builder.Entity<Package>(ConfigurePackage);
         builder.Entity<UserPackage>(ConfigureUserPackage);
         builder.Entity<Payment>(ConfigurePayment);
@@ -167,8 +170,32 @@ public static class QuackOrbitEntityConfiguration
 
     static void ConfigureXpTransaction(EntityTypeBuilder<XpTransaction> e)
     {
+        e.Property(x => x.SourceType).HasConversion<int>();
+        e.Property(x => x.IdempotencyKey).HasMaxLength(200);
         e.HasIndex(x => x.UserId);
         e.HasIndex(x => x.MapId);
+        e.HasIndex(x => x.SourceType);
+        e.HasIndex(x => x.IdempotencyKey).IsUnique();
+    }
+
+    static void ConfigureLevelThreshold(EntityTypeBuilder<LevelThreshold> e)
+    {
+        e.HasIndex(x => x.Level).IsUnique();
+        e.HasIndex(x => x.RequiredTotalXp);
+    }
+
+    static void ConfigureXpPolicyConfig(EntityTypeBuilder<XpPolicyConfig> e)
+    {
+        e.Property(x => x.PolicyKey).HasMaxLength(100);
+        e.HasIndex(x => x.PolicyKey).IsUnique();
+        e.HasIndex(x => new { x.IsEnabled, x.Priority });
+    }
+
+    static void ConfigureXpSourceConfig(EntityTypeBuilder<XpSourceConfig> e)
+    {
+        e.Property(x => x.SourceType).HasConversion<int>();
+        e.HasIndex(x => x.SourceType).IsUnique();
+        e.HasIndex(x => x.IsEnabled);
     }
 
     static void ConfigurePackage(EntityTypeBuilder<Package> e)

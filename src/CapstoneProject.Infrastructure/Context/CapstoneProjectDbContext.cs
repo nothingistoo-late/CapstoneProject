@@ -35,6 +35,9 @@ public class CapstoneProjectDbContext : IdentityDbContext<AppUser, AppRole, Guid
     public DbSet<Achievement> Achievements { get; set; }
     public DbSet<UserAchievement> UserAchievements { get; set; }
     public DbSet<XpTransaction> XpTransactions { get; set; }
+    public DbSet<LevelThreshold> LevelThresholds { get; set; }
+    public DbSet<XpPolicyConfig> XpPolicyConfigs { get; set; }
+    public DbSet<XpSourceConfig> XpSourceConfigs { get; set; }
 
     // QuackOrbit: Competitive
     public DbSet<Match> Matches { get; set; }
@@ -85,9 +88,13 @@ public class CapstoneProjectDbContext : IdentityDbContext<AppUser, AppRole, Guid
         {
             entity.Property(x => x.Status).HasConversion<int>();
             entity.HasIndex(x => x.Id).IsUnique();
+            entity.Property(x => x.CurrentXp).HasDefaultValue(0);
+            entity.Property(x => x.CurrentLevel).HasDefaultValue(1);
 
             // Performance indexes
             entity.HasIndex(x => x.Status);
+            entity.HasIndex(x => x.CurrentXp);
+            entity.HasIndex(x => x.CurrentLevel);
             entity.HasIndex(x => x.JoiningAt);
             entity.HasIndex(x => x.LastLoginAt).HasFilter("\"LastLoginAt\" IS NOT NULL");
             entity.HasIndex(x => new { x.Status, x.JoiningAt });
