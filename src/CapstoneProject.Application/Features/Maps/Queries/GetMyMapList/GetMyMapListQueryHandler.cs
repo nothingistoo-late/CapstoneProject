@@ -75,6 +75,7 @@ public class GetMyMapListQueryHandler : IRequestHandler<GetMyMapListQuery, Resul
                 IsAuthor = mm.IsAuthor,
                 CreatedAt = m.CreatedAt,
                 TagNames = m.MapTags.Select(t => t.Tag.Name).ToList(),
+                LearnedTags = m.LearnedTags,
                 WinCondition = m.WinCondition,
                 AvatarUrl = m.AvatarUrl
             };

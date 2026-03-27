@@ -38,6 +38,7 @@ public class CreateMapCommandHandler : IRequestHandler<CreateMapCommand, Result<
             Price = req.Price,
             IsPublished = command.AutoPublish,
             MapStatus = command.AutoPublish ? MapStatusEnum.Published : MapStatusEnum.Draft,
+            LearnedTags = req.LearnedTags,
             AvatarUrl = req.AvatarUrl
         };
         map.InitializeEntity(userId);

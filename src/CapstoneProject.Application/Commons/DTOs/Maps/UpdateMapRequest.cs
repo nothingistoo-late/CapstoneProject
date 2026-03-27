@@ -17,7 +17,10 @@ public class UpdateMapRequest
     public string? EditorialContent { get; set; }
     public int? UnlockEditorialAfterStars { get; set; }
     public List<HintItemDto>? Hints { get; set; }
+    /// <summary>Tag map hiện tại. Null = không đổi, [] = xóa hết.</summary>
     public List<Guid>? TagIds { get; set; }
+    /// <summary>Tag map (UID). Null = không đổi, [] = xóa hết.</summary>
+    public List<Guid>? LearnedTags { get; set; }
     /// <summary>URL avatar map (Cloudinary). Null = không đổi.</summary>
     public string? AvatarUrl { get; set; }
 }

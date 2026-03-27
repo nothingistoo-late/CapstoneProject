@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using System.Text.Json;
 using CapstoneProject.Domain.Entities;
 using CapstoneProject.Domain.Enums;
 
@@ -95,6 +96,15 @@ public static class QuackOrbitEntityConfiguration
     static void ConfigureMap(EntityTypeBuilder<Map> e)
     {
         e.Property(x => x.MapStatus).HasConversion<int>();
+        e.Property(x => x.LearnedTags)
+            .HasColumnType("jsonb")
+            .HasDefaultValueSql("'[]'::jsonb")
+            .HasConversion(
+                v => JsonSerializer.Serialize(v, (JsonSerializerOptions?)null),
+                v => string.IsNullOrWhiteSpace(v)
+                    ? new List<Guid>()
+                    : (JsonSerializer.Deserialize<List<Guid>>(v, (JsonSerializerOptions?)null) ?? new List<Guid>())
+            );
         e.HasIndex(x => x.CreatedBy);
         e.HasOne(x => x.Creator).WithMany().HasForeignKey(x => x.CreatedBy).IsRequired(false);
         e.HasIndex(x => x.MapStatus);

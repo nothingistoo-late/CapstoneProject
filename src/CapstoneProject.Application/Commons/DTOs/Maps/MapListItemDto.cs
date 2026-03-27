@@ -20,6 +20,7 @@ public class MapListItemDto
     public bool IsAuthor { get; set; }
     public DateTime? CreatedAt { get; set; }
     public List<string> TagNames { get; set; } = new();
+    public List<Guid> LearnedTags { get; set; } = new();
     public int WinCondition { get; set; }
     /// <summary>URL avatar map (Cloudinary).</summary>
     public string? AvatarUrl { get; set; }

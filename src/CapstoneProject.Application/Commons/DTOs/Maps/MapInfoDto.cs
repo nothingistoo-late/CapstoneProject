@@ -20,6 +20,7 @@ public class MapInfoDto
     public string? CreatedByUserName { get; set; }
     public DateTime? CreatedAt { get; set; }
     public List<string> TagNames { get; set; } = new();
+    public List<Guid> LearnedTags { get; set; } = new();
     public int WinCondition { get; set; }
     public string? AvatarUrl { get; set; }
 }

@@ -15,7 +15,10 @@ public class CreateMapRequest
     public decimal? Price { get; set; }
     public JsonElement MapDetailJson { get; set; }
     public List<HintItemDto> Hints { get; set; } = new();
+    /// <summary>Tag map hiện tại để hiển thị/chọn lọc game.</summary>
     public List<Guid> TagIds { get; set; } = new();
+    /// <summary>Tag map (UID) theo taxonomy hệ thống.</summary>
+    public List<Guid> LearnedTags { get; set; } = new();
     /// <summary>URL avatar map (Cloudinary). Optional khi tạo map.</summary>
     public string? AvatarUrl { get; set; }
 }

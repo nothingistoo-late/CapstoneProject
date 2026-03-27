@@ -72,6 +72,7 @@ public class GetMapsQueryHandler : IRequestHandler<GetMapsQuery, Result<Paginati
                 CreatedByUserName = m.Creator != null ? $"{m.Creator.FirstName} {m.Creator.LastName}".Trim() : null,
                 CreatedAt = m.CreatedAt,
                 TagNames = m.MapTags.Select(t => t.Tag.Name).ToList(),
+                LearnedTags = m.LearnedTags,
                 WinCondition = m.WinCondition,
                 AvatarUrl = m.AvatarUrl
             }).ToListAsync(cancellationToken);

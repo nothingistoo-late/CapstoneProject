@@ -44,6 +44,7 @@ public class GetMapInfoQueryHandler : IRequestHandler<GetMapInfoQuery, Result<Ma
             CreatedByUserName = map.Creator != null ? $"{map.Creator.FirstName} {map.Creator.LastName}".Trim() : null,
             CreatedAt = map.CreatedAt,
             TagNames = map.MapTags.Select(t => t.Tag.Name).ToList(),
+            LearnedTags = map.LearnedTags,
             WinCondition = map.WinCondition,
             AvatarUrl = map.AvatarUrl
         };

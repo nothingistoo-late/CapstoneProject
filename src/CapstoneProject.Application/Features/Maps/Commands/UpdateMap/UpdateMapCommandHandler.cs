@@ -55,6 +55,8 @@ public class UpdateMapCommandHandler : IRequestHandler<UpdateMapCommand, Result>
         map.EditorialContent = req.EditorialContent;
         if (req.UnlockEditorialAfterStars.HasValue)
             map.UnlockEditorialAfterStars = req.UnlockEditorialAfterStars.Value;
+        if (req.LearnedTags != null)
+            map.LearnedTags = req.LearnedTags;
         if (req.AvatarUrl != null)
             map.AvatarUrl = req.AvatarUrl;
 
