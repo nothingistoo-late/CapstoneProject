@@ -15,6 +15,24 @@ public class UpdateMapCommandValidator : AbstractValidator<UpdateMapCommand>
             RuleFor(x => x.Request!.TimeLimitMs).GreaterThan(0);
             When(x => x.Request!.UnlockEditorialAfterStars.HasValue, () =>
                 RuleFor(x => x.Request!.UnlockEditorialAfterStars!.Value).InclusiveBetween(0, 3));
+
+            When(x => x.Request!.TagIds != null, () =>
+            {
+                RuleForEach(x => x.Request!.TagIds!)
+                    .NotEmpty().WithMessage("TagIds must contain valid Guid values.");
+                RuleFor(x => x.Request!.TagIds!)
+                    .Must(ids => ids.Distinct().Count() == ids.Count)
+                    .WithMessage("TagIds must not contain duplicates.");
+            });
+
+            When(x => x.Request!.LearnedTags != null, () =>
+            {
+                RuleForEach(x => x.Request!.LearnedTags!)
+                    .NotEmpty().WithMessage("LearnedTags must contain valid Guid values.");
+                RuleFor(x => x.Request!.LearnedTags!)
+                    .Must(ids => ids.Distinct().Count() == ids.Count)
+                    .WithMessage("LearnedTags must not contain duplicates.");
+            });
         });
     }
 }

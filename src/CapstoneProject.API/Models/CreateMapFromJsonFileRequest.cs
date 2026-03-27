@@ -15,6 +15,7 @@ public class CreateMapFromJsonFileRequest
     public decimal? Price { get; set; }
     public string HintsJson { get; set; } = "[]";
     public string TagIdsCsv { get; set; } = string.Empty;
+    public string LearnedTagsCsv { get; set; } = string.Empty;
     public IFormFile MapDetailFile { get; set; } = null!;
     /// <summary>Avatar map (ảnh, optional). Upload lên Cloudinary khi tạo map.</summary>
     public IFormFile? AvatarFile { get; set; }

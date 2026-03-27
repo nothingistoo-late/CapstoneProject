@@ -42,6 +42,9 @@ public class CreateMapFromJsonFileCommandHandler : IRequestHandler<CreateMapFrom
         var tagIds = ParseTagIdsCsv(input.TagIdsCsv);
         if (tagIds == null)
             return Result<Guid>.Failure("TagIdsCsv contains invalid Guid(s).", ErrorCodeEnum.ValidationFailed);
+        var learnedTags = ParseTagIdsCsv(input.LearnedTagsCsv);
+        if (learnedTags == null)
+            return Result<Guid>.Failure("LearnedTagsCsv contains invalid Guid(s).", ErrorCodeEnum.ValidationFailed);
 
         string? avatarUrl = null;
         if (command.AvatarFile != null && command.AvatarFile.Length > 0)
@@ -63,6 +66,7 @@ public class CreateMapFromJsonFileCommandHandler : IRequestHandler<CreateMapFrom
             WinCondition = input.WinCondition,
             Price = input.Price,
             TagIds = tagIds,
+            LearnedTags = learnedTags,
             Hints = hints,
             MapDetailJson = detailJson,
             AvatarUrl = avatarUrl

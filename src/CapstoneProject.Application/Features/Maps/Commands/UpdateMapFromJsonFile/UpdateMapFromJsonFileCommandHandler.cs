@@ -39,6 +39,9 @@ public class UpdateMapFromJsonFileCommandHandler : IRequestHandler<UpdateMapFrom
         var tagIds = ParseTagIdsCsv(input.TagIdsCsv);
         if (tagIds == null)
             return Result.Failure("TagIdsCsv contains invalid Guid(s).", ErrorCodeEnum.ValidationFailed);
+        var learnedTags = ParseTagIdsCsv(input.LearnedTagsCsv);
+        if (learnedTags == null)
+            return Result.Failure("LearnedTagsCsv contains invalid Guid(s).", ErrorCodeEnum.ValidationFailed);
 
         var updateRequest = new UpdateMapRequest
         {
@@ -50,6 +53,7 @@ public class UpdateMapFromJsonFileCommandHandler : IRequestHandler<UpdateMapFrom
             WinCondition = input.WinCondition,
             Price = input.Price,
             TagIds = tagIds,
+            LearnedTags = learnedTags,
             Hints = hints,
             MapDetailJson = detailJson
         };

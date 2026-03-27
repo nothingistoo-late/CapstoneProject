@@ -29,6 +29,10 @@ public class GetMapInfoQueryHandler : IRequestHandler<GetMapInfoQuery, Result<Ma
         if (map == null)
             return Result<MapInfoDto>.Failure($"Map not found with Id: {request.MapId}.", ErrorCodeEnum.NotFound);
 
+        var learnedTagNameMap = await _unitOfWork.Repository<Tag>().GetQueryable()
+            .Where(t => map.LearnedTags.Contains(t.Id))
+            .ToDictionaryAsync(t => t.Id, t => t.Name, cancellationToken);
+
         var dto = new MapInfoDto
         {
             Id = map.Id,
@@ -44,7 +48,9 @@ public class GetMapInfoQueryHandler : IRequestHandler<GetMapInfoQuery, Result<Ma
             CreatedByUserName = map.Creator != null ? $"{map.Creator.FirstName} {map.Creator.LastName}".Trim() : null,
             CreatedAt = map.CreatedAt,
             TagNames = map.MapTags.Select(t => t.Tag.Name).ToList(),
-            LearnedTags = map.LearnedTags,
+            LearnedTags = map.LearnedTags
+                .Select(id => learnedTagNameMap.TryGetValue(id, out var name) ? name : id.ToString())
+                .ToList(),
             WinCondition = map.WinCondition,
             AvatarUrl = map.AvatarUrl
         };

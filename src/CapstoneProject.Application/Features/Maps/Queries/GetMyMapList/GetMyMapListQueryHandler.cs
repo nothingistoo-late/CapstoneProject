@@ -56,6 +56,15 @@ public class GetMyMapListQueryHandler : IRequestHandler<GetMyMapListQuery, Resul
         };
 
         var page = await query.Skip((pageNumber - 1) * pageSize).Take(pageSize).ToListAsync(cancellationToken);
+        var learnedTagIds = page
+            .Where(mm => mm.Map != null)
+            .SelectMany(mm => mm.Map!.LearnedTags)
+            .Distinct()
+            .ToList();
+        var learnedTagNameMap = await _unitOfWork.Repository<Tag>().GetQueryable()
+            .Where(t => learnedTagIds.Contains(t.Id))
+            .ToDictionaryAsync(t => t.Id, t => t.Name, cancellationToken);
+
         var list = page.Where(mm => mm.Map != null).Select(mm =>
         {
             var m = mm.Map!;
@@ -75,7 +84,9 @@ public class GetMyMapListQueryHandler : IRequestHandler<GetMyMapListQuery, Resul
                 IsAuthor = mm.IsAuthor,
                 CreatedAt = m.CreatedAt,
                 TagNames = m.MapTags.Select(t => t.Tag.Name).ToList(),
-                LearnedTags = m.LearnedTags,
+                LearnedTags = m.LearnedTags
+                    .Select(id => learnedTagNameMap.TryGetValue(id, out var name) ? name : id.ToString())
+                    .ToList(),
                 WinCondition = m.WinCondition,
                 AvatarUrl = m.AvatarUrl
             };

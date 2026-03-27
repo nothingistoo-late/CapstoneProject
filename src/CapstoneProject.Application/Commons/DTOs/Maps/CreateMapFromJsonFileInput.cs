@@ -17,5 +17,6 @@ public class CreateMapFromJsonFileInput
     public decimal? Price { get; set; }
     public string HintsJson { get; set; } = "[]";
     public string TagIdsCsv { get; set; } = string.Empty;
+    public string LearnedTagsCsv { get; set; } = string.Empty;
     public string MapDetailJsonContent { get; set; } = string.Empty;
 }

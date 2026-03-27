@@ -36,26 +36,33 @@ public class GetAllMapsForAdminQueryHandler : IRequestHandler<GetAllMapsForAdmin
             _ => request.SortAscending ? query.OrderBy(m => m.CreatedAt) : query.OrderByDescending(m => m.CreatedAt)
         };
 
-        var list = await query.Skip((pageNumber - 1) * pageSize).Take(pageSize)
-            .Select(m => new MapListItemDto
-            {
-                Id = m.Id,
-                Title = m.Title,
-                Description = m.Description,
-                Difficulty = m.Difficulty,
-                Type = m.Type.ToString(),
-                TimeLimitMs = m.TimeLimitMs,
-                IsPublished = m.IsPublished,
-                MapStatus = m.MapStatus.ToString(),
-                Price = m.Price,
-                CreatedByUserId = m.CreatedBy ?? Guid.Empty,
-                CreatedByUserName = m.Creator != null ? $"{m.Creator.FirstName} {m.Creator.LastName}".Trim() : null,
-                CreatedAt = m.CreatedAt,
-                TagNames = m.MapTags.Select(t => t.Tag.Name).ToList(),
-                LearnedTags = m.LearnedTags,
-                WinCondition = m.WinCondition,
-                AvatarUrl = m.AvatarUrl
-            }).ToListAsync(cancellationToken);
+        var page = await query.Skip((pageNumber - 1) * pageSize).Take(pageSize).ToListAsync(cancellationToken);
+        var learnedTagIds = page.SelectMany(m => m.LearnedTags).Distinct().ToList();
+        var learnedTagNameMap = await _unitOfWork.Repository<Tag>().GetQueryable()
+            .Where(t => learnedTagIds.Contains(t.Id))
+            .ToDictionaryAsync(t => t.Id, t => t.Name, cancellationToken);
+
+        var list = page.Select(m => new MapListItemDto
+        {
+            Id = m.Id,
+            Title = m.Title,
+            Description = m.Description,
+            Difficulty = m.Difficulty,
+            Type = m.Type.ToString(),
+            TimeLimitMs = m.TimeLimitMs,
+            IsPublished = m.IsPublished,
+            MapStatus = m.MapStatus.ToString(),
+            Price = m.Price,
+            CreatedByUserId = m.CreatedBy ?? Guid.Empty,
+            CreatedByUserName = m.Creator != null ? $"{m.Creator.FirstName} {m.Creator.LastName}".Trim() : null,
+            CreatedAt = m.CreatedAt,
+            TagNames = m.MapTags.Select(t => t.Tag.Name).ToList(),
+            LearnedTags = m.LearnedTags
+                .Select(id => learnedTagNameMap.TryGetValue(id, out var name) ? name : id.ToString())
+                .ToList(),
+            WinCondition = m.WinCondition,
+            AvatarUrl = m.AvatarUrl
+        }).ToList();
 
         var result = PaginationResult<MapListItemDto>.Success(list, pageNumber, pageSize, total, "Retrieved successfully");
         return Result<PaginationResult<MapListItemDto>>.Success(result);

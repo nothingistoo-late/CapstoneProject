@@ -326,6 +326,7 @@ public class LearnerMapController : ControllerBase
             Price = request.Price,
             HintsJson = request.HintsJson ?? "[]",
             TagIdsCsv = request.TagIdsCsv ?? string.Empty,
+            LearnedTagsCsv = request.LearnedTagsCsv ?? string.Empty,
             MapDetailJsonContent = jsonContent
         };
 
@@ -440,6 +441,7 @@ public class LearnerMapController : ControllerBase
             Price = request.Price,
             HintsJson = request.HintsJson ?? "[]",
             TagIdsCsv = request.TagIdsCsv ?? string.Empty,
+            LearnedTagsCsv = request.LearnedTagsCsv ?? string.Empty,
             MapDetailJsonContent = jsonContent
         };
 
