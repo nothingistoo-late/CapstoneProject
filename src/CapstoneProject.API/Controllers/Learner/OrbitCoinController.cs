@@ -1,6 +1,7 @@
 using CapstoneProject.Application.Commons.DTOs.OrbitCoin;
 using CapstoneProject.Application.Features.OrbitCoin.Commands.ConfirmDeposit;
 using CapstoneProject.Application.Features.OrbitCoin.Commands.CreateDepositOrder;
+using CapstoneProject.Application.Features.OrbitCoin.Queries.GetDepositOrder;
 using CapstoneProject.Application.Features.OrbitCoin.Queries.GetOrbitCoinBalance;
 using CapstoneProject.Application.Features.OrbitCoin.Queries.GetOrbitCoinTransactionHistory;
 
@@ -96,6 +97,27 @@ public class LearnerOrbitCoinController : ControllerBase
     public async Task<IActionResult> CreateDepositOrder([FromBody] CreateDepositOrderRequest request)
     {
         var result = await _mediator.Send(new CreateDepositOrderCommand(request.AmountOrbitCoin));
+        return StatusCode(result.GetHttpStatusCode(), result);
+    }
+
+    /// <summary>
+    /// Get deposit order detail (success page: DB times, amounts, PayOS code)
+    /// </summary>
+    /// <remarks>
+    /// Trả về CreatedAt, PaidAt, số tiền, phương thức, mã PayOS. Chỉ đơn nạp OrbitCoin của user hiện tại.
+    ///
+    /// **METHOD and path:** GET /api/learner/orbitcoin/deposit/order?orderId={guid}
+    /// </remarks>
+    [HttpGet("deposit/order")]
+    [AuthorizeRoles(nameof(RoleEnum.Learner), nameof(RoleEnum.Admin), nameof(RoleEnum.Moderator))]
+    [ProducesResponseType(typeof(Result<DepositOrderDetailDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(Result<DepositOrderDetailDto>), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(Result<DepositOrderDetailDto>), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(Result<DepositOrderDetailDto>), StatusCodes.Status500InternalServerError)]
+    [SwaggerOperation(Summary = "Get deposit order detail", Description = "Returns CreatedAt, PaidAt, amounts, payment method, PayOS external code. Query: orderId. Only OrbitCoin deposit orders for the current user.", OperationId = "Learner_GetDepositOrder", Tags = new[] { "Learner - OrbitCoin" })]
+    public async Task<IActionResult> GetDepositOrder([FromQuery] Guid orderId)
+    {
+        var result = await _mediator.Send(new GetDepositOrderQuery(orderId));
         return StatusCode(result.GetHttpStatusCode(), result);
     }
 
