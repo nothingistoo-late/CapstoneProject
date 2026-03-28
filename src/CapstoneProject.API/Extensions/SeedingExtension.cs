@@ -696,6 +696,23 @@ public static class SeedingExtension
             }
         }
 
+        var mapSolveExisting = await dbContext.MapSolveScoreConfigs.FirstOrDefaultAsync(
+            x => !x.IsDeleted && x.ConfigKey == MapSolveScoreConfig.DefaultConfigKey);
+        if (mapSolveExisting == null)
+        {
+            var mapSolveRow = new MapSolveScoreConfig
+            {
+                ConfigKey = MapSolveScoreConfig.DefaultConfigKey,
+                BaseScore = 10,
+                TimeScore = 30,
+                StepsScore = 30,
+                BlocksScore = 30,
+                Status = EntityStatusEnum.Active
+            };
+            mapSolveRow.InitializeEntity(actorId);
+            await dbContext.MapSolveScoreConfigs.AddAsync(mapSolveRow);
+        }
+
         await dbContext.SaveChangesAsync();
         logger.LogInformation("XP configuration seeding completed.");
     }

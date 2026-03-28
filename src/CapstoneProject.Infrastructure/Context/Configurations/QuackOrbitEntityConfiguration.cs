@@ -27,6 +27,7 @@ public static class QuackOrbitEntityConfiguration
         builder.Entity<LevelThreshold>(ConfigureLevelThreshold);
         builder.Entity<XpPolicyConfig>(ConfigureXpPolicyConfig);
         builder.Entity<XpSourceConfig>(ConfigureXpSourceConfig);
+        builder.Entity<MapSolveScoreConfig>(ConfigureMapSolveScoreConfig);
         builder.Entity<Package>(ConfigurePackage);
         builder.Entity<UserPackage>(ConfigureUserPackage);
         builder.Entity<Payment>(ConfigurePayment);
@@ -206,6 +207,12 @@ public static class QuackOrbitEntityConfiguration
         e.Property(x => x.SourceType).HasConversion<int>();
         e.HasIndex(x => x.SourceType).IsUnique();
         e.HasIndex(x => x.IsEnabled);
+    }
+
+    static void ConfigureMapSolveScoreConfig(EntityTypeBuilder<MapSolveScoreConfig> e)
+    {
+        e.Property(x => x.ConfigKey).HasMaxLength(64);
+        e.HasIndex(x => x.ConfigKey).IsUnique();
     }
 
     static void ConfigurePackage(EntityTypeBuilder<Package> e)

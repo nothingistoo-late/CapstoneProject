@@ -44,6 +44,13 @@ public class ValidateSolutionCommandHandler : IRequestHandler<ValidateSolutionCo
         if (map.MapDetail == null)
             return Result<ValidateSolutionResultDto>.Failure("Map data not found", ErrorCodeEnum.ValidationFailed);
 
+        var mapSolveCfg = await _unitOfWork.Repository<MapSolveScoreConfig>().GetQueryable()
+            .AsNoTracking()
+            .FirstOrDefaultAsync(
+                x => x.ConfigKey == MapSolveScoreConfig.DefaultConfigKey && !x.IsDeleted,
+                cancellationToken);
+        var scoreWeights = MapSolveScoreWeights.FromDbOrLegacy(mapSolveCfg);
+
         var ast = command.Request.AstSpec?.Trim() ?? string.Empty;
         var bytecode = command.Request.BytecodeSpec?.Trim() ?? string.Empty;
 
@@ -57,7 +64,7 @@ public class ValidateSolutionCommandHandler : IRequestHandler<ValidateSolutionCo
         if (HasEngineMetrics(command.Request))
         {
             (score, stars, statusEnum, accepted, stepsUsedForSubmission, blocksUsedForSubmission) =
-                ScoreFromEngineMetrics(command.Request, map.MapDetail.JsonContent, ast, bytecode);
+                ScoreFromEngineMetrics(command.Request, map.MapDetail.JsonContent, ast, bytecode, scoreWeights);
         }
         else
         {
@@ -230,7 +237,8 @@ public class ValidateSolutionCommandHandler : IRequestHandler<ValidateSolutionCo
         ValidateSolutionRequest req,
         string mapJsonContent,
         string ast,
-        string bytecode)
+        string bytecode,
+        MapSolveScoreWeights weights)
     {
         var stepsUsed = req.ClientStepsUsed ?? ast.Length;
         var blocksUsed = req.ClientBlocksUsed ?? bytecode.Length;
@@ -243,7 +251,7 @@ public class ValidateSolutionCommandHandler : IRequestHandler<ValidateSolutionCo
         var limits = ParseMissionLimits(mapJsonContent);
         var elapsed = req.ClientElapsedSeconds ?? 0;
         var starCount = ComputeStarCount(elapsed, stepsUsed, blocksUsed, limits);
-        var s = ScoreFromWinAndStars(true, starCount);
+        var s = ScoreWinFromEngineCriteria(starCount, limits, elapsed, stepsUsed, blocksUsed, weights);
         return (s, starCount, SubmissionStatusEnum.Accepted, true, stepsUsed, blocksUsed);
     }
 
@@ -324,11 +332,42 @@ public class ValidateSolutionCommandHandler : IRequestHandler<ValidateSolutionCo
         return s;
     }
 
-    /// <summary>Thắng: 10 + 30*stars (max 100), khớp UI (0 sao vẫn pass level thì 10 điểm).</summary>
-    private static int ScoreFromWinAndStars(bool isWin, int stars)
+    /// <summary>Điểm khi thắng có metrics: base + phần time/steps/blocks khi đạt; cả 3 limit vô cực thì chia đều pool 3 tiêu chí theo số sao.</summary>
+    private static int ScoreWinFromEngineCriteria(
+        int starCount,
+        MissionLimits lim,
+        double elapsedSeconds,
+        int steps,
+        int blocks,
+        MapSolveScoreWeights w)
     {
-        if (!isWin) return 0;
-        return Math.Min(100, 10 + stars * 30);
+        var inf = double.PositiveInfinity;
+        if (lim.TimeLimitSeconds >= inf && lim.EstimatedSteps >= inf && lim.BlockLimit >= inf)
+        {
+            var criteriaPool = w.TimeScore + w.StepsScore + w.BlocksScore;
+            return Math.Clamp(w.BaseScore + (int)Math.Round(criteriaPool * starCount / 3.0), 0, 100);
+        }
+
+        var timeMet = elapsedSeconds <= lim.TimeLimitSeconds;
+        var stepsMet = steps <= lim.EstimatedSteps;
+        var blocksMet = blocks <= lim.BlockLimit;
+        var score = w.BaseScore
+                    + (timeMet ? w.TimeScore : 0)
+                    + (stepsMet ? w.StepsScore : 0)
+                    + (blocksMet ? w.BlocksScore : 0);
+        return Math.Clamp(score, 0, 100);
+    }
+
+    private readonly record struct MapSolveScoreWeights(int BaseScore, int TimeScore, int StepsScore, int BlocksScore)
+    {
+        public static MapSolveScoreWeights Legacy => new(10, 30, 30, 30);
+
+        public static MapSolveScoreWeights FromDbOrLegacy(MapSolveScoreConfig? cfg)
+        {
+            if (cfg == null) return Legacy;
+            if (cfg.BaseScore + cfg.TimeScore + cfg.StepsScore + cfg.BlocksScore != 100) return Legacy;
+            return new MapSolveScoreWeights(cfg.BaseScore, cfg.TimeScore, cfg.StepsScore, cfg.BlocksScore);
+        }
     }
 }
 

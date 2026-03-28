@@ -38,6 +38,7 @@ public class CapstoneProjectDbContext : IdentityDbContext<AppUser, AppRole, Guid
     public DbSet<LevelThreshold> LevelThresholds { get; set; }
     public DbSet<XpPolicyConfig> XpPolicyConfigs { get; set; }
     public DbSet<XpSourceConfig> XpSourceConfigs { get; set; }
+    public DbSet<MapSolveScoreConfig> MapSolveScoreConfigs { get; set; }
 
     // QuackOrbit: Competitive
     public DbSet<Match> Matches { get; set; }
