@@ -1,4 +1,4 @@
-﻿using MediatR;
+using MediatR;
 using Microsoft.EntityFrameworkCore;
 using CapstoneProject.Application.Common.Enums;
 using CapstoneProject.Application.Common.Interfaces;
@@ -52,7 +52,7 @@ public class PurchaseMapWithOrbitCoinCommandHandler : IRequestHandler<PurchaseMa
         var amount = map.Price.Value;
         var feeAmount = Math.Round(amount * (PlatformFeePercent / 100m), 4);
 
-        // NgÆ°á»i mua tráº£ Ä‘Ãºng giÃ¡ map; ngÆ°á»i bÃ¡n nháº­n = giÃ¡ - phÃ­ (ngÆ°á»i bÃ¡n chá»‹u phÃ­)
+        // Người mua trả đúng giá map; người bán nhận = giá - phí (người bán chịu phí)
         var (success, error) = await _orbitCoinService.TransferWithSellerFeeAsync(
             buyerUserId,
             sellerUserId,

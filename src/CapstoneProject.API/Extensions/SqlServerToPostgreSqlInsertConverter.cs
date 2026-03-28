@@ -6,6 +6,7 @@ namespace CapstoneProject.API.Extensions;
 /// <summary>
 /// Chuyển một câu INSERT kiểu SQL Server (script SSMS: [dbo].[Table], N'...', CAST(... AS DateTime), bit 0/1)
 /// sang PostgreSQL cho bảng seed Maps / MapDetails / Hints / MapTags.
+/// MapTags dùng ON CONFLICT (MapId, TagId) để idempotent với dữ liệu đã có (seed cũ / app).
 /// </summary>
 internal static class SqlServerToPostgreSqlInsertConverter
 {
@@ -105,7 +106,11 @@ internal static class SqlServerToPostgreSqlInsertConverter
             sb.Append(converted[i]);
         }
 
-        sb.Append(") ON CONFLICT (\"Id\") DO NOTHING");
+        // MapTags: unique IX_MapTags_MapId_TagId — re-seed / app may already have (MapId, TagId) with another Id.
+        if (string.Equals(table, "MapTags", StringComparison.OrdinalIgnoreCase))
+            sb.Append(") ON CONFLICT (\"MapId\", \"TagId\") DO NOTHING");
+        else
+            sb.Append(") ON CONFLICT (\"Id\") DO NOTHING");
         return sb.ToString();
     }
 

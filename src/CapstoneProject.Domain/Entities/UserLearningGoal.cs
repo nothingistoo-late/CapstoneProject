@@ -1,10 +1,10 @@
-﻿using CapstoneProject.Domain.Common;
+using CapstoneProject.Domain.Common;
 
 namespace CapstoneProject.Domain.Entities;
 
 /// <summary>
-/// Má»¥c tiÃªu há»c táº­p user Ä‘Ã£ chá»n (khi Ä‘Äƒng nháº­p / vÃ o dashboard).
-/// Má»—i user cÃ³ thá»ƒ cÃ³ má»™t má»¥c tiÃªu Ä‘ang theo (hoáº·c chÆ°a chá»n).
+/// Mục tiêu học tập user đã chọn (khi đăng nhập / vào dashboard).
+/// Mỗi user có thể có một mục tiêu đang theo (hoặc chưa chọn).
 /// </summary>
 public class UserLearningGoal : BaseEntity
 {

@@ -1,4 +1,4 @@
-﻿using System.Collections.Concurrent;
+using System.Collections.Concurrent;
 using System.Linq;
 using System.Text;
 using CapstoneProject.Application.Commons.DTOs.Lobby;
@@ -149,7 +149,7 @@ public class RoomManager : IRoomManager
             return (true, null, null);
         }
 
-        // Host rá»i (Waiting hoáº·c Ä‘ang chÆ¡i): chuyá»ƒn host cho ngÆ°á»i cÃ²n láº¡i
+        // Host rời (Waiting hoặc đang chơi): chuyển host cho người còn lại
         if (room.HostId == playerId)
         {
             foreach (var p in room.Players.Values) p.IsHost = false;
@@ -158,7 +158,7 @@ public class RoomManager : IRoomManager
             nextHost.IsHost = true;
         }
 
-        // Äang chÆ¡i: gá»¡ ngÆ°á»i rá»i khá»i GameInstance Ä‘á»ƒ ranking chá»‰ cáº§n ná»™p Ä‘á»§ sá»‘ ngÆ°á»i cÃ²n láº¡i
+        // Đang chơi: gỡ người rời khỏi GameInstance để ranking chỉ cần nộp đủ số người còn lại
         if (room.Status == RoomStatusEnum.Playing && _gameInstances.TryGetValue(roomId, out var gi))
         {
             var stillIn = gi.Players.Where(p => room.Players.ContainsKey(p.PlayerId)).ToList();

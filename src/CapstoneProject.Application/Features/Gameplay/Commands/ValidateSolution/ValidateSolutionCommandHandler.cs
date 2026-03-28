@@ -14,8 +14,8 @@ using CapstoneProject.Domain.Enums;
 namespace CapstoneProject.Application.Features.Gameplay.Commands.ValidateSolution;
 
 /// <summary>
-/// Nháº­n block strategy, táº¡o Submission, mÃ´ phá»ng Ä‘Æ¡n giáº£n (hoáº·c gá»i engine tháº­t),
-/// lÆ°u ExecutionsResult, cáº­p nháº­t UserMapResult (score, stars, attempts) vÃ  cá»™ng XP náº¿u Accepted.
+/// Nhận block strategy, tạo Submission, mô phỏng đơn giản (hoặc gọi engine thật),
+/// lưu ExecutionsResult, cập nhật UserMapResult (score, stars, attempts) và cộng XP nếu Accepted.
 /// </summary>
 public class ValidateSolutionCommandHandler : IRequestHandler<ValidateSolutionCommand, Result<ValidateSolutionResultDto>>
 {
@@ -223,7 +223,7 @@ public class ValidateSolutionCommandHandler : IRequestHandler<ValidateSolutionCo
         return Result<ValidateSolutionResultDto>.Success(dto);
     }
 
-    /// <summary>Client gá»­i IsWin (+ metrics) â€” cháº¥m giá»‘ng logic sao trÃªn UI (thá»i gian / bÆ°á»›c / block).</summary>
+    /// <summary>Client gửi IsWin (+ metrics) — chấm giống logic sao trên UI (thời gian / bước / block).</summary>
     private static bool HasEngineMetrics(ValidateSolutionRequest r) => r.IsWin.HasValue;
 
     private static (int score, int stars, SubmissionStatusEnum status, bool accepted, int stepsUsed, int blocksUsed) ScoreFromEngineMetrics(
@@ -247,7 +247,7 @@ public class ValidateSolutionCommandHandler : IRequestHandler<ValidateSolutionCo
         return (s, starCount, SubmissionStatusEnum.Accepted, true, stepsUsed, blocksUsed);
     }
 
-    /// <summary>Placeholder cÅ©: khÃ´ng Ä‘Æ°á»£c tin â€” AST rá»—ng <c>[]</c> váº«n bá»‹ tÃ­nh ~100 Ä‘iá»ƒm; thÃªm cháº·n trivial.</summary>
+    /// <summary>Placeholder cũ: không được tin — AST rỗng <c>[]</c> vẫn bị tính ~100 điểm; thêm chặn trivial.</summary>
     private static (int score, int stars, SubmissionStatusEnum status, bool accepted, int stepsUsed, int blocksUsed) ScoreFromLegacyPlaceholder(
         string ast,
         string bytecode)
@@ -307,7 +307,7 @@ public class ValidateSolutionCommandHandler : IRequestHandler<ValidateSolutionCo
         }
     }
 
-    /// <summary>Giá»‘ng GameResultsModal: 0â€“3 sao theo time / steps / block so vá»›i limit map.</summary>
+    /// <summary>Giống GameResultsModal: 0–3 sao theo time / steps / block so với limit map.</summary>
     private static int ComputeStarCount(double elapsedSeconds, int steps, int blocks, MissionLimits lim)
     {
         if (lim.TimeLimitSeconds >= double.PositiveInfinity &&
@@ -324,7 +324,7 @@ public class ValidateSolutionCommandHandler : IRequestHandler<ValidateSolutionCo
         return s;
     }
 
-    /// <summary>Tháº¯ng: 10 + 30*stars (max 100), khá»›p UI (0 sao váº«n pass level thÃ¬ 10 Ä‘iá»ƒm).</summary>
+    /// <summary>Thắng: 10 + 30*stars (max 100), khớp UI (0 sao vẫn pass level thì 10 điểm).</summary>
     private static int ScoreFromWinAndStars(bool isWin, int stars)
     {
         if (!isWin) return 0;

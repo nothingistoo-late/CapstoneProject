@@ -205,7 +205,7 @@ public static class HangfireConfiguration
             logger.LogInformation("🔧 DEVELOPMENT MODE: Dashboard accessible without authentication");
             logger.LogInformation("🗄️ Database: Main Database");
             logger.LogInformation("🌐 Dashboard: /hangfire (no auth required)");
-            logger.LogInformation("� Email: Using Service Account (no token management needed)");
+            logger.LogInformation("Email: Using Service Account (no token management needed)");
         }
 
         // All OAuth token management jobs are disabled

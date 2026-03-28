@@ -64,7 +64,7 @@ public static class UserExtension
             return (false, null, new List<RoleEnum>());
         }
 
-        // Láº¥y roles hiá»‡n táº¡i tá»« database (luÃ´n up-to-date)
+        // Lấy roles hiện tại từ database (luôn up-to-date)
         var userRoleStrings = await userManager.GetRolesAsync(user);
         var userRoles = userRoleStrings
             .Where(roleString => Enum.TryParse<RoleEnum>(roleString, true, out _))
@@ -104,7 +104,7 @@ public static class UserExtension
             return (false, null, new List<RoleEnum>(), null);
         }
 
-        // Láº¥y roles hiá»‡n táº¡i tá»« database (luÃ´n up-to-date)
+        // Lấy roles hiện tại từ database (luôn up-to-date)
         var userRoleStrings = await userManager.GetRolesAsync(user);
         var userRoles = userRoleStrings
             .Where(roleString => Enum.TryParse<RoleEnum>(roleString, true, out _))

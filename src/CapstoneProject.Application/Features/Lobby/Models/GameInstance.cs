@@ -1,4 +1,4 @@
-﻿using System.Collections.Concurrent;
+using System.Collections.Concurrent;
 using CapstoneProject.Application.Commons.DTOs.Lobby;
 
 namespace CapstoneProject.Application.Features.Lobby.Models;
@@ -12,7 +12,7 @@ public class GameInstance
     public Guid RoomId { get; set; }
     public string RoomCode { get; set; } = string.Empty;
     public Guid? MapId { get; set; }
-    /// <summary>Danh sÃ¡ch ngÆ°á»i chÆ¡i cÃ²n trong phÃ²ng (cáº­p nháº­t khi cÃ³ ngÆ°á»i thoÃ¡t giá»¯a game).</summary>
+    /// <summary>Danh sách người chơi còn trong phòng (cập nhật khi có người thoát giữa game).</summary>
     public List<LobbyPlayer> Players { get; set; } = new();
 
     public object? GameState { get; set; }

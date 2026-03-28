@@ -1,4 +1,4 @@
-﻿using System.Collections.Concurrent;
+using System.Collections.Concurrent;
 using System.Security.Cryptography;
 using System.Text.Json;
 using Microsoft.Extensions.Logging;
@@ -118,7 +118,7 @@ namespace CapstoneProject.Infrastructure.Services
             {
                 rng.GetBytes(bytes);
                 int digit = Math.Abs(BitConverter.ToInt32(bytes, 0)) % 10;
-                chars[i] = (char)('0' + digit); // chuyá»ƒn sá»‘ thÃ nh kÃ½ tá»± trá»±c tiáº¿p
+                chars[i] = (char)('0' + digit); // chuyển số thành ký tự trực tiếp
             }
 
             return new string(chars);

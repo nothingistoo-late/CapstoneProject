@@ -72,7 +72,7 @@ public class CreateDepositOrderCommandHandler : IRequestHandler<CreateDepositOrd
 
         var returnUrl = _depositSettings.ReturnUrlBase.TrimEnd('/') + "?orderId=" + record.Id;
         var cancelUrl = _depositSettings.CancelUrlBase.TrimEnd('/') + "?orderId=" + record.Id;
-        var description = $"Náº¡p {request.AmountOrbitCoin} OrbitCoin";
+        var description = $"Nạp {request.AmountOrbitCoin} OrbitCoin";
 
         var (checkoutUrl, error) = await _payOSService.CreatePaymentLinkAsync(
             orderCode,
