@@ -1,5 +1,6 @@
 using CapstoneProject.Application.Commons.DTOs.Marketplace;
 using CapstoneProject.Application.Features.Marketplace.Commands.PurchasePackage;
+using CapstoneProject.Application.Features.Marketplace.Queries.GetMyPackages;
 using CapstoneProject.Application.Features.Marketplace.Queries.GetPackageById;
 using CapstoneProject.Application.Features.Marketplace.Queries.GetPackages;
 using CapstoneProject.Application.Features.OrbitCoin.Commands.PurchaseMapWithOrbitCoin;
@@ -42,6 +43,31 @@ public class LearnerMarketplaceController : ControllerBase
     public async Task<IActionResult> GetPackages([FromQuery] PackageFilter? filter = null)
     {
         var result = await _mediator.Send(new GetPackagesQuery(filter));
+        return StatusCode(result.GetHttpStatusCode(), result);
+    }
+
+    /// <summary>
+    /// Get my purchased packages (history, paginated)
+    /// </summary>
+    /// <remarks>
+    /// Returns packages the current user has purchased (UserPackages). Optional filter for active entitlements only.
+    ///
+    /// **METHOD and path:** GET /api/learner/marketplace/my-packages
+    ///
+    /// **Query:**
+    /// - activeOnly (bool?, optional): If true, only rows with remaining &gt; 0 and not expired.
+    /// - pageNumber (int, default 1), pageSize (int, default 20, max 100).
+    /// </remarks>
+    [HttpGet("my-packages")]
+    [AuthorizeRoles(nameof(RoleEnum.Learner))]
+    [ProducesResponseType(typeof(Result<PaginationResult<MyPackageDto>>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(Result<PaginationResult<MyPackageDto>>), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(Result<PaginationResult<MyPackageDto>>), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(Result<PaginationResult<MyPackageDto>>), StatusCodes.Status500InternalServerError)]
+    [SwaggerOperation(Summary = "Lịch sử gói đã mua", Description = "Paginated purchased packages. Query: activeOnly, pageNumber, pageSize (MyPackagesFilter).", OperationId = "Learner_GetMyPackages", Tags = new[] { "Learner - Marketplace" })]
+    public async Task<IActionResult> GetMyPackages([FromQuery] MyPackagesFilter? filter = null)
+    {
+        var result = await _mediator.Send(new GetMyPackagesQuery(filter));
         return StatusCode(result.GetHttpStatusCode(), result);
     }
 
