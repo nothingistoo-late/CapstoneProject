@@ -181,6 +181,9 @@ public class UpdateMapCommandHandler : IRequestHandler<UpdateMapCommand, Result>
             }
         }
 
+        if (map.ContentVersion < 1)
+            map.ContentVersion = 1;
+        map.ContentVersion++;
         mapRepo.Update(map);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
         return Result.Success("Map updated and moved back to Draft status.");

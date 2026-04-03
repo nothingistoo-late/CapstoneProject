@@ -21,6 +21,9 @@ public class Map : BaseEntity
     /// <summary>URL avatar của map (lưu trên Cloudinary).</summary>
     public string? AvatarUrl { get; set; }
 
+    /// <summary>Tăng khi nội dung map thay đổi có ý nghĩa (update level/JSON). Bản mới = 1.</summary>
+    public int ContentVersion { get; set; } = 1;
+
     public virtual AppUser? Creator { get; set; }
     public virtual ICollection<MapTag> MapTags { get; set; } = new List<MapTag>();
     /// <summary>Các level (JSON layout) của map, sắp xếp theo <see cref="MapDetail.LevelOrder"/>.</summary>

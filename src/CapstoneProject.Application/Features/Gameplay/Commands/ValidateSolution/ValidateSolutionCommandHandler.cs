@@ -41,9 +41,29 @@ public class ValidateSolutionCommandHandler : IRequestHandler<ValidateSolutionCo
         var mapRepo = _unitOfWork.Repository<Map>();
         var map = await mapRepo.GetQueryable()
             .Include(m => m.MapDetails)
-            .FirstOrDefaultAsync(m => m.Id == command.Request.MapId && !m.IsDeleted, cancellationToken);
+            .FirstOrDefaultAsync(m => m.Id == command.Request.MapId, cancellationToken);
         if (map == null)
             return Result<ValidateSolutionResultDto>.Failure("Map not found", ErrorCodeEnum.NotFound);
+
+        if (map.IsDeleted)
+        {
+            var isAuthor = map.CreatedBy.HasValue && map.CreatedBy.Value == userId;
+            var isOwned = isAuthor;
+            if (!isOwned)
+            {
+                var purchased = await _unitOfWork.Repository<PaymentRecord>().GetQueryable()
+                    .AnyAsync(p => !p.IsDeleted && p.UserId == userId && p.MapId == map.Id && p.PaymentStatus == PaymentStatusEnum.Completed, cancellationToken);
+                if (purchased)
+                    isOwned = true;
+                else
+                    isOwned = await _unitOfWork.Repository<MyMap>().GetQueryable()
+                        .AnyAsync(mm => !mm.IsDeleted && mm.UserId == userId && mm.MapId == map.Id, cancellationToken);
+            }
+
+            if (!isOwned)
+                return Result<ValidateSolutionResultDto>.Failure("Map not found", ErrorCodeEnum.NotFound);
+        }
+
         var levelsOrdered = map.MapDetails.OrderBy(d => d.LevelOrder).ToList();
         if (levelsOrdered.Count == 0)
             return Result<ValidateSolutionResultDto>.Failure("Map data not found", ErrorCodeEnum.ValidationFailed);
@@ -395,6 +415,7 @@ public class ValidateSolutionCommandHandler : IRequestHandler<ValidateSolutionCo
         }
     }
 }
+
 
 
 

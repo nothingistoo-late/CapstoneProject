@@ -87,6 +87,8 @@ public class GetMapsQueryHandler : IRequestHandler<GetMapsQuery, Result<Paginati
             CreatedByUserId = m.CreatedBy ?? Guid.Empty,
             CreatedByUserName = m.Creator != null ? $"{m.Creator.FirstName} {m.Creator.LastName}".Trim() : null,
             CreatedAt = m.CreatedAt,
+            UpdatedAt = m.UpdatedAt,
+            ContentVersion = m.ContentVersion,
             TagNames = m.MapTags.Select(t => t.Tag.Name).ToList(),
             LearnedTags = m.LearnedTags
                 .Select(id => learnedTagNameMap.TryGetValue(id, out var name) ? name : id.ToString())

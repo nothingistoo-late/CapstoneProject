@@ -43,7 +43,7 @@ public class GetMyMapListQueryHandler : IRequestHandler<GetMyMapListQuery, Resul
             .ThenInclude(m => m!.Creator)
             .AsNoTracking();
 
-        query = query.Where(mm => mm.Map != null && !mm.Map.IsDeleted && mm.Map.Status == EntityStatusEnum.Active);
+        query = query.Where(mm => mm.Map != null && mm.Map.Status == EntityStatusEnum.Active && (!mm.Map.IsDeleted || !mm.IsAuthor));
 
         var total = await query.CountAsync(cancellationToken);
         var pageNumber = Math.Max(1, request.PageNumber);
@@ -89,6 +89,8 @@ public class GetMyMapListQueryHandler : IRequestHandler<GetMyMapListQuery, Resul
                 CreatedByUserName = m.Creator != null ? $"{m.Creator.FirstName} {m.Creator.LastName}".Trim() : null,
                 IsAuthor = mm.IsAuthor,
                 CreatedAt = m.CreatedAt,
+                UpdatedAt = m.UpdatedAt,
+                ContentVersion = m.ContentVersion,
                 TagNames = m.MapTags.Select(t => t.Tag.Name).ToList(),
                 LearnedTags = m.LearnedTags
                     .Select(id => learnedTagNameMap.TryGetValue(id, out var name) ? name : id.ToString())

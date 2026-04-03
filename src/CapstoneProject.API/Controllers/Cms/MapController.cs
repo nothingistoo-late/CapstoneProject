@@ -9,6 +9,7 @@ using CapstoneProject.Application.Features.Maps.Commands.BatchRejectMaps;
 using CapstoneProject.Application.Features.Maps.Commands.CreateMap;
 using CapstoneProject.Application.Features.Maps.Commands.CreateTag;
 using CapstoneProject.Application.Features.Maps.Commands.DeleteMap;
+using CapstoneProject.Application.Features.Maps.Commands.DuplicateMapAsNew;
 using CapstoneProject.Application.Features.Maps.Commands.DeleteTag;
 using CapstoneProject.Application.Features.Maps.Commands.PublishMap;
 using CapstoneProject.Application.Features.Maps.Commands.RejectMap;
@@ -117,6 +118,26 @@ public class CmsMapController : ControllerBase
     public async Task<IActionResult> GetMapById(Guid id, [FromQuery] bool includeEditorialForUser = false)
     {
         var result = await _mediator.Send(new GetMapByIdQuery(id, includeEditorialForUser));
+        return StatusCode(result.GetHttpStatusCode(), result);
+    }
+
+    /// <summary>Tạo map mới từ map nguồn (map gốc không đổi). Author của map hoặc Admin/Moderator.</summary>
+    [HttpPost("{id:guid}/duplicate-as-new")]
+    [AuthorizeRoles(nameof(RoleEnum.Admin), nameof(RoleEnum.Moderator))]
+    [Consumes("application/json")]
+    [ProducesResponseType(typeof(Result<Guid>), StatusCodes.Status201Created)]
+    [ProducesResponseType(typeof(Result<Guid>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(Result), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(Result), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(Result<Guid>), StatusCodes.Status404NotFound)]
+    [SwaggerOperation(Summary = "Duplicate map as new listing", Description = "New MapId; source unchanged. Same rules as learner endpoint. Caller becomes author of the copy.", OperationId = "Cms_DuplicateMapAsNew", Tags = new[] { "CMS - Maps" })]
+    public async Task<IActionResult> DuplicateMapAsNew(
+        Guid id,
+        [FromBody(EmptyBodyBehavior = EmptyBodyBehavior.Allow)] DuplicateMapAsNewRequest? request = null)
+    {
+        var result = await _mediator.Send(new DuplicateMapAsNewCommand(id, request));
+        if (result.IsSuccess && result.Data != default)
+            return CreatedAtAction(nameof(GetMapById), new { id = result.Data }, result);
         return StatusCode(result.GetHttpStatusCode(), result);
     }
 

@@ -111,6 +111,7 @@ public static class QuackOrbitEntityConfiguration
         e.HasOne(x => x.Creator).WithMany().HasForeignKey(x => x.CreatedBy).IsRequired(false);
         e.HasIndex(x => x.MapStatus);
         e.HasIndex(x => x.IsPublished);
+        e.Property(x => x.ContentVersion).HasDefaultValue(1);
         e.HasMany(x => x.MapTags).WithOne(x => x.Map).HasForeignKey(x => x.MapId).OnDelete(DeleteBehavior.Cascade);
         e.HasMany(x => x.MapDetails).WithOne(x => x.Map).HasForeignKey(x => x.MapId).OnDelete(DeleteBehavior.Cascade);
         e.HasMany(x => x.MapMedias).WithOne(x => x.Map).HasForeignKey(x => x.MapId).OnDelete(DeleteBehavior.Cascade);

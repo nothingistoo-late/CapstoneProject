@@ -1,6 +1,7 @@
 // Global usings for API project - minimize repeated usings in controllers
 global using MediatR;
 global using Microsoft.AspNetCore.Mvc;
+global using Microsoft.AspNetCore.Mvc.ModelBinding;
 global using Swashbuckle.AspNetCore.Annotations;
 global using CapstoneProject.Application.Common.Enums;
 global using CapstoneProject.Application.Common.Extensions;

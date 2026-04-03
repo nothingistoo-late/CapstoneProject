@@ -5,6 +5,7 @@ using CapstoneProject.Application.Commons.DTOs.Maps;
 using CapstoneProject.Application.Features.Maps.Commands.CreateMap;
 using CapstoneProject.Application.Features.Maps.Commands.CreateMapFromJsonFile;
 using CapstoneProject.Application.Features.Maps.Commands.DeleteMap;
+using CapstoneProject.Application.Features.Maps.Commands.DuplicateMapAsNew;
 using CapstoneProject.Application.Features.Maps.Commands.SubmitMapForReview;
 using CapstoneProject.Application.Features.Maps.Commands.UpdateMap;
 using CapstoneProject.Application.Features.Maps.Commands.UploadMapAvatar;
@@ -392,10 +393,35 @@ public class LearnerMapController : ControllerBase
     [ProducesResponseType(typeof(Result), StatusCodes.Status403Forbidden)]
     [ProducesResponseType(typeof(Result), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(Result), StatusCodes.Status500InternalServerError)]
-    [SwaggerOperation(Summary = "Update map", Description = "Updates a draft map. Author or Admin/Moderator only. Requires Bearer token.", OperationId = "Learner_UpdateMap", Tags = new[] { "Learner - Maps" })]
+    [SwaggerOperation(Summary = "Update map", Description = "Ghi đè nội dung cùng listing (cùng MapId): cập nhật map; sau publish lại người đã mua vẫn dùng cùng MapId. Để giữ map gốc không đổi và tạo bản mới (MapId mới, lịch sử map cũ không đổi), dùng POST .../{id}/duplicate-as-new. Author or Admin/Moderator.", OperationId = "Learner_UpdateMap", Tags = new[] { "Learner - Maps" })]
     public async Task<IActionResult> UpdateMap(Guid id, [FromBody] UpdateMapRequest request)
     {
         var result = await _mediator.Send(new UpdateMapCommand(id, request));
+        return StatusCode(result.GetHttpStatusCode(), result);
+    }
+
+    /// <summary>Tạo map mới từ map nguồn (map gốc không bị sửa).</summary>
+    /// <remarks>
+    /// Clone toàn bộ level, hint, gallery (cùng URL), tag (hoặc gửi tagIds), metadata. Map mới mặc định Draft; optional autoPublish.
+    /// Người gọi trở thành tác giả bản sao (MyMap IsAuthor). Người chơi muốn bản mới cần sở hữu map mới (MapId khác).
+    /// </remarks>
+    [HttpPost("{id:guid}/duplicate-as-new")]
+    [AuthorizeRoles(nameof(RoleEnum.Learner), nameof(RoleEnum.Admin), nameof(RoleEnum.Moderator))]
+    [Consumes("application/json")]
+    [ProducesResponseType(typeof(Result<Guid>), StatusCodes.Status201Created)]
+    [ProducesResponseType(typeof(Result<Guid>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(Result<Guid>), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(Result<Guid>), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(Result<Guid>), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(Result<Guid>), StatusCodes.Status500InternalServerError)]
+    [SwaggerOperation(Summary = "Duplicate map as new listing", Description = "Creates a new map (new MapId). Source map is not modified. Optional body: DuplicateMapAsNewRequest (title, description, difficulty, price, tagIds, learnedTags, editorial, autoPublish, ...). Empty body = copy with title \"(Copy)\".", OperationId = "Learner_DuplicateMapAsNew", Tags = new[] { "Learner - Maps" })]
+    public async Task<IActionResult> DuplicateMapAsNew(
+        Guid id,
+        [FromBody(EmptyBodyBehavior = EmptyBodyBehavior.Allow)] DuplicateMapAsNewRequest? request = null)
+    {
+        var result = await _mediator.Send(new DuplicateMapAsNewCommand(id, request));
+        if (result.IsSuccess && result.Data != default)
+            return CreatedAtAction(nameof(GetMapById), new { id = result.Data }, result);
         return StatusCode(result.GetHttpStatusCode(), result);
     }
 

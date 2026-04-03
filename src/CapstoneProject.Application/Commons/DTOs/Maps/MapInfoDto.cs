@@ -21,6 +21,8 @@ public class MapInfoDto
     /// <summary>Tên người tạo map (FirstName + LastName).</summary>
     public string? CreatedByUserName { get; set; }
     public DateTime? CreatedAt { get; set; }
+    public DateTime? UpdatedAt { get; set; }
+    public int ContentVersion { get; set; }
     public List<string> TagNames { get; set; } = new();
     public List<string> LearnedTags { get; set; } = new();
     /// <summary>Điều kiện thắng của level đầu tiên.</summary>

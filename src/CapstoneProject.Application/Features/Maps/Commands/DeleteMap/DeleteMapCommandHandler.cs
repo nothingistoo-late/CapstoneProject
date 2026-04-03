@@ -37,6 +37,10 @@ public class DeleteMapCommandHandler : IRequestHandler<DeleteMapCommand, Result>
         if (map.CreatedBy != userIdNullable.Value && !isAdminOrMod)
             return Result.Failure("You do not have permission to delete this map. Only the map author or Admin/Moderator can delete it.", ErrorCodeEnum.Forbidden);
 
+        map.IsPublished = false;
+        if (map.MapStatus == MapStatusEnum.Published)
+            map.MapStatus = MapStatusEnum.Approved;
+
         map.SoftDeleteEntity(userIdNullable.Value);
         _unitOfWork.Repository<Map>().Update(map);
         await _unitOfWork.SaveChangesAsync(cancellationToken);

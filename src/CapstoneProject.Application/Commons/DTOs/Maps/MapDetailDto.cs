@@ -18,6 +18,9 @@ public class MapDetailDto
     public string? EditorialContent { get; set; }
     public int UnlockEditorialAfterStars { get; set; }
     public DateTime? CreatedAt { get; set; }
+    public DateTime? UpdatedAt { get; set; }
+    /// <summary>Tăng mỗi lần cập nhật nội dung map (level/JSON). Dùng cho cache client.</summary>
+    public int ContentVersion { get; set; }
     /// <summary>Các level (JSON layout) theo thứ tự.</summary>
     public List<MapLevelItemDto> Levels { get; set; } = new();
     /// <summary>Tương thích client cũ: JSON của level đầu tiên (cùng <see cref="Levels"/>[0] nếu có).</summary>

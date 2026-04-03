@@ -6,6 +6,7 @@ using CapstoneProject.Application.Common.Interfaces;
 using CapstoneProject.Application.Common.Models;
 using CapstoneProject.Application.Commons.DTOs.Maps;
 using CapstoneProject.Domain.Entities;
+using CapstoneProject.Domain.Enums;
 
 namespace CapstoneProject.Application.Features.Maps.Queries.GetMapById;
 
@@ -23,7 +24,7 @@ public class GetMapByIdQueryHandler : IRequestHandler<GetMapByIdQuery, Result<Ma
     public async Task<Result<MapDetailDto>> Handle(GetMapByIdQuery request, CancellationToken cancellationToken)
     {
         var map = await _unitOfWork.Repository<Map>().GetQueryable()
-            .Where(m => m.Id == request.MapId && !m.IsDeleted)
+            .Where(m => m.Id == request.MapId && m.Status == EntityStatusEnum.Active)
             .Include(m => m.MapDetails).ThenInclude(d => d.Hints)
             .Include(m => m.MapMedias)
             .Include(m => m.MapTags).ThenInclude(mt => mt.Tag)
@@ -32,6 +33,30 @@ public class GetMapByIdQueryHandler : IRequestHandler<GetMapByIdQuery, Result<Ma
             .FirstOrDefaultAsync(cancellationToken);
         if (map == null)
             return Result<MapDetailDto>.Failure($"Map not found with Id: {request.MapId}.", ErrorCodeEnum.NotFound);
+
+        if (map.IsDeleted)
+        {
+            var (isValid, userIdNullable) = await _currentUserService.IsUserValidAsync();
+            if (!isValid || !userIdNullable.HasValue)
+                return Result<MapDetailDto>.Failure($"Map not found with Id: {request.MapId}.", ErrorCodeEnum.NotFound);
+
+            var userId = userIdNullable.Value;
+            var isAuthor = map.CreatedBy.HasValue && map.CreatedBy.Value == userId;
+            var isOwned = isAuthor;
+            if (!isOwned)
+            {
+                var purchased = await _unitOfWork.Repository<PaymentRecord>().GetQueryable()
+                    .AnyAsync(p => !p.IsDeleted && p.UserId == userId && p.MapId == map.Id && p.PaymentStatus == PaymentStatusEnum.Completed, cancellationToken);
+                if (purchased)
+                    isOwned = true;
+                else
+                    isOwned = await _unitOfWork.Repository<MyMap>().GetQueryable()
+                        .AnyAsync(mm => !mm.IsDeleted && mm.UserId == userId && mm.MapId == map.Id, cancellationToken);
+            }
+
+            if (!isOwned)
+                return Result<MapDetailDto>.Failure($"Map not found with Id: {request.MapId}.", ErrorCodeEnum.NotFound);
+        }
 
         var learnedTagNameMap = await _unitOfWork.Repository<Tag>().GetQueryable()
             .Where(t => map.LearnedTags.Contains(t.Id))
@@ -84,6 +109,8 @@ public class GetMapByIdQueryHandler : IRequestHandler<GetMapByIdQuery, Result<Ma
             EditorialContent = showEditorial ? map.EditorialContent : null,
             UnlockEditorialAfterStars = map.UnlockEditorialAfterStars,
             CreatedAt = map.CreatedAt,
+            UpdatedAt = map.UpdatedAt,
+            ContentVersion = map.ContentVersion,
             Levels = levelDtos,
             MapDetailJson = firstJson,
             Hints = flatHints,

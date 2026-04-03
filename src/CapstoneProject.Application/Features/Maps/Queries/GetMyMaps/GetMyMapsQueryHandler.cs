@@ -59,7 +59,7 @@ public class GetMyMapsQueryHandler : IRequestHandler<GetMyMapsQuery, Result<Pagi
         }
 
         var query = mapRepo.GetQueryable()
-            .Where(m => !m.IsDeleted && m.Status == EntityStatusEnum.Active && ownedMapIds.Contains(m.Id))
+            .Where(m => m.Status == EntityStatusEnum.Active && ownedMapIds.Contains(m.Id))
             .Include(m => m.MapDetails)
             .Include(m => m.MapTags).ThenInclude(mt => mt.Tag)
             .Include(m => m.Creator)
@@ -104,6 +104,8 @@ public class GetMyMapsQueryHandler : IRequestHandler<GetMyMapsQuery, Result<Pagi
             // IsAuthor = user đang gửi request có phải là người tạo map (CreatedBy), không phải kiểm tra sở hữu
             IsAuthor = m.CreatedBy == userId.Value,
             CreatedAt = m.CreatedAt,
+            UpdatedAt = m.UpdatedAt,
+            ContentVersion = m.ContentVersion,
             TagNames = m.MapTags.Select(t => t.Tag.Name).ToList(),
             LearnedTags = m.LearnedTags
                 .Select(id => learnedTagNameMap.TryGetValue(id, out var name) ? name : id.ToString())

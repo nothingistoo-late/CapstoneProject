@@ -28,7 +28,7 @@ public class CheckMapOwnershipQueryHandler : IRequestHandler<CheckMapOwnershipQu
         var mapRepo = _unitOfWork.Repository<Map>();
         var map = await mapRepo.GetQueryable()
             .AsNoTracking()
-            .FirstOrDefaultAsync(m => m.Id == request.MapId && !m.IsDeleted && m.Status == EntityStatusEnum.Active, cancellationToken);
+            .FirstOrDefaultAsync(m => m.Id == request.MapId && m.Status == EntityStatusEnum.Active, cancellationToken);
 
         var dto = new CheckMapOwnershipDto { MapExists = map != null };
         if (map == null)
