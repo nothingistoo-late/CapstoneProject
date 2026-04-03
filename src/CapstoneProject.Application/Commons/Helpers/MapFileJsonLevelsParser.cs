@@ -16,7 +16,8 @@ public static class MapFileJsonLevelsParser
             var list = new List<MapLevelInputDto>();
             var i = 0;
             foreach (var el in root.EnumerateArray())
-                list.Add(new MapLevelInputDto { LevelOrder = i++, Title = null, JsonContent = el });
+                // JsonElement chỉ hợp lệ trong đời JsonDocument; clone để dùng sau khi doc dispose.
+                list.Add(new MapLevelInputDto { LevelOrder = i++, Title = null, JsonContent = el.Clone() });
             return list;
         }
         if (root.ValueKind == JsonValueKind.Object &&
@@ -30,12 +31,12 @@ public static class MapFileJsonLevelsParser
                 {
                     var order = el.TryGetProperty("levelOrder", out var lo) && lo.TryGetInt32(out var o) ? o : list.Count;
                     var title = el.TryGetProperty("title", out var t) && t.ValueKind == JsonValueKind.String ? t.GetString() : null;
-                    var dto = new MapLevelInputDto { LevelOrder = order, Title = title, JsonContent = jc };
+                    var dto = new MapLevelInputDto { LevelOrder = order, Title = title, JsonContent = jc.Clone() };
                     MapLevelMetadataExtractor.MergeWrapperMetadata(el, dto);
                     list.Add(dto);
                 }
                 else
-                    list.Add(new MapLevelInputDto { LevelOrder = list.Count, Title = null, JsonContent = el });
+                    list.Add(new MapLevelInputDto { LevelOrder = list.Count, Title = null, JsonContent = el.Clone() });
             }
             return list.OrderBy(x => x.LevelOrder).ToList();
         }
