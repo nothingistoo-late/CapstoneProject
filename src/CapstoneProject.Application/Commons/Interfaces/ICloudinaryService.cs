@@ -1,9 +1,10 @@
 using Microsoft.AspNetCore.Http;
+using CapstoneProject.Domain.Enums;
 
 namespace CapstoneProject.Application.Commons.Interfaces;
 
 /// <summary>
-/// Service for uploading images to Cloudinary (user avatar, map avatar).
+/// Service for uploading images/videos to Cloudinary (avatars, map gallery).
 /// </summary>
 public interface ICloudinaryService
 {
@@ -17,6 +18,9 @@ public interface ICloudinaryService
     /// <returns>Secure URL of the uploaded image, or null on failure.</returns>
     Task<string?> UploadImageAsync(IFormFile file, string folder, string? publicIdPrefix = null, CancellationToken cancellationToken = default);
 
+    /// <summary>Upload video to Cloudinary (map gallery, etc.).</summary>
+    Task<string?> UploadVideoAsync(IFormFile file, string folder, string? publicIdPrefix = null, CancellationToken cancellationToken = default);
+
     /// <summary>
     /// Delete image from Cloudinary by public_id (full or without extension).
     /// </summary>
@@ -24,6 +28,9 @@ public interface ICloudinaryService
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>True if deleted successfully.</returns>
     Task<bool> DeleteAsync(string publicId, CancellationToken cancellationToken = default);
+
+    /// <summary>Delete asset by public_id; use <paramref name="kind"/> to pick image vs video resource type.</summary>
+    Task<bool> DeleteAsync(string publicId, MapMediaKind kind, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Extract public_id from Cloudinary URL (for delete). Returns null if not a Cloudinary URL.

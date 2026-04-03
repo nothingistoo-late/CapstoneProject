@@ -1,3 +1,4 @@
+using CapstoneProject.Application.Commons.Helpers;
 using FluentValidation;
 
 namespace CapstoneProject.Application.Features.Maps.Commands.UpdateMap;
@@ -12,7 +13,15 @@ public class UpdateMapCommandValidator : AbstractValidator<UpdateMapCommand>
         {
             RuleFor(x => x.Request!.Title).NotEmpty().MaximumLength(200);
             RuleFor(x => x.Request!.Difficulty).InclusiveBetween(1, 5);
-            RuleFor(x => x.Request!.TimeLimitMs).GreaterThan(0);
+            When(x => x.Request!.Levels is { Count: > 0 }, () =>
+            {
+                RuleFor(x => x.Request!)
+                    .Must(req =>
+                    {
+                        MapLevelOrderNormalizer.NormalizeIfDuplicate(req.Levels!);
+                        return true;
+                    });
+            });
             When(x => x.Request!.UnlockEditorialAfterStars.HasValue, () =>
                 RuleFor(x => x.Request!.UnlockEditorialAfterStars!.Value).InclusiveBetween(0, 3));
 

@@ -722,7 +722,7 @@ namespace CapstoneProject.Infrastructure.Migrations
                         .HasColumnType("boolean")
                         .HasDefaultValue(false);
 
-                    b.Property<Guid>("MapId")
+                    b.Property<Guid>("MapDetailId")
                         .HasColumnType("uuid");
 
                     b.Property<int>("OrderNo")
@@ -739,7 +739,7 @@ namespace CapstoneProject.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("MapId", "OrderNo");
+                    b.HasIndex("MapDetailId", "OrderNo");
 
                     b.ToTable("Hints");
                 });
@@ -967,15 +967,9 @@ namespace CapstoneProject.Infrastructure.Migrations
                     b.Property<int>("Status")
                         .HasColumnType("integer");
 
-                    b.Property<int>("TimeLimitMs")
-                        .HasColumnType("integer");
-
                     b.Property<string>("Title")
                         .IsRequired()
                         .HasColumnType("text");
-
-                    b.Property<int>("Type")
-                        .HasColumnType("integer");
 
                     b.Property<int>("UnlockEditorialAfterStars")
                         .HasColumnType("integer");
@@ -985,9 +979,6 @@ namespace CapstoneProject.Infrastructure.Migrations
 
                     b.Property<Guid?>("UpdatedBy")
                         .HasColumnType("uuid");
-
-                    b.Property<int>("WinCondition")
-                        .HasColumnType("integer");
 
                     b.HasKey("Id");
 
@@ -1029,8 +1020,74 @@ namespace CapstoneProject.Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<int>("LevelOrder")
+                        .HasColumnType("integer");
+
                     b.Property<Guid>("MapId")
                         .HasColumnType("uuid");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("TimeLimitMs")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Title")
+                        .HasColumnType("text");
+
+                    b.Property<int>("Type")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp without time zone");
+
+                    b.Property<Guid?>("UpdatedBy")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("WinCondition")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("MapId", "LevelOrder")
+                        .IsUnique();
+
+                    b.ToTable("MapDetails");
+                });
+
+            modelBuilder.Entity("CapstoneProject.Domain.Entities.MapMedia", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp without time zone")
+                        .HasDefaultValueSql("(now() AT TIME ZONE 'Asia/Ho_Chi_Minh')");
+
+                    b.Property<Guid?>("CreatedBy")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("timestamp without time zone");
+
+                    b.Property<Guid?>("DeletedBy")
+                        .HasColumnType("uuid");
+
+                    b.Property<bool>("IsDeleted")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false);
+
+                    b.Property<int>("Kind")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid>("MapId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("integer");
 
                     b.Property<int>("Status")
                         .HasColumnType("integer");
@@ -1041,12 +1098,15 @@ namespace CapstoneProject.Infrastructure.Migrations
                     b.Property<Guid?>("UpdatedBy")
                         .HasColumnType("uuid");
 
+                    b.Property<string>("Url")
+                        .IsRequired()
+                        .HasColumnType("text");
+
                     b.HasKey("Id");
 
-                    b.HasIndex("MapId")
-                        .IsUnique();
+                    b.HasIndex("MapId", "SortOrder");
 
-                    b.ToTable("MapDetails");
+                    b.ToTable("MapMedias");
                 });
 
             modelBuilder.Entity("CapstoneProject.Domain.Entities.MapRating", b =>
@@ -1916,6 +1976,9 @@ namespace CapstoneProject.Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<Guid?>("MapDetailId")
+                        .HasColumnType("uuid");
+
                     b.Property<Guid>("MapId")
                         .HasColumnType("uuid");
 
@@ -1944,6 +2007,8 @@ namespace CapstoneProject.Infrastructure.Migrations
                         .HasColumnType("uuid");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("MapDetailId");
 
                     b.HasIndex("MapId");
 
@@ -2199,6 +2264,9 @@ namespace CapstoneProject.Infrastructure.Migrations
                     b.Property<string>("Language")
                         .HasColumnType("text");
 
+                    b.Property<Guid?>("MapDetailId")
+                        .HasColumnType("uuid");
+
                     b.Property<Guid>("MapId")
                         .HasColumnType("uuid");
 
@@ -2238,6 +2306,8 @@ namespace CapstoneProject.Infrastructure.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("ExecutionsResultId");
+
+                    b.HasIndex("MapDetailId");
 
                     b.HasIndex("MapId");
 
@@ -2287,6 +2357,9 @@ namespace CapstoneProject.Infrastructure.Migrations
                     b.Property<DateTime?>("LastPlayedAt")
                         .HasColumnType("timestamp without time zone");
 
+                    b.Property<Guid?>("MapDetailId")
+                        .HasColumnType("uuid");
+
                     b.Property<Guid>("MapId")
                         .HasColumnType("uuid");
 
@@ -2307,8 +2380,11 @@ namespace CapstoneProject.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("UserId", "MapId")
-                        .IsUnique();
+                    b.HasIndex("MapDetailId");
+
+                    b.HasIndex("MapId");
+
+                    b.HasIndex("UserId", "MapDetailId");
 
                     b.ToTable("UserMapResults");
                 });
@@ -2879,13 +2955,13 @@ namespace CapstoneProject.Infrastructure.Migrations
 
             modelBuilder.Entity("CapstoneProject.Domain.Entities.Hint", b =>
                 {
-                    b.HasOne("CapstoneProject.Domain.Entities.Map", "Map")
+                    b.HasOne("CapstoneProject.Domain.Entities.MapDetail", "MapDetail")
                         .WithMany("Hints")
-                        .HasForeignKey("MapId")
+                        .HasForeignKey("MapDetailId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("Map");
+                    b.Navigation("MapDetail");
                 });
 
             modelBuilder.Entity("CapstoneProject.Domain.Entities.LearningPathItem", b =>
@@ -2925,8 +3001,19 @@ namespace CapstoneProject.Infrastructure.Migrations
             modelBuilder.Entity("CapstoneProject.Domain.Entities.MapDetail", b =>
                 {
                     b.HasOne("CapstoneProject.Domain.Entities.Map", "Map")
-                        .WithOne("MapDetail")
-                        .HasForeignKey("CapstoneProject.Domain.Entities.MapDetail", "MapId")
+                        .WithMany("MapDetails")
+                        .HasForeignKey("MapId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Map");
+                });
+
+            modelBuilder.Entity("CapstoneProject.Domain.Entities.MapMedia", b =>
+                {
+                    b.HasOne("CapstoneProject.Domain.Entities.Map", "Map")
+                        .WithMany("MapMedias")
+                        .HasForeignKey("MapId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
@@ -3072,6 +3159,16 @@ namespace CapstoneProject.Infrastructure.Migrations
                     b.Navigation("Submission");
                 });
 
+            modelBuilder.Entity("CapstoneProject.Domain.Entities.Submission", b =>
+                {
+                    b.HasOne("CapstoneProject.Domain.Entities.MapDetail", "MapDetail")
+                        .WithMany()
+                        .HasForeignKey("MapDetailId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("MapDetail");
+                });
+
             modelBuilder.Entity("CapstoneProject.Domain.Entities.UserAchievement", b =>
                 {
                     b.HasOne("CapstoneProject.Domain.Entities.Achievement", "Achievement")
@@ -3119,6 +3216,16 @@ namespace CapstoneProject.Infrastructure.Migrations
                     b.Navigation("LearningGoal");
 
                     b.Navigation("User");
+                });
+
+            modelBuilder.Entity("CapstoneProject.Domain.Entities.UserMapResult", b =>
+                {
+                    b.HasOne("CapstoneProject.Domain.Entities.MapDetail", "MapDetail")
+                        .WithMany()
+                        .HasForeignKey("MapDetailId")
+                        .OnDelete(DeleteBehavior.Cascade);
+
+                    b.Navigation("MapDetail");
                 });
 
             modelBuilder.Entity("CapstoneProject.Domain.Entities.UserMatchResult", b =>
@@ -3235,12 +3342,16 @@ namespace CapstoneProject.Infrastructure.Migrations
 
             modelBuilder.Entity("CapstoneProject.Domain.Entities.Map", b =>
                 {
-                    b.Navigation("Hints");
+                    b.Navigation("MapDetails");
 
-                    b.Navigation("MapDetail")
-                        .IsRequired();
+                    b.Navigation("MapMedias");
 
                     b.Navigation("MapTags");
+                });
+
+            modelBuilder.Entity("CapstoneProject.Domain.Entities.MapDetail", b =>
+                {
+                    b.Navigation("Hints");
                 });
 
             modelBuilder.Entity("CapstoneProject.Domain.Entities.Match", b =>

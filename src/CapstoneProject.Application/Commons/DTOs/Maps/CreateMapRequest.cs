@@ -1,5 +1,4 @@
 using System.Text.Json;
-using CapstoneProject.Domain.Enums;
 
 namespace CapstoneProject.Application.Commons.DTOs.Maps;
 
@@ -8,12 +7,12 @@ public class CreateMapRequest
     public string Title { get; set; } = string.Empty;
     public string Description { get; set; } = string.Empty;
     public int Difficulty { get; set; }
-    /// <summary>Loại map: Topdown (0) hoặc Platform (1). Mặc định Topdown.</summary>
-    public MapTypeEnum? Type { get; set; }
-    public int TimeLimitMs { get; set; }
-    public int WinCondition { get; set; }
     public decimal? Price { get; set; }
-    public JsonElement MapDetailJson { get; set; }
+    /// <summary>Nhiều level; nếu null/rỗng thì dùng <see cref="MapDetailJson"/> (một level order 0).</summary>
+    public List<MapLevelInputDto>? Levels { get; set; }
+    /// <summary>Một level duy nhất (order 0) khi không gửi <see cref="Levels"/>.</summary>
+    public JsonElement? MapDetailJson { get; set; }
+    /// <summary>Gợi ý cho map một level (khi chỉ gửi <see cref="MapDetailJson"/>). Nếu gửi <see cref="Levels"/> thì dùng <see cref="MapLevelInputDto.Hints"/> theo từng level.</summary>
     public List<HintItemDto> Hints { get; set; } = new();
     /// <summary>Tag map hiện tại để hiển thị/chọn lọc game.</summary>
     public List<Guid> TagIds { get; set; } = new();

@@ -1,8 +1,8 @@
-using System.Text.Json;
 using MediatR;
 using CapstoneProject.Application.Common.Enums;
 using CapstoneProject.Application.Common.Models;
 using CapstoneProject.Application.Commons.DTOs.Maps;
+using CapstoneProject.Application.Commons.Helpers;
 using CapstoneProject.Application.Features.Maps.Commands.UpdateMap;
 
 namespace CapstoneProject.Application.Features.Maps.Commands.UpdateMapFromJsonFile;
@@ -19,22 +19,21 @@ public class UpdateMapFromJsonFileCommandHandler : IRequestHandler<UpdateMapFrom
     public async Task<Result> Handle(UpdateMapFromJsonFileCommand command, CancellationToken cancellationToken)
     {
         var input = command.Input;
-        if (string.IsNullOrWhiteSpace(input.MapDetailJsonContent))
-            return Result.Failure("MapDetailFile content is required.", ErrorCodeEnum.ValidationFailed);
+        var (levelsFromFile, detailJson, parseErr) = MapFileJsonLevelsParser.ParseFromCreateMapInput(input);
+        if (parseErr != null)
+            return Result.Failure(parseErr, ErrorCodeEnum.ValidationFailed);
 
-        JsonElement detailJson;
-        try
+        // Không dùng HintsJson nữa: hints được extract trực tiếp từ JSON map detail (mỗi level).
+        if (levelsFromFile == null && detailJson.HasValue)
         {
-            detailJson = JsonSerializer.Deserialize<JsonElement>(input.MapDetailJsonContent);
+            levelsFromFile = new List<MapLevelInputDto>
+            {
+                new() { LevelOrder = 0, Title = null, JsonContent = detailJson.Value }
+            };
+            detailJson = null;
         }
-        catch (JsonException)
-        {
-            return Result.Failure("Uploaded file is not valid JSON.", ErrorCodeEnum.ValidationFailed);
-        }
-
-        var hints = ParseHintsJson(input.HintsJson);
-        if (hints == null)
-            return Result.Failure("HintsJson must be valid JSON (array or object).", ErrorCodeEnum.ValidationFailed);
+        if (levelsFromFile != null)
+            MapHintsExtractor.MergeHintsFromJson(levelsFromFile);
 
         var tagIds = ParseTagIdsCsv(input.TagIdsCsv);
         if (tagIds == null)
@@ -48,54 +47,15 @@ public class UpdateMapFromJsonFileCommandHandler : IRequestHandler<UpdateMapFrom
             Title = input.Title,
             Description = input.Description,
             Difficulty = input.Difficulty,
-            Type = input.Type,
-            TimeLimitMs = input.TimeLimitMs,
-            WinCondition = input.WinCondition,
             Price = input.Price,
             TagIds = tagIds,
             LearnedTags = learnedTags,
-            Hints = hints,
-            MapDetailJson = detailJson
+            Levels = levelsFromFile,
+            MapDetailJson = null
         };
 
         var result = await _mediator.Send(new UpdateMapCommand(command.MapId, updateRequest), cancellationToken);
         return result;
-    }
-
-    private static List<HintItemDto>? ParseHintsJson(string? hintsJson)
-    {
-        if (string.IsNullOrWhiteSpace(hintsJson)) return new List<HintItemDto>();
-
-        try
-        {
-            using var doc = JsonDocument.Parse(hintsJson);
-            var root = doc.RootElement;
-            if (root.ValueKind == JsonValueKind.Array)
-                return JsonSerializer.Deserialize<List<HintItemDto>>(hintsJson) ?? new List<HintItemDto>();
-            if (root.ValueKind == JsonValueKind.Object)
-            {
-                var one = JsonSerializer.Deserialize<HintItemDto>(hintsJson);
-                return one != null ? new List<HintItemDto> { one } : new List<HintItemDto>();
-            }
-            if (root.ValueKind == JsonValueKind.String)
-            {
-                var inner = root.GetString();
-                if (string.IsNullOrWhiteSpace(inner)) return new List<HintItemDto>();
-                using var innerDoc = JsonDocument.Parse(inner);
-                if (innerDoc.RootElement.ValueKind == JsonValueKind.Array)
-                    return JsonSerializer.Deserialize<List<HintItemDto>>(inner) ?? new List<HintItemDto>();
-                if (innerDoc.RootElement.ValueKind == JsonValueKind.Object)
-                {
-                    var one = JsonSerializer.Deserialize<HintItemDto>(inner);
-                    return one != null ? new List<HintItemDto> { one } : new List<HintItemDto>();
-                }
-            }
-            return null;
-        }
-        catch (JsonException)
-        {
-            return null;
-        }
     }
 
     private static List<Guid>? ParseTagIdsCsv(string? tagIdsCsv)

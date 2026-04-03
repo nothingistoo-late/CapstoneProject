@@ -300,7 +300,7 @@ Request/response tương tự Learner (AuthResponse, Result). Role trả trong `
 
 2. **Tạo map (nháp)**  
    `POST /api/learner/maps` – Body: **CreateMapRequest**.  
-   Hoặc `POST /api/learner/maps/upload-json` – multipart/form-data (title, description, difficulty, timeLimitMs, winCondition, mapDetailFile, …).  
+   Hoặc `POST /api/learner/maps/upload-json` – multipart/form-data (title, description, difficulty, timeLimitMs, winCondition, mapDetailFiles, …).  
    **Response:** `Result<Guid>` – Id map (status = Draft). Role: Learner, Admin, Moderator.
 
 3. **Cập nhật map (nháp)**  

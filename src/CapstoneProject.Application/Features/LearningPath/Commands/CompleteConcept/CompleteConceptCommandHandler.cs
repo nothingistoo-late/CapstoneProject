@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using CapstoneProject.Application.Common.Enums;
 using CapstoneProject.Application.Common.Interfaces;
 using CapstoneProject.Application.Common.Models;
+using CapstoneProject.Application.Commons.Helpers;
 using CapstoneProject.Application.Commons.Interfaces;
 using CapstoneProject.Application.Commons.Models.Xp;
 using CapstoneProject.Domain.Common;
@@ -99,11 +100,12 @@ public class CompleteConceptCommandHandler : IRequestHandler<CompleteConceptComm
                 completedConceptIds.Add(concept.Id);
                 var completedConceptSet = completedConceptIds.ToHashSet();
 
-                var completedMapIds = await _unitOfWork.Repository<UserMapResult>().GetQueryable()
-                    .Where(r => r.UserId == userId.Value && !r.IsDeleted && r.BestStars >= 1 && mapIdsInGoal.Contains(r.MapId))
-                    .Select(r => r.MapId)
-                    .ToListAsync(cancellationToken);
-                var completedMapSet = completedMapIds.ToHashSet();
+                var completedMapSet = new HashSet<Guid>();
+                foreach (var mid in mapIdsInGoal)
+                {
+                    if (await MapProgressHelper.MapHasAllLevelsCompletedAsync(_unitOfWork, userId.Value, mid, minStars: 1, cancellationToken))
+                        completedMapSet.Add(mid);
+                }
 
                 var isLearningPathCompleted = pathItems.All(i =>
                     i.ItemType == LearningPathItemTypeEnum.Concept

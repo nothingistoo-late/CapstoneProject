@@ -2,9 +2,12 @@ using MediatR;
 using CapstoneProject.Application.Common.Enums;
 using CapstoneProject.Application.Common.Interfaces;
 using CapstoneProject.Application.Common.Models;
+using CapstoneProject.Application.Commons.DTOs.Maps;
+using CapstoneProject.Application.Commons.Helpers;
+using CapstoneProject.Application.Commons.Interfaces;
 using CapstoneProject.Domain.Entities;
-using CapstoneProject.Domain.Enums;
 using CapstoneProject.Domain.Common;
+using CapstoneProject.Domain.Enums;
 
 namespace CapstoneProject.Application.Features.Maps.Commands.CreateMap;
 
@@ -12,11 +15,16 @@ public class CreateMapCommandHandler : IRequestHandler<CreateMapCommand, Result<
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly ICurrentUserService _currentUserService;
+    private readonly ICloudinaryService _cloudinaryService;
 
-    public CreateMapCommandHandler(IUnitOfWork unitOfWork, ICurrentUserService currentUserService)
+    public CreateMapCommandHandler(
+        IUnitOfWork unitOfWork,
+        ICurrentUserService currentUserService,
+        ICloudinaryService cloudinaryService)
     {
         _unitOfWork = unitOfWork;
         _currentUserService = currentUserService;
+        _cloudinaryService = cloudinaryService;
     }
 
     public async Task<Result<Guid>> Handle(CreateMapCommand command, CancellationToken cancellationToken)
@@ -32,9 +40,6 @@ public class CreateMapCommandHandler : IRequestHandler<CreateMapCommand, Result<
             Title = req.Title,
             Description = req.Description,
             Difficulty = req.Difficulty,
-            TimeLimitMs = req.TimeLimitMs,
-            WinCondition = req.WinCondition,
-            Type = req.Type ?? MapTypeEnum.Topdown,
             Price = req.Price,
             IsPublished = command.AutoPublish,
             MapStatus = command.AutoPublish ? MapStatusEnum.Published : MapStatusEnum.Draft,
@@ -45,13 +50,6 @@ public class CreateMapCommandHandler : IRequestHandler<CreateMapCommand, Result<
 
         var mapRepo = _unitOfWork.Repository<Map>();
         await mapRepo.AddAsync(map);
-        var hintRepo = _unitOfWork.Repository<Hint>();
-        foreach (var h in req.Hints.OrderBy(x => x.OrderNo))
-        {
-            var hint = new Hint { MapId = map.Id, OrderNo = h.OrderNo, Content = h.Content };
-            hint.InitializeEntity(userId);
-            await hintRepo.AddAsync(hint);
-        }
 
         var mapTagRepo = _unitOfWork.Repository<MapTag>();
         foreach (var tagId in req.TagIds)
@@ -61,13 +59,61 @@ public class CreateMapCommandHandler : IRequestHandler<CreateMapCommand, Result<
             await mapTagRepo.AddAsync(mapTag);
         }
 
-        var mapMap = new MapDetail
+        var levelInputs = ResolveLevelInputs(req);
+        foreach (var lv in levelInputs)
+            MapHintsExtractor.MergeHintsFromJson(lv);
+        MapLevelMetadataExtractor.MergeFromJson(levelInputs);
+        foreach (var lv in levelInputs)
         {
-            MapId = map.Id,
-            JsonContent = req.MapDetailJson.GetRawText()
-        };
-        mapMap.InitializeEntity(userId);
-        await _unitOfWork.Repository<MapDetail>().AddAsync(mapMap);
+            if (lv.TimeLimitMs <= 0 || lv.WinCondition <= 0)
+                return Result<Guid>.Failure(
+                    "Each level requires TimeLimitMs and WinCondition > 0 (set in Levels[] or timeLimitMs / winCondition in each level JSON).",
+                    ErrorCodeEnum.ValidationFailed);
+            if (lv.Type == null)
+                return Result<Guid>.Failure(
+                    "Each level must declare map type: type or mapType (0|1 or Topdown|Platform) in level JSON root, on the wrapper next to jsonContent, or as type on each item in Levels[].",
+                    ErrorCodeEnum.ValidationFailed);
+        }
+
+        var hintRepo = _unitOfWork.Repository<Hint>();
+        foreach (var lv in levelInputs)
+        {
+            var detail = new MapDetail
+            {
+                MapId = map.Id,
+                LevelOrder = lv.LevelOrder,
+                Title = lv.Title,
+                JsonContent = lv.JsonContent.GetRawText(),
+                TimeLimitMs = lv.TimeLimitMs,
+                WinCondition = lv.WinCondition,
+                Type = lv.Type!.Value
+            };
+            detail.InitializeEntity(userId);
+            await _unitOfWork.Repository<MapDetail>().AddAsync(detail);
+
+            foreach (var h in lv.Hints.OrderBy(x => x.OrderNo))
+            {
+                var hint = new Hint { MapDetailId = detail.Id, OrderNo = h.OrderNo, Content = h.Content };
+                hint.InitializeEntity(userId);
+                await hintRepo.AddAsync(hint);
+            }
+        }
+
+        var galleryResult = await MapGalleryMediaHelper.StageGalleryMediaAsync(
+            map.Id,
+            userId,
+            command.GalleryFiles,
+            _unitOfWork,
+            _cloudinaryService,
+            requireAtLeastOneFile: false,
+            cancellationToken);
+        if (!galleryResult.IsSuccess)
+        {
+            var code = galleryResult.ErrorCode != null && Enum.TryParse<ErrorCodeEnum>(galleryResult.ErrorCode, out var ec)
+                ? ec
+                : ErrorCodeEnum.ValidationFailed;
+            return Result<Guid>.Failure(galleryResult.Message ?? "Gallery upload failed.", code);
+        }
 
         var myMap = new MyMap { MapId = map.Id, UserId = userId, IsAuthor = true };
         myMap.InitializeEntity(userId);
@@ -78,5 +124,23 @@ public class CreateMapCommandHandler : IRequestHandler<CreateMapCommand, Result<
             ? "Map created and published successfully."
             : "Map created successfully.";
         return Result<Guid>.Success(map.Id, message);
+    }
+
+    static List<MapLevelInputDto> ResolveLevelInputs(CreateMapRequest req)
+    {
+        if (req.Levels is { Count: > 0 })
+            return req.Levels.OrderBy(x => x.LevelOrder).ToList();
+        if (req.MapDetailJson.HasValue)
+            return new List<MapLevelInputDto>
+            {
+                new()
+                {
+                    LevelOrder = 0,
+                    Title = null,
+                    JsonContent = req.MapDetailJson.Value,
+                    Hints = req.Hints.ToList()
+                }
+            };
+        return new List<MapLevelInputDto>();
     }
 }

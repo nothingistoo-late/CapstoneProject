@@ -5,6 +5,7 @@ using CapstoneProject.Application.Common.Enums;
 using CapstoneProject.Application.Common.Interfaces;
 using CapstoneProject.Application.Common.Models;
 using CapstoneProject.Application.Commons.DTOs.Gameplay;
+using CapstoneProject.Application.Commons.Helpers;
 using CapstoneProject.Application.Commons.Interfaces;
 using CapstoneProject.Application.Commons.Models.Xp;
 using CapstoneProject.Domain.Common;
@@ -38,11 +39,20 @@ public class ValidateSolutionCommandHandler : IRequestHandler<ValidateSolutionCo
         var userId = userIdNullable.Value;
 
         var mapRepo = _unitOfWork.Repository<Map>();
-        var map = await mapRepo.GetQueryable().Include(m => m.MapDetail).FirstOrDefaultAsync(m => m.Id == command.Request.MapId && !m.IsDeleted, cancellationToken);
+        var map = await mapRepo.GetQueryable()
+            .Include(m => m.MapDetails)
+            .FirstOrDefaultAsync(m => m.Id == command.Request.MapId && !m.IsDeleted, cancellationToken);
         if (map == null)
             return Result<ValidateSolutionResultDto>.Failure("Map not found", ErrorCodeEnum.NotFound);
-        if (map.MapDetail == null)
+        var levelsOrdered = map.MapDetails.OrderBy(d => d.LevelOrder).ToList();
+        if (levelsOrdered.Count == 0)
             return Result<ValidateSolutionResultDto>.Failure("Map data not found", ErrorCodeEnum.ValidationFailed);
+
+        var mapDetail = ResolveMapDetail(command.Request.MapDetailId, levelsOrdered);
+        if (mapDetail == null)
+            return Result<ValidateSolutionResultDto>.Failure(
+                "MapDetailId is required when the map has multiple levels, or invalid for this map.",
+                ErrorCodeEnum.ValidationFailed);
 
         var mapSolveCfg = await _unitOfWork.Repository<MapSolveScoreConfig>().GetQueryable()
             .AsNoTracking()
@@ -64,7 +74,7 @@ public class ValidateSolutionCommandHandler : IRequestHandler<ValidateSolutionCo
         if (HasEngineMetrics(command.Request))
         {
             (score, stars, statusEnum, accepted, stepsUsedForSubmission, blocksUsedForSubmission) =
-                ScoreFromEngineMetrics(command.Request, map.MapDetail.JsonContent, ast, bytecode, scoreWeights);
+                ScoreFromEngineMetrics(command.Request, mapDetail.JsonContent, ast, bytecode, scoreWeights);
         }
         else
         {
@@ -76,6 +86,7 @@ public class ValidateSolutionCommandHandler : IRequestHandler<ValidateSolutionCo
         {
             UserId = userId,
             MapId = map.Id,
+            MapDetailId = mapDetail.Id,
             Language = command.Request.Language,
             AstSpec = command.Request.AstSpec,
             BytecodeSpec = command.Request.BytecodeSpec,
@@ -100,13 +111,16 @@ public class ValidateSolutionCommandHandler : IRequestHandler<ValidateSolutionCo
         await _unitOfWork.Repository<ExecutionsResult>().AddAsync(execResult);
 
         var umrRepo = _unitOfWork.Repository<UserMapResult>();
-        var umr = await umrRepo.GetQueryable().FirstOrDefaultAsync(u => u.UserId == userId && u.MapId == map.Id, cancellationToken);
+        var umr = await umrRepo.GetQueryable().FirstOrDefaultAsync(
+            u => u.UserId == userId && u.MapDetailId == mapDetail.Id,
+            cancellationToken);
         if (umr == null)
         {
             umr = new UserMapResult
             {
                 UserId = userId,
                 MapId = map.Id,
+                MapDetailId = mapDetail.Id,
                 BestScore = score,
                 BestStars = stars,
                 Attempts = 1,
@@ -129,6 +143,7 @@ public class ValidateSolutionCommandHandler : IRequestHandler<ValidateSolutionCo
         {
             UserId = userId,
             MapId = map.Id,
+            MapDetailId = mapDetail.Id,
             PlayMode = command.Request.PlayMode,
             RoomId = command.Request.RoomId,
             MatchId = command.Request.MatchId,
@@ -153,7 +168,7 @@ public class ValidateSolutionCommandHandler : IRequestHandler<ValidateSolutionCo
                 RequestedXp = xpDelta,
                 SourceType = XpSourceTypeEnum.MapSolve,
                 SourceId = map.Id,
-                IdempotencyKey = $"xp:mapsolve:{userId}:{map.Id}:{submission.Id}",
+                IdempotencyKey = $"xp:mapsolve:{userId}:{map.Id}:{mapDetail.Id}:{submission.Id}",
                 Reason = "Map completed",
                 Metadata = $"{{\"stars\":{stars},\"score\":{score}}}"
             }, cancellationToken);
@@ -184,12 +199,12 @@ public class ValidateSolutionCommandHandler : IRequestHandler<ValidateSolutionCo
                         .ToListAsync(cancellationToken);
                     var completedConceptSet = completedConceptIds.ToHashSet();
 
-                    var completedMapIds = await _unitOfWork.Repository<UserMapResult>().GetQueryable()
-                        .Where(r => r.UserId == userId && !r.IsDeleted && r.BestStars >= 1 && mapIdsInGoal.Contains(r.MapId))
-                        .Select(r => r.MapId)
-                        .ToListAsync(cancellationToken);
-                    completedMapIds.Add(map.Id);
-                    var completedMapSet = completedMapIds.ToHashSet();
+                    var completedMapSet = new HashSet<Guid>();
+                    foreach (var mid in mapIdsInGoal)
+                    {
+                        if (await MapProgressHelper.MapHasAllLevelsCompletedAsync(_unitOfWork, userId, mid, minStars: 1, cancellationToken))
+                            completedMapSet.Add(mid);
+                    }
 
                     var isLearningPathCompleted = goalItems.All(i =>
                         i.ItemType == LearningPathItemTypeEnum.Concept
@@ -228,6 +243,16 @@ public class ValidateSolutionCommandHandler : IRequestHandler<ValidateSolutionCo
             Message = accepted ? "Accepted" : "Wrong answer or constraint violation"
         };
         return Result<ValidateSolutionResultDto>.Success(dto);
+    }
+
+    /// <summary>Null nếu map nhiều level mà không gửi MapDetailId hợp lệ.</summary>
+    private static MapDetail? ResolveMapDetail(Guid? requestedId, List<MapDetail> levelsOrdered)
+    {
+        if (levelsOrdered.Count == 1)
+            return levelsOrdered[0];
+        if (requestedId.HasValue && requestedId.Value != Guid.Empty)
+            return levelsOrdered.FirstOrDefault(d => d.Id == requestedId.Value);
+        return null;
     }
 
     /// <summary>Client gửi IsWin (+ metrics) — chấm giống logic sao trên UI (thời gian / bước / block).</summary>

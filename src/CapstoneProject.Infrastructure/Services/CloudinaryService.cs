@@ -1,4 +1,4 @@
-﻿using System.Text.RegularExpressions;
+using System.Text.RegularExpressions;
 using CloudinaryDotNet;
 using CloudinaryDotNet.Actions;
 using Microsoft.AspNetCore.Http;
@@ -6,6 +6,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using CapstoneProject.Application.Commons.Interfaces;
 using CapstoneProject.Application.Commons.Models;
+using CapstoneProject.Domain.Enums;
 
 namespace CapstoneProject.Infrastructure.Services;
 
@@ -61,13 +62,56 @@ public class CloudinaryService : ICloudinaryService
         }
     }
 
-    public async Task<bool> DeleteAsync(string publicId, CancellationToken cancellationToken = default)
+    public async Task<string?> UploadVideoAsync(IFormFile file, string folder, string? publicIdPrefix = null, CancellationToken cancellationToken = default)
+    {
+        if (file == null || file.Length == 0)
+            return null;
+
+        var prefix = string.IsNullOrEmpty(_settings.FolderPrefix) ? folder : $"{_settings.FolderPrefix}/{folder}";
+        var publicId = string.IsNullOrEmpty(publicIdPrefix)
+            ? $"{prefix}/{Guid.NewGuid():N}"
+            : $"{prefix}/{publicIdPrefix}_{CapstoneProject.Domain.Common.VietnamDateTime.DbNow.Ticks}";
+
+        try
+        {
+            await using var stream = new MemoryStream();
+            await file.CopyToAsync(stream, cancellationToken);
+            stream.Position = 0;
+            var uploadParams = new VideoUploadParams
+            {
+                File = new FileDescription(file.FileName, stream),
+                PublicId = publicId,
+                Overwrite = true
+            };
+            var result = await _cloudinary.UploadAsync(uploadParams, cancellationToken);
+            if (result.Error != null)
+            {
+                _logger.LogWarning("Cloudinary video upload error: {Error}", result.Error.Message);
+                return null;
+            }
+            _logger.LogInformation("Cloudinary video upload success: {PublicId}", result.PublicId);
+            return result.SecureUrl?.ToString();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Cloudinary video upload failed");
+            return null;
+        }
+    }
+
+    public async Task<bool> DeleteAsync(string publicId, CancellationToken cancellationToken = default) =>
+        await DeleteInternalAsync(publicId, ResourceType.Image, cancellationToken);
+
+    public async Task<bool> DeleteAsync(string publicId, MapMediaKind kind, CancellationToken cancellationToken = default) =>
+        await DeleteInternalAsync(publicId, kind == MapMediaKind.Video ? ResourceType.Video : ResourceType.Image, cancellationToken);
+
+    async Task<bool> DeleteInternalAsync(string publicId, ResourceType resourceType, CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(publicId))
             return false;
         try
         {
-            var result = await _cloudinary.DeleteResourcesAsync(ResourceType.Image, publicId);
+            var result = await _cloudinary.DeleteResourcesAsync(resourceType, publicId);
             return result.Deleted?.Count > 0;
         }
         catch (Exception ex)
@@ -79,10 +123,9 @@ public class CloudinaryService : ICloudinaryService
 
     public string? GetPublicIdFromUrl(string url)
     {
-        if (string.IsNullOrWhiteSpace(url) || !url.Contains("cloudinary.com"))
+        if (string.IsNullOrWhiteSpace(url) || !url.Contains("cloudinary.com", StringComparison.OrdinalIgnoreCase))
             return null;
-        // Match pattern like .../upload/v1234567/folder/public_id.jpg
-        var match = Regex.Match(url, @"/upload/(?:v\d+/)?(.+?)(?:\.\w+)?(?:\?|$)");
+        var match = Regex.Match(url, @"/(?:image|video|raw)/upload/(?:v\d+/)?(.+?)(?:\.\w+)?(?:\?|$)", RegexOptions.IgnoreCase);
         return match.Success ? match.Groups[1].Value : null;
     }
 }

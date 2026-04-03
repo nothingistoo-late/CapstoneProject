@@ -769,7 +769,7 @@ public static class SeedingExtension
                 scriptTagIdToCurrentId[scriptId] = currentId;
         }
 
-        // Execution order: Maps, MapDetails, Hints, MapTags.
+        // Execution order: Maps, MapDetails (mỗi map có thể nhiều level — cột LevelOrder trong DB sau migration), Hints, MapTags.
         var tableOrder = new[] { "Maps", "MapDetails", "Hints", "MapTags" };
         var orderIndex = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
         for (int i = 0; i < tableOrder.Length; i++)
@@ -788,6 +788,8 @@ public static class SeedingExtension
 
         int executed = 0;
         int skipped = 0;
+        var mapLimitsFromScript = new Dictionary<Guid, (int TimeLimitMs, int WinCondition)>();
+        var mapTypesFromScript = new Dictionary<Guid, int>();
 
         async Task RunOneInsertAsync(InsertStatementInfo item)
         {
@@ -801,6 +803,18 @@ public static class SeedingExtension
             {
                 foreach (var (scriptTagId, currentTagId) in scriptTagIdToCurrentId)
                     statement = statement.Replace($"N'{scriptTagId}'", $"N'{currentTagId}'", StringComparison.OrdinalIgnoreCase);
+            }
+
+            if (string.Equals(table, "Maps", StringComparison.OrdinalIgnoreCase))
+            {
+                statement = SqlServerToPostgreSqlInsertConverter.PrepareMapsInsertForPostgres(
+                    statement,
+                    out var limits,
+                    out var types);
+                foreach (var kv in limits)
+                    mapLimitsFromScript[kv.Key] = kv.Value;
+                foreach (var kv in types)
+                    mapTypesFromScript[kv.Key] = kv.Value;
             }
 
             string pgSql;
@@ -820,19 +834,19 @@ public static class SeedingExtension
             if (affected > 0) executed++; else skipped++;
         }
 
-        // Phase 1: seed Maps first (MapDetails/Hints/MapTags reference MapId).
+        // Phase 1: Maps only.
         foreach (var item in ordered.Where(x => string.Equals(x.Table, "Maps", StringComparison.OrdinalIgnoreCase)))
             await RunOneInsertAsync(item);
 
         var mapIds = (await dbContext.Maps.AsNoTracking().Select(m => m.Id).ToListAsync()).ToHashSet();
 
-        // Phase 2: seed MapDetails/Hints/MapTags; skip rows when parent MapId does not exist.
-        foreach (var item in ordered.Where(x => !string.Equals(x.Table, "Maps", StringComparison.OrdinalIgnoreCase)))
+        // Phase 2a: MapDetails (FK MapId → Maps). Hints giờ FK MapDetailId — xử lý sau khi có MapDetails.
+        foreach (var item in ordered.Where(x => string.Equals(x.Table, "MapDetails", StringComparison.OrdinalIgnoreCase)))
         {
             var mapIdMatch = ChildInsertMapIdRegex.Match(item.Statement);
             if (!mapIdMatch.Success || !Guid.TryParse(mapIdMatch.Groups["mapId"].Value, out var fkMapId))
             {
-                logger.LogWarning("Skip {Table} Id {RowId}: cannot parse MapId from VALUES.", item.Table, item.Id);
+                logger.LogWarning("Skip MapDetails Id {RowId}: cannot parse MapId from VALUES.", item.Id);
                 skipped++;
                 continue;
             }
@@ -840,8 +854,114 @@ public static class SeedingExtension
             if (!mapIds.Contains(fkMapId))
             {
                 logger.LogWarning(
-                    "Skip {Table} Id {RowId}: MapId {MapId} does not exist in Maps table.",
-                    item.Table,
+                    "Skip MapDetails Id {RowId}: MapId {MapId} does not exist in Maps table.",
+                    item.Id,
+                    fkMapId);
+                skipped++;
+                continue;
+            }
+
+            await RunOneInsertAsync(item);
+        }
+
+        // TimeLimitMs / WinCondition / Type đã chuyển sang MapDetails — backfill từ INSERT Maps (script cũ).
+        var mapIdsForBackfill = mapLimitsFromScript.Keys.Union(mapTypesFromScript.Keys).ToHashSet();
+        foreach (var mapId in mapIdsForBackfill)
+        {
+            var hasL = mapLimitsFromScript.TryGetValue(mapId, out var lim);
+            var hasT = mapTypesFromScript.TryGetValue(mapId, out var typ);
+            int affected;
+            if (hasL && hasT)
+            {
+                affected = await dbContext.Database.ExecuteSqlRawAsync(
+                    @"UPDATE ""MapDetails"" SET ""TimeLimitMs"" = {0}, ""WinCondition"" = {1}, ""Type"" = {2} WHERE ""MapId"" = {3} AND ""IsDeleted"" = false",
+                    lim.TimeLimitMs,
+                    lim.WinCondition,
+                    typ,
+                    mapId);
+            }
+            else if (hasL)
+            {
+                affected = await dbContext.Database.ExecuteSqlRawAsync(
+                    @"UPDATE ""MapDetails"" SET ""TimeLimitMs"" = {0}, ""WinCondition"" = {1} WHERE ""MapId"" = {2} AND ""IsDeleted"" = false",
+                    lim.TimeLimitMs,
+                    lim.WinCondition,
+                    mapId);
+            }
+            else
+            {
+                affected = await dbContext.Database.ExecuteSqlRawAsync(
+                    @"UPDATE ""MapDetails"" SET ""Type"" = {0} WHERE ""MapId"" = {1} AND ""IsDeleted"" = false",
+                    typ,
+                    mapId);
+            }
+
+            if (affected > 0)
+                logger.LogDebug("Backfilled MapDetails from legacy Maps INSERT for MapId {MapId} ({Rows} row(s)).", mapId, affected);
+        }
+
+        // MapId → MapDetailId đầu tiên (LevelOrder nhỏ nhất) — script cũ gán hint theo MapId.
+        var detailRows = await dbContext.MapDetails.AsNoTracking()
+            .Where(d => !d.IsDeleted)
+            .OrderBy(d => d.MapId).ThenBy(d => d.LevelOrder)
+            .Select(d => new { d.MapId, d.Id })
+            .ToListAsync();
+        var mapIdToFirstDetailId = new Dictionary<Guid, Guid>();
+        var validMapDetailIds = new HashSet<Guid>();
+        foreach (var row in detailRows)
+        {
+            validMapDetailIds.Add(row.Id);
+            if (!mapIdToFirstDetailId.ContainsKey(row.MapId))
+                mapIdToFirstDetailId[row.MapId] = row.Id;
+        }
+
+        // Phase 2b: Hints — script cũ dùng [MapId] → đổi thành [MapDetailId] + FK đúng MapDetail.
+        foreach (var item in ordered.Where(x => string.Equals(x.Table, "Hints", StringComparison.OrdinalIgnoreCase)))
+        {
+            var stmt = TransformHintsInsertMapIdToMapDetailId(item.Statement, mapIdToFirstDetailId, logger, item.Id);
+            if (stmt == null)
+            {
+                skipped++;
+                continue;
+            }
+
+            var mapIdMatch = ChildInsertMapIdRegex.Match(stmt);
+            if (!mapIdMatch.Success || !Guid.TryParse(mapIdMatch.Groups["mapId"].Value, out var fkDetailId))
+            {
+                logger.LogWarning("Skip Hints Id {RowId}: cannot parse MapDetailId from VALUES after transform.", item.Id);
+                skipped++;
+                continue;
+            }
+
+            if (!validMapDetailIds.Contains(fkDetailId))
+            {
+                logger.LogWarning(
+                    "Skip Hints Id {RowId}: MapDetailId {MapDetailId} does not exist.",
+                    item.Id,
+                    fkDetailId);
+                skipped++;
+                continue;
+            }
+
+            item.Statement = stmt;
+            await RunOneInsertAsync(item);
+        }
+
+        // Phase 2c: MapTags (FK MapId).
+        foreach (var item in ordered.Where(x => string.Equals(x.Table, "MapTags", StringComparison.OrdinalIgnoreCase)))
+        {
+            var mapIdMatch = ChildInsertMapIdRegex.Match(item.Statement);
+            if (!mapIdMatch.Success || !Guid.TryParse(mapIdMatch.Groups["mapId"].Value, out var fkMapId))
+            {
+                logger.LogWarning("Skip MapTags Id {RowId}: cannot parse MapId from VALUES.", item.Id);
+                skipped++;
+                continue;
+            }
+
+            if (!mapIds.Contains(fkMapId))
+            {
+                logger.LogWarning(
+                    "Skip MapTags Id {RowId}: MapId {MapId} does not exist in Maps table.",
                     item.Id,
                     fkMapId);
                 skipped++;
@@ -863,10 +983,49 @@ public static class SeedingExtension
         public int SourceOrder { get; set; }
     }
 
-    /// <summary>For MapDetails/Hints/MapTags, the second VALUES column is MapId (N'guid').</summary>
+    /// <summary>MapDetails/MapTags: cột 2 là MapId. Hints (sau transform): cột 2 là MapDetailId — cùng pattern N'guid'.</summary>
     private static readonly Regex ChildInsertMapIdRegex = new(
         @"VALUES\s*\(\s*N'(?<rowId>[0-9a-fA-F-]{36})'\s*,\s*N'(?<mapId>[0-9a-fA-F-]{36})'",
         RegexOptions.IgnoreCase | RegexOptions.Singleline | RegexOptions.Compiled);
+
+    /// <summary>Script SSMS cũ: <c>INSERT Hints (... [MapId] ...)</c> → schema mới dùng <c>MapDetailId</c> (level đầu của map).</summary>
+    private static string? TransformHintsInsertMapIdToMapDetailId(
+        string statement,
+        IReadOnlyDictionary<Guid, Guid> mapIdToFirstDetailId,
+        ILogger logger,
+        string rowId)
+    {
+        if (!statement.Contains("[MapId]", StringComparison.OrdinalIgnoreCase))
+            return statement;
+
+        var m = ChildInsertMapIdRegex.Match(statement);
+        if (!m.Success || !Guid.TryParse(m.Groups["mapId"].Value, out var fkMapId))
+        {
+            logger.LogWarning("Hints Id {RowId}: cannot parse MapId from VALUES.", rowId);
+            return null;
+        }
+
+        if (!mapIdToFirstDetailId.TryGetValue(fkMapId, out var detailId))
+        {
+            logger.LogWarning("Hints Id {RowId}: no MapDetail for MapId {MapId}.", rowId, fkMapId);
+            return null;
+        }
+
+        var s = statement.Replace("[MapId]", "[MapDetailId]", StringComparison.OrdinalIgnoreCase);
+        var mg = ChildInsertMapIdRegex.Match(s);
+        if (!mg.Success)
+            return null;
+
+        var g = mg.Groups["mapId"];
+        var start = g.Index - 2;
+        if (start < 0 || start + g.Length + 3 > s.Length)
+            return null;
+        if (!s.AsSpan(start, 2).Equals("N'", StringComparison.OrdinalIgnoreCase))
+            return null;
+
+        var newN = $"N'{detailId:D}'";
+        return s.Remove(start, g.Length + 3).Insert(start, newN);
+    }
 
     /// <summary>Read script and extract (TagId, Name) from INSERT [dbo].[Tags] to remap Tag Id in DB.</summary>
     private static List<(string TagId, string Name)> ExtractScriptTagIdToName(string scriptPath)

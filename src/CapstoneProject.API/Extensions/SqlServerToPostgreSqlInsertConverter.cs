@@ -35,6 +35,124 @@ internal static class SqlServerToPostgreSqlInsertConverter
         @"^[0-9a-fA-F-]{36}$",
         RegexOptions.Compiled);
 
+    /// <summary>
+    /// Script SSMS cũ: INSERT Maps có [TimeLimitMs], [WinCondition], [Type] — trên PostgreSQL đã chuyển sang <c>MapDetails</c>.
+    /// Gỡ khỏi câu INSERT Maps; trả về mapId → limits và mapId → Type (int enum) để backfill <c>MapDetails</c> sau.
+    /// </summary>
+    public static string PrepareMapsInsertForPostgres(
+        string statement,
+        out Dictionary<Guid, (int TimeLimitMs, int WinCondition)> limitsByMapId,
+        out Dictionary<Guid, int> mapTypeIntByMapId)
+    {
+        limitsByMapId = new Dictionary<Guid, (int, int)>();
+        mapTypeIntByMapId = new Dictionary<Guid, int>();
+        var s = statement.Trim();
+        var header = InsertHeaderRegex.Match(s);
+        if (!header.Success)
+            return statement;
+        if (!string.Equals(header.Groups[1].Value, "Maps", StringComparison.OrdinalIgnoreCase))
+            return statement;
+
+        var valuesMatch = ValuesClauseRegex.Match(s);
+        if (!valuesMatch.Success)
+            return statement;
+
+        int colListStart = header.Index + header.Length;
+        int colListEnd = valuesMatch.Index;
+        var columnListSegment = s.Substring(colListStart, colListEnd - colListStart);
+        var columns = ColumnBracketRegex.Matches(columnListSegment)
+            .Cast<Match>()
+            .Select(m => m.Groups[1].Value)
+            .ToList();
+
+        int valuesOpenParen = valuesMatch.Index + valuesMatch.Length - 1;
+        var valueTokens = SplitValuesTokens(s, valuesOpenParen);
+        if (columns.Count != valueTokens.Count)
+            return statement;
+
+        var iTime = columns.FindIndex(c => string.Equals(c, "TimeLimitMs", StringComparison.OrdinalIgnoreCase));
+        var iWin = columns.FindIndex(c => string.Equals(c, "WinCondition", StringComparison.OrdinalIgnoreCase));
+        var iType = columns.FindIndex(c => string.Equals(c, "Type", StringComparison.OrdinalIgnoreCase));
+        if (iTime < 0 && iWin < 0 && iType < 0)
+            return statement;
+
+        if (!TryParseGuidNToken(valueTokens[0], out var mapId))
+            return statement;
+
+        int? tMs = null;
+        int? wC = null;
+        if (iTime >= 0 && TryParseIntSqlToken(valueTokens[iTime], out var t))
+            tMs = t;
+        if (iWin >= 0 && TryParseIntSqlToken(valueTokens[iWin], out var w))
+            wC = w;
+
+        if (tMs.HasValue && wC.HasValue)
+            limitsByMapId[mapId] = (tMs.Value, wC.Value);
+
+        if (iType >= 0 && TryParseIntSqlToken(valueTokens[iType], out var ty) && ty is 0 or 1)
+            mapTypeIntByMapId[mapId] = ty;
+
+        var removeIdx = new List<int>();
+        if (iTime >= 0) removeIdx.Add(iTime);
+        if (iWin >= 0) removeIdx.Add(iWin);
+        if (iType >= 0) removeIdx.Add(iType);
+        removeIdx.Sort();
+        for (int k = removeIdx.Count - 1; k >= 0; k--)
+        {
+            var idx = removeIdx[k];
+            columns.RemoveAt(idx);
+            valueTokens.RemoveAt(idx);
+        }
+
+        return RebuildSqlServerInsert("Maps", columns, valueTokens);
+    }
+
+    private static string RebuildSqlServerInsert(string table, List<string> columns, List<string> valueTokens)
+    {
+        var sb = new StringBuilder();
+        sb.Append("INSERT [dbo].[").Append(table).Append("] (");
+        for (int i = 0; i < columns.Count; i++)
+        {
+            if (i > 0) sb.Append(", ");
+            sb.Append('[').Append(columns[i]).Append(']');
+        }
+
+        sb.Append(") VALUES (");
+        for (int i = 0; i < valueTokens.Count; i++)
+        {
+            if (i > 0) sb.Append(", ");
+            sb.Append(valueTokens[i]);
+        }
+
+        sb.Append(')');
+        return sb.ToString();
+    }
+
+    private static bool TryParseGuidNToken(string token, out Guid guid)
+    {
+        guid = default;
+        token = token.Trim();
+        if (token.Length < 5 || !token.StartsWith("N'", StringComparison.OrdinalIgnoreCase) || token[^1] != '\'')
+            return false;
+        var inner = UnescapeSqlString(token.Substring(2, token.Length - 3));
+        return Guid.TryParse(inner, out guid);
+    }
+
+    private static bool TryParseIntSqlToken(string token, out int value)
+    {
+        value = 0;
+        token = token.Trim();
+        if (int.TryParse(token, out value))
+            return true;
+        if (token.Length >= 3 && token.StartsWith("N'", StringComparison.OrdinalIgnoreCase) && token[^1] == '\'')
+        {
+            var inner = UnescapeSqlString(token.Substring(2, token.Length - 3));
+            return int.TryParse(inner, out value);
+        }
+
+        return false;
+    }
+
     public static string ConvertInsertStatement(string statement)
     {
         if (string.IsNullOrWhiteSpace(statement))

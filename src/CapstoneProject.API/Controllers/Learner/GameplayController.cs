@@ -78,6 +78,7 @@ public class LearnerGameplayController : ControllerBase
     /// Returns ordered hints (orderNo, content) for the given map. Use after loading map detail.
     ///
     /// **Route:** mapId (Guid, required): Map ID.
+    /// **Query (optional):** mapDetailId — chỉ lấy hint của một level.
     ///
     /// **Body:** None.
     ///
@@ -88,10 +89,10 @@ public class LearnerGameplayController : ControllerBase
     [HttpGet("maps/{mapId:guid}/hints")]
     [ProducesResponseType(typeof(Result<List<HintLevelDto>>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(Result), StatusCodes.Status404NotFound)]
-    [SwaggerOperation(Summary = "Get hints for map", Description = "Returns ordered hints (OrderNo, Content) for the given map. Use after loading map detail.", OperationId = "Learner_GetHintsForMap", Tags = new[] { "Learner - Gameplay" })]
-    public async Task<IActionResult> GetHintsForMap(Guid mapId)
+    [SwaggerOperation(Summary = "Get hints for map", Description = "Returns hints per level (levelOrder, mapDetailId, orderNo, content). Optional mapDetailId filters to one level.", OperationId = "Learner_GetHintsForMap", Tags = new[] { "Learner - Gameplay" })]
+    public async Task<IActionResult> GetHintsForMap(Guid mapId, [FromQuery] Guid? mapDetailId = null)
     {
-        var result = await _mediator.Send(new GetHintsForMapQuery(mapId));
+        var result = await _mediator.Send(new GetHintsForMapQuery(mapId, mapDetailId));
         return StatusCode(result.GetHttpStatusCode(), result);
     }
 

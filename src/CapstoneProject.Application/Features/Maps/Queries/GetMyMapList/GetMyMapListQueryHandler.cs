@@ -4,6 +4,7 @@ using CapstoneProject.Application.Common.Enums;
 using CapstoneProject.Application.Common.Interfaces;
 using CapstoneProject.Application.Common.Models;
 using CapstoneProject.Application.Commons.DTOs.Maps;
+using CapstoneProject.Application.Commons.Helpers;
 using CapstoneProject.Domain.Entities;
 using CapstoneProject.Domain.Enums;
 
@@ -37,6 +38,8 @@ public class GetMyMapListQueryHandler : IRequestHandler<GetMyMapListQuery, Resul
             .ThenInclude(m => m!.MapTags)
             .ThenInclude(mt => mt.Tag)
             .Include(mm => mm.Map)
+            .ThenInclude(m => m!.MapDetails)
+            .Include(mm => mm.Map)
             .ThenInclude(m => m!.Creator)
             .AsNoTracking();
 
@@ -51,7 +54,9 @@ public class GetMyMapListQueryHandler : IRequestHandler<GetMyMapListQuery, Resul
         {
             "title" => request.SortAscending ? query.OrderBy(mm => mm.Map!.Title) : query.OrderByDescending(mm => mm.Map!.Title),
             "difficulty" => request.SortAscending ? query.OrderBy(mm => mm.Map!.Difficulty) : query.OrderByDescending(mm => mm.Map!.Difficulty),
-            "timelimitms" => request.SortAscending ? query.OrderBy(mm => mm.Map!.TimeLimitMs) : query.OrderByDescending(mm => mm.Map!.TimeLimitMs),
+            "timelimitms" => request.SortAscending
+                ? query.OrderBy(mm => mm.Map!.MapDetails.Where(d => !d.IsDeleted).OrderBy(d => d.LevelOrder).Select(d => d.TimeLimitMs).FirstOrDefault())
+                : query.OrderByDescending(mm => mm.Map!.MapDetails.Where(d => !d.IsDeleted).OrderBy(d => d.LevelOrder).Select(d => d.TimeLimitMs).FirstOrDefault()),
             _ => request.SortAscending ? query.OrderBy(mm => mm.Map!.CreatedAt) : query.OrderByDescending(mm => mm.Map!.CreatedAt)
         };
 
@@ -68,14 +73,15 @@ public class GetMyMapListQueryHandler : IRequestHandler<GetMyMapListQuery, Resul
         var list = page.Where(mm => mm.Map != null).Select(mm =>
         {
             var m = mm.Map!;
+            var (tLimit, win, mapType) = MapFirstLevelHelper.FirstLevelMetadata(m.MapDetails);
             return new MapListItemDto
             {
                 Id = m.Id,
                 Title = m.Title,
                 Description = m.Description,
                 Difficulty = m.Difficulty,
-                Type = m.Type.ToString(),
-                TimeLimitMs = m.TimeLimitMs,
+                Type = mapType.ToString(),
+                TimeLimitMs = tLimit,
                 IsPublished = m.IsPublished,
                 MapStatus = m.MapStatus.ToString(),
                 Price = m.Price,
@@ -87,7 +93,7 @@ public class GetMyMapListQueryHandler : IRequestHandler<GetMyMapListQuery, Resul
                 LearnedTags = m.LearnedTags
                     .Select(id => learnedTagNameMap.TryGetValue(id, out var name) ? name : id.ToString())
                     .ToList(),
-                WinCondition = m.WinCondition,
+                WinCondition = win,
                 AvatarUrl = m.AvatarUrl
             };
         }).ToList();

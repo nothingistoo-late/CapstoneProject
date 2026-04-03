@@ -11,10 +11,6 @@ public class Map : BaseEntity
     public string Title { get; set; } = string.Empty;
     public string Description { get; set; } = string.Empty;
     public int Difficulty { get; set; }
-    public int TimeLimitMs { get; set; }
-    public int WinCondition { get; set; }
-    /// <summary>Loại map: Topdown hoặc Platform (user chọn khi tạo).</summary>
-    public MapTypeEnum Type { get; set; } = MapTypeEnum.Topdown;
     public bool IsPublished { get; set; }
     public MapStatusEnum MapStatus { get; set; } = MapStatusEnum.Draft;
     public decimal? Price { get; set; }
@@ -26,7 +22,9 @@ public class Map : BaseEntity
     public string? AvatarUrl { get; set; }
 
     public virtual AppUser? Creator { get; set; }
-    public virtual ICollection<Hint> Hints { get; set; } = new List<Hint>();
     public virtual ICollection<MapTag> MapTags { get; set; } = new List<MapTag>();
-    public virtual MapDetail MapDetail { get; set; } = null!;
+    /// <summary>Các level (JSON layout) của map, sắp xếp theo <see cref="MapDetail.LevelOrder"/>.</summary>
+    public virtual ICollection<MapDetail> MapDetails { get; set; } = new List<MapDetail>();
+    /// <summary>Ảnh / video mô tả gameplay (gallery).</summary>
+    public virtual ICollection<MapMedia> MapMedias { get; set; } = new List<MapMedia>();
 }

@@ -1,3 +1,5 @@
+using System.Text.Json;
+using CapstoneProject.API.Helpers;
 using CapstoneProject.API.Models;
 using CapstoneProject.Application.Commons.DTOs.Maps;
 using CapstoneProject.Application.Features.Maps.Commands.CreateMap;
@@ -6,6 +8,8 @@ using CapstoneProject.Application.Features.Maps.Commands.DeleteMap;
 using CapstoneProject.Application.Features.Maps.Commands.SubmitMapForReview;
 using CapstoneProject.Application.Features.Maps.Commands.UpdateMap;
 using CapstoneProject.Application.Features.Maps.Commands.UploadMapAvatar;
+using CapstoneProject.Application.Features.Maps.Commands.AddMapGalleryMedia;
+using CapstoneProject.Application.Features.Maps.Commands.DeleteMapGalleryMedia;
 using CapstoneProject.Application.Features.Maps.Queries.GetMapById;
 using CapstoneProject.Application.Features.Maps.Queries.GetMapInfo;
 using CapstoneProject.Application.Features.Maps.Queries.GetMaps;
@@ -17,7 +21,6 @@ using CapstoneProject.Application.Features.Maps.Commands.UpdateMapFromJsonFile;
 using CapstoneProject.Application.Features.Maps.Commands.PublishMap;
 using CapstoneProject.Application.Features.Maps.Commands.AddMapToMyMaps;
 using CapstoneProject.Application.Common.Enums;
-using CapstoneProject.Domain.Enums;
 
 namespace CapstoneProject.API.Controllers.Learner;
 
@@ -257,6 +260,7 @@ public class LearnerMapController : ControllerBase
     /// <response code="500">Internal server error</response>
     [HttpPost]
     [AuthorizeRoles(nameof(RoleEnum.Learner), nameof(RoleEnum.Admin), nameof(RoleEnum.Moderator))]
+    [Consumes("application/json")]
     [ProducesResponseType(typeof(Result<Guid>), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(Result<Guid>), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(Result<Guid>), StatusCodes.Status401Unauthorized)]
@@ -265,6 +269,38 @@ public class LearnerMapController : ControllerBase
     public async Task<IActionResult> CreateMap([FromBody] CreateMapRequest request)
     {
         var result = await _mediator.Send(new CreateMapCommand(request));
+        if (result.IsSuccess && result.Data != default)
+            return CreatedAtAction(nameof(GetMapById), new { id = result.Data }, result);
+        return StatusCode(result.GetHttpStatusCode(), result);
+    }
+
+    /// <summary>Tạo map (nháp) kèm avatar + gallery (multipart). Route riêng để Swagger không trùng POST /maps.</summary>
+    [HttpPost("with-files")]
+    [AuthorizeRoles(nameof(RoleEnum.Learner), nameof(RoleEnum.Admin), nameof(RoleEnum.Moderator))]
+    [Consumes("multipart/form-data")]
+    [ProducesResponseType(typeof(Result<Guid>), StatusCodes.Status201Created)]
+    [ProducesResponseType(typeof(Result<Guid>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(Result<Guid>), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(Result<Guid>), StatusCodes.Status500InternalServerError)]
+    [SwaggerOperation(Summary = "Tạo map (nháp) + avatar/gallery", Description = "POST .../maps/with-files. Field `data`: JSON (CreateMapRequest). Optional: avatarFile, galleryFiles.", OperationId = "Learner_CreateMapMultipart", Tags = new[] { "Learner - Maps" })]
+    public async Task<IActionResult> CreateMapMultipart([FromForm] CreateMapMultipartForm form)
+    {
+        if (string.IsNullOrWhiteSpace(form.Data))
+            return BadRequest(Result<Guid>.Failure("Field 'data' (JSON string, same as CreateMapRequest body) is required.", ErrorCodeEnum.ValidationFailed));
+        CreateMapRequest? req;
+        try
+        {
+            req = JsonSerializer.Deserialize<CreateMapRequest>(form.Data, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+        }
+        catch (JsonException)
+        {
+            return BadRequest(Result<Guid>.Failure("Field 'data' is not valid JSON.", ErrorCodeEnum.ValidationFailed));
+        }
+
+        if (req == null)
+            return BadRequest(Result<Guid>.Failure("Field 'data' could not be deserialized to CreateMapRequest.", ErrorCodeEnum.ValidationFailed));
+
+        var result = await _mediator.Send(new CreateMapCommand(req, GalleryFiles: form.GalleryFiles, AvatarFile: form.AvatarFile));
         if (result.IsSuccess && result.Data != default)
             return CreatedAtAction(nameof(GetMapById), new { id = result.Data }, result);
         return StatusCode(result.GetHttpStatusCode(), result);
@@ -285,15 +321,14 @@ public class LearnerMapController : ControllerBase
     /// - timeLimitMs (int, required): Thời gian giới hạn (ms).
     /// - winCondition (int, required): Điều kiện thắng (metadata).
     /// - price (decimal?, optional): Giá; null = miễn phí.
-    /// - hintsJson (string, optional): JSON array hints, mặc định "[]".
     /// - tagIdsCsv (string, optional): Danh sách tag ID cách nhau bằng dấu phẩy.
-    /// - mapDetailFile (file, required): File JSON chứa chi tiết map (level/layers/objects...).
+    /// - mapDetailFiles (files, required): Một hoặc nhiều file JSON. Một file: có thể là object một level, mảng các level, hoặc `{ "levels": [...] }`. Nhiều file: mỗi file = một level (0,1,2…).
     /// - avatarFile (file, optional): Ảnh avatar map; upload lên Cloudinary khi tạo.
     ///
-    /// **Example:** Content-Type: multipart/form-data với các field trên và mapDetailFile là file .json.
+    /// **Example:** multipart/form-data; lặp field `mapDetailFiles` hoặc chọn nhiều file (Postman/Swagger).
     /// </remarks>
     /// <response code="201">Map created. Returns message and data (mapId).</response>
-    /// <response code="400">Validation error or MapDetailFile is required</response>
+    /// <response code="400">Validation error or mapDetailFiles is required</response>
     /// <response code="401">Not authorized</response>
     /// <response code="500">Internal server error</response>
     [HttpPost("upload-json")]
@@ -303,34 +338,18 @@ public class LearnerMapController : ControllerBase
     [ProducesResponseType(typeof(Result<Guid>), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(Result<Guid>), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(Result<Guid>), StatusCodes.Status500InternalServerError)]
-    [SwaggerOperation(Summary = "Tạo map từ file JSON", Description = "Uploads a JSON file; creates map as Draft. Form: title, description, difficulty, type? (Topdown|Platform), timeLimitMs, winCondition, price?, hintsJson?, tagIdsCsv?, mapDetailFile (required). Requires Bearer token.", OperationId = "Learner_CreateMapFromJsonFile", Tags = new[] { "Learner - Maps" })]
+    [SwaggerOperation(Summary = "Tạo map từ file JSON", Description = "multipart/form-data: mapDetailFiles — một file (nhiều level trong file) hoặc nhiều file (mỗi file một level). Requires Bearer token.", OperationId = "Learner_CreateMapFromJsonFile", Tags = new[] { "Learner - Maps" })]
     public async Task<IActionResult> CreateMapFromJsonFile([FromForm] CreateMapFromJsonFileRequest request)
     {
-        if (request.MapDetailFile == null || request.MapDetailFile.Length == 0)
-            return BadRequest(Result<Guid>.Failure("MapDetailFile is required.", ErrorCodeEnum.ValidationFailed));
+        var (input, formErr) = await MapJsonUploadFormReader.BuildCreateInputAsync(request, Request);
+        if (formErr != null || input == null)
+            return BadRequest(Result<Guid>.Failure(formErr ?? "Invalid map file input.", ErrorCodeEnum.ValidationFailed));
 
-        string jsonContent;
-        using (var reader = new StreamReader(request.MapDetailFile.OpenReadStream()))
-        {
-            jsonContent = await reader.ReadToEndAsync();
-        }
-
-        var input = new CreateMapFromJsonFileInput
-        {
-            Title = request.Title,
-            Description = request.Description,
-            Difficulty = request.Difficulty,
-            Type = ParseMapType(request.Type),
-            TimeLimitMs = request.TimeLimitMs,
-            WinCondition = request.WinCondition,
-            Price = request.Price,
-            HintsJson = request.HintsJson ?? "[]",
-            TagIdsCsv = request.TagIdsCsv ?? string.Empty,
-            LearnedTagsCsv = request.LearnedTagsCsv ?? string.Empty,
-            MapDetailJsonContent = jsonContent
-        };
-
-        var result = await _mediator.Send(new CreateMapFromJsonFileCommand(input, AutoPublish: false, request.AvatarFile));
+        var result = await _mediator.Send(new CreateMapFromJsonFileCommand(
+            input,
+            AutoPublish: false,
+            AvatarFile: request.AvatarFile,
+            GalleryFiles: request.GalleryFiles));
         if (result.IsSuccess && result.Data != default)
             return CreatedAtAction(nameof(GetMapById), new { id = result.Data }, result);
         return StatusCode(result.GetHttpStatusCode(), result);
@@ -397,14 +416,13 @@ public class LearnerMapController : ControllerBase
     /// - timeLimitMs (int, required): Thời gian giới hạn (ms).
     /// - winCondition (int, required): Điều kiện thắng (metadata).
     /// - price (decimal?, optional): Giá; null = miễn phí.
-    /// - hintsJson (string, optional): JSON array hints, mặc định "[]".
     /// - tagIdsCsv (string, optional): Danh sách tag ID cách nhau bằng dấu phẩy.
-    /// - mapDetailFile (file, required): File JSON chứa chi tiết map (level/layers/objects...).
+    /// - mapDetailFiles: Giống API tạo map (một hoặc nhiều file JSON).
     ///
     /// **Lưu ý:** API này chỉ cập nhật nội dung map (spec, hints, tags, metadata) dựa trên file JSON; avatar map cập nhật qua API riêng `/api/learner/maps/{id}/avatar`.
     /// </remarks>
     /// <response code="200">Map updated. Returns message only.</response>
-    /// <response code="400">Validation error or MapDetailFile is required</response>
+    /// <response code="400">Validation error or mapDetailFiles is required</response>
     /// <response code="401">Not authorized</response>
     /// <response code="403">Forbidden (not author or admin)</response>
     /// <response code="404">Map not found</response>
@@ -418,32 +436,12 @@ public class LearnerMapController : ControllerBase
     [ProducesResponseType(typeof(Result), StatusCodes.Status403Forbidden)]
     [ProducesResponseType(typeof(Result), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(Result), StatusCodes.Status500InternalServerError)]
-    [SwaggerOperation(Summary = "Update map từ file JSON", Description = "Uploads a JSON file; updates existing Draft map. Form: title, description, difficulty, type? (Topdown|Platform), timeLimitMs, winCondition, price?, hintsJson?, tagIdsCsv?, mapDetailFile (required). Requires Bearer token.", OperationId = "Learner_UpdateMapFromJsonFile", Tags = new[] { "Learner - Maps" })]
+    [SwaggerOperation(Summary = "Update map từ file JSON", Description = "Giống tạo map: mapDetailFiles (một hoặc nhiều file). Requires Bearer token.", OperationId = "Learner_UpdateMapFromJsonFile", Tags = new[] { "Learner - Maps" })]
     public async Task<IActionResult> UpdateMapFromJsonFile(Guid id, [FromForm] CreateMapFromJsonFileRequest request)
     {
-        if (request.MapDetailFile == null || request.MapDetailFile.Length == 0)
-            return BadRequest(Result.Failure("MapDetailFile is required.", ErrorCodeEnum.ValidationFailed));
-
-        string jsonContent;
-        using (var reader = new StreamReader(request.MapDetailFile.OpenReadStream()))
-        {
-            jsonContent = await reader.ReadToEndAsync();
-        }
-
-        var input = new CreateMapFromJsonFileInput
-        {
-            Title = request.Title,
-            Description = request.Description,
-            Difficulty = request.Difficulty,
-            Type = ParseMapType(request.Type),
-            TimeLimitMs = request.TimeLimitMs,
-            WinCondition = request.WinCondition,
-            Price = request.Price,
-            HintsJson = request.HintsJson ?? "[]",
-            TagIdsCsv = request.TagIdsCsv ?? string.Empty,
-            LearnedTagsCsv = request.LearnedTagsCsv ?? string.Empty,
-            MapDetailJsonContent = jsonContent
-        };
+        var (input, formErr) = await MapJsonUploadFormReader.BuildCreateInputAsync(request, Request);
+        if (formErr != null || input == null)
+            return BadRequest(Result.Failure(formErr ?? "Invalid map file input.", ErrorCodeEnum.ValidationFailed));
 
         var result = await _mediator.Send(new UpdateMapFromJsonFileCommand(id, input));
         return StatusCode(result.GetHttpStatusCode(), result);
@@ -470,6 +468,36 @@ public class LearnerMapController : ControllerBase
         if (avatar == null || avatar.Length == 0)
             return BadRequest(Result<string>.Failure("Avatar file is required.", ErrorCodeEnum.ValidationFailed));
         var result = await _mediator.Send(new UploadMapAvatarCommand(id, avatar));
+        return StatusCode(result.GetHttpStatusCode(), result);
+    }
+
+    /// <summary>Upload một hoặc nhiều ảnh/video mô tả map (gallery, Cloudinary).</summary>
+    [HttpPost("{id:guid}/gallery")]
+    [AuthorizeRoles(nameof(RoleEnum.Learner), nameof(RoleEnum.Admin), nameof(RoleEnum.Moderator))]
+    [Consumes("multipart/form-data")]
+    [ProducesResponseType(typeof(Result<List<MapMediaItemDto>>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(Result), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(Result), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(Result), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(Result), StatusCodes.Status404NotFound)]
+    [SwaggerOperation(Summary = "Upload map gallery (images/videos)", Description = "Author or Admin/Moderator. Form: files (one or more image/video files). Max 20 per request.", OperationId = "Learner_AddMapGalleryMedia", Tags = new[] { "Learner - Maps" })]
+    public async Task<IActionResult> AddMapGalleryMedia(Guid id, [FromForm] List<IFormFile>? files)
+    {
+        var result = await _mediator.Send(new AddMapGalleryMediaCommand(id, files ?? new List<IFormFile>()));
+        return StatusCode(result.GetHttpStatusCode(), result);
+    }
+
+    /// <summary>Xóa một mục trong gallery map.</summary>
+    [HttpDelete("{id:guid}/gallery/{mediaId:guid}")]
+    [AuthorizeRoles(nameof(RoleEnum.Learner), nameof(RoleEnum.Admin), nameof(RoleEnum.Moderator))]
+    [ProducesResponseType(typeof(Result), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(Result), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(Result), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(Result), StatusCodes.Status404NotFound)]
+    [SwaggerOperation(Summary = "Delete map gallery item", Description = "Author or Admin/Moderator.", OperationId = "Learner_DeleteMapGalleryMedia", Tags = new[] { "Learner - Maps" })]
+    public async Task<IActionResult> DeleteMapGalleryMedia(Guid id, Guid mediaId)
+    {
+        var result = await _mediator.Send(new DeleteMapGalleryMediaCommand(id, mediaId));
         return StatusCode(result.GetHttpStatusCode(), result);
     }
 
@@ -593,11 +621,5 @@ public class LearnerMapController : ControllerBase
     {
         var result = await _mediator.Send(new GetTagsQuery(search));
         return StatusCode(result.GetHttpStatusCode(), result);
-    }
-
-    private static MapTypeEnum? ParseMapType(string? type)
-    {
-        if (string.IsNullOrWhiteSpace(type)) return null;
-        return string.Equals(type.Trim(), "Platform", StringComparison.OrdinalIgnoreCase) ? MapTypeEnum.Platform : MapTypeEnum.Topdown;
     }
 }

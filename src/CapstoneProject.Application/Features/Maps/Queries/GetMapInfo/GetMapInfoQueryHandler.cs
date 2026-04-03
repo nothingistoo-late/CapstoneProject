@@ -4,6 +4,7 @@ using CapstoneProject.Application.Common.Enums;
 using CapstoneProject.Application.Common.Interfaces;
 using CapstoneProject.Application.Common.Models;
 using CapstoneProject.Application.Commons.DTOs.Maps;
+using CapstoneProject.Application.Commons.Helpers;
 using CapstoneProject.Domain.Entities;
 using CapstoneProject.Domain.Enums;
 
@@ -22,6 +23,7 @@ public class GetMapInfoQueryHandler : IRequestHandler<GetMapInfoQuery, Result<Ma
     {
         var map = await _unitOfWork.Repository<Map>().GetQueryable()
             .Where(m => m.Id == request.MapId && !m.IsDeleted)
+            .Include(m => m.MapDetails)
             .Include(m => m.MapTags).ThenInclude(mt => mt.Tag)
             .Include(m => m.Creator)
             .AsNoTracking()
@@ -33,14 +35,15 @@ public class GetMapInfoQueryHandler : IRequestHandler<GetMapInfoQuery, Result<Ma
             .Where(t => map.LearnedTags.Contains(t.Id))
             .ToDictionaryAsync(t => t.Id, t => t.Name, cancellationToken);
 
+        var (tLimit, win, mapType) = MapFirstLevelHelper.FirstLevelMetadata(map.MapDetails);
         var dto = new MapInfoDto
         {
             Id = map.Id,
             Title = map.Title,
             Description = map.Description,
             Difficulty = map.Difficulty,
-            Type = map.Type.ToString(),
-            TimeLimitMs = map.TimeLimitMs,
+            Type = mapType.ToString(),
+            TimeLimitMs = tLimit,
             IsPublished = map.IsPublished,
             MapStatus = map.MapStatus.ToString(),
             Price = map.Price,
@@ -51,7 +54,7 @@ public class GetMapInfoQueryHandler : IRequestHandler<GetMapInfoQuery, Result<Ma
             LearnedTags = map.LearnedTags
                 .Select(id => learnedTagNameMap.TryGetValue(id, out var name) ? name : id.ToString())
                 .ToList(),
-            WinCondition = map.WinCondition,
+            WinCondition = win,
             AvatarUrl = map.AvatarUrl
         };
         return Result<MapInfoDto>.Success(dto);

@@ -4,6 +4,7 @@ using CapstoneProject.Application.Common.Enums;
 using CapstoneProject.Application.Common.Interfaces;
 using CapstoneProject.Application.Common.Models;
 using CapstoneProject.Application.Commons.DTOs.Gameplay;
+using CapstoneProject.Application.Commons.Helpers;
 using CapstoneProject.Application.Commons.Interfaces;
 using CapstoneProject.Domain.Entities;
 
@@ -35,12 +36,20 @@ public class GetProgressDashboardQueryHandler : IRequestHandler<GetProgressDashb
 
         var umrRepo = _unitOfWork.Repository<UserMapResult>();
         var mapRepo = _unitOfWork.Repository<Map>();
-        var completed = await umrRepo.GetQueryable()
-            .Where(u => u.UserId == userId && u.BestStars > 0)
-            .CountAsync(cancellationToken);
+        var mapIdsTouched = await umrRepo.GetQueryable()
+            .Where(u => u.UserId == userId && !u.IsDeleted)
+            .Select(u => u.MapId)
+            .Distinct()
+            .ToListAsync(cancellationToken);
+        var completed = 0;
+        foreach (var mid in mapIdsTouched)
+        {
+            if (await MapProgressHelper.MapHasAllLevelsCompletedAsync(_unitOfWork, userId, mid, minStars: 1, cancellationToken))
+                completed++;
+        }
         var totalStars = await umrRepo.GetQueryable()
-            .Where(u => u.UserId == userId)
-            .SumAsync(u => u.BestStars, cancellationToken);
+            .Where(u => u.UserId == userId && !u.IsDeleted)
+            .SumAsync(u => (int?)u.BestStars, cancellationToken) ?? 0;
 
         var badges = await _unitOfWork.Repository<UserAchievement>().GetQueryable()
             .Where(ua => ua.UserId == userId && !ua.IsDeleted)

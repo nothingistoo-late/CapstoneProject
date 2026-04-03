@@ -7,9 +7,9 @@ namespace CapstoneProject.Domain.Entities;
 /// </summary>
 public class Hint : BaseEntity
 {
-    public Guid MapId { get; set; }
+    public Guid MapDetailId { get; set; }
     public int OrderNo { get; set; }
     public string Content { get; set; } = string.Empty;
 
-    public virtual Map Map { get; set; } = null!;
+    public virtual MapDetail MapDetail { get; set; } = null!;
 }

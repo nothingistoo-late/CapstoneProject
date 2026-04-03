@@ -9,7 +9,9 @@ public class MapInfoDto
     public string Title { get; set; } = string.Empty;
     public string Description { get; set; } = string.Empty;
     public int Difficulty { get; set; }
+    /// <summary>Loại level đầu tiên: "Topdown" hoặc "Platform".</summary>
     public string Type { get; set; } = string.Empty;
+    /// <summary>Giới hạn thời gian (ms) của level đầu tiên.</summary>
     public int TimeLimitMs { get; set; }
     public bool IsPublished { get; set; }
     /// <summary>Trạng thái map: Draft, PendingReview, Approved, Rejected, Published.</summary>
@@ -21,6 +23,7 @@ public class MapInfoDto
     public DateTime? CreatedAt { get; set; }
     public List<string> TagNames { get; set; } = new();
     public List<string> LearnedTags { get; set; } = new();
+    /// <summary>Điều kiện thắng của level đầu tiên.</summary>
     public int WinCondition { get; set; }
     public string? AvatarUrl { get; set; }
 }

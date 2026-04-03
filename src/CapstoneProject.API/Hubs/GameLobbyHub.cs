@@ -350,7 +350,8 @@ public class GameLobbyHub : Hub
         bool? isWin = null,
         int? stepsUsed = null,
         int? blocksUsed = null,
-        double? timeSeconds = null)
+        double? timeSeconds = null,
+        Guid? mapDetailId = null)
     {
         if (!TryGetUserId(out var userId))
         {
@@ -385,6 +386,7 @@ public class GameLobbyHub : Hub
         var validateRequest = new ValidateSolutionRequest
         {
             MapId = gameInstance.MapId.Value,
+            MapDetailId = mapDetailId,
             Language = language ?? "Blockly",
             AstSpec = astSpec,
             BytecodeSpec = bytecodeSpec,

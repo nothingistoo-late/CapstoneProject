@@ -11,6 +11,9 @@ public class Submission : BaseEntity
 {
     public Guid UserId { get; set; }
     public Guid MapId { get; set; }
+    /// <summary>Level đang nộp (MapDetails.Id). Cần sau migration DB.</summary>
+    public Guid? MapDetailId { get; set; }
+    public virtual MapDetail? MapDetail { get; set; }
     public string Language { get; set; } = "Blockly";
     public string? AstSpec { get; set; }
     public string? BytecodeSpec { get; set; }

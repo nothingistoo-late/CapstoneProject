@@ -18,4 +18,7 @@ public class SubmissionSubmitRequest
     public bool? IsWin { get; set; }
     /// <summary>Thời gian (giây) hoặc milliseconds tùy client — thời gian chơi / thời gian nộp.</summary>
     public double? Time { get; set; }
+
+    /// <summary>Level đang nộp (MapDetails.Id). Null = map một level.</summary>
+    public Guid? MapDetailId { get; set; }
 }

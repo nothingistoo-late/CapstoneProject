@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using CapstoneProject.Application.Common.Interfaces;
 using CapstoneProject.Application.Common.Models;
 using CapstoneProject.Application.Commons.DTOs.Maps;
+using CapstoneProject.Application.Commons.Helpers;
 using CapstoneProject.Domain.Entities;
 using CapstoneProject.Domain.Enums;
 
@@ -18,6 +19,7 @@ public class GetAllMapsForAdminQueryHandler : IRequestHandler<GetAllMapsForAdmin
     {
         var query = _unitOfWork.Repository<Map>().GetQueryable()
             .Where(m => !m.IsDeleted && m.Status == EntityStatusEnum.Active)
+            .Include(m => m.MapDetails)
             .Include(m => m.MapTags).ThenInclude(mt => mt.Tag)
             .Include(m => m.Creator)
             .AsNoTracking();
@@ -30,7 +32,9 @@ public class GetAllMapsForAdminQueryHandler : IRequestHandler<GetAllMapsForAdmin
         {
             "title" => request.SortAscending ? query.OrderBy(m => m.Title) : query.OrderByDescending(m => m.Title),
             "difficulty" => request.SortAscending ? query.OrderBy(m => m.Difficulty) : query.OrderByDescending(m => m.Difficulty),
-            "timelimitms" => request.SortAscending ? query.OrderBy(m => m.TimeLimitMs) : query.OrderByDescending(m => m.TimeLimitMs),
+            "timelimitms" => request.SortAscending
+                ? query.OrderBy(m => m.MapDetails.Where(d => !d.IsDeleted).OrderBy(d => d.LevelOrder).Select(d => d.TimeLimitMs).FirstOrDefault())
+                : query.OrderByDescending(m => m.MapDetails.Where(d => !d.IsDeleted).OrderBy(d => d.LevelOrder).Select(d => d.TimeLimitMs).FirstOrDefault()),
             "price" => request.SortAscending ? query.OrderBy(m => m.Price ?? 0) : query.OrderByDescending(m => m.Price ?? 0),
             "mapstatus" => request.SortAscending ? query.OrderBy(m => m.MapStatus) : query.OrderByDescending(m => m.MapStatus),
             _ => request.SortAscending ? query.OrderBy(m => m.CreatedAt) : query.OrderByDescending(m => m.CreatedAt)
@@ -42,14 +46,17 @@ public class GetAllMapsForAdminQueryHandler : IRequestHandler<GetAllMapsForAdmin
             .Where(t => learnedTagIds.Contains(t.Id))
             .ToDictionaryAsync(t => t.Id, t => t.Name, cancellationToken);
 
-        var list = page.Select(m => new MapListItemDto
+        var list = page.Select(m =>
+        {
+            var (tLimit, win, mapType) = MapFirstLevelHelper.FirstLevelMetadata(m.MapDetails);
+            return new MapListItemDto
         {
             Id = m.Id,
             Title = m.Title,
             Description = m.Description,
             Difficulty = m.Difficulty,
-            Type = m.Type.ToString(),
-            TimeLimitMs = m.TimeLimitMs,
+            Type = mapType.ToString(),
+            TimeLimitMs = tLimit,
             IsPublished = m.IsPublished,
             MapStatus = m.MapStatus.ToString(),
             Price = m.Price,
@@ -60,8 +67,9 @@ public class GetAllMapsForAdminQueryHandler : IRequestHandler<GetAllMapsForAdmin
             LearnedTags = m.LearnedTags
                 .Select(id => learnedTagNameMap.TryGetValue(id, out var name) ? name : id.ToString())
                 .ToList(),
-            WinCondition = m.WinCondition,
+            WinCondition = win,
             AvatarUrl = m.AvatarUrl
+        };
         }).ToList();
 
         var result = PaginationResult<MapListItemDto>.Success(list, pageNumber, pageSize, total, "Retrieved successfully");

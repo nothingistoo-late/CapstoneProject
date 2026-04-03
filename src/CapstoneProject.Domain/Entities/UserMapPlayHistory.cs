@@ -11,6 +11,8 @@ public class UserMapPlayHistory : BaseEntity
 {
     public Guid UserId { get; set; }
     public Guid MapId { get; set; }
+    /// <summary>Level đang chơi (MapDetails.Id), optional.</summary>
+    public Guid? MapDetailId { get; set; }
 
     /// <summary>Chế độ chơi: Single/Lobby/Competitive.</summary>
     public PlayModeEnum PlayMode { get; set; }

@@ -14,6 +14,7 @@ public static class QuackOrbitEntityConfiguration
     public static void Configure(ModelBuilder builder)
     {
         builder.Entity<Map>(ConfigureMap);
+        builder.Entity<MapMedia>(ConfigureMapMedia);
         builder.Entity<MapDetail>(ConfigureMapDetail);
         builder.Entity<Hint>(ConfigureHint);
         builder.Entity<Tag>(ConfigureTag);
@@ -110,22 +111,35 @@ public static class QuackOrbitEntityConfiguration
         e.HasOne(x => x.Creator).WithMany().HasForeignKey(x => x.CreatedBy).IsRequired(false);
         e.HasIndex(x => x.MapStatus);
         e.HasIndex(x => x.IsPublished);
-        e.HasMany(x => x.Hints).WithOne(x => x.Map).HasForeignKey(x => x.MapId).OnDelete(DeleteBehavior.Cascade);
         e.HasMany(x => x.MapTags).WithOne(x => x.Map).HasForeignKey(x => x.MapId).OnDelete(DeleteBehavior.Cascade);
+        e.HasMany(x => x.MapDetails).WithOne(x => x.Map).HasForeignKey(x => x.MapId).OnDelete(DeleteBehavior.Cascade);
+        e.HasMany(x => x.MapMedias).WithOne(x => x.Map).HasForeignKey(x => x.MapId).OnDelete(DeleteBehavior.Cascade);
+    }
+
+    static void ConfigureMapMedia(EntityTypeBuilder<MapMedia> e)
+    {
+        e.Property(x => x.Kind).HasConversion<int>();
+        e.HasIndex(x => new { x.MapId, x.SortOrder });
+        e.HasOne(x => x.Map)
+            .WithMany(x => x.MapMedias)
+            .HasForeignKey(x => x.MapId)
+            .OnDelete(DeleteBehavior.Cascade);
     }
 
     static void ConfigureMapDetail(EntityTypeBuilder<MapDetail> e)
     {
-        e.HasIndex(x => x.MapId);
+        e.Property(x => x.Type).HasConversion<int>();
+        e.HasIndex(x => new { x.MapId, x.LevelOrder }).IsUnique();
         e.HasOne(x => x.Map)
-            .WithOne(x => x.MapDetail)
-            .HasForeignKey<MapDetail>(x => x.MapId)
+            .WithMany(x => x.MapDetails)
+            .HasForeignKey(x => x.MapId)
             .OnDelete(DeleteBehavior.Cascade);
+        e.HasMany(x => x.Hints).WithOne(x => x.MapDetail).HasForeignKey(x => x.MapDetailId).OnDelete(DeleteBehavior.Cascade);
     }
 
     static void ConfigureHint(EntityTypeBuilder<Hint> e)
     {
-        e.HasIndex(x => new { x.MapId, x.OrderNo });
+        e.HasIndex(x => new { x.MapDetailId, x.OrderNo });
     }
 
     static void ConfigureTag(EntityTypeBuilder<Tag> e)
@@ -155,7 +169,9 @@ public static class QuackOrbitEntityConfiguration
         e.Property(x => x.ResultStatus).HasConversion<int>();
         e.HasIndex(x => x.UserId);
         e.HasIndex(x => x.MapId);
+        e.HasIndex(x => x.MapDetailId);
         e.HasIndex(x => x.MatchId);
+        e.HasOne(x => x.MapDetail).WithMany().HasForeignKey(x => x.MapDetailId).OnDelete(DeleteBehavior.Restrict);
         e.HasMany(x => x.ExecutionsResults).WithOne(x => x.Submission).HasForeignKey(x => x.SubmissionId).OnDelete(DeleteBehavior.Cascade);
     }
 
@@ -166,7 +182,9 @@ public static class QuackOrbitEntityConfiguration
 
     static void ConfigureUserMapResult(EntityTypeBuilder<UserMapResult> e)
     {
-        e.HasIndex(x => new { x.UserId, x.MapId }).IsUnique();
+        e.HasIndex(x => x.MapId);
+        e.HasIndex(x => new { x.UserId, x.MapDetailId });
+        e.HasOne(x => x.MapDetail).WithMany().HasForeignKey(x => x.MapDetailId).OnDelete(DeleteBehavior.Cascade);
     }
 
     static void ConfigureUserMapPlayHistory(EntityTypeBuilder<UserMapPlayHistory> e)
@@ -174,6 +192,7 @@ public static class QuackOrbitEntityConfiguration
         e.Property(x => x.PlayMode).HasConversion<int>();
         e.HasIndex(x => x.UserId);
         e.HasIndex(x => x.MapId);
+        e.HasIndex(x => x.MapDetailId);
         e.HasIndex(x => new { x.UserId, x.MapId, x.StartTime });
         e.HasIndex(x => x.SubmissionId);
         e.HasIndex(x => x.ExecutionsResultId);

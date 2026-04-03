@@ -46,6 +46,7 @@ public class SubmitLobbySolutionCommandHandler : IRequestHandler<SubmitLobbySolu
         var validateRequest = new ValidateSolutionRequest
         {
             MapId = room.SelectedMapId.Value,
+            MapDetailId = command.Request.MapDetailId,
             Language = "Blockly",
             AstSpec = command.Request.AstSpec,
             BytecodeSpec = command.Request.BytecodeSpec,

@@ -24,8 +24,8 @@ public class GetMapByIdQueryHandler : IRequestHandler<GetMapByIdQuery, Result<Ma
     {
         var map = await _unitOfWork.Repository<Map>().GetQueryable()
             .Where(m => m.Id == request.MapId && !m.IsDeleted)
-            .Include(m => m.MapDetail)
-            .Include(m => m.Hints)
+            .Include(m => m.MapDetails).ThenInclude(d => d.Hints)
+            .Include(m => m.MapMedias)
             .Include(m => m.MapTags).ThenInclude(mt => mt.Tag)
             .Include(m => m.Creator)
             .AsNoTracking()
@@ -43,10 +43,31 @@ public class GetMapByIdQueryHandler : IRequestHandler<GetMapByIdQuery, Result<Ma
             var (isValid, userIdNullable) = await _currentUserService.IsUserValidAsync();
             if (isValid && userIdNullable.HasValue)
             {
-                var umr = await _unitOfWork.Repository<UserMapResult>().GetQueryable()
-                    .FirstOrDefaultAsync(u => u.UserId == userIdNullable.Value && u.MapId == map.Id, cancellationToken);
-                if (umr != null && umr.BestStars >= map.UnlockEditorialAfterStars) showEditorial = true;
+                showEditorial = await MeetsEditorialStarsAsync(
+                    userIdNullable.Value, map, cancellationToken);
             }
+        }
+
+        var levelsOrdered = map.MapDetails.OrderBy(d => d.LevelOrder).ToList();
+        var levelDtos = levelsOrdered.Select(d => new MapLevelItemDto
+        {
+            Id = d.Id,
+            LevelOrder = d.LevelOrder,
+            Title = d.Title,
+            DetailJson = ParseMapDetailJson(d.JsonContent),
+            Hints = d.Hints.OrderBy(h => h.OrderNo).Select(h => new HintItemDto { OrderNo = h.OrderNo, Content = h.Content }).ToList(),
+            TimeLimitMs = d.TimeLimitMs,
+            WinCondition = d.WinCondition,
+            Type = d.Type.ToString()
+        }).ToList();
+        var firstJson = levelDtos.FirstOrDefault()?.DetailJson;
+
+        var flatOrder = 0;
+        var flatHints = new List<HintItemDto>();
+        foreach (var d in levelsOrdered)
+        {
+            foreach (var h in d.Hints.OrderBy(x => x.OrderNo))
+                flatHints.Add(new HintItemDto { OrderNo = flatOrder++, Content = h.Content });
         }
 
         var dto = new MapDetailDto
@@ -55,8 +76,6 @@ public class GetMapByIdQueryHandler : IRequestHandler<GetMapByIdQuery, Result<Ma
             Title = map.Title,
             Description = map.Description,
             Difficulty = map.Difficulty,
-            Type = map.Type.ToString(),
-            TimeLimitMs = map.TimeLimitMs,
             IsPublished = map.IsPublished,
             MapStatus = map.MapStatus.ToString(),
             Price = map.Price,
@@ -65,16 +84,43 @@ public class GetMapByIdQueryHandler : IRequestHandler<GetMapByIdQuery, Result<Ma
             EditorialContent = showEditorial ? map.EditorialContent : null,
             UnlockEditorialAfterStars = map.UnlockEditorialAfterStars,
             CreatedAt = map.CreatedAt,
-            MapDetailJson = ParseMapDetailJson(map.MapDetail?.JsonContent),
-            Hints = map.Hints.OrderBy(h => h.OrderNo).Select(h => new HintItemDto { OrderNo = h.OrderNo, Content = h.Content }).ToList(),
+            Levels = levelDtos,
+            MapDetailJson = firstJson,
+            Hints = flatHints,
             TagNames = map.MapTags.Select(t => t.Tag.Name).ToList(),
             LearnedTags = map.LearnedTags
                 .Select(id => learnedTagNameMap.TryGetValue(id, out var name) ? name : id.ToString())
                 .ToList(),
-            WinCondition = map.WinCondition,
-            AvatarUrl = map.AvatarUrl
+            AvatarUrl = map.AvatarUrl,
+            Gallery = map.MapMedias.OrderBy(x => x.SortOrder).Select(x => new MapMediaItemDto
+            {
+                Id = x.Id,
+                Url = x.Url,
+                Kind = x.Kind.ToString(),
+                SortOrder = x.SortOrder
+            }).ToList()
         };
         return Result<MapDetailDto>.Success(dto);
+    }
+
+    private async Task<bool> MeetsEditorialStarsAsync(Guid userId, Map map, CancellationToken cancellationToken)
+    {
+        var threshold = map.UnlockEditorialAfterStars;
+        var levels = map.MapDetails.OrderBy(d => d.LevelOrder).ToList();
+        if (levels.Count == 0) return false;
+
+        var umrs = await _unitOfWork.Repository<UserMapResult>().GetQueryable()
+            .Where(u => u.UserId == userId && u.MapId == map.Id && !u.IsDeleted)
+            .ToListAsync(cancellationToken);
+
+        if (umrs.Any(u => u.MapDetailId == null))
+        {
+            var legacy = umrs.FirstOrDefault(u => u.MapDetailId == null);
+            return legacy != null && legacy.BestStars >= threshold && levels.Count <= 1;
+        }
+
+        return levels.All(d =>
+            umrs.Any(u => u.MapDetailId == d.Id && u.BestStars >= threshold));
     }
 
     private static JsonElement? ParseMapDetailJson(string? jsonContent)

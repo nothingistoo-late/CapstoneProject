@@ -8,9 +8,6 @@ public class MapDetailDto
     public string Title { get; set; } = string.Empty;
     public string Description { get; set; } = string.Empty;
     public int Difficulty { get; set; }
-    /// <summary>Loại map: "Topdown" hoặc "Platform".</summary>
-    public string Type { get; set; } = string.Empty;
-    public int TimeLimitMs { get; set; }
     public bool IsPublished { get; set; }
     /// <summary>Trạng thái map: Draft, PendingReview, Approved, Rejected, Published.</summary>
     public string MapStatus { get; set; } = string.Empty;
@@ -21,12 +18,16 @@ public class MapDetailDto
     public string? EditorialContent { get; set; }
     public int UnlockEditorialAfterStars { get; set; }
     public DateTime? CreatedAt { get; set; }
-    /// <summary>Map level JSON (layers, startPosition, goalPosition, objects...) returned as object, not escaped string.</summary>
+    /// <summary>Các level (JSON layout) theo thứ tự.</summary>
+    public List<MapLevelItemDto> Levels { get; set; } = new();
+    /// <summary>Tương thích client cũ: JSON của level đầu tiên (cùng <see cref="Levels"/>[0] nếu có).</summary>
     public JsonElement? MapDetailJson { get; set; }
+    /// <summary>Tất cả hint của map (theo thứ tự level rồi OrderNo trong level). Chi tiết theo level: <see cref="MapLevelItemDto.Hints"/>.</summary>
     public List<HintItemDto> Hints { get; set; } = new();
     public List<string> TagNames { get; set; } = new();
     public List<string> LearnedTags { get; set; } = new();
-    public int WinCondition { get; set; }
     /// <summary>URL avatar map (Cloudinary).</summary>
     public string? AvatarUrl { get; set; }
+    /// <summary>Ảnh / video mô tả map (gallery), sắp xếp theo <see cref="MapMediaItemDto.SortOrder"/>.</summary>
+    public List<MapMediaItemDto> Gallery { get; set; } = new();
 }

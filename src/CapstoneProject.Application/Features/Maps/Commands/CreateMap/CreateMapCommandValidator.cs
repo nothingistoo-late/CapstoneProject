@@ -1,3 +1,5 @@
+using CapstoneProject.Application.Commons.DTOs.Maps;
+using CapstoneProject.Application.Commons.Helpers;
 using FluentValidation;
 
 namespace CapstoneProject.Application.Features.Maps.Commands.CreateMap;
@@ -11,13 +13,19 @@ public class CreateMapCommandValidator : AbstractValidator<CreateMapCommand>
             .MaximumLength(200).WithMessage("Title must not exceed 200 characters");
         RuleFor(x => x.Request.Difficulty)
             .InclusiveBetween(1, 5).WithMessage("Difficulty must be between 1 and 5");
-        RuleFor(x => x.Request.TimeLimitMs)
-            .GreaterThan(0).WithMessage("TimeLimitMs must be positive");
-        RuleFor(x => x.Request.WinCondition)
-            .GreaterThan(0).WithMessage("WinCondition must be positive");
-        RuleFor(x => x.Request.MapDetailJson.ValueKind)
-            .NotEqual(System.Text.Json.JsonValueKind.Undefined).WithMessage("MapDetailJson is required")
-            .NotEqual(System.Text.Json.JsonValueKind.Null).WithMessage("MapDetailJson is required");
+        RuleFor(x => x.Request)
+            .Must(r => HasLevelsOrSingleJson(r))
+            .WithMessage("Provide Levels (non-empty) or MapDetailJson for a single level.");
+        RuleFor(x => x.Request)
+            .Must(r =>
+            {
+                if (r.Levels is { Count: > 0 })
+                    MapLevelOrderNormalizer.NormalizeIfDuplicate(r.Levels);
+                return true;
+            });
+        RuleFor(x => x.Request)
+            .Must(r => r.Levels == null || r.Levels.Count == 0 || r.Levels.Select(l => l.LevelOrder).Distinct().Count() == r.Levels.Count)
+            .WithMessage("Levels must have unique LevelOrder values.");
 
         RuleForEach(x => x.Request.TagIds)
             .NotEmpty().WithMessage("TagIds must contain valid Guid values.");
@@ -30,5 +38,16 @@ public class CreateMapCommandValidator : AbstractValidator<CreateMapCommand>
         RuleFor(x => x.Request.LearnedTags)
             .Must(ids => ids.Distinct().Count() == ids.Count)
             .WithMessage("LearnedTags must not contain duplicates.");
+    }
+
+    static bool HasLevelsOrSingleJson(CreateMapRequest r)
+    {
+        if (r.Levels is { Count: > 0 })
+            return r.Levels.All(l =>
+                l.JsonContent.ValueKind != System.Text.Json.JsonValueKind.Undefined &&
+                l.JsonContent.ValueKind != System.Text.Json.JsonValueKind.Null);
+        return r.MapDetailJson.HasValue &&
+               r.MapDetailJson.Value.ValueKind != System.Text.Json.JsonValueKind.Undefined &&
+               r.MapDetailJson.Value.ValueKind != System.Text.Json.JsonValueKind.Null;
     }
 }

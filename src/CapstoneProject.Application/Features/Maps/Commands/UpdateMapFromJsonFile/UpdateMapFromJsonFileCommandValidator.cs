@@ -20,10 +20,6 @@ public class UpdateMapFromJsonFileCommandValidator : AbstractValidator<UpdateMap
             RuleFor(x => x.Input.Difficulty)
                 .InclusiveBetween(1, 5)
                 .WithMessage("Difficulty must be between 1 and 5.");
-            RuleFor(x => x.Input.TimeLimitMs)
-                .GreaterThan(0).WithMessage("TimeLimitMs must be positive.");
-            RuleFor(x => x.Input.WinCondition)
-                .GreaterThan(0).WithMessage("WinCondition must be positive.");
             RuleFor(x => x.Input.TagIdsCsv)
                 .Must(BeValidGuidCsv).WithMessage("TagIdsCsv contains invalid Guid(s).")
                 .Must(NotContainDuplicatesInGuidCsv).WithMessage("TagIdsCsv must not contain duplicates.");

@@ -26,6 +26,7 @@ public class CapstoneProjectDbContext : IdentityDbContext<AppUser, AppRole, Guid
     public DbSet<Hint> Hints { get; set; }
     public DbSet<Tag> Tags { get; set; }
     public DbSet<MapTag> MapTags { get; set; }
+    public DbSet<MapMedia> MapMedias { get; set; }
 
     // QuackOrbit: Gameplay & Progress
     public DbSet<Submission> Submissions { get; set; }
