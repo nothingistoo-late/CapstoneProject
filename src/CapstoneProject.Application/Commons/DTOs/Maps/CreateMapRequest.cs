@@ -8,6 +8,8 @@ public class CreateMapRequest
     public string Description { get; set; } = string.Empty;
     public int Difficulty { get; set; }
     public decimal? Price { get; set; }
+    /// <summary>Số lượt chơi thử miễn phí cho mỗi người chơi. 0 = không có trial.</summary>
+    public int FreeTrialAttemptLimit { get; set; }
     /// <summary>Nhiều level; nếu null/rỗng thì dùng <see cref="MapDetailJson"/> (một level order 0).</summary>
     public List<MapLevelInputDto>? Levels { get; set; }
     /// <summary>Một level duy nhất (order 0) khi không gửi <see cref="Levels"/>.</summary>

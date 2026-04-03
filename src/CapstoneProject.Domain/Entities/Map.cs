@@ -14,6 +14,8 @@ public class Map : BaseEntity
     public bool IsPublished { get; set; }
     public MapStatusEnum MapStatus { get; set; } = MapStatusEnum.Draft;
     public decimal? Price { get; set; }
+    /// <summary>Số lượt chơi thử miễn phí cho mỗi người chơi. 0 = không có trial.</summary>
+    public int FreeTrialAttemptLimit { get; set; }
     public string? EditorialContent { get; set; }
     public int UnlockEditorialAfterStars { get; set; } = 3;
     /// <summary>Danh sách tag kiến thức user học được sau khi chơi map (UID của Tag).</summary>

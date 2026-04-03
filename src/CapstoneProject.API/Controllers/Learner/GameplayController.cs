@@ -21,7 +21,7 @@ public class LearnerGameplayController : ControllerBase
     /// Validate solution
     /// </summary>
     /// <remarks>
-    /// Submits solution (mapId, astSpec or bytecodeSpec, language). Returns Accepted/Rejected, stars, XP. Creates Submission and updates UserMapResult. Requires Bearer token.
+    /// Submits solution (mapId, astSpec or bytecodeSpec, language). Returns Accepted/Rejected, stars, XP. Trial attempts still record progress, but do not grant XP. Creates Submission and updates UserMapResult. Requires Bearer token.
     ///
     /// **Body (JSON):**
     /// - mapId (Guid, required): Challenge map ID.
@@ -48,7 +48,7 @@ public class LearnerGameplayController : ControllerBase
     [ProducesResponseType(typeof(Result<ValidateSolutionResultDto>), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(Result<ValidateSolutionResultDto>), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(Result<ValidateSolutionResultDto>), StatusCodes.Status500InternalServerError)]
-    [SwaggerOperation(Summary = "Validate solution", Description = "Submits solution. Returns Accepted/Rejected, stars, XP. Creates Submission and updates UserMapResult. Requires Bearer token.", OperationId = "Learner_ValidateSolution", Tags = new[] { "Learner - Gameplay" })]
+    [SwaggerOperation(Summary = "Validate solution", Description = "Submits solution. Returns Accepted/Rejected, stars, XP. Trial attempts still record progress, but do not grant XP. Creates Submission and updates UserMapResult. Requires Bearer token.", OperationId = "Learner_ValidateSolution", Tags = new[] { "Learner - Gameplay" })]
     public async Task<IActionResult> ValidateSolution([FromBody] ValidateSolutionRequest request)
     {
         var result = await _mediator.Send(new ValidateSolutionCommand(request));

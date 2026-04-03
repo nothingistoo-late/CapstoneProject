@@ -41,6 +41,7 @@ public class CreateMapCommandHandler : IRequestHandler<CreateMapCommand, Result<
             Description = req.Description,
             Difficulty = req.Difficulty,
             Price = req.Price,
+            FreeTrialAttemptLimit = req.FreeTrialAttemptLimit,
             IsPublished = command.AutoPublish,
             MapStatus = command.AutoPublish ? MapStatusEnum.Published : MapStatusEnum.Draft,
             LearnedTags = req.LearnedTags,

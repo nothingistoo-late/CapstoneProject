@@ -84,6 +84,7 @@ public class GetMapsQueryHandler : IRequestHandler<GetMapsQuery, Result<Paginati
             IsPublished = m.IsPublished,
             MapStatus = m.MapStatus.ToString(),
             Price = m.Price,
+            FreeTrialAttemptLimit = m.FreeTrialAttemptLimit,
             CreatedByUserId = m.CreatedBy ?? Guid.Empty,
             CreatedByUserName = m.Creator != null ? $"{m.Creator.FirstName} {m.Creator.LastName}".Trim() : null,
             CreatedAt = m.CreatedAt,

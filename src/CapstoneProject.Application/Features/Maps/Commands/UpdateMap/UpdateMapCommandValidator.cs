@@ -13,6 +13,8 @@ public class UpdateMapCommandValidator : AbstractValidator<UpdateMapCommand>
         {
             RuleFor(x => x.Request!.Title).NotEmpty().MaximumLength(200);
             RuleFor(x => x.Request!.Difficulty).InclusiveBetween(1, 5);
+            When(x => x.Request!.FreeTrialAttemptLimit.HasValue, () =>
+                RuleFor(x => x.Request!.FreeTrialAttemptLimit!.Value).GreaterThanOrEqualTo(0));
             When(x => x.Request!.Levels is { Count: > 0 }, () =>
             {
                 RuleFor(x => x.Request!)

@@ -13,6 +13,8 @@ public class CreateMapCommandValidator : AbstractValidator<CreateMapCommand>
             .MaximumLength(200).WithMessage("Title must not exceed 200 characters");
         RuleFor(x => x.Request.Difficulty)
             .InclusiveBetween(1, 5).WithMessage("Difficulty must be between 1 and 5");
+        RuleFor(x => x.Request.FreeTrialAttemptLimit)
+            .GreaterThanOrEqualTo(0).WithMessage("FreeTrialAttemptLimit must be greater than or equal to 0");
         RuleFor(x => x.Request)
             .Must(r => HasLevelsOrSingleJson(r))
             .WithMessage("Provide Levels (non-empty) or MapDetailJson for a single level.");

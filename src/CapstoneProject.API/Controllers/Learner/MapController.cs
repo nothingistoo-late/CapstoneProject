@@ -245,6 +245,7 @@ public class LearnerMapController : ControllerBase
     /// - timeLimitMs (int, required): Time limit in milliseconds.
     /// - winCondition (int, required): Win condition value stored in Map metadata.
     /// - price (decimal?, optional): Price for paid map; null = free.
+    /// - freeTrialAttemptLimit (int, optional): Số lượt chơi thử miễn phí cho mỗi người chơi. 0 = không có trial.
     /// - mapDetailJson (object, required): Full JSON map detail payload (level/layers/start-goal/objects/metadata...).
     /// - hints (array of { orderNo: int, content: string }, optional): Ordered hints.
     /// - tagIds (array of Guid, optional): Tag IDs.
@@ -322,6 +323,7 @@ public class LearnerMapController : ControllerBase
     /// - timeLimitMs (int, required): Thời gian giới hạn (ms).
     /// - winCondition (int, required): Điều kiện thắng (metadata).
     /// - price (decimal?, optional): Giá; null = miễn phí.
+    /// - freeTrialAttemptLimit (int, optional): Số lượt chơi thử miễn phí cho mỗi người chơi. 0 = không có trial.
     /// - tagIdsCsv (string, optional): Danh sách tag ID cách nhau bằng dấu phẩy.
     /// - mapDetailFiles (files, required): Một hoặc nhiều file JSON. Một file: có thể là object một level, mảng các level, hoặc `{ "levels": [...] }`. Nhiều file: mỗi file = một level (0,1,2…).
     /// - avatarFile (file, optional): Ảnh avatar map; upload lên Cloudinary khi tạo.
@@ -371,6 +373,7 @@ public class LearnerMapController : ControllerBase
     /// - timeLimitMs (int, required): Time limit in ms.
     /// - winCondition (int, required): Win condition value stored in Map metadata.
     /// - price (decimal?, optional): Price; null = free.
+    /// - freeTrialAttemptLimit (int, optional): Số lượt chơi thử miễn phí cho mỗi người chơi. 0 = không có trial.
     /// - mapDetailJson (object, optional): Full JSON map detail payload.
     /// - editorialContent (string, optional): Editorial text.
     /// - unlockEditorialAfterStars (int?, optional): Stars required to unlock editorial.
@@ -442,6 +445,7 @@ public class LearnerMapController : ControllerBase
     /// - timeLimitMs (int, required): Thời gian giới hạn (ms).
     /// - winCondition (int, required): Điều kiện thắng (metadata).
     /// - price (decimal?, optional): Giá; null = miễn phí.
+    /// - freeTrialAttemptLimit (int, optional): Số lượt chơi thử miễn phí cho mỗi người chơi. 0 = không có trial.
     /// - tagIdsCsv (string, optional): Danh sách tag ID cách nhau bằng dấu phẩy.
     /// - mapDetailFiles: Giống API tạo map (một hoặc nhiều file JSON).
     ///

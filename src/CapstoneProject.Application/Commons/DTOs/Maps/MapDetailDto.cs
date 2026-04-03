@@ -12,6 +12,8 @@ public class MapDetailDto
     /// <summary>Trạng thái map: Draft, PendingReview, Approved, Rejected, Published.</summary>
     public string MapStatus { get; set; } = string.Empty;
     public decimal? Price { get; set; }
+    /// <summary>Số lượt chơi thử miễn phí cho mỗi người chơi. 0 = không có trial.</summary>
+    public int FreeTrialAttemptLimit { get; set; }
     public Guid CreatedByUserId { get; set; }
     /// <summary>Tên người tạo map (FirstName + LastName).</summary>
     public string? CreatedByUserName { get; set; }

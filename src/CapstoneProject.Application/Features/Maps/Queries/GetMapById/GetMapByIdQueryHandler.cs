@@ -104,6 +104,7 @@ public class GetMapByIdQueryHandler : IRequestHandler<GetMapByIdQuery, Result<Ma
             IsPublished = map.IsPublished,
             MapStatus = map.MapStatus.ToString(),
             Price = map.Price,
+            FreeTrialAttemptLimit = map.FreeTrialAttemptLimit,
             CreatedByUserId = map.CreatedBy ?? Guid.Empty,
             CreatedByUserName = map.Creator != null ? $"{map.Creator.FirstName} {map.Creator.LastName}".Trim() : null,
             EditorialContent = showEditorial ? map.EditorialContent : null,

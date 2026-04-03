@@ -8,6 +8,8 @@ public class UpdateMapRequest
     public string Description { get; set; } = string.Empty;
     public int Difficulty { get; set; }
     public decimal? Price { get; set; }
+    /// <summary>Số lượt chơi thử miễn phí cho mỗi người chơi. Null = không đổi; 0 = tắt trial.</summary>
+    public int? FreeTrialAttemptLimit { get; set; }
     /// <summary>Thay thế toàn bộ levels khi có giá trị (xóa level cũ, tạo mới).</summary>
     public List<MapLevelInputDto>? Levels { get; set; }
     /// <summary>Cập nhật một level: level đầu (order nhỏ nhất) hoặc order 0 khi không dùng <see cref="Levels"/>.</summary>

@@ -47,6 +47,8 @@ public class UpdateMapCommandHandler : IRequestHandler<UpdateMapCommand, Result>
         map.Description = req.Description;
         map.Difficulty = req.Difficulty;
         map.Price = req.Price;
+        if (req.FreeTrialAttemptLimit.HasValue)
+            map.FreeTrialAttemptLimit = req.FreeTrialAttemptLimit.Value;
         map.EditorialContent = req.EditorialContent;
         if (req.UnlockEditorialAfterStars.HasValue)
             map.UnlockEditorialAfterStars = req.UnlockEditorialAfterStars.Value;

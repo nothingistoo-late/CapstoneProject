@@ -48,6 +48,7 @@ public class UpdateMapFromJsonFileCommandHandler : IRequestHandler<UpdateMapFrom
             Description = input.Description,
             Difficulty = input.Difficulty,
             Price = input.Price,
+            FreeTrialAttemptLimit = input.FreeTrialAttemptLimit,
             TagIds = tagIds,
             LearnedTags = learnedTags,
             Levels = levelsFromFile,

@@ -45,21 +45,12 @@ public class ValidateSolutionCommandHandler : IRequestHandler<ValidateSolutionCo
         if (map == null)
             return Result<ValidateSolutionResultDto>.Failure("Map not found", ErrorCodeEnum.NotFound);
 
+        var isOwned = false;
+        if (map.IsDeleted || map.FreeTrialAttemptLimit > 0)
+            isOwned = await IsMapOwnedByUserAsync(map, userId, cancellationToken);
+
         if (map.IsDeleted)
         {
-            var isAuthor = map.CreatedBy.HasValue && map.CreatedBy.Value == userId;
-            var isOwned = isAuthor;
-            if (!isOwned)
-            {
-                var purchased = await _unitOfWork.Repository<PaymentRecord>().GetQueryable()
-                    .AnyAsync(p => !p.IsDeleted && p.UserId == userId && p.MapId == map.Id && p.PaymentStatus == PaymentStatusEnum.Completed, cancellationToken);
-                if (purchased)
-                    isOwned = true;
-                else
-                    isOwned = await _unitOfWork.Repository<MyMap>().GetQueryable()
-                        .AnyAsync(mm => !mm.IsDeleted && mm.UserId == userId && mm.MapId == map.Id, cancellationToken);
-            }
-
             if (!isOwned)
                 return Result<ValidateSolutionResultDto>.Failure("Map not found", ErrorCodeEnum.NotFound);
         }
@@ -73,6 +64,18 @@ public class ValidateSolutionCommandHandler : IRequestHandler<ValidateSolutionCo
             return Result<ValidateSolutionResultDto>.Failure(
                 "MapDetailId is required when the map has multiple levels, or invalid for this map.",
                 ErrorCodeEnum.ValidationFailed);
+
+        var umrRepo = _unitOfWork.Repository<UserMapResult>();
+        var umr = await umrRepo.GetQueryable().FirstOrDefaultAsync(
+            u => u.UserId == userId && u.MapDetailId == mapDetail.Id,
+            cancellationToken);
+        var currentMapAttempts = await umrRepo.GetQueryable()
+            .Where(u => u.UserId == userId && u.MapId == map.Id && !u.IsDeleted)
+            .Select(u => (int?)u.Attempts)
+            .SumAsync(cancellationToken) ?? 0;
+        var isTrialPlay = map.FreeTrialAttemptLimit > 0 && !isOwned;
+        if (isTrialPlay && currentMapAttempts >= map.FreeTrialAttemptLimit)
+            return Result<ValidateSolutionResultDto>.Failure("No free trial attempts left for this map.", ErrorCodeEnum.ValidationFailed);
 
         var mapSolveCfg = await _unitOfWork.Repository<MapSolveScoreConfig>().GetQueryable()
             .AsNoTracking()
@@ -130,10 +133,6 @@ public class ValidateSolutionCommandHandler : IRequestHandler<ValidateSolutionCo
         execResult.InitializeEntity(userId);
         await _unitOfWork.Repository<ExecutionsResult>().AddAsync(execResult);
 
-        var umrRepo = _unitOfWork.Repository<UserMapResult>();
-        var umr = await umrRepo.GetQueryable().FirstOrDefaultAsync(
-            u => u.UserId == userId && u.MapDetailId == mapDetail.Id,
-            cancellationToken);
         if (umr == null)
         {
             umr = new UserMapResult
@@ -179,7 +178,7 @@ public class ValidateSolutionCommandHandler : IRequestHandler<ValidateSolutionCo
         history.InitializeEntity(userId);
         await _unitOfWork.Repository<UserMapPlayHistory>().AddAsync(history);
 
-        if (accepted)
+        if (accepted && !isTrialPlay)
         {
             var xpDelta = 10 + stars * 5;
             var xpResult = await _xpEngineService.GrantXpAsync(new XpGrantInput
@@ -263,6 +262,20 @@ public class ValidateSolutionCommandHandler : IRequestHandler<ValidateSolutionCo
             Message = accepted ? "Accepted" : "Wrong answer or constraint violation"
         };
         return Result<ValidateSolutionResultDto>.Success(dto);
+    }
+
+    private async Task<bool> IsMapOwnedByUserAsync(Map map, Guid userId, CancellationToken cancellationToken)
+    {
+        if (map.CreatedBy.HasValue && map.CreatedBy.Value == userId)
+            return true;
+
+        var purchased = await _unitOfWork.Repository<PaymentRecord>().GetQueryable()
+            .AnyAsync(p => !p.IsDeleted && p.UserId == userId && p.MapId == map.Id && p.PaymentStatus == PaymentStatusEnum.Completed, cancellationToken);
+        if (purchased)
+            return true;
+
+        return await _unitOfWork.Repository<MyMap>().GetQueryable()
+            .AnyAsync(mm => !mm.IsDeleted && mm.UserId == userId && mm.MapId == map.Id, cancellationToken);
     }
 
     /// <summary>Null nếu map nhiều level mà không gửi MapDetailId hợp lệ.</summary>

@@ -50,6 +50,7 @@ public static class MapJsonUploadFormReader
             Description = request.Description,
             Difficulty = request.Difficulty,
             Price = request.Price,
+            FreeTrialAttemptLimit = request.FreeTrialAttemptLimit,
             TagIdsCsv = request.TagIdsCsv ?? string.Empty,
             LearnedTagsCsv = request.LearnedTagsCsv ?? string.Empty,
             MapDetailJsonContent = mapDetailJsonContent,

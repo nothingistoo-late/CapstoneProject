@@ -48,6 +48,7 @@ public class CreateMapFromJsonFileCommandHandler : IRequestHandler<CreateMapFrom
             Description = input.Description,
             Difficulty = input.Difficulty,
             Price = input.Price,
+            FreeTrialAttemptLimit = input.FreeTrialAttemptLimit ?? 0,
             TagIds = tagIds,
             LearnedTags = learnedTags,
             Levels = levelsFromFile,
