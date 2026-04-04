@@ -160,7 +160,13 @@ public static class InfrastructureDependencyInjection
         // PayOS (user top-up)
         services.Configure<PayOSSettings>(configuration.GetSection(PayOSSettings.SectionName));
         services.AddScoped<Application.Commons.Interfaces.IPayOSService, PayOSService>();
-        services.AddScoped<Application.Commons.Interfaces.IOrbitCoinDepositSettings, OrbitCoinDepositSettingsAdapter>();
+        // OrbitCoin deposit settings: reads exchange rate from database with fallback to appsettings
+        services.AddScoped<Application.Commons.Interfaces.IOrbitCoinDepositSettings>(provider =>
+        {
+            var options = provider.GetRequiredService<IOptions<PayOSSettings>>();
+            var unitOfWork = provider.GetRequiredService<IUnitOfWork>();
+            return new OrbitCoinDepositSettingsAdapter(options, unitOfWork);
+        });
 
         // In-memory lobby room manager (Gunny/GunBound style) - singleton for thread-safe shared state
         services.AddSingleton<Application.Commons.Interfaces.IRoomManager, RoomManager>();

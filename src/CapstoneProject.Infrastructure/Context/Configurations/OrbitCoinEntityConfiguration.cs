@@ -11,6 +11,7 @@ public static class OrbitCoinEntityConfiguration
     {
         builder.Entity<UserWallet>(ConfigureUserWallet);
         builder.Entity<OrbitCoinTransaction>(ConfigureOrbitCoinTransaction);
+        builder.Entity<ExchangeRate>(ConfigureExchangeRate);
     }
 
     static void ConfigureUserWallet(EntityTypeBuilder<UserWallet> e)
@@ -29,5 +30,12 @@ public static class OrbitCoinEntityConfiguration
         e.HasIndex(x => x.UserId);
         e.HasIndex(x => x.CreatedAt);
         e.HasIndex(x => new { x.RelatedEntityType, x.RelatedEntityId });
+    }
+
+    static void ConfigureExchangeRate(EntityTypeBuilder<ExchangeRate> e)
+    {
+        e.Property(x => x.Rate).HasPrecision(18, 4);
+        e.HasIndex(x => new { x.FromCurrency, x.ToCurrency, x.IsActive });
+        e.HasIndex(x => x.CreatedAt).HasFilter("\"IsDeleted\" = false");
     }
 }

@@ -64,6 +64,7 @@ public class CapstoneProjectDbContext : IdentityDbContext<AppUser, AppRole, Guid
     // OrbitCoin: virtual currency
     public DbSet<UserWallet> UserWallets { get; set; }
     public DbSet<OrbitCoinTransaction> OrbitCoinTransactions { get; set; }
+    public DbSet<ExchangeRate> ExchangeRates { get; set; }
 
     // Learning Path (lộ trình học)
     public DbSet<LearningGoal> LearningGoals { get; set; }

@@ -30,4 +30,6 @@ public class MapListItemDto
     public int WinCondition { get; set; }
     /// <summary>URL avatar map (Cloudinary).</summary>
     public string? AvatarUrl { get; set; }
+    /// <summary>Ảnh / video gallery của map (Cloudinary).</summary>
+    public List<MapMediaItemDto> Gallery { get; set; } = new();
 }

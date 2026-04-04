@@ -40,6 +40,8 @@ public class GetMyMapListQueryHandler : IRequestHandler<GetMyMapListQuery, Resul
             .Include(mm => mm.Map)
             .ThenInclude(m => m!.MapDetails)
             .Include(mm => mm.Map)
+            .ThenInclude(m => m!.MapMedias)
+            .Include(mm => mm.Map)
             .ThenInclude(m => m!.Creator)
             .AsNoTracking();
 
@@ -96,7 +98,17 @@ public class GetMyMapListQueryHandler : IRequestHandler<GetMyMapListQuery, Resul
                     .Select(id => learnedTagNameMap.TryGetValue(id, out var name) ? name : id.ToString())
                     .ToList(),
                 WinCondition = win,
-                AvatarUrl = m.AvatarUrl
+                AvatarUrl = m.AvatarUrl,
+                Gallery = m.MapMedias
+                    .OrderBy(media => media.SortOrder)
+                    .Select(media => new MapMediaItemDto
+                    {
+                        Id = media.Id,
+                        Url = media.Url,
+                        Kind = media.Kind.ToString(),
+                        SortOrder = media.SortOrder
+                    })
+                    .ToList()
             };
         }).ToList();
 

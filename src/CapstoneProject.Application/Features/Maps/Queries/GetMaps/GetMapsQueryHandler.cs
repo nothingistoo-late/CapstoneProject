@@ -21,6 +21,7 @@ public class GetMapsQueryHandler : IRequestHandler<GetMapsQuery, Result<Paginati
             .Where(m => !m.IsDeleted && m.Status == EntityStatusEnum.Active)
             .Include(m => m.MapDetails)
             .Include(m => m.MapTags).ThenInclude(mt => mt.Tag)
+            .Include(m => m.MapMedias)
             .Include(m => m.Creator)
             .AsNoTracking();
 
@@ -95,7 +96,17 @@ public class GetMapsQueryHandler : IRequestHandler<GetMapsQuery, Result<Paginati
                 .Select(id => learnedTagNameMap.TryGetValue(id, out var name) ? name : id.ToString())
                 .ToList(),
             WinCondition = win,
-            AvatarUrl = m.AvatarUrl
+            AvatarUrl = m.AvatarUrl,
+            Gallery = m.MapMedias
+                .OrderBy(media => media.SortOrder)
+                .Select(media => new MapMediaItemDto
+                {
+                    Id = media.Id,
+                    Url = media.Url,
+                    Kind = media.Kind.ToString(),
+                    SortOrder = media.SortOrder
+                })
+                .ToList()
         };
         }).ToList();
 

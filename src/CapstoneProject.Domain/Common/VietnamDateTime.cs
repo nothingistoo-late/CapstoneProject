@@ -40,5 +40,34 @@ public static class VietnamDateTime
     public static DateTimeOffset UtcNowOffset => DateTimeOffset.UtcNow;
 
     public static DateTimeOffset VietnamNowOffset => new(VietnamNow, TimeSpan.FromHours(7));
+
+    /// <summary>
+    /// Convert any DateTime Kind (Utc/Local/Unspecified) to a value suitable for
+    /// PostgreSQL "timestamp without time zone" columns used by this project.
+    /// Result Kind is always Unspecified in Vietnam local time.
+    /// </summary>
+    public static DateTime ToDbDateTime(DateTime value)
+    {
+        if (value.Kind == DateTimeKind.Unspecified)
+            return value;
+
+        if (value.Kind == DateTimeKind.Utc)
+        {
+            var vn = TimeZoneInfo.ConvertTimeFromUtc(value, VietnamTimeZone);
+            return DateTime.SpecifyKind(vn, DateTimeKind.Unspecified);
+        }
+
+        // Local -> UTC -> Vietnam -> Unspecified
+        var utc = value.ToUniversalTime();
+        var vietnam = TimeZoneInfo.ConvertTimeFromUtc(utc, VietnamTimeZone);
+        return DateTime.SpecifyKind(vietnam, DateTimeKind.Unspecified);
+    }
+
+    public static DateTime? ToDbDateTime(DateTime? value)
+    {
+        if (!value.HasValue)
+            return null;
+        return ToDbDateTime(value.Value);
+    }
 }
 
