@@ -1,6 +1,7 @@
 using CapstoneProject.Application.Common.Enums;
 using CapstoneProject.Application.Common.Interfaces;
 using CapstoneProject.Application.Common.Models;
+using CapstoneProject.Domain.Common;
 using CapstoneProject.Domain.Entities;
 using CapstoneProject.Domain.Enums;
 using MediatR;
@@ -12,11 +13,16 @@ public class GetComplaintsQueryHandler : IRequestHandler<GetComplaintsQuery, Res
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly ICurrentUserService _currentUserService;
+    private readonly IComplaintContextResolver _complaintContextResolver;
 
-    public GetComplaintsQueryHandler(IUnitOfWork unitOfWork, ICurrentUserService currentUserService)
+    public GetComplaintsQueryHandler(
+        IUnitOfWork unitOfWork,
+        ICurrentUserService currentUserService,
+        IComplaintContextResolver complaintContextResolver)
     {
         _unitOfWork = unitOfWork;
         _currentUserService = currentUserService;
+        _complaintContextResolver = complaintContextResolver;
     }
 
     public async Task<Result<PaginationResult<ComplaintListItemDto>>> Handle(GetComplaintsQuery request, CancellationToken cancellationToken)
@@ -32,14 +38,17 @@ public class GetComplaintsQueryHandler : IRequestHandler<GetComplaintsQuery, Res
         var query = _unitOfWork.Repository<Complaint>().GetQueryable()
             .Where(c => !c.IsDeleted);
 
+        var dateFrom = VietnamDateTime.ToDbDateTime(request.DateFrom);
+        var dateTo = VietnamDateTime.ToDbDateTime(request.DateTo);
+
         if (request.Status.HasValue)
             query = query.Where(c => c.ComplaintStatus == request.Status.Value);
         if (request.UserId.HasValue)
             query = query.Where(c => c.UserId == request.UserId.Value);
-        if (request.DateFrom.HasValue)
-            query = query.Where(c => c.CreatedAt >= request.DateFrom.Value);
-        if (request.DateTo.HasValue)
-            query = query.Where(c => c.CreatedAt != null && c.CreatedAt.Value <= request.DateTo.Value);
+        if (dateFrom.HasValue)
+            query = query.Where(c => c.CreatedAt >= dateFrom.Value);
+        if (dateTo.HasValue)
+            query = query.Where(c => c.CreatedAt != null && c.CreatedAt.Value <= dateTo.Value);
         if (!string.IsNullOrWhiteSpace(request.Keyword))
         {
             var keyword = request.Keyword.Trim();
@@ -53,21 +62,38 @@ public class GetComplaintsQueryHandler : IRequestHandler<GetComplaintsQuery, Res
         var pageNumber = Math.Max(1, request.PageNumber);
         var pageSize = Math.Clamp(request.PageSize, 1, 100);
 
-        var list = await query
+        var complaints = await query
             .OrderByDescending(c => c.CreatedAt)
             .Skip((pageNumber - 1) * pageSize)
             .Take(pageSize)
-            .Select(c => new ComplaintListItemDto
-            {
-                Id = c.Id,
-                UserId = c.UserId,
-                Subject = c.Subject,
-                Category = c.Category,
-                ComplaintStatus = c.ComplaintStatus.ToString(),
-                CreatedAt = c.CreatedAt,
-                ResolvedAt = c.ResolvedAt
-            })
             .ToListAsync(cancellationToken);
+
+        var list = new List<ComplaintListItemDto>(complaints.Count);
+        foreach (var complaint in complaints)
+        {
+            list.Add(new ComplaintListItemDto
+            {
+                Id = complaint.Id,
+                UserId = complaint.UserId,
+                Subject = complaint.Subject,
+                Category = complaint.Category,
+                CategoryKey = complaint.CategoryKey,
+                ComplaintStatus = complaint.ComplaintStatus.ToString(),
+                ContextType = complaint.ContextType,
+                ContextId = complaint.ContextId,
+                ContextKey = complaint.ContextKey,
+                ContextDataJson = complaint.ContextDataJson,
+                OccurredAt = complaint.OccurredAt,
+                ContextResolved = await _complaintContextResolver.ResolveAsync(
+                    complaint.ContextType,
+                    complaint.ContextId,
+                    complaint.ContextDataJson,
+                    complaint.UserId,
+                    cancellationToken),
+                CreatedAt = complaint.CreatedAt,
+                ResolvedAt = complaint.ResolvedAt
+            });
+        }
 
         var paginated = PaginationResult<ComplaintListItemDto>.Success(list, pageNumber, pageSize, total);
         return Result<PaginationResult<ComplaintListItemDto>>.Success(paginated);

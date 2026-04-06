@@ -52,7 +52,22 @@ public class PurchasePackageCommandHandler : IRequestHandler<PurchasePackageComm
             userId,
             cancellationToken);
         if (!success)
+        {
+            var failedRecord = new PaymentRecord
+            {
+                UserId = userId,
+                PackageId = pkg.Id,
+                Amount = pkg.Price,
+                PaymentStatus = PaymentStatusEnum.Failed,
+                PaidAt = CapstoneProject.Domain.Common.VietnamDateTime.DbNow,
+                PaymentId = null
+            };
+            failedRecord.InitializeEntity(userId);
+            await _unitOfWork.Repository<PaymentRecord>().AddAsync(failedRecord);
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
+
             return Result<Guid>.Failure(error ?? "Insufficient OrbitCoin. Please top up first.", ErrorCodeEnum.InvalidOperation);
+        }
 
         var orbitCoinPayment = await _unitOfWork.Repository<Payment>()
             .GetQueryable()

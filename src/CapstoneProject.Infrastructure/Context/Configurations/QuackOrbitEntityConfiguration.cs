@@ -40,7 +40,10 @@ public static class QuackOrbitEntityConfiguration
         builder.Entity<MapRating>(ConfigureMapRating);
         builder.Entity<MapReport>(ConfigureMapReport);
         builder.Entity<Complaint>(ConfigureComplaint);
+        builder.Entity<ComplaintCategoryCatalog>(ConfigureComplaintCategoryCatalog);
+        builder.Entity<ComplaintPolicyRuleConfig>(ConfigureComplaintPolicyRuleConfig);
         builder.Entity<ComplaintMessage>(ConfigureComplaintMessage);
+        builder.Entity<ComplaintMessageAttachment>(ConfigureComplaintMessageAttachment);
         builder.Entity<ComplaintStatusHistory>(ConfigureComplaintStatusHistory);
         builder.Entity<MyMap>(ConfigureMyMap);
         builder.Entity<LearningGoal>(ConfigureLearningGoal);
@@ -297,14 +300,36 @@ public static class QuackOrbitEntityConfiguration
         e.HasOne(r => r.Map).WithMany().HasForeignKey(r => r.MapId).OnDelete(DeleteBehavior.Restrict);
     }
 
+    static void ConfigureComplaintCategoryCatalog(EntityTypeBuilder<ComplaintCategoryCatalog> e)
+    {
+        e.Property(x => x.CategoryKey).HasMaxLength(100);
+        e.Property(x => x.DisplayName).HasMaxLength(150);
+        e.HasIndex(x => x.CategoryKey).IsUnique();
+        e.HasIndex(x => new { x.IsEnabled, x.SortOrder });
+    }
+
+    static void ConfigureComplaintPolicyRuleConfig(EntityTypeBuilder<ComplaintPolicyRuleConfig> e)
+    {
+        e.Property(x => x.CategoryKey).HasMaxLength(100);
+        e.Property(x => x.RuleKey).HasMaxLength(100);
+        e.HasIndex(x => new { x.CategoryKey, x.RuleKey }).IsUnique();
+        e.HasIndex(x => new { x.IsEnabled, x.Priority });
+    }
+
     static void ConfigureComplaint(EntityTypeBuilder<Complaint> e)
     {
         e.Property(x => x.ComplaintStatus).HasConversion<int>();
+        e.Property(x => x.CategoryKey).HasMaxLength(100);
+        e.Property(x => x.ContextType).HasMaxLength(100);
+        e.Property(x => x.ContextKey).HasMaxLength(250);
 
         e.HasIndex(x => x.UserId);
         e.HasIndex(x => x.ComplaintStatus);
         e.HasIndex(x => x.CreatedAt);
+        e.HasIndex(x => x.CategoryKey);
+        e.HasIndex(x => x.ContextKey);
         e.HasIndex(x => new { x.ComplaintStatus, x.CreatedAt });
+        e.HasIndex(x => new { x.UserId, x.CategoryKey, x.ContextKey, x.ComplaintStatus });
 
         e.HasOne(x => x.User)
             .WithMany()
@@ -333,6 +358,21 @@ public static class QuackOrbitEntityConfiguration
             .WithMany()
             .HasForeignKey(x => x.SenderId)
             .OnDelete(DeleteBehavior.Restrict);
+
+        e.HasMany(x => x.Attachments)
+            .WithOne(x => x.ComplaintMessage)
+            .HasForeignKey(x => x.ComplaintMessageId)
+            .OnDelete(DeleteBehavior.Cascade);
+    }
+
+    static void ConfigureComplaintMessageAttachment(EntityTypeBuilder<ComplaintMessageAttachment> e)
+    {
+        e.Property(x => x.FileName).HasMaxLength(260);
+        e.Property(x => x.Url).HasMaxLength(2000);
+        e.Property(x => x.MimeType).HasMaxLength(120);
+
+        e.HasIndex(x => x.ComplaintMessageId);
+        e.HasIndex(x => new { x.ComplaintMessageId, x.SortOrder });
     }
 
     static void ConfigureComplaintStatusHistory(EntityTypeBuilder<ComplaintStatusHistory> e)

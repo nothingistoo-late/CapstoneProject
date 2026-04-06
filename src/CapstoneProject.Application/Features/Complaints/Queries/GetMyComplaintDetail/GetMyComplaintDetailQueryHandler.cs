@@ -1,6 +1,7 @@
 using CapstoneProject.Application.Common.Enums;
 using CapstoneProject.Application.Common.Interfaces;
 using CapstoneProject.Application.Common.Models;
+using CapstoneProject.Application.Commons.DTOs.Complaints;
 using CapstoneProject.Application.Commons.Interfaces;
 using CapstoneProject.Domain.Entities;
 using MediatR;
@@ -12,11 +13,16 @@ public class GetMyComplaintDetailQueryHandler : IRequestHandler<GetMyComplaintDe
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly ICurrentUserService _currentUserService;
+    private readonly IComplaintContextResolver _complaintContextResolver;
 
-    public GetMyComplaintDetailQueryHandler(IUnitOfWork unitOfWork, ICurrentUserService currentUserService)
+    public GetMyComplaintDetailQueryHandler(
+        IUnitOfWork unitOfWork,
+        ICurrentUserService currentUserService,
+        IComplaintContextResolver complaintContextResolver)
     {
         _unitOfWork = unitOfWork;
         _currentUserService = currentUserService;
+        _complaintContextResolver = complaintContextResolver;
     }
 
     public async Task<Result<MyComplaintDetailDto>> Handle(GetMyComplaintDetailQuery request, CancellationToken cancellationToken)
@@ -31,6 +37,7 @@ public class GetMyComplaintDetailQueryHandler : IRequestHandler<GetMyComplaintDe
 
         var complaint = await _unitOfWork.Repository<Complaint>().GetQueryable()
             .Include(c => c.Messages)
+                .ThenInclude(m => m.Attachments)
             .Include(c => c.StatusHistories)
             .FirstOrDefaultAsync(c => c.Id == request.ComplaintId && !c.IsDeleted, cancellationToken);
 
@@ -44,8 +51,20 @@ public class GetMyComplaintDetailQueryHandler : IRequestHandler<GetMyComplaintDe
             Id = complaint.Id,
             Subject = complaint.Subject,
             Category = complaint.Category,
+            CategoryKey = complaint.CategoryKey,
             Description = complaint.Description,
             ComplaintStatus = complaint.ComplaintStatus.ToString(),
+            ContextType = complaint.ContextType,
+            ContextId = complaint.ContextId,
+            ContextKey = complaint.ContextKey,
+            ContextDataJson = complaint.ContextDataJson,
+            OccurredAt = complaint.OccurredAt,
+            ContextResolved = await _complaintContextResolver.ResolveAsync(
+                complaint.ContextType,
+                complaint.ContextId,
+                complaint.ContextDataJson,
+                complaint.UserId,
+                cancellationToken),
             CreatedAt = complaint.CreatedAt,
             ResolvedAt = complaint.ResolvedAt,
             Messages = complaint.Messages
@@ -57,7 +76,20 @@ public class GetMyComplaintDetailQueryHandler : IRequestHandler<GetMyComplaintDe
                     SenderId = m.SenderId,
                     Content = m.Content,
                     IsInternal = m.IsInternal,
-                    CreatedAt = m.CreatedAt
+                    CreatedAt = m.CreatedAt,
+                    Attachments = m.Attachments
+                        .Where(a => !a.IsDeleted)
+                        .OrderBy(a => a.SortOrder)
+                        .Select(a => new ComplaintAttachmentDto
+                        {
+                            Id = a.Id,
+                            FileName = a.FileName,
+                            Url = a.Url,
+                            MimeType = a.MimeType,
+                            SizeBytes = a.SizeBytes,
+                            SortOrder = a.SortOrder
+                        })
+                        .ToList()
                 })
                 .ToList(),
             StatusHistories = complaint.StatusHistories

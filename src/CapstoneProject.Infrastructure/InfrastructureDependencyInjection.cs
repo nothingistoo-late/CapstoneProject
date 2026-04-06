@@ -156,6 +156,8 @@ public static class InfrastructureDependencyInjection
         services.AddScoped<IXpPolicy, Services.XpPolicies.StreakPolicy>();
         services.AddScoped<IXpPolicy, Services.XpPolicies.FirstWinOfDayPolicy>();
         services.AddScoped<IXpPolicy, Services.XpPolicies.EventBoostPolicy>();
+        services.AddScoped<IComplaintPolicyService, ComplaintPolicyService>();
+        services.AddScoped<IComplaintContextResolver, ComplaintContextResolver>();
 
         // PayOS (user top-up)
         services.Configure<PayOSSettings>(configuration.GetSection(PayOSSettings.SectionName));

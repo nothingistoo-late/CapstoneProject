@@ -394,8 +394,27 @@ namespace CapstoneProject.Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<string>("CategoryKey")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
                     b.Property<int>("ComplaintStatus")
                         .HasColumnType("integer");
+
+                    b.Property<string>("ContextDataJson")
+                        .HasColumnType("text");
+
+                    b.Property<Guid?>("ContextId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("ContextKey")
+                        .HasMaxLength(250)
+                        .HasColumnType("character varying(250)");
+
+                    b.Property<string>("ContextType")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
 
                     b.Property<DateTime?>("CreatedAt")
                         .ValueGeneratedOnAdd()
@@ -420,6 +439,9 @@ namespace CapstoneProject.Infrastructure.Migrations
                         .HasColumnType("boolean")
                         .HasDefaultValue(false);
 
+                    b.Property<DateTime?>("OccurredAt")
+                        .HasColumnType("timestamp without time zone");
+
                     b.Property<DateTime?>("ResolvedAt")
                         .HasColumnType("timestamp without time zone");
 
@@ -441,7 +463,11 @@ namespace CapstoneProject.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("CategoryKey");
+
                     b.HasIndex("ComplaintStatus");
+
+                    b.HasIndex("ContextKey");
 
                     b.HasIndex("CreatedAt");
 
@@ -449,7 +475,72 @@ namespace CapstoneProject.Infrastructure.Migrations
 
                     b.HasIndex("ComplaintStatus", "CreatedAt");
 
+                    b.HasIndex("UserId", "CategoryKey", "ContextKey", "ComplaintStatus");
+
                     b.ToTable("Complaints");
+                });
+
+            modelBuilder.Entity("CapstoneProject.Domain.Entities.ComplaintCategoryCatalog", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("CategoryKey")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<DateTime?>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp without time zone")
+                        .HasDefaultValueSql("(now() AT TIME ZONE 'Asia/Ho_Chi_Minh')");
+
+                    b.Property<Guid?>("CreatedBy")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("timestamp without time zone");
+
+                    b.Property<Guid?>("DeletedBy")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("text");
+
+                    b.Property<string>("DisplayName")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("character varying(150)");
+
+                    b.Property<bool>("IsDeleted")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false);
+
+                    b.Property<bool>("IsEnabled")
+                        .HasColumnType("boolean");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp without time zone");
+
+                    b.Property<Guid?>("UpdatedBy")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CategoryKey")
+                        .IsUnique();
+
+                    b.HasIndex("IsEnabled", "SortOrder");
+
+                    b.ToTable("ComplaintCategoryCatalogs");
                 });
 
             modelBuilder.Entity("CapstoneProject.Domain.Entities.ComplaintMessage", b =>
@@ -510,6 +601,141 @@ namespace CapstoneProject.Infrastructure.Migrations
                     b.HasIndex("ComplaintId", "CreatedAt");
 
                     b.ToTable("ComplaintMessages");
+                });
+
+            modelBuilder.Entity("CapstoneProject.Domain.Entities.ComplaintMessageAttachment", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("ComplaintMessageId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp without time zone")
+                        .HasDefaultValueSql("(now() AT TIME ZONE 'Asia/Ho_Chi_Minh')");
+
+                    b.Property<Guid?>("CreatedBy")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("timestamp without time zone");
+
+                    b.Property<Guid?>("DeletedBy")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("FileName")
+                        .IsRequired()
+                        .HasMaxLength(260)
+                        .HasColumnType("character varying(260)");
+
+                    b.Property<bool>("IsDeleted")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false);
+
+                    b.Property<string>("MimeType")
+                        .HasMaxLength(120)
+                        .HasColumnType("character varying(120)");
+
+                    b.Property<long>("SizeBytes")
+                        .HasColumnType("bigint");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp without time zone");
+
+                    b.Property<Guid?>("UpdatedBy")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Url")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ComplaintMessageId");
+
+                    b.HasIndex("ComplaintMessageId", "SortOrder");
+
+                    b.ToTable("ComplaintMessageAttachments");
+                });
+
+            modelBuilder.Entity("CapstoneProject.Domain.Entities.ComplaintPolicyRuleConfig", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("ActiveFrom")
+                        .HasColumnType("timestamp without time zone");
+
+                    b.Property<DateTime?>("ActiveTo")
+                        .HasColumnType("timestamp without time zone");
+
+                    b.Property<string>("CategoryKey")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("ConfigJson")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime?>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp without time zone")
+                        .HasDefaultValueSql("(now() AT TIME ZONE 'Asia/Ho_Chi_Minh')");
+
+                    b.Property<Guid?>("CreatedBy")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("timestamp without time zone");
+
+                    b.Property<Guid?>("DeletedBy")
+                        .HasColumnType("uuid");
+
+                    b.Property<bool>("IsDeleted")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false);
+
+                    b.Property<bool>("IsEnabled")
+                        .HasColumnType("boolean");
+
+                    b.Property<int>("Priority")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("RuleKey")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp without time zone");
+
+                    b.Property<Guid?>("UpdatedBy")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CategoryKey", "RuleKey")
+                        .IsUnique();
+
+                    b.HasIndex("IsEnabled", "Priority");
+
+                    b.ToTable("ComplaintPolicyRuleConfigs");
                 });
 
             modelBuilder.Entity("CapstoneProject.Domain.Entities.ComplaintStatusHistory", b =>
@@ -2988,6 +3214,17 @@ namespace CapstoneProject.Infrastructure.Migrations
                     b.Navigation("Sender");
                 });
 
+            modelBuilder.Entity("CapstoneProject.Domain.Entities.ComplaintMessageAttachment", b =>
+                {
+                    b.HasOne("CapstoneProject.Domain.Entities.ComplaintMessage", "ComplaintMessage")
+                        .WithMany("Attachments")
+                        .HasForeignKey("ComplaintMessageId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("ComplaintMessage");
+                });
+
             modelBuilder.Entity("CapstoneProject.Domain.Entities.ComplaintStatusHistory", b =>
                 {
                     b.HasOne("CapstoneProject.Domain.Entities.AppUser", "ChangedByUser")
@@ -3400,6 +3637,11 @@ namespace CapstoneProject.Infrastructure.Migrations
                     b.Navigation("Messages");
 
                     b.Navigation("StatusHistories");
+                });
+
+            modelBuilder.Entity("CapstoneProject.Domain.Entities.ComplaintMessage", b =>
+                {
+                    b.Navigation("Attachments");
                 });
 
             modelBuilder.Entity("CapstoneProject.Domain.Entities.Concept", b =>

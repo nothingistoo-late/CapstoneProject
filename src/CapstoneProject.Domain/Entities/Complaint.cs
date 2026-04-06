@@ -8,7 +8,14 @@ public class Complaint : BaseEntity
     public Guid UserId { get; set; }
     public string Subject { get; set; } = string.Empty;
     public string Category { get; set; } = string.Empty;
+    public string CategoryKey { get; set; } = string.Empty;
     public string Description { get; set; } = string.Empty;
+
+    public string? ContextType { get; set; }
+    public Guid? ContextId { get; set; }
+    public string? ContextKey { get; set; }
+    public string? ContextDataJson { get; set; }
+    public DateTime? OccurredAt { get; set; }
 
     public ComplaintStatusEnum ComplaintStatus { get; set; } = ComplaintStatusEnum.Open;
 

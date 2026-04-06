@@ -15,5 +15,6 @@ public class ComplaintMessage : BaseEntity
 
     public virtual Complaint Complaint { get; set; } = null!;
     public virtual AppUser Sender { get; set; } = null!;
+    public virtual ICollection<ComplaintMessageAttachment> Attachments { get; set; } = new List<ComplaintMessageAttachment>();
 }
 

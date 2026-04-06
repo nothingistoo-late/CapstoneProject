@@ -66,7 +66,22 @@ public class PurchaseMapWithOrbitCoinCommandHandler : IRequestHandler<PurchaseMa
             cancellationToken);
 
         if (!success)
+        {
+            var failedRecord = new PaymentRecord
+            {
+                UserId = buyerUserId,
+                MapId = map.Id,
+                Amount = amount,
+                PaymentStatus = PaymentStatusEnum.Failed,
+                PaidAt = CapstoneProject.Domain.Common.VietnamDateTime.DbNow,
+                PaymentId = null
+            };
+            failedRecord.InitializeEntity(buyerUserId);
+            await _unitOfWork.Repository<PaymentRecord>().AddAsync(failedRecord);
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
+
             return Result.Failure(error ?? "Transfer failed.", ErrorCodeEnum.InvalidOperation);
+        }
 
         // Reuse PaymentRecords: record this map purchase (paid with OrbitCoin) for unified purchase history
         var orbitCoinPayment = await _unitOfWork.Repository<Payment>()
