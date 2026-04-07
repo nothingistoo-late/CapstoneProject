@@ -1,4 +1,4 @@
-using CapstoneProject.Application.Common.Enums;
+﻿using CapstoneProject.Application.Common.Enums;
 using CapstoneProject.Application.Common.Interfaces;
 using CapstoneProject.Application.Common.Models;
 using CapstoneProject.Application.Commons.DTOs.Complaints;
@@ -44,15 +44,15 @@ public class CreateComplaintCommandHandler : IRequestHandler<CreateComplaintComm
     {
         var (isValid, userIdNullable) = await _currentUserService.IsUserValidAsync();
         if (!isValid || !userIdNullable.HasValue)
-            return Result<CreateComplaintResponseDto>.Failure("Authentication required. Please log in to submit a complaint.", ErrorCodeEnum.Unauthorized);
+            return Result<CreateComplaintResponseDto>.Failure("Yêu cầu xác thực. Vui lòng đăng nhập để gửi khiếu nại.", ErrorCodeEnum.Unauthorized);
 
         var userId = userIdNullable.Value;
         if (string.IsNullOrWhiteSpace(command.Subject))
-            return Result<CreateComplaintResponseDto>.Failure("Subject is required.", ErrorCodeEnum.ValidationFailed);
+            return Result<CreateComplaintResponseDto>.Failure("Chủ đề là bắt buộc.", ErrorCodeEnum.ValidationFailed);
         if (string.IsNullOrWhiteSpace(command.CategoryKey))
-            return Result<CreateComplaintResponseDto>.Failure("CategoryKey is required.", ErrorCodeEnum.ValidationFailed);
+            return Result<CreateComplaintResponseDto>.Failure("CategoryKey là bắt buộc.", ErrorCodeEnum.ValidationFailed);
         if (string.IsNullOrWhiteSpace(command.Description))
-            return Result<CreateComplaintResponseDto>.Failure("Description is required.", ErrorCodeEnum.ValidationFailed);
+            return Result<CreateComplaintResponseDto>.Failure("Mô tả là bắt buộc.", ErrorCodeEnum.ValidationFailed);
 
         var attachmentValidationError = ValidateAttachments(command.Attachments);
         if (!string.IsNullOrEmpty(attachmentValidationError))
@@ -68,7 +68,7 @@ public class CreateComplaintCommandHandler : IRequestHandler<CreateComplaintComm
         }, cancellationToken);
 
         if (!policyResult.IsSuccess)
-            return Result<CreateComplaintResponseDto>.Failure(policyResult.ErrorMessage ?? "Complaint policy validation failed.", ErrorCodeEnum.ValidationFailed);
+            return Result<CreateComplaintResponseDto>.Failure(policyResult.ErrorMessage ?? "Xác thực chính sách khiếu nại không thành công.", ErrorCodeEnum.ValidationFailed);
 
         var complaint = new Complaint
         {
@@ -114,7 +114,7 @@ public class CreateComplaintCommandHandler : IRequestHandler<CreateComplaintComm
                 if (string.IsNullOrWhiteSpace(url))
                 {
                     await CleanupUploadedFilesAsync(uploadedUrls, cancellationToken);
-                    return Result<CreateComplaintResponseDto>.Failure("Failed to upload one or more attachments.", ErrorCodeEnum.FileUploadFailed);
+                    return Result<CreateComplaintResponseDto>.Failure("Không thể tải lên một hoặc nhiều tệp đính kèm.", ErrorCodeEnum.FileUploadFailed);
                 }
 
                 uploadedUrls.Add(url);
@@ -172,7 +172,7 @@ public class CreateComplaintCommandHandler : IRequestHandler<CreateComplaintComm
             CreatedAt = complaint.CreatedAt
         };
 
-        return Result<CreateComplaintResponseDto>.Success(response, "Complaint submitted.");
+        return Result<CreateComplaintResponseDto>.Success(response, "Đã gửi đơn khiếu nại.");
     }
 
     private static string? ValidateAttachments(IReadOnlyCollection<IFormFile>? files)

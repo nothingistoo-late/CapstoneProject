@@ -1,4 +1,4 @@
-using CapstoneProject.Application.Common.Enums;
+﻿using CapstoneProject.Application.Common.Enums;
 using CapstoneProject.Application.Common.Interfaces;
 using CapstoneProject.Application.Common.Models;
 using CapstoneProject.Domain.Common;
@@ -29,21 +29,21 @@ public class ChangeComplaintStatusCommandHandler : IRequestHandler<ChangeComplai
     {
         var (isValid, userIdNullable) = await _currentUserService.IsUserValidAsync();
         if (!isValid || !userIdNullable.HasValue)
-            return Result<ComplaintStatusUpdateDto>.Failure("Authentication required. Please log in to change complaint status.", ErrorCodeEnum.Unauthorized);
+            return Result<ComplaintStatusUpdateDto>.Failure("Yêu cầu xác thực. Vui lòng đăng nhập để thay đổi trạng thái khiếu nại.", ErrorCodeEnum.Unauthorized);
         var userId = userIdNullable.Value;
 
         var roles = await _currentUserService.GetCurrentRolesAsync();
         if (!roles.Contains(RoleEnum.Admin) && !roles.Contains(RoleEnum.Moderator))
-            return Result<ComplaintStatusUpdateDto>.Failure("You do not have permission to change complaint status. Only Admin or Moderator can perform this action.", ErrorCodeEnum.Forbidden);
+            return Result<ComplaintStatusUpdateDto>.Failure("Bạn không có quyền thay đổi trạng thái khiếu nại. Chỉ Quản trị viên hoặc Người điều hành mới có thể thực hiện hành động này.", ErrorCodeEnum.Forbidden);
 
         if (command.ComplaintId == Guid.Empty)
-            return Result<ComplaintStatusUpdateDto>.Failure("ComplaintId is required.", ErrorCodeEnum.ValidationFailed);
+            return Result<ComplaintStatusUpdateDto>.Failure("Khiếu nạiId là bắt buộc.", ErrorCodeEnum.ValidationFailed);
 
         var complaintRepo = _unitOfWork.Repository<Complaint>();
         var complaint = await complaintRepo.GetQueryable()
             .FirstOrDefaultAsync(c => c.Id == command.ComplaintId && !c.IsDeleted, cancellationToken);
         if (complaint == null)
-            return Result<ComplaintStatusUpdateDto>.Failure($"Complaint not found with Id: {command.ComplaintId}.", ErrorCodeEnum.NotFound);
+            return Result<ComplaintStatusUpdateDto>.Failure($"Không tìm thấy khiếu nại với Id: {command.ComplaintId}.", ErrorCodeEnum.NotFound);
 
         var fromStatus = complaint.ComplaintStatus;
         var toStatus = command.ToStatus;
@@ -51,7 +51,7 @@ public class ChangeComplaintStatusCommandHandler : IRequestHandler<ChangeComplai
         if (fromStatus == toStatus)
         {
             var noChange = await BuildStatusDtoAsync(complaint, fromStatus, toStatus, command.Note, cancellationToken);
-            return Result<ComplaintStatusUpdateDto>.Success(noChange, "No status change.");
+            return Result<ComplaintStatusUpdateDto>.Success(noChange, "Không có thay đổi trạng thái.");
         }
 
         var allowed = fromStatus switch
@@ -62,7 +62,7 @@ public class ChangeComplaintStatusCommandHandler : IRequestHandler<ChangeComplai
             _ => false
         };
         if (!allowed)
-            return Result<ComplaintStatusUpdateDto>.Failure($"Invalid status transition: {fromStatus} -> {toStatus}.", ErrorCodeEnum.ValidationFailed);
+            return Result<ComplaintStatusUpdateDto>.Failure($"Chuyển đổi trạng thái không hợp lệ: {fromStatus} -> {toStatus}.", ErrorCodeEnum.ValidationFailed);
 
         complaint.ComplaintStatus = toStatus;
         if (toStatus == ComplaintStatusEnum.Resolved)
@@ -86,7 +86,7 @@ public class ChangeComplaintStatusCommandHandler : IRequestHandler<ChangeComplai
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         var response = await BuildStatusDtoAsync(complaint, fromStatus, toStatus, history.Note, cancellationToken);
-        return Result<ComplaintStatusUpdateDto>.Success(response, "Complaint status updated.");
+        return Result<ComplaintStatusUpdateDto>.Success(response, "Đã cập nhật trạng thái khiếu nại.");
     }
 
     private async Task<ComplaintStatusUpdateDto> BuildStatusDtoAsync(

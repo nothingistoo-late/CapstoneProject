@@ -1,4 +1,4 @@
-using MediatR;
+﻿using MediatR;
 using Microsoft.EntityFrameworkCore;
 using CapstoneProject.Application.Common.Enums;
 using CapstoneProject.Application.Common.Interfaces;
@@ -29,22 +29,22 @@ public class DeleteMapGalleryMediaCommandHandler : IRequestHandler<DeleteMapGall
     {
         var (isValid, userId) = await _currentUserService.IsUserValidAsync();
         if (!isValid || !userId.HasValue)
-            return Result.Failure("Authentication required.", ErrorCodeEnum.Unauthorized);
+            return Result.Failure("Yêu cầu xác thực.", ErrorCodeEnum.Unauthorized);
 
         var map = await _unitOfWork.Repository<Map>().GetQueryable()
             .FirstOrDefaultAsync(m => m.Id == request.MapId && !m.IsDeleted, cancellationToken);
         if (map == null)
-            return Result.Failure("Map not found.", ErrorCodeEnum.NotFound);
+            return Result.Failure("Bản đồ không được tìm thấy.", ErrorCodeEnum.NotFound);
 
         var roles = await _currentUserService.GetCurrentRolesAsync();
         var isAdminOrMod = roles.Contains(RoleEnum.Admin) || roles.Contains(RoleEnum.Moderator);
         if (map.CreatedBy != userId && !isAdminOrMod)
-            return Result.Failure("You do not have permission to update this map.", ErrorCodeEnum.Forbidden);
+            return Result.Failure("Bạn không có quyền cập nhật bản đồ này.", ErrorCodeEnum.Forbidden);
 
         var media = await _unitOfWork.Repository<MapMedia>().GetQueryable()
             .FirstOrDefaultAsync(m => m.Id == request.MediaId && m.MapId == request.MapId, cancellationToken);
         if (media == null)
-            return Result.Failure("Gallery item not found.", ErrorCodeEnum.NotFound);
+            return Result.Failure("Không tìm thấy mục thư viện.", ErrorCodeEnum.NotFound);
 
         var url = media.Url;
         var kind = media.Kind;
@@ -65,6 +65,6 @@ public class DeleteMapGalleryMediaCommandHandler : IRequestHandler<DeleteMapGall
             }
         });
 
-        return Result.Success("Gallery item removed.");
+        return Result.Success("Mục thư viện đã bị xóa.");
     }
 }

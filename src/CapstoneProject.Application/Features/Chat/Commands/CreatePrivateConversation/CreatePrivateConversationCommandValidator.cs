@@ -1,4 +1,4 @@
-using FluentValidation;
+﻿using FluentValidation;
 using CapstoneProject.Application.Common.Interfaces;
 
 namespace CapstoneProject.Application.Features.Chat.Commands.CreatePrivateConversation;
@@ -16,7 +16,7 @@ public class CreatePrivateConversationCommandValidator : AbstractValidator<Creat
     private void SetupValidationRules()
     {
         RuleFor(x => x.OtherUserId)
-            .NotEmpty().WithMessage("Other user ID is required")
+            .NotEmpty().WithMessage("Cần có ID người dùng khác")
             .MustAsync(async (otherUserId, cancellation) =>
             {
                 if (otherUserId == Guid.Empty)

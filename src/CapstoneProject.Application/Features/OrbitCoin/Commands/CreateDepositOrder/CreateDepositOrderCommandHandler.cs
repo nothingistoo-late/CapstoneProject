@@ -1,4 +1,4 @@
-using MediatR;
+﻿using MediatR;
 using Microsoft.EntityFrameworkCore;
 using CapstoneProject.Application.Common.Enums;
 using CapstoneProject.Application.Common.Interfaces;
@@ -34,21 +34,21 @@ public class CreateDepositOrderCommandHandler : IRequestHandler<CreateDepositOrd
     {
         var (isValid, userIdNullable) = await _currentUserService.IsUserValidAsync();
         if (!isValid || !userIdNullable.HasValue)
-            return Result<CreateDepositOrderResult>.Failure("Authentication required.", ErrorCodeEnum.Unauthorized);
+            return Result<CreateDepositOrderResult>.Failure("Yêu cầu xác thực.", ErrorCodeEnum.Unauthorized);
         var userId = userIdNullable.Value;
 
         if (request.AmountOrbitCoin <= 0)
-            return Result<CreateDepositOrderResult>.Failure("Amount must be positive.", ErrorCodeEnum.ValidationFailed);
+            return Result<CreateDepositOrderResult>.Failure("Số tiền phải dương.", ErrorCodeEnum.ValidationFailed);
 
         var payOSPayment = await _unitOfWork.Repository<Payment>()
             .GetQueryable()
             .FirstOrDefaultAsync(p => p.Code == "PayOS", cancellationToken);
         if (payOSPayment == null)
-            return Result<CreateDepositOrderResult>.Failure("PayOS payment method is not configured. Contact support.", ErrorCodeEnum.InvalidOperation);
+            return Result<CreateDepositOrderResult>.Failure("Phương thức thanh toán PayOS chưa được định cấu hình. Liên hệ hỗ trợ.", ErrorCodeEnum.InvalidOperation);
 
         var amountVnd = (long)(request.AmountOrbitCoin * _depositSettings.VndPerOrbitCoin);
         if (amountVnd <= 0)
-            return Result<CreateDepositOrderResult>.Failure("Amount too small for conversion.", ErrorCodeEnum.ValidationFailed);
+            return Result<CreateDepositOrderResult>.Failure("Số tiền quá nhỏ để chuyển đổi.", ErrorCodeEnum.ValidationFailed);
 
         // Unique order code for PayOS (int)
         var orderCode = Math.Abs((int)(CapstoneProject.Domain.Common.VietnamDateTime.DbNow.Ticks / 10 % int.MaxValue));
@@ -83,11 +83,11 @@ public class CreateDepositOrderCommandHandler : IRequestHandler<CreateDepositOrd
             cancellationToken);
 
         if (string.IsNullOrEmpty(checkoutUrl))
-            return Result<CreateDepositOrderResult>.Failure(error ?? "Could not create payment link.", ErrorCodeEnum.InvalidOperation);
+            return Result<CreateDepositOrderResult>.Failure(error ?? "Không thể tạo liên kết thanh toán.", ErrorCodeEnum.InvalidOperation);
 
         return Result<CreateDepositOrderResult>.Success(
             new CreateDepositOrderResult { OrderId = record.Id, AmountVnd = amountVnd, CheckoutUrl = checkoutUrl },
-            "Redirect user to CheckoutUrl to complete payment.");
+            "Chuyển hướng người dùng đến CheckoutUrl để hoàn tất thanh toán.");
     }
 }
 

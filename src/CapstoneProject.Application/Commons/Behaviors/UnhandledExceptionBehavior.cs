@@ -1,4 +1,4 @@
-using System.Reflection;
+﻿using System.Reflection;
 using FluentValidation;
 using MediatR;
 using Microsoft.Extensions.Logging;
@@ -52,7 +52,7 @@ public class UnhandledExceptionBehavior<TRequest, TResponse> : IPipelineBehavior
             if (responseType == typeof(Result))
             {
                 return (TResponse)(object)Result.Failure(
-                    "An unexpected error occurred while processing your request. Please try again later.",
+                    "Đã xảy ra lỗi không mong muốn khi xử lý yêu cầu của bạn. Vui lòng thử lại sau.",
                     ErrorCodeEnum.InternalError);
             }
 
@@ -65,7 +65,7 @@ public class UnhandledExceptionBehavior<TRequest, TResponse> : IPipelineBehavior
                 {
                     var result = failureMethod.Invoke(null, new object[]
                     {
-                        "An unexpected error occurred while processing your request. Please try again later.",
+                        "Đã xảy ra lỗi không mong muốn khi xử lý yêu cầu của bạn. Vui lòng thử lại sau.",
                         ErrorCodeEnum.InternalError
                     });
                     if (result != null)

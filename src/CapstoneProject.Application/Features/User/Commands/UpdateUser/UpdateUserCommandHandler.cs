@@ -1,4 +1,4 @@
-
+﻿
 using System.Transactions;
 using AutoMapper;
 using MediatR;
@@ -44,7 +44,7 @@ public class UpdateUserCommandHandler : IRequestHandler<UpdateUserCommand, Resul
             var (isValid, userId) = await _currentUserService.IsUserValidAsync();
             if (!isValid)
             {
-                throw new UnauthorizedAccessException("User is not authenticated");
+                throw new UnauthorizedAccessException("Người dùng chưa được xác thực");
             }
 
             var request = command.Request;
@@ -53,7 +53,7 @@ public class UpdateUserCommandHandler : IRequestHandler<UpdateUserCommand, Resul
             var user = await _identityService.GetUserByIdIncludeProfileAsync(command.UserId);
             if (user == null)
             {
-                throw new KeyNotFoundException("User not found");
+                throw new KeyNotFoundException("Không tìm thấy người dùng");
             }
 
             // Check email duplication (if email is being changed)
@@ -72,7 +72,7 @@ public class UpdateUserCommandHandler : IRequestHandler<UpdateUserCommand, Resul
                 var phoneExists = await _unitOfWork.Repository<AppUser>().AnyAsync(u => u.PhoneNumber == request.PhoneNumber);
                 if (phoneExists)
                 {
-                    throw new ArgumentException("Phone number already exists");
+                    throw new ArgumentException("Số điện thoại đã tồn tại");
                 }
             }
 
@@ -134,7 +134,7 @@ public class UpdateUserCommandHandler : IRequestHandler<UpdateUserCommand, Resul
                     if (!addRoleResult.Succeeded)
                     {
                         var errors = addRoleResult.Errors.Select(e => e.Description).ToList();
-                        return Result.Failure("Failed to update user role", ErrorCodeEnum.ValidationFailed, errors);
+                        return Result.Failure("Không cập nhật được vai trò người dùng", ErrorCodeEnum.ValidationFailed, errors);
                     }
                 }
 
@@ -144,7 +144,7 @@ public class UpdateUserCommandHandler : IRequestHandler<UpdateUserCommand, Resul
                 if (!updateResult.Succeeded)
                 {
                     var errors = updateResult.Errors.Select(e => e.Description).ToList();
-                    return Result.Failure("Failed to update user", ErrorCodeEnum.ValidationFailed, errors);
+                    return Result.Failure("Không thể cập nhật người dùng", ErrorCodeEnum.ValidationFailed, errors);
                 }
                 scope.Complete();
             }
@@ -171,7 +171,7 @@ public class UpdateUserCommandHandler : IRequestHandler<UpdateUserCommand, Resul
                     }
                 }
             });
-            return Result.Success("User updated successfully");
+            return Result.Success("Người dùng đã cập nhật thành công");
         }
         catch
         {

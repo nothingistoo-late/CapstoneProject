@@ -1,4 +1,4 @@
-using FluentValidation;
+﻿using FluentValidation;
 using CapstoneProject.Application.Common.Enums;
 using CapstoneProject.Application.Common.Interfaces;
 using CapstoneProject.Domain.Entities;
@@ -93,7 +93,7 @@ public static class AuthValidationExtensions
                 var exists = await unitOfWork.Repository<AppUser>().AnyAsync(x => x.PhoneNumber == phoneNumber);
                 return !exists;
             })
-            .WithMessage("Phone number already exists");
+            .WithMessage("Số điện thoại đã tồn tại");
     }
 
     /// <summary>

@@ -1,4 +1,4 @@
-using MediatR;
+﻿using MediatR;
 using Microsoft.EntityFrameworkCore;
 using CapstoneProject.Application.Common.Enums;
 using CapstoneProject.Application.Common.Interfaces;
@@ -32,24 +32,24 @@ public class ConfirmDepositCommandHandler : IRequestHandler<ConfirmDepositComman
     {
         var (isValid, userId) = await _currentUserService.IsUserValidAsync();
         if (!isValid || !userId.HasValue)
-            return Result.Failure("Authentication required.", ErrorCodeEnum.Unauthorized);
+            return Result.Failure("Yêu cầu xác thực.", ErrorCodeEnum.Unauthorized);
 
         var record = await _unitOfWork.Repository<PaymentRecord>()
             .GetQueryable()
             .FirstOrDefaultAsync(r => r.Id == request.OrderId && r.UserId == userId.Value, cancellationToken);
         if (record == null)
-            return Result.Failure("Order not found or access denied.", ErrorCodeEnum.NotFound);
+            return Result.Failure("Không tìm thấy đơn đặt hàng hoặc quyền truy cập bị từ chối.", ErrorCodeEnum.NotFound);
         if (record.PaymentStatus == PaymentStatusEnum.Completed)
-            return Result.Success("Deposit already completed. OrbitCoin was credited.");
+            return Result.Success("Việc gửi tiền đã hoàn tất. OrbitCoin đã được ghi có.");
 
         if (string.IsNullOrEmpty(record.ExternalId) || !long.TryParse(record.ExternalId, out var orderCode))
-            return Result.Failure("Invalid order data.", ErrorCodeEnum.InvalidOperation);
+            return Result.Failure("Dữ liệu đơn hàng không hợp lệ.", ErrorCodeEnum.InvalidOperation);
 
         var isPaid = await _payOSService.GetPaymentStatusByOrderCodeAsync(orderCode, cancellationToken);
         if (isPaid == null)
-            return Result.Failure("Could not verify payment status. Please try again or contact support.", ErrorCodeEnum.InvalidOperation);
+            return Result.Failure("Không thể xác minh trạng thái thanh toán. Vui lòng thử lại hoặc liên hệ với bộ phận hỗ trợ.", ErrorCodeEnum.InvalidOperation);
         if (isPaid != true)
-            return Result.Failure("Payment not completed yet. Please wait or check PayOS.", ErrorCodeEnum.InvalidOperation);
+            return Result.Failure("Thanh toán chưa hoàn tất. Vui lòng chờ hoặc kiểm tra PayOS.", ErrorCodeEnum.InvalidOperation);
 
         var (success, error) = await _orbitCoinService.CreditAsync(
             record.UserId,
@@ -62,13 +62,13 @@ public class ConfirmDepositCommandHandler : IRequestHandler<ConfirmDepositComman
             null,
             cancellationToken);
         if (!success)
-            return Result.Failure(error ?? "Credit failed.", ErrorCodeEnum.InvalidOperation);
+            return Result.Failure(error ?? "Tín dụng không thành công.", ErrorCodeEnum.InvalidOperation);
 
         record.PaymentStatus = PaymentStatusEnum.Completed;
         record.PaidAt = CapstoneProject.Domain.Common.VietnamDateTime.DbNow;
         _unitOfWork.Repository<PaymentRecord>().Update(record);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
-        return Result.Success("Deposit confirmed. OrbitCoin has been credited.");
+        return Result.Success("Đã xác nhận tiền gửi. OrbitCoin đã được ghi có.");
     }
 }
 

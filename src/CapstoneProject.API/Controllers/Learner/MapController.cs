@@ -1,4 +1,4 @@
-using System.Text.Json;
+﻿using System.Text.Json;
 using CapstoneProject.API.Helpers;
 using CapstoneProject.API.Models;
 using CapstoneProject.Application.Commons.DTOs.Maps;
@@ -26,7 +26,7 @@ using CapstoneProject.Application.Common.Enums;
 namespace CapstoneProject.API.Controllers.Learner;
 
 /// <summary>
-/// API thử thách dành cho Learner: catalog, tạo/sửa map (UGC), gửi duyệt. Tags/Concepts chỉ đọc.
+/// API thá»­ thÃ¡ch dÃ nh cho Learner: catalog, táº¡o/sá»­a map (UGC), gá»­i duyá»‡t. Tags/Concepts chá»‰ Ä‘á»c.
 /// </summary>
 [ApiController]
 [Route("api/learner/maps")]
@@ -66,7 +66,7 @@ public class LearnerMapController : ControllerBase
     [HttpGet]
     [ProducesResponseType(typeof(Result<PaginationResult<MapListItemDto>>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(Result<PaginationResult<MapListItemDto>>), StatusCodes.Status500InternalServerError)]
-    [SwaggerOperation(Summary = "Danh sách map (catalog)", Description = "Returns paginated challenge maps for catalog. Filter by mapStatus (0–4) or publishedOnly, difficulty, tagId, search, sortBy.", OperationId = "Learner_GetMaps", Tags = new[] { "Learner - Maps" })]
+    [SwaggerOperation(Summary = "Danh sách map (catalog)", Description = "Returns paginated challenge maps for catalog. Filter by mapStatus (0-4) or publishedOnly, difficulty, tagId, search, sortBy.", OperationId = "Learner_GetMaps", Tags = new[] { "Learner - Maps" })]
     public async Task<IActionResult> GetMaps([FromQuery] GetMapsQuery query)
     {
         var result = await _mediator.Send(query);
@@ -84,11 +84,11 @@ public class LearnerMapController : ControllerBase
     /// - pageSize (int, optional): Items per page. Default 20.
     /// - sortBy (string, optional): CreatedAt, Title, Difficulty, TimeLimitMs.
     /// - sortAscending (bool, optional): Default false.
-    /// - isAuthorOnly (bool, optional): true = chỉ lấy map do chính user tạo; false (mặc định) = bao gồm cả map đã mua.
+    /// - isAuthorOnly (bool, optional): true = chá»‰ láº¥y map do chÃ­nh user táº¡o; false (máº·c Ä‘á»‹nh) = bao gá»“m cáº£ map Ä‘Ã£ mua.
     ///
     /// **Response item fields (MapListItemDto):**
     /// - id, title, description, difficulty, type, timeLimitMs, isPublished, mapStatus, price, createdByUserId, createdAt, tagNames, winCondition, avatarUrl
-    /// - isAuthor (bool): true = map do chính user đang gửi request tạo ra (Map.CreatedBy); false = user chỉ sở hữu (mua/thêm). Dùng để phân biệt tác giả, không phải kiểm tra sở hữu.
+    /// - isAuthor (bool): true = map do chÃ­nh user Ä‘ang gá»­i request táº¡o ra (Map.CreatedBy); false = user chá»‰ sá»Ÿ há»¯u (mua/thÃªm). DÃ¹ng Ä‘á»ƒ phÃ¢n biá»‡t tÃ¡c giáº£, khÃ´ng pháº£i kiá»ƒm tra sá»Ÿ há»¯u.
     ///
     /// **METHOD and path:** GET /api/learner/maps/my-maps
     /// </remarks>
@@ -106,14 +106,14 @@ public class LearnerMapController : ControllerBase
     }
 
     /// <summary>
-    /// Get list of maps from bảng MyMap (tự tạo, mua, thêm free). Filter isAuthor: null = lấy hết, true = chỉ map tự tạo, false = chỉ map mua/thêm vào.
+    /// Get list of maps from báº£ng MyMap (tá»± táº¡o, mua, thÃªm free). Filter isAuthor: null = láº¥y háº¿t, true = chá»‰ map tá»± táº¡o, false = chá»‰ map mua/thÃªm vÃ o.
     /// </summary>
     /// <remarks>
-    /// API mới lấy dữ liệu từ bảng MyMap. Không gửi isAuthor = lấy hết; isAuthor=true = chỉ map tự tạo (author); isAuthor=false = chỉ map đã mua hoặc thêm vào.
+    /// API má»›i láº¥y dá»¯ liá»‡u tá»« báº£ng MyMap. KhÃ´ng gá»­i isAuthor = láº¥y háº¿t; isAuthor=true = chá»‰ map tá»± táº¡o (author); isAuthor=false = chá»‰ map Ä‘Ã£ mua hoáº·c thÃªm vÃ o.
     /// **Query:** pageNumber, pageSize, sortBy (CreatedAt, Title, Difficulty, TimeLimitMs), sortAscending, isAuthor (bool?, optional).
     /// **METHOD and path:** GET /api/learner/maps/my-map-list
     /// </remarks>
-    /// <response code="200">Paginated list of maps (MapListItemDto, isAuthor từ bảng MyMap).</response>
+    /// <response code="200">Paginated list of maps (MapListItemDto, isAuthor tá»« báº£ng MyMap).</response>
     /// <response code="401">Unauthorized</response>
     [HttpGet("my-map-list")]
     [AuthorizeRoles(nameof(RoleEnum.Learner), nameof(RoleEnum.Admin), nameof(RoleEnum.Moderator))]
@@ -130,14 +130,14 @@ public class LearnerMapController : ControllerBase
     /// Check if current user owns a map (created or purchased)
     /// </summary>
     /// <remarks>
-    /// Nhập map ID, trả về map có tồn tại không và user hiện tại đã sở hữu map chưa (tự tạo hoặc đã mua bằng OrbitCoin). Requires Bearer token.
+    /// Nháº­p map ID, tráº£ vá» map cÃ³ tá»“n táº¡i khÃ´ng vÃ  user hiá»‡n táº¡i Ä‘Ã£ sá»Ÿ há»¯u map chÆ°a (tá»± táº¡o hoáº·c Ä‘Ã£ mua báº±ng OrbitCoin). Requires Bearer token.
     ///
     /// **Route:** id (Guid, required): Map ID.
     ///
     /// **Response (CheckMapOwnershipDto):**
-    /// - mapExists (bool): Map có tồn tại và active.
-    /// - isOwned (bool): User có sở hữu (tác giả hoặc đã mua).
-    /// - isAuthor (bool): true nếu user là tác giả; false nếu chỉ mua hoặc không sở hữu.
+    /// - mapExists (bool): Map cÃ³ tá»“n táº¡i vÃ  active.
+    /// - isOwned (bool): User cÃ³ sá»Ÿ há»¯u (tÃ¡c giáº£ hoáº·c Ä‘Ã£ mua).
+    /// - isAuthor (bool): true náº¿u user lÃ  tÃ¡c giáº£; false náº¿u chá»‰ mua hoáº·c khÃ´ng sá»Ÿ há»¯u.
     ///
     /// **METHOD and path:** GET /api/learner/maps/{id}/check-ownership
     /// </remarks>
@@ -158,7 +158,7 @@ public class LearnerMapController : ControllerBase
     /// Add a free map to current user's collection (MyMap). Only published free maps (price = 0 or null) can be added.
     /// </summary>
     /// <remarks>
-    /// Thêm map free vào bộ sưu tập của user. Chỉ áp dụng cho map đã published và có giá = 0 hoặc null. Nếu đã có trong bộ sưu tập thì trả về success.
+    /// ThÃªm map free vÃ o bá»™ sÆ°u táº­p cá»§a user. Chá»‰ Ã¡p dá»¥ng cho map Ä‘Ã£ published vÃ  cÃ³ giÃ¡ = 0 hoáº·c null. Náº¿u Ä‘Ã£ cÃ³ trong bá»™ sÆ°u táº­p thÃ¬ tráº£ vá» success.
     /// **Route:** id (Guid): Map ID.
     /// **METHOD and path:** POST /api/learner/maps/{id}/add-to-my-maps
     /// </remarks>
@@ -212,7 +212,7 @@ public class LearnerMapController : ControllerBase
     /// Get map info only (metadata, no MapDetail / hints)
     /// </summary>
     /// <remarks>
-    /// Lấy chỉ thông tin map theo ID: title, description, difficulty, type, timeLimitMs, isPublished, mapStatus, price, createdByUserId, createdAt, tagNames, winCondition, avatarUrl. Không trả về MapDetail (JSON level), Hints, Editorial. Dùng khi chỉ cần metadata.
+    /// Láº¥y chá»‰ thÃ´ng tin map theo ID: title, description, difficulty, type, timeLimitMs, isPublished, mapStatus, price, createdByUserId, createdAt, tagNames, winCondition, avatarUrl. KhÃ´ng tráº£ vá» MapDetail (JSON level), Hints, Editorial. DÃ¹ng khi chá»‰ cáº§n metadata.
     ///
     /// **Route:** id (Guid, required): Map ID.
     ///
@@ -245,15 +245,15 @@ public class LearnerMapController : ControllerBase
     /// - timeLimitMs (int, required): Time limit in milliseconds.
     /// - winCondition (int, required): Win condition value stored in Map metadata.
     /// - price (decimal?, optional): Price for paid map; null = free.
-    /// - freeTrialAttemptLimit (int, optional): Số lượt chơi thử miễn phí cho mỗi người chơi. 0 = không có trial.
+    /// - freeTrialAttemptLimit (int, optional): Sá»‘ lÆ°á»£t chÆ¡i thá»­ miá»…n phÃ­ cho má»—i ngÆ°á»i chÆ¡i. 0 = khÃ´ng cÃ³ trial.
     /// - mapDetailJson (object, required): Full JSON map detail payload (level/layers/start-goal/objects/metadata...).
     /// - hints (array of { orderNo: int, content: string }, optional): Ordered hints.
     /// - tagIds (array of Guid, optional): Tag IDs.
-    /// - avatarUrl (string, optional): URL avatar map (Cloudinary). Hoặc upload sau qua POST /api/learner/maps/{id}/avatar.
+    /// - avatarUrl (string, optional): URL avatar map (Cloudinary). Hoáº·c upload sau qua POST /api/learner/maps/{id}/avatar.
     ///
     /// **METHOD and path:** POST /api/learner/maps
     ///
-    /// **Body:** type (string, optional): Topdown | Platform | Snake. Mặc định Topdown.
+    /// **Body:** type (string, optional): Topdown | Platform | Snake. Máº·c Ä‘á»‹nh Topdown.
     /// **Example request body:** { "title": "My Map", "description": "Description", "difficulty": 1, "type": "Topdown", "timeLimitMs": 60000, "winCondition": 10, "mapDetailJson": { "id": "level-1", "layers": {} }, "hints": [], "tagIds": [] }
     /// </remarks>
     /// <response code="201">Map created. Returns message and data (mapId).</response>
@@ -276,7 +276,7 @@ public class LearnerMapController : ControllerBase
         return StatusCode(result.GetHttpStatusCode(), result);
     }
 
-    /// <summary>Tạo map (nháp) kèm avatar + gallery (multipart). Route riêng để Swagger không trùng POST /maps.</summary>
+    /// <summary>Táº¡o map (nhÃ¡p) kÃ¨m avatar + gallery (multipart). Route riÃªng Ä‘á»ƒ Swagger khÃ´ng trÃ¹ng POST /maps.</summary>
     [HttpPost("with-files")]
     [AuthorizeRoles(nameof(RoleEnum.Learner), nameof(RoleEnum.Admin), nameof(RoleEnum.Moderator))]
     [Consumes("multipart/form-data")]
@@ -288,7 +288,7 @@ public class LearnerMapController : ControllerBase
     public async Task<IActionResult> CreateMapMultipart([FromForm] CreateMapMultipartForm form)
     {
         if (string.IsNullOrWhiteSpace(form.Data))
-            return BadRequest(Result<Guid>.Failure("Field 'data' (JSON string, same as CreateMapRequest body) is required.", ErrorCodeEnum.ValidationFailed));
+            return BadRequest(Result<Guid>.Failure("Trường 'dữ liệu' (chuỗi JSON, giống như nội dung CreateMapRequest) là bắt buộc.", ErrorCodeEnum.ValidationFailed));
         CreateMapRequest? req;
         try
         {
@@ -296,11 +296,11 @@ public class LearnerMapController : ControllerBase
         }
         catch (JsonException)
         {
-            return BadRequest(Result<Guid>.Failure("Field 'data' is not valid JSON.", ErrorCodeEnum.ValidationFailed));
+            return BadRequest(Result<Guid>.Failure("Trường 'dữ liệu' không phải là JSON hợp lệ.", ErrorCodeEnum.ValidationFailed));
         }
 
         if (req == null)
-            return BadRequest(Result<Guid>.Failure("Field 'data' could not be deserialized to CreateMapRequest.", ErrorCodeEnum.ValidationFailed));
+            return BadRequest(Result<Guid>.Failure("Không thể giải tuần tự hóa trường 'dữ liệu' thành CreateMapRequest.", ErrorCodeEnum.ValidationFailed));
 
         var result = await _mediator.Send(new CreateMapCommand(req, GalleryFiles: form.GalleryFiles, AvatarFile: form.AvatarFile));
         if (result.IsSuccess && result.Data != default)
@@ -312,23 +312,23 @@ public class LearnerMapController : ControllerBase
     /// Create new map from uploaded JSON file (draft)
     /// </summary>
     /// <remarks>
-    /// Tạo map mới từ file JSON (multipart/form-data). Map được tạo ở trạng thái Draft; sau đó cập nhật và gửi duyệt qua Submit. Yêu cầu Bearer token (Learner/Admin/Moderator).
+    /// Táº¡o map má»›i tá»« file JSON (multipart/form-data). Map Ä‘Æ°á»£c táº¡o á»Ÿ tráº¡ng thÃ¡i Draft; sau Ä‘Ã³ cáº­p nháº­t vÃ  gá»­i duyá»‡t qua Submit. YÃªu cáº§u Bearer token (Learner/Admin/Moderator).
     ///
     /// **METHOD and path:** POST /api/learner/maps/upload-json
     ///
     /// **Body (multipart/form-data):**
-    /// - title (string, required): Tiêu đề map.
-    /// - description (string, required): Mô tả.
-    /// - difficulty (int, required): Độ khó (1-5).
-    /// - timeLimitMs (int, required): Thời gian giới hạn (ms).
-    /// - winCondition (int, required): Điều kiện thắng (metadata).
-    /// - price (decimal?, optional): Giá; null = miễn phí.
-    /// - freeTrialAttemptLimit (int, optional): Số lượt chơi thử miễn phí cho mỗi người chơi. 0 = không có trial.
-    /// - tagIdsCsv (string, optional): Danh sách tag ID cách nhau bằng dấu phẩy.
-    /// - mapDetailFiles (files, required): Một hoặc nhiều file JSON. Một file: có thể là object một level, mảng các level, hoặc `{ "levels": [...] }`. Nhiều file: mỗi file = một level (0,1,2…).
-    /// - avatarFile (file, optional): Ảnh avatar map; upload lên Cloudinary khi tạo.
+    /// - title (string, required): TiÃªu Ä‘á» map.
+    /// - description (string, required): MÃ´ táº£.
+    /// - difficulty (int, required): Äá»™ khÃ³ (1-5).
+    /// - timeLimitMs (int, required): Thá»i gian giá»›i háº¡n (ms).
+    /// - winCondition (int, required): Äiá»u kiá»‡n tháº¯ng (metadata).
+    /// - price (decimal?, optional): GiÃ¡; null = miá»…n phÃ­.
+    /// - freeTrialAttemptLimit (int, optional): Sá»‘ lÆ°á»£t chÆ¡i thá»­ miá»…n phÃ­ cho má»—i ngÆ°á»i chÆ¡i. 0 = khÃ´ng cÃ³ trial.
+    /// - tagIdsCsv (string, optional): Danh sÃ¡ch tag ID cÃ¡ch nhau báº±ng dáº¥u pháº©y.
+    /// - mapDetailFiles (files, required): Má»™t hoáº·c nhiá»u file JSON. Má»™t file: cÃ³ thá»ƒ lÃ  object má»™t level, máº£ng cÃ¡c level, hoáº·c `{ "levels": [...] }`. Nhiá»u file: má»—i file = má»™t level (0,1,2â€¦).
+    /// - avatarFile (file, optional): áº¢nh avatar map; upload lÃªn Cloudinary khi táº¡o.
     ///
-    /// **Example:** multipart/form-data; lặp field `mapDetailFiles` hoặc chọn nhiều file (Postman/Swagger).
+    /// **Example:** multipart/form-data; láº·p field `mapDetailFiles` hoáº·c chá»n nhiá»u file (Postman/Swagger).
     /// </remarks>
     /// <response code="201">Map created. Returns message and data (mapId).</response>
     /// <response code="400">Validation error or mapDetailFiles is required</response>
@@ -341,12 +341,12 @@ public class LearnerMapController : ControllerBase
     [ProducesResponseType(typeof(Result<Guid>), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(Result<Guid>), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(Result<Guid>), StatusCodes.Status500InternalServerError)]
-    [SwaggerOperation(Summary = "Tạo map từ file JSON", Description = "multipart/form-data: mapDetailFiles — một file (nhiều level trong file) hoặc nhiều file (mỗi file một level). Requires Bearer token.", OperationId = "Learner_CreateMapFromJsonFile", Tags = new[] { "Learner - Maps" })]
+    [SwaggerOperation(Summary = "Tạo map từ file JSON", Description = "multipart/form-data: mapDetailFiles - một file (nhiều level trong file) hoặc nhiều file (mỗi file một level). Requires Bearer token.", OperationId = "Learner_CreateMapFromJsonFile", Tags = new[] { "Learner - Maps" })]
     public async Task<IActionResult> CreateMapFromJsonFile([FromForm] CreateMapFromJsonFileRequest request)
     {
         var (input, formErr) = await MapJsonUploadFormReader.BuildCreateInputAsync(request, Request);
         if (formErr != null || input == null)
-            return BadRequest(Result<Guid>.Failure(formErr ?? "Invalid map file input.", ErrorCodeEnum.ValidationFailed));
+            return BadRequest(Result<Guid>.Failure(formErr ?? "Đầu vào tệp bản đồ không hợp lệ.", ErrorCodeEnum.ValidationFailed));
 
         var result = await _mediator.Send(new CreateMapFromJsonFileCommand(
             input,
@@ -362,7 +362,7 @@ public class LearnerMapController : ControllerBase
     /// Update challenge map (draft only)
     /// </summary>
     /// <remarks>
-    /// Updates a map in Draft status. Chỉ tác giả (Learner) hoặc Admin/Moderator mới được sửa. Sau khi update, map sẽ quay lại trạng thái Draft (MapStatus=Draft, IsPublished=false) và cần submit lại để duyệt. Requires Bearer token.
+    /// Updates a map in Draft status. Chá»‰ tÃ¡c giáº£ (Learner) hoáº·c Admin/Moderator má»›i Ä‘Æ°á»£c sá»­a. Sau khi update, map sáº½ quay láº¡i tráº¡ng thÃ¡i Draft (MapStatus=Draft, IsPublished=false) vÃ  cáº§n submit láº¡i Ä‘á»ƒ duyá»‡t. Requires Bearer token.
     ///
     /// **Route:** id (Guid, required): Map ID.
     ///
@@ -373,7 +373,7 @@ public class LearnerMapController : ControllerBase
     /// - timeLimitMs (int, required): Time limit in ms.
     /// - winCondition (int, required): Win condition value stored in Map metadata.
     /// - price (decimal?, optional): Price; null = free.
-    /// - freeTrialAttemptLimit (int, optional): Số lượt chơi thử miễn phí cho mỗi người chơi. 0 = không có trial.
+    /// - freeTrialAttemptLimit (int, optional): Sá»‘ lÆ°á»£t chÆ¡i thá»­ miá»…n phÃ­ cho má»—i ngÆ°á»i chÆ¡i. 0 = khÃ´ng cÃ³ trial.
     /// - mapDetailJson (object, optional): Full JSON map detail payload.
     /// - editorialContent (string, optional): Editorial text.
     /// - unlockEditorialAfterStars (int?, optional): Stars required to unlock editorial.
@@ -403,10 +403,10 @@ public class LearnerMapController : ControllerBase
         return StatusCode(result.GetHttpStatusCode(), result);
     }
 
-    /// <summary>Tạo map mới từ map nguồn (map gốc không bị sửa).</summary>
+    /// <summary>Táº¡o map má»›i tá»« map nguá»“n (map gá»‘c khÃ´ng bá»‹ sá»­a).</summary>
     /// <remarks>
-    /// Clone toàn bộ level, hint, gallery (cùng URL), tag (hoặc gửi tagIds), metadata. Map mới mặc định Draft; optional autoPublish.
-    /// Người gọi trở thành tác giả bản sao (MyMap IsAuthor). Người chơi muốn bản mới cần sở hữu map mới (MapId khác).
+    /// Clone toÃ n bá»™ level, hint, gallery (cÃ¹ng URL), tag (hoáº·c gá»­i tagIds), metadata. Map má»›i máº·c Ä‘á»‹nh Draft; optional autoPublish.
+    /// NgÆ°á»i gá»i trá»Ÿ thÃ nh tÃ¡c giáº£ báº£n sao (MyMap IsAuthor). NgÆ°á»i chÆ¡i muá»‘n báº£n má»›i cáº§n sá»Ÿ há»¯u map má»›i (MapId khÃ¡c).
     /// </remarks>
     [HttpPost("{id:guid}/duplicate-as-new")]
     [AuthorizeRoles(nameof(RoleEnum.Learner), nameof(RoleEnum.Admin), nameof(RoleEnum.Moderator))]
@@ -432,24 +432,24 @@ public class LearnerMapController : ControllerBase
     /// Update challenge map from uploaded JSON file (draft only)
     /// </summary>
     /// <remarks>
-    /// Cập nhật map (ở trạng thái Draft) từ file JSON (multipart/form-data). Author hoặc Admin/Moderator. Yêu cầu Bearer token.
+    /// Cáº­p nháº­t map (á»Ÿ tráº¡ng thÃ¡i Draft) tá»« file JSON (multipart/form-data). Author hoáº·c Admin/Moderator. YÃªu cáº§u Bearer token.
     ///
-    /// **Route:** id (Guid, required): Map ID cần update.
+    /// **Route:** id (Guid, required): Map ID cáº§n update.
     ///
     /// **METHOD and path:** PUT /api/learner/maps/{id}/upload-json
     ///
     /// **Body (multipart/form-data):**
-    /// - title (string, required): Tiêu đề map.
-    /// - description (string, required): Mô tả.
-    /// - difficulty (int, required): Độ khó (1-5).
-    /// - timeLimitMs (int, required): Thời gian giới hạn (ms).
-    /// - winCondition (int, required): Điều kiện thắng (metadata).
-    /// - price (decimal?, optional): Giá; null = miễn phí.
-    /// - freeTrialAttemptLimit (int, optional): Số lượt chơi thử miễn phí cho mỗi người chơi. 0 = không có trial.
-    /// - tagIdsCsv (string, optional): Danh sách tag ID cách nhau bằng dấu phẩy.
-    /// - mapDetailFiles: Giống API tạo map (một hoặc nhiều file JSON).
+    /// - title (string, required): TiÃªu Ä‘á» map.
+    /// - description (string, required): MÃ´ táº£.
+    /// - difficulty (int, required): Äá»™ khÃ³ (1-5).
+    /// - timeLimitMs (int, required): Thá»i gian giá»›i háº¡n (ms).
+    /// - winCondition (int, required): Äiá»u kiá»‡n tháº¯ng (metadata).
+    /// - price (decimal?, optional): GiÃ¡; null = miá»…n phÃ­.
+    /// - freeTrialAttemptLimit (int, optional): Sá»‘ lÆ°á»£t chÆ¡i thá»­ miá»…n phÃ­ cho má»—i ngÆ°á»i chÆ¡i. 0 = khÃ´ng cÃ³ trial.
+    /// - tagIdsCsv (string, optional): Danh sÃ¡ch tag ID cÃ¡ch nhau báº±ng dáº¥u pháº©y.
+    /// - mapDetailFiles: Giá»‘ng API táº¡o map (má»™t hoáº·c nhiá»u file JSON).
     ///
-    /// **Lưu ý:** API này chỉ cập nhật nội dung map (spec, hints, tags, metadata) dựa trên file JSON; avatar map cập nhật qua API riêng `/api/learner/maps/{id}/avatar`.
+    /// **LÆ°u Ã½:** API nÃ y chá»‰ cáº­p nháº­t ná»™i dung map (spec, hints, tags, metadata) dá»±a trÃªn file JSON; avatar map cáº­p nháº­t qua API riÃªng `/api/learner/maps/{id}/avatar`.
     /// </remarks>
     /// <response code="200">Map updated. Returns message only.</response>
     /// <response code="400">Validation error or mapDetailFiles is required</response>
@@ -471,7 +471,7 @@ public class LearnerMapController : ControllerBase
     {
         var (input, formErr) = await MapJsonUploadFormReader.BuildCreateInputAsync(request, Request);
         if (formErr != null || input == null)
-            return BadRequest(Result.Failure(formErr ?? "Invalid map file input.", ErrorCodeEnum.ValidationFailed));
+            return BadRequest(Result.Failure(formErr ?? "Đầu vào tệp bản đồ không hợp lệ.", ErrorCodeEnum.ValidationFailed));
 
         var result = await _mediator.Send(new UpdateMapFromJsonFileCommand(id, input));
         return StatusCode(result.GetHttpStatusCode(), result);
@@ -481,7 +481,7 @@ public class LearnerMapController : ControllerBase
     /// Upload map avatar (image) to Cloudinary
     /// </summary>
     /// <remarks>
-    /// Upload avatar cho map. Author hoặc Admin/Moderator. Body: multipart/form-data, field "avatar" (file ảnh).
+    /// Upload avatar cho map. Author hoáº·c Admin/Moderator. Body: multipart/form-data, field "avatar" (file áº£nh).
     /// **METHOD and path:** POST /api/learner/maps/{id}/avatar
     /// </remarks>
     [HttpPost("{id:guid}/avatar")]
@@ -496,12 +496,12 @@ public class LearnerMapController : ControllerBase
     public async Task<IActionResult> UploadMapAvatar(Guid id, IFormFile avatar)
     {
         if (avatar == null || avatar.Length == 0)
-            return BadRequest(Result<string>.Failure("Avatar file is required.", ErrorCodeEnum.ValidationFailed));
+            return BadRequest(Result<string>.Failure("Cần có tập tin Avatar.", ErrorCodeEnum.ValidationFailed));
         var result = await _mediator.Send(new UploadMapAvatarCommand(id, avatar));
         return StatusCode(result.GetHttpStatusCode(), result);
     }
 
-    /// <summary>Upload một hoặc nhiều ảnh/video mô tả map (gallery, Cloudinary).</summary>
+    /// <summary>Upload má»™t hoáº·c nhiá»u áº£nh/video mÃ´ táº£ map (gallery, Cloudinary).</summary>
     [HttpPost("{id:guid}/gallery")]
     [AuthorizeRoles(nameof(RoleEnum.Learner), nameof(RoleEnum.Admin), nameof(RoleEnum.Moderator))]
     [Consumes("multipart/form-data")]
@@ -517,7 +517,7 @@ public class LearnerMapController : ControllerBase
         return StatusCode(result.GetHttpStatusCode(), result);
     }
 
-    /// <summary>Xóa một mục trong gallery map.</summary>
+    /// <summary>XÃ³a má»™t má»¥c trong gallery map.</summary>
     [HttpDelete("{id:guid}/gallery/{mediaId:guid}")]
     [AuthorizeRoles(nameof(RoleEnum.Learner), nameof(RoleEnum.Admin), nameof(RoleEnum.Moderator))]
     [ProducesResponseType(typeof(Result), StatusCodes.Status200OK)]
@@ -563,19 +563,19 @@ public class LearnerMapController : ControllerBase
     }
 
     /// <summary>
-    /// Publish map (Approved → Published) – tác giả (Learner) hoặc Admin/Moderator
+    /// Publish map (Approved â†’ Published) â€“ tÃ¡c giáº£ (Learner) hoáº·c Admin/Moderator
     /// </summary>
     /// <remarks>
     /// Publishes an Approved map so it appears in learner catalog.
-    /// - **Learner:** chỉ được publish map do chính mình tạo (CreatedBy).
-    /// - **Admin/Moderator:** publish map đã Approved (bất kỳ).
+    /// - **Learner:** chá»‰ Ä‘Æ°á»£c publish map do chÃ­nh mÃ¬nh táº¡o (CreatedBy).
+    /// - **Admin/Moderator:** publish map Ä‘Ã£ Approved (báº¥t ká»³).
     ///
     /// **Route:** id (Guid, required): Map ID.
     ///
     /// **METHOD and path:** POST /api/learner/maps/{id}/publish
     /// </remarks>
     /// <response code="200">Map published. Returns message only.</response>
-    /// <response code="400">Invalid status (map not Approved) hoặc lỗi khác.</response>
+    /// <response code="400">Invalid status (map not Approved) hoáº·c lá»—i khÃ¡c.</response>
     /// <response code="401">Not authorized</response>
     /// <response code="403">Forbidden (not author / not staff)</response>
     /// <response code="404">Map not found</response>

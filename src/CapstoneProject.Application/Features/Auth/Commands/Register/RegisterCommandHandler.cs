@@ -1,4 +1,4 @@
-using MediatR;
+﻿using MediatR;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using CapstoneProject.Application.Common.Enums;
@@ -38,7 +38,7 @@ public class RegisterCommandHandler : IRequestHandler<RegisterCommand, Result>
 
             if (string.IsNullOrEmpty(contact))
             {
-                return Result.Failure("Contact information is required", ErrorCodeEnum.ValidationFailed);
+                return Result.Failure("Thông tin liên hệ là bắt buộc", ErrorCodeEnum.ValidationFailed);
             }
             
             //encrypt password and clear confirm password
@@ -91,18 +91,18 @@ public class RegisterCommandHandler : IRequestHandler<RegisterCommand, Result>
             {
                 _logger.LogInformation("OTP sent successfully to {Contact} via {Channel} for registration", 
                     contact, channel);
-                return Result.Success($"Registration initiated. Please verify the OTP sent to your {channel.ToString().ToLower()} to complete the registration process.");
+                return Result.Success($"Đăng ký bắt đầu. Vui lòng xác minh OTP được gửi tới {channel.ToString().ToLower()} của bạn để hoàn tất quá trình đăng ký.");
             }
             else
             {
                 _logger.LogError("Failed to send OTP to {Contact} via {Channel}", contact, channel);
-                return Result.Failure("Failed to send verification code. Please try again.", ErrorCodeEnum.InternalError);
+                return Result.Failure("Không gửi được mã xác minh. Vui lòng thử lại.", ErrorCodeEnum.InternalError);
             }
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error during registration process");
-            return Result.Failure("Error during registration process", ErrorCodeEnum.InternalError);
+            _logger.LogError(ex, "Lỗi trong quá trình đăng ký");
+            return Result.Failure("Lỗi trong quá trình đăng ký", ErrorCodeEnum.InternalError);
         }
     }
 }

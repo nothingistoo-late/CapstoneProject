@@ -1,4 +1,4 @@
-using MediatR;
+﻿using MediatR;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using CapstoneProject.Application.Common.Enums;
@@ -32,17 +32,17 @@ public class AddMapGalleryMediaCommandHandler : IRequestHandler<AddMapGalleryMed
     {
         var (isValid, userId) = await _currentUserService.IsUserValidAsync();
         if (!isValid || !userId.HasValue)
-            return Result<List<MapMediaItemDto>>.Failure("Authentication required.", ErrorCodeEnum.Unauthorized);
+            return Result<List<MapMediaItemDto>>.Failure("Yêu cầu xác thực.", ErrorCodeEnum.Unauthorized);
 
         var map = await _unitOfWork.Repository<Map>().GetQueryable()
             .FirstOrDefaultAsync(m => m.Id == request.MapId && !m.IsDeleted, cancellationToken);
         if (map == null)
-            return Result<List<MapMediaItemDto>>.Failure("Map not found.", ErrorCodeEnum.NotFound);
+            return Result<List<MapMediaItemDto>>.Failure("Bản đồ không được tìm thấy.", ErrorCodeEnum.NotFound);
 
         var roles = await _currentUserService.GetCurrentRolesAsync();
         var isAdminOrMod = roles.Contains(RoleEnum.Admin) || roles.Contains(RoleEnum.Moderator);
         if (map.CreatedBy != userId && !isAdminOrMod)
-            return Result<List<MapMediaItemDto>>.Failure("You do not have permission to update this map.", ErrorCodeEnum.Forbidden);
+            return Result<List<MapMediaItemDto>>.Failure("Bạn không có quyền cập nhật bản đồ này.", ErrorCodeEnum.Forbidden);
 
         var staged = await MapGalleryMediaHelper.StageGalleryMediaAsync(
             request.MapId,

@@ -1,4 +1,4 @@
-using System.Linq.Expressions;
+﻿using System.Linq.Expressions;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using CapstoneProject.Application.Common.DTOs.Auth;
@@ -31,21 +31,21 @@ public class IdentityService : IIdentityService
             var user = await _userManager.FindByNameAsync(request.Email);
             if (user == null)
             {
-                return Result<AppUser>.Failure("Invalid email", ErrorCodeEnum.InvalidCredentials);
+                return Result<AppUser>.Failure("Email không hợp lệ", ErrorCodeEnum.InvalidCredentials);
             }
 
             if (user.Status != EntityStatusEnum.Active)
-                return Result<AppUser>.Failure("User is not active", ErrorCodeEnum.InvalidCredentials);
+                return Result<AppUser>.Failure("Người dùng không hoạt động", ErrorCodeEnum.InvalidCredentials);
 
             var result = await _signInManager.CheckPasswordSignInAsync(user, request.Password, false);
             if (!result.Succeeded)
             {
-                return Result<AppUser>.Failure("Invalid password", ErrorCodeEnum.InvalidCredentials);
+                return Result<AppUser>.Failure("Mật khẩu không hợp lệ", ErrorCodeEnum.InvalidCredentials);
             }
 
             // Check if email is confirmed (future feature)
             // if (!user.EmailConfirmed)
-            //     return Result<AppUser>.Failure("Email is not confirmed", ErrorCodeEnum.InvalidCredentials);
+            //     return Result<AppUser>.Failure("Email chưa được xác nhận", ErrorCodeEnum.InvalidCredentials);
 
             return Result<AppUser>.Success(user);
         }
@@ -65,7 +65,7 @@ public class IdentityService : IIdentityService
                 var isExists = await IsPhoneNumberDuplicateAsync(user, user.PhoneNumber!);
                 if (isExists.IsSuccess && isExists.Data)
                 {
-                    result = IdentityResult.Failed(new IdentityError { Code = "PhoneNumberExists", Description = "Phone number already exists" });
+                    result = IdentityResult.Failed(new IdentityError { Code = "PhoneNumberExists", Description = "Số điện thoại đã tồn tại" });
                     return result;
                 }
             }
@@ -185,7 +185,7 @@ public class IdentityService : IIdentityService
                 var isExists = await IsPhoneNumberDuplicateAsync(user, user.PhoneNumber!);
                 if (isExists.IsSuccess && isExists.Data)
                 {
-                    result = IdentityResult.Failed(new IdentityError { Code = "PhoneNumberExists", Description = "Phone number already exists" });
+                    result = IdentityResult.Failed(new IdentityError { Code = "PhoneNumberExists", Description = "Số điện thoại đã tồn tại" });
                     return result;
                 }
             }
@@ -219,7 +219,7 @@ public class IdentityService : IIdentityService
             var user = await _userManager.Users.FirstOrDefaultAsync(contactPredicate);
             if (user == null)
             {
-                return IdentityResult.Failed(new IdentityError { Code = "UserNotFound", Description = "User not found" });
+                return IdentityResult.Failed(new IdentityError { Code = "UserNotFound", Description = "Không tìm thấy người dùng" });
             }
 
             user.UpdateEntity(user.Id);

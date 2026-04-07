@@ -32,7 +32,7 @@ public class ConversationService : IConversationService
 
             if (user1Id == user2Id)
             {
-                throw new InvalidOperationException("Cannot create a conversation with yourself");
+                throw new InvalidOperationException("Không thể tạo cuộc trò chuyện với chính mình");
             }
 
             var conversationRepo = _unitOfWork.Repository<ChatRoom>();
@@ -376,7 +376,7 @@ public class ConversationService : IConversationService
         catch (DbUpdateException ex)
         {
             _logger.LogError(ex, "Database error while closing conversation {ConversationId} by user {UserId}", conversationId, closedByUserId);
-            throw new InvalidOperationException("Failed to close conversation due to database error", ex);
+            throw new InvalidOperationException("Không thể đóng cuộc trò chuyện do lỗi cơ sở dữ liệu", ex);
         }
         catch (Exception ex) when (ex is ArgumentException || ex is InvalidOperationException)
         {

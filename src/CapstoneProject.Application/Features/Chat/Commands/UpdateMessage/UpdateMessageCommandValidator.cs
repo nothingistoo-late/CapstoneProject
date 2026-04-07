@@ -1,4 +1,4 @@
-using FluentValidation;
+﻿using FluentValidation;
 using CapstoneProject.Application.Common.Interfaces;
 
 namespace CapstoneProject.Application.Features.Chat.Commands.UpdateMessage;
@@ -16,7 +16,7 @@ public class UpdateMessageCommandValidator : AbstractValidator<UpdateMessageComm
     private void SetupValidationRules()
     {
         RuleFor(x => x.MessageId)
-            .NotEmpty().WithMessage("Message ID is required")
+            .NotEmpty().WithMessage("ID tin nhắn là bắt buộc")
             .MustAsync(async (messageId, cancellation) =>
             {
                 if (messageId == Guid.Empty)
@@ -31,6 +31,6 @@ public class UpdateMessageCommandValidator : AbstractValidator<UpdateMessageComm
 
         RuleFor(x => x.Content)
             .NotEmpty().WithMessage("Message content is required")
-            .MaximumLength(5000).WithMessage("Message content must not exceed 5000 characters");
+            .MaximumLength(5000).WithMessage("Nội dung tin nhắn không được vượt quá 5000 ký tự");
     }
 }

@@ -26,18 +26,18 @@ public class JoinRoomCommandHandler : IRequestHandler<JoinRoomCommand, Result<Jo
     {
         var (isValid, userIdNullable) = await _currentUserService.IsUserValidAsync();
         if (!isValid || !userIdNullable.HasValue)
-            return Result<JoinRoomResultDto>.Failure("Authentication required. Please log in to join a room.", ErrorCodeEnum.Unauthorized);
+            return Result<JoinRoomResultDto>.Failure("Yêu cầu xác thực. Vui lòng đăng nhập để tham gia phòng.", ErrorCodeEnum.Unauthorized);
         var userId = userIdNullable.Value;
 
         var room = await _unitOfWork.Repository<Room>().GetQueryable()
             .Include(r => r.RoomParticipants)
             .FirstOrDefaultAsync(r => r.Code == command.RoomCode && !r.IsDeleted, cancellationToken);
         if (room == null)
-            return Result<JoinRoomResultDto>.Failure("Room not found", ErrorCodeEnum.NotFound);
+            return Result<JoinRoomResultDto>.Failure("Không tìm thấy phòng", ErrorCodeEnum.NotFound);
         if (room.RoomStatus != RoomStatusEnum.Waiting)
-            return Result<JoinRoomResultDto>.Failure("Room is not waiting", ErrorCodeEnum.ValidationFailed);
+            return Result<JoinRoomResultDto>.Failure("Phòng không chờ", ErrorCodeEnum.ValidationFailed);
         if (room.RoomParticipants.Count >= room.MaxPlayers)
-            return Result<JoinRoomResultDto>.Failure("Room is full", ErrorCodeEnum.ValidationFailed);
+            return Result<JoinRoomResultDto>.Failure("Phòng đã đầy", ErrorCodeEnum.ValidationFailed);
         if (room.RoomParticipants.Any(p => p.UserId == userId))
             return Result<JoinRoomResultDto>.Success(new JoinRoomResultDto
             {

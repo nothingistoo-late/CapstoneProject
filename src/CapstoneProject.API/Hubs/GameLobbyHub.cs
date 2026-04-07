@@ -1,4 +1,4 @@
-using MediatR;
+﻿using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
 using CapstoneProject.Application.Common.Interfaces;
@@ -68,7 +68,7 @@ public class GameLobbyHub : Hub
             var mapExists = await _mediator.Send(new MapExistsQuery(selectedMapId.Value));
             if (!mapExists.IsSuccess || mapExists.Data != true)
             {
-                await Clients.Caller.SendAsync("Error", mapExists.Message ?? "Map not found or has been deleted.");
+                await Clients.Caller.SendAsync("Error", mapExists.Message ?? "Bản đồ không được tìm thấy hoặc đã bị xóa.");
                 return;
             }
         }
@@ -82,7 +82,7 @@ public class GameLobbyHub : Hub
         var room = _roomManager.CreateRoom(userId, Context.ConnectionId, maxPlayers, selectedMapId);
         if (room == null)
         {
-            await Clients.Caller.SendAsync("Error", "Failed to create room.");
+            await Clients.Caller.SendAsync("Error", "Không tạo được phòng.");
             return;
         }
 
@@ -162,7 +162,7 @@ public class GameLobbyHub : Hub
         var (success, errorMessage, updatedRoom) = _roomManager.LeaveRoom(roomId, userId);
         if (!success)
         {
-            await Clients.Caller.SendAsync("Error", errorMessage ?? "Could not leave room.");
+            await Clients.Caller.SendAsync("Error", errorMessage ?? "Không thể rời khỏi phòng.");
             return;
         }
 
@@ -190,7 +190,7 @@ public class GameLobbyHub : Hub
         var (success, errorMessage, room) = _roomManager.ToggleReady(roomId, userId);
         if (!success || room == null)
         {
-            await Clients.Caller.SendAsync("Error", errorMessage ?? "Could not toggle ready.");
+            await Clients.Caller.SendAsync("Error", errorMessage ?? "Không thể chuyển đổi sẵn sàng.");
             return;
         }
 
@@ -211,14 +211,14 @@ public class GameLobbyHub : Hub
             var mapExists = await _mediator.Send(new MapExistsQuery(selectedMapId));
             if (!mapExists.IsSuccess || mapExists.Data != true)
             {
-                await Clients.Caller.SendAsync("Error", mapExists.Message ?? "Map not found or has been deleted. Choose another map.");
+                await Clients.Caller.SendAsync("Error", mapExists.Message ?? "Bản đồ không được tìm thấy hoặc đã bị xóa. Chọn bản đồ khác.");
                 return;
             }
         }
         var (success, errorMessage, gameInstance, updatedRoom) = _roomManager.StartGame(roomId, userId);
         if (!success)
         {
-            await Clients.Caller.SendAsync("Error", errorMessage ?? "Could not start game.");
+            await Clients.Caller.SendAsync("Error", errorMessage ?? "Không thể bắt đầu trò chơi.");
             return;
         }
 
@@ -302,7 +302,7 @@ public class GameLobbyHub : Hub
         var (success, errorMessage, room) = _roomManager.EndGame(roomId, userId);
         if (!success)
         {
-            await Clients.Caller.SendAsync("Error", errorMessage ?? "Could not end game.");
+            await Clients.Caller.SendAsync("Error", errorMessage ?? "Không thể kết thúc trò chơi.");
             return;
         }
 
@@ -326,14 +326,14 @@ public class GameLobbyHub : Hub
             var mapExists = await _mediator.Send(new MapExistsQuery(mapId.Value));
             if (!mapExists.IsSuccess || mapExists.Data != true)
             {
-                await Clients.Caller.SendAsync("Error", mapExists.Message ?? "Map not found or has been deleted.");
+                await Clients.Caller.SendAsync("Error", mapExists.Message ?? "Bản đồ không được tìm thấy hoặc đã bị xóa.");
                 return;
             }
         }
         var (success, errorMessage, room) = _roomManager.SetRoomMap(roomId, userId, mapId);
         if (!success || room == null)
         {
-            await Clients.Caller.SendAsync("Error", errorMessage ?? "Could not set map.");
+            await Clients.Caller.SendAsync("Error", errorMessage ?? "Không thể thiết lập bản đồ.");
             return;
         }
 
@@ -362,17 +362,17 @@ public class GameLobbyHub : Hub
         var room = _roomManager.GetRoomById(roomId);
         if (room == null)
         {
-            await Clients.Caller.SendAsync("Error", "Room not found.");
+            await Clients.Caller.SendAsync("Error", "Không tìm thấy phòng.");
             return;
         }
         if (room.Status != RoomStatusEnum.Playing)
         {
-            await Clients.Caller.SendAsync("Error", "Game is not in progress.");
+            await Clients.Caller.SendAsync("Error", "Trò chơi không được tiến hành.");
             return;
         }
         if (!room.Players.ContainsKey(userId))
         {
-            await Clients.Caller.SendAsync("Error", "You are not in this room.");
+            await Clients.Caller.SendAsync("Error", "Bạn không ở trong phòng này.");
             return;
         }
 
@@ -400,7 +400,7 @@ public class GameLobbyHub : Hub
         var validateResult = await _mediator.Send(new ValidateSolutionCommand(validateRequest));
         if (!validateResult.IsSuccess || validateResult.Data == null)
         {
-            await Clients.Caller.SendAsync("SubmissionResult", new { Success = false, Message = validateResult.Message ?? "Validation failed." });
+            await Clients.Caller.SendAsync("SubmissionResult", new { Success = false, Message = validateResult.Message ?? "Xác thực không thành công." });
             return;
         }
 
@@ -409,7 +409,7 @@ public class GameLobbyHub : Hub
         var (recordSuccess, recordError, ranking) = _roomManager.RecordSubmission(roomId, userId, score, status, validateResult.Data.SubmissionId);
         if (!recordSuccess)
         {
-            await Clients.Caller.SendAsync("SubmissionResult", new { Success = false, Message = recordError ?? "Could not record submission." });
+            await Clients.Caller.SendAsync("SubmissionResult", new { Success = false, Message = recordError ?? "Không thể ghi lại bài nộp." });
             return;
         }
 

@@ -1,4 +1,4 @@
-using MediatR;
+﻿using MediatR;
 using CapstoneProject.Application.Common.Enums;
 using CapstoneProject.Application.Common.Interfaces;
 using CapstoneProject.Application.Common.Models;
@@ -26,13 +26,13 @@ public class DeleteUserCommandHandler : IRequestHandler<DeleteUserCommand, Resul
             var (isValid, userId) = await _currentUserService.IsUserValidAsync();
             if (!isValid)
             {
-                throw new UnauthorizedAccessException("User is not authenticated");
+                throw new UnauthorizedAccessException("Người dùng chưa được xác thực");
             }
 
             var user = await _identityService.GetUserByIdAsync(command.UserId.ToString());
             if (user == null)
             {
-                throw new KeyNotFoundException("User not found");
+                throw new KeyNotFoundException("Không tìm thấy người dùng");
             }
 
             // Prevent self-deletion
@@ -48,10 +48,10 @@ public class DeleteUserCommandHandler : IRequestHandler<DeleteUserCommand, Resul
             if (!updateResult.Succeeded)
             {
                 var errors = updateResult.Errors.Select(e => e.Description).ToList();
-                return Result.Failure("Failed to delete user", ErrorCodeEnum.ValidationFailed, errors);
+                return Result.Failure("Không thể xóa người dùng", ErrorCodeEnum.ValidationFailed, errors);
             }
 
-            return Result.Success("User deleted successfully");
+            return Result.Success("Người dùng đã xóa thành công");
         }
         catch
         {

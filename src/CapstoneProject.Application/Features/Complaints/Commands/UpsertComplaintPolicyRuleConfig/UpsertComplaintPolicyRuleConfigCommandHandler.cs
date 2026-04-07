@@ -1,4 +1,4 @@
-using CapstoneProject.Application.Common.Enums;
+﻿using CapstoneProject.Application.Common.Enums;
 using CapstoneProject.Application.Common.Interfaces;
 using CapstoneProject.Application.Common.Models;
 using CapstoneProject.Domain.Common;
@@ -24,16 +24,16 @@ public class UpsertComplaintPolicyRuleConfigCommandHandler : IRequestHandler<Ups
     {
         var (isValid, userIdNullable) = await _currentUserService.IsUserValidAsync();
         if (!isValid || !userIdNullable.HasValue)
-            return Result<UpsertComplaintPolicyRuleConfigDto>.Failure("Authentication required.", ErrorCodeEnum.Unauthorized);
+            return Result<UpsertComplaintPolicyRuleConfigDto>.Failure("Yêu cầu xác thực.", ErrorCodeEnum.Unauthorized);
 
         var roles = await _currentUserService.GetCurrentRolesAsync();
         if (!roles.Contains(RoleEnum.Admin) && !roles.Contains(RoleEnum.Moderator))
-            return Result<UpsertComplaintPolicyRuleConfigDto>.Failure("Only Admin/Moderator can update complaint policy rule configs.", ErrorCodeEnum.Forbidden);
+            return Result<UpsertComplaintPolicyRuleConfigDto>.Failure("Chỉ Quản trị viên/Người điều hành mới có thể cập nhật cấu hình quy tắc chính sách khiếu nại.", ErrorCodeEnum.Forbidden);
 
         if (string.IsNullOrWhiteSpace(request.CategoryKey))
-            return Result<UpsertComplaintPolicyRuleConfigDto>.Failure("CategoryKey is required.", ErrorCodeEnum.ValidationFailed);
+            return Result<UpsertComplaintPolicyRuleConfigDto>.Failure("CategoryKey là bắt buộc.", ErrorCodeEnum.ValidationFailed);
         if (string.IsNullOrWhiteSpace(request.RuleKey))
-            return Result<UpsertComplaintPolicyRuleConfigDto>.Failure("RuleKey is required.", ErrorCodeEnum.ValidationFailed);
+            return Result<UpsertComplaintPolicyRuleConfigDto>.Failure("RuleKey là bắt buộc.", ErrorCodeEnum.ValidationFailed);
 
         var categoryKey = request.CategoryKey.Trim();
         var ruleKey = request.RuleKey.Trim();
@@ -42,7 +42,7 @@ public class UpsertComplaintPolicyRuleConfigCommandHandler : IRequestHandler<Ups
         var categoryExists = await _unitOfWork.Repository<ComplaintCategoryCatalog>().GetQueryable()
             .AnyAsync(x => !x.IsDeleted && x.CategoryKey == categoryKey, cancellationToken);
         if (!categoryExists)
-            return Result<UpsertComplaintPolicyRuleConfigDto>.Failure("Complaint category config not found for this rule.", ErrorCodeEnum.NotFound);
+            return Result<UpsertComplaintPolicyRuleConfigDto>.Failure("Không tìm thấy cấu hình danh mục khiếu nại cho quy tắc này.", ErrorCodeEnum.NotFound);
 
         var repo = _unitOfWork.Repository<ComplaintPolicyRuleConfig>();
         var row = await repo.GetQueryable().FirstOrDefaultAsync(x => x.CategoryKey == categoryKey && x.RuleKey == ruleKey, cancellationToken);
@@ -88,6 +88,6 @@ public class UpsertComplaintPolicyRuleConfigCommandHandler : IRequestHandler<Ups
             ActiveTo = row.ActiveTo
         };
 
-        return Result<UpsertComplaintPolicyRuleConfigDto>.Success(result, "Complaint policy rule config saved.");
+        return Result<UpsertComplaintPolicyRuleConfigDto>.Success(result, "Đã lưu cấu hình quy tắc chính sách khiếu nại.");
     }
 }

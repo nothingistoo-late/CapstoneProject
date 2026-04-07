@@ -1,4 +1,4 @@
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 
 namespace CapstoneProject.Application.Commons.DTOs.Chat;
 
@@ -7,7 +7,7 @@ namespace CapstoneProject.Application.Commons.DTOs.Chat;
 /// </summary>
 public class GetMessagesRequest
 {
-    [Required(ErrorMessage = "Chat room ID is required")]
+    [Required(ErrorMessage = "Cần có ID phòng trò chuyện")]
     public Guid ChatRoomId { get; set; }
 
     [Range(1, int.MaxValue, ErrorMessage = "Page number must be at least 1")]

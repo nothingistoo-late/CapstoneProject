@@ -43,7 +43,7 @@ public class CreateUserCommandHandler : IRequestHandler<CreateUserCommand, Resul
             var (isValid, userId) = await _currentUserService.IsUserValidAsync();
             if (!isValid)
             {
-                throw new UnauthorizedAccessException("User is not authenticated");
+                throw new UnauthorizedAccessException("Người dùng chưa được xác thực");
             }
 
             var request = command.Request;
@@ -61,7 +61,7 @@ public class CreateUserCommandHandler : IRequestHandler<CreateUserCommand, Resul
                 var phoneExists = await _identityService.IsPhoneNumberDuplicateAsync(new AppUser(), request.PhoneNumber);
                 if (phoneExists.IsSuccess && phoneExists.Data)
                 {
-                    throw new ArgumentException("Phone number already exists");
+                    throw new ArgumentException("Số điện thoại đã tồn tại");
                 }
             }
 
@@ -95,7 +95,7 @@ public class CreateUserCommandHandler : IRequestHandler<CreateUserCommand, Resul
                 if (!createResult.Succeeded)
                 {
                     var errors = createResult.Errors.Select(e => e.Description).ToList();
-                    return Result.Failure("Failed to create user", ErrorCodeEnum.ValidationFailed, errors);
+                    return Result.Failure("Không tạo được người dùng", ErrorCodeEnum.ValidationFailed, errors);
                 }
 
                 // Add role
@@ -103,14 +103,14 @@ public class CreateUserCommandHandler : IRequestHandler<CreateUserCommand, Resul
                 if (!roleResult.Succeeded)
                 {
                     var errors = roleResult.Errors.Select(e => e.Description).ToList();
-                    return Result.Failure("Failed to add user to role", ErrorCodeEnum.ValidationFailed, errors);
+                    return Result.Failure("Không thể thêm người dùng vào vai trò", ErrorCodeEnum.ValidationFailed, errors);
                 }
 
                 await _unitOfWork.SaveChangesAsync(cancellationToken);
                 scope.Complete();
             }
 
-            return Result.Success("User created successfully");
+            return Result.Success("Người dùng được tạo thành công");
         }
         catch
         {

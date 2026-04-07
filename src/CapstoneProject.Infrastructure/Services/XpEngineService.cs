@@ -1,4 +1,4 @@
-using CapstoneProject.Application.Common.Enums;
+﻿using CapstoneProject.Application.Common.Enums;
 using CapstoneProject.Application.Common.Interfaces;
 using CapstoneProject.Application.Common.Models;
 using CapstoneProject.Application.Commons.Models.Xp;
@@ -22,9 +22,9 @@ public class XpEngineService : IXpEngineService
     public async Task<Result<XpGrantResult>> GrantXpAsync(XpGrantInput input, CancellationToken cancellationToken = default)
     {
         if (input.UserId == Guid.Empty)
-            return Result<XpGrantResult>.Failure("UserId is required.", ErrorCodeEnum.ValidationFailed);
+            return Result<XpGrantResult>.Failure("Id người dùng là bắt buộc.", ErrorCodeEnum.ValidationFailed);
         if (string.IsNullOrWhiteSpace(input.IdempotencyKey))
-            return Result<XpGrantResult>.Failure("IdempotencyKey is required.", ErrorCodeEnum.ValidationFailed);
+            return Result<XpGrantResult>.Failure("IdempotencyKey là bắt buộc.", ErrorCodeEnum.ValidationFailed);
 
         var txRepo = _unitOfWork.Repository<XpTransaction>();
         var existedTx = await txRepo.GetQueryable()
@@ -33,7 +33,7 @@ public class XpEngineService : IXpEngineService
         var userRepo = _unitOfWork.Repository<AppUser>();
         var user = await userRepo.GetQueryable().FirstOrDefaultAsync(x => x.Id == input.UserId, cancellationToken);
         if (user == null)
-            return Result<XpGrantResult>.Failure($"User not found with Id: {input.UserId}.", ErrorCodeEnum.NotFound);
+            return Result<XpGrantResult>.Failure($"Không tìm thấy người dùng có Id: {input.UserId}.", ErrorCodeEnum.NotFound);
 
         if (existedTx != null)
         {
@@ -45,7 +45,7 @@ public class XpEngineService : IXpEngineService
                 PreviousLevel = user.CurrentLevel,
                 NewLevel = user.CurrentLevel,
                 TransactionId = existedTx.Id
-            }, "XP reward already processed.");
+            }, "Phần thưởng XP đã được xử lý.");
         }
 
         var sourceConfig = await _unitOfWork.Repository<XpSourceConfig>().GetQueryable()
@@ -58,7 +58,7 @@ public class XpEngineService : IXpEngineService
                 NewTotalXp = user.CurrentXp,
                 PreviousLevel = user.CurrentLevel,
                 NewLevel = user.CurrentLevel
-            }, "XP source is disabled.");
+            }, "Nguồn XP bị vô hiệu hóa.");
 
         var policyConfigs = await _unitOfWork.Repository<XpPolicyConfig>().GetQueryable()
             .Where(x => !x.IsDeleted && x.IsEnabled && (x.ActiveFrom == null || x.ActiveFrom <= VietnamDateTime.DbNow) &&
@@ -94,7 +94,7 @@ public class XpEngineService : IXpEngineService
                 NewTotalXp = user.CurrentXp,
                 PreviousLevel = user.CurrentLevel,
                 NewLevel = user.CurrentLevel
-            }, "No XP granted after policy evaluation.");
+            }, "Không có XP được cấp sau khi đánh giá chính sách.");
         }
 
         var previousLevel = user.CurrentLevel;
@@ -142,7 +142,7 @@ public class XpEngineService : IXpEngineService
                 NewTotalXp = user.CurrentXp,
                 PreviousLevel = previousLevel,
                 NewLevel = user.CurrentLevel
-            }, "XP reward already processed.");
+            }, "Phần thưởng XP đã được xử lý.");
         }
 
         return Result<XpGrantResult>.Success(new XpGrantResult
@@ -153,7 +153,7 @@ public class XpEngineService : IXpEngineService
             PreviousLevel = previousLevel,
             NewLevel = user.CurrentLevel,
             TransactionId = tx.Id
-        }, "XP granted successfully.");
+        }, "XP được cấp thành công.");
     }
 }
 

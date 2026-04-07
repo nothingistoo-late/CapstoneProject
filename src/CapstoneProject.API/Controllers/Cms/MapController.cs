@@ -1,4 +1,4 @@
-using CapstoneProject.API.Helpers;
+﻿using CapstoneProject.API.Helpers;
 using CapstoneProject.API.Models;
 using CapstoneProject.Application.Commons.DTOs.Maps;
 using CapstoneProject.Application.Features.Maps.Commands.ApproveMap;
@@ -47,12 +47,12 @@ public class CmsMapController : ControllerBase
     /// - pageSize (int, optional): Default 20.
     /// - mapStatus (int?, optional): 0=Draft, 1=PendingReview, 2=Approved, 3=Rejected, 4=Published.
     /// - publishedOnly (bool?, optional): true = only published; ignored when mapStatus is set.
-    /// - createdByUserId (Guid?, optional): Lọc theo user tạo map.
+    /// - createdByUserId (Guid?, optional): Lá»c theo user táº¡o map.
     /// - difficulty (int?, optional): Difficulty level (1-5).
-    /// - tagId (Guid?, optional): Lọc theo tag.
-    /// - search (string, optional): Tìm trong title, description.
-    /// - minPrice (decimal?, optional): Chỉ map có giá &gt;= minPrice (null/0 = free).
-    /// - maxPrice (decimal?, optional): Chỉ map có giá &lt;= maxPrice.
+    /// - tagId (Guid?, optional): Lá»c theo tag.
+    /// - search (string, optional): TÃ¬m trong title, description.
+    /// - minPrice (decimal?, optional): Chá»‰ map cÃ³ giÃ¡ &gt;= minPrice (null/0 = free).
+    /// - maxPrice (decimal?, optional): Chá»‰ map cÃ³ giÃ¡ &lt;= maxPrice.
     /// - sortBy (string, optional): CreatedAt | Title | Difficulty | TimeLimitMs | Price. Default CreatedAt.
     /// - sortAscending (bool, optional): Default false.
     ///
@@ -74,7 +74,7 @@ public class CmsMapController : ControllerBase
 
     /// <summary>Get all maps (no filter) for Admin.</summary>
     /// <remarks>
-    /// Trả về tất cả map, không lọc theo status hay điều kiện nào. Chỉ phân trang và sắp xếp. Admin/Moderator only.
+    /// Tráº£ vá» táº¥t cáº£ map, khÃ´ng lá»c theo status hay Ä‘iá»u kiá»‡n nÃ o. Chá»‰ phÃ¢n trang vÃ  sáº¯p xáº¿p. Admin/Moderator only.
     ///
     /// **Query:**
     /// - pageNumber (int, optional): Default 1.
@@ -121,7 +121,7 @@ public class CmsMapController : ControllerBase
         return StatusCode(result.GetHttpStatusCode(), result);
     }
 
-    /// <summary>Tạo map mới từ map nguồn (map gốc không đổi). Author của map hoặc Admin/Moderator.</summary>
+    /// <summary>Táº¡o map má»›i tá»« map nguá»“n (map gá»‘c khÃ´ng Ä‘á»•i). Author cá»§a map hoáº·c Admin/Moderator.</summary>
     [HttpPost("{id:guid}/duplicate-as-new")]
     [AuthorizeRoles(nameof(RoleEnum.Admin), nameof(RoleEnum.Moderator))]
     [Consumes("application/json")]
@@ -143,13 +143,13 @@ public class CmsMapController : ControllerBase
 
     /// <summary>Create and publish map immediately (Admin only).</summary>
     /// <remarks>
-    /// Tạo map và publish ngay, không qua quy trình duyệt. Chỉ Admin. Body JSON giống Learner CreateMap (title, description, difficulty, timeLimitMs, winCondition, price?, mapDetailJson, hints?, tagIds?).
+    /// Táº¡o map vÃ  publish ngay, khÃ´ng qua quy trÃ¬nh duyá»‡t. Chá»‰ Admin. Body JSON giá»‘ng Learner CreateMap (title, description, difficulty, timeLimitMs, winCondition, price?, mapDetailJson, hints?, tagIds?).
     ///
     /// **METHOD and path:** POST /api/cms/maps
     ///
     /// **Body (JSON):**
     /// - title (string, required), description (string, required), difficulty (int), timeLimitMs (int), winCondition (int).
-    /// - type (string, optional): Topdown | Platform | Snake. Mặc định Topdown.
+    /// - type (string, optional): Topdown | Platform | Snake. Máº·c Ä‘á»‹nh Topdown.
     /// - price (decimal?, optional), mapDetailJson (object, required), hints (array, optional), tagIds (array of Guid, optional).
     ///
     /// **Example request body:** { "title": "Official Map", "description": "Desc", "difficulty": 1, "timeLimitMs": 60000, "winCondition": 10, "mapDetailJson": { "id": "level-1", "layers": {} }, "hints": [], "tagIds": [] }
@@ -175,7 +175,7 @@ public class CmsMapController : ControllerBase
         return StatusCode(result.GetHttpStatusCode(), result);
     }
 
-    /// <summary>Create and publish map kèm avatar + gallery (multipart). Route with-files để không trùng POST /maps với JSON.</summary>
+    /// <summary>Create and publish map kÃ¨m avatar + gallery (multipart). Route with-files Ä‘á»ƒ khÃ´ng trÃ¹ng POST /maps vá»›i JSON.</summary>
     [HttpPost("with-files")]
     [AuthorizeRoles(nameof(RoleEnum.Admin))]
     [Consumes("multipart/form-data")]
@@ -187,7 +187,7 @@ public class CmsMapController : ControllerBase
     public async Task<IActionResult> CreateAndPublishMapMultipart([FromForm] CreateMapMultipartForm form)
     {
         if (string.IsNullOrWhiteSpace(form.Data))
-            return BadRequest(Result<Guid>.Failure("Field 'data' (JSON) is required.", ErrorCodeEnum.ValidationFailed));
+            return BadRequest(Result<Guid>.Failure("Trường 'dữ liệu' (JSON) là bắt buộc.", ErrorCodeEnum.ValidationFailed));
         CreateMapRequest? req;
         try
         {
@@ -195,11 +195,11 @@ public class CmsMapController : ControllerBase
         }
         catch (JsonException)
         {
-            return BadRequest(Result<Guid>.Failure("Field 'data' is not valid JSON.", ErrorCodeEnum.ValidationFailed));
+            return BadRequest(Result<Guid>.Failure("Trường 'dữ liệu' không phải là JSON hợp lệ.", ErrorCodeEnum.ValidationFailed));
         }
 
         if (req == null)
-            return BadRequest(Result<Guid>.Failure("Field 'data' could not be deserialized.", ErrorCodeEnum.ValidationFailed));
+            return BadRequest(Result<Guid>.Failure("Trường 'dữ liệu' không thể được giải tuần tự hóa.", ErrorCodeEnum.ValidationFailed));
 
         var result = await _mediator.Send(new CreateMapCommand(req, true, form.GalleryFiles, form.AvatarFile));
         if (result.IsSuccess && result.Data != default)
@@ -209,7 +209,7 @@ public class CmsMapController : ControllerBase
 
     /// <summary>Create and publish map from uploaded JSON file (Admin only).</summary>
     /// <remarks>
-    /// Admin tạo map từ file JSON và publish ngay (không qua duyệt). Form giống Learner upload-json: title, description, difficulty, timeLimitMs, winCondition, price?, tagIdsCsv?, mapDetailFiles (required).
+    /// Admin táº¡o map tá»« file JSON vÃ  publish ngay (khÃ´ng qua duyá»‡t). Form giá»‘ng Learner upload-json: title, description, difficulty, timeLimitMs, winCondition, price?, tagIdsCsv?, mapDetailFiles (required).
     ///
     /// **METHOD and path:** POST /api/cms/maps/upload-json
     ///
@@ -234,7 +234,7 @@ public class CmsMapController : ControllerBase
     {
         var (input, formErr) = await MapJsonUploadFormReader.BuildCreateInputAsync(request, Request);
         if (formErr != null || input == null)
-            return BadRequest(Result<Guid>.Failure(formErr ?? "Invalid map file input.", ErrorCodeEnum.ValidationFailed));
+            return BadRequest(Result<Guid>.Failure(formErr ?? "Đầu vào tệp bản đồ không hợp lệ.", ErrorCodeEnum.ValidationFailed));
 
         var result = await _mediator.Send(new CreateMapFromJsonFileCommand(
             input,
@@ -246,7 +246,7 @@ public class CmsMapController : ControllerBase
         return StatusCode(result.GetHttpStatusCode(), result);
     }
 
-    /// <summary>Approve map (PendingReview → Approved).</summary>
+    /// <summary>Approve map (PendingReview â†’ Approved).</summary>
     /// <remarks>
     /// Marks map as Approved (from PendingReview). Optional query: reviewNote. Admin/Moderator only.
     ///
@@ -274,7 +274,7 @@ public class CmsMapController : ControllerBase
         return StatusCode(result.GetHttpStatusCode(), result);
     }
 
-    /// <summary>Reject map (PendingReview → Rejected).</summary>
+    /// <summary>Reject map (PendingReview â†’ Rejected).</summary>
     /// <remarks>
     /// Marks map as Rejected. Optional query: rejectReason. Admin/Moderator only.
     ///
@@ -302,7 +302,7 @@ public class CmsMapController : ControllerBase
         return StatusCode(result.GetHttpStatusCode(), result);
     }
 
-    /// <summary>Publish map (Approved → Published, appears on catalog).</summary>
+    /// <summary>Publish map (Approved â†’ Published, appears on catalog).</summary>
     /// <remarks>
     /// Publishes an Approved map so it appears in learner catalog. Admin/Moderator only.
     ///
@@ -342,12 +342,12 @@ public class CmsMapController : ControllerBase
     public async Task<IActionResult> UploadMapAvatar(Guid id, IFormFile avatar)
     {
         if (avatar == null || avatar.Length == 0)
-            return BadRequest(Result<string>.Failure("Avatar file is required.", ErrorCodeEnum.ValidationFailed));
+            return BadRequest(Result<string>.Failure("Cần có tập tin Avatar.", ErrorCodeEnum.ValidationFailed));
         var result = await _mediator.Send(new UploadMapAvatarCommand(id, avatar));
         return StatusCode(result.GetHttpStatusCode(), result);
     }
 
-    /// <summary>Upload ảnh/video gallery map (Cloudinary). Admin/Moderator.</summary>
+    /// <summary>Upload áº£nh/video gallery map (Cloudinary). Admin/Moderator.</summary>
     [HttpPost("{id:guid}/gallery")]
     [AuthorizeRoles(nameof(RoleEnum.Admin), nameof(RoleEnum.Moderator))]
     [Consumes("multipart/form-data")]

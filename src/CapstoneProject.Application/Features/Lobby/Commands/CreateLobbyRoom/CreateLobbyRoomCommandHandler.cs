@@ -1,4 +1,4 @@
-using MediatR;
+﻿using MediatR;
 using CapstoneProject.Application.Common.Enums;
 using CapstoneProject.Application.Common.Interfaces;
 using CapstoneProject.Application.Common.Models;
@@ -26,7 +26,7 @@ public class CreateLobbyRoomCommandHandler : IRequestHandler<CreateLobbyRoomComm
     {
         var (isValid, userIdNullable) = await _currentUserService.IsUserValidAsync();
         if (!isValid || !userIdNullable.HasValue)
-            return Result<CreateLobbyRoomResponse>.Failure("Authentication required.", ErrorCodeEnum.Unauthorized);
+            return Result<CreateLobbyRoomResponse>.Failure("Yêu cầu xác thực.", ErrorCodeEnum.Unauthorized);
 
         var maxPlayers = command.Request?.MaxPlayers ?? 8;
         var mapId = command.Request?.SelectedMapId;
@@ -34,7 +34,7 @@ public class CreateLobbyRoomCommandHandler : IRequestHandler<CreateLobbyRoomComm
         {
             var mapExists = await _mediator.Send(new MapExistsQuery(mapId.Value), cancellationToken);
             if (!mapExists.IsSuccess || mapExists.Data != true)
-                return Result<CreateLobbyRoomResponse>.Failure(mapExists.Message ?? "Map not found or has been deleted.", ErrorCodeEnum.NotFound);
+                return Result<CreateLobbyRoomResponse>.Failure(mapExists.Message ?? "Bản đồ không được tìm thấy hoặc đã bị xóa.", ErrorCodeEnum.NotFound);
         }
 
         var userId = userIdNullable.Value;
@@ -56,7 +56,7 @@ public class CreateLobbyRoomCommandHandler : IRequestHandler<CreateLobbyRoomComm
 
         var room = _roomManager.CreateRoom(userId, "", maxPlayers, mapId);
         if (room == null)
-            return Result<CreateLobbyRoomResponse>.Failure("Failed to create room.", ErrorCodeEnum.InvalidOperation);
+            return Result<CreateLobbyRoomResponse>.Failure("Không tạo được phòng.", ErrorCodeEnum.InvalidOperation);
 
         return Result<CreateLobbyRoomResponse>.Success(new CreateLobbyRoomResponse
         {
@@ -64,6 +64,6 @@ public class CreateLobbyRoomCommandHandler : IRequestHandler<CreateLobbyRoomComm
             RoomCode = room.RoomCode,
             MaxPlayers = room.MaxPlayers,
             SelectedMapId = room.SelectedMapId
-        }, "Room created.");
+        }, "Phòng được tạo.");
     }
 }

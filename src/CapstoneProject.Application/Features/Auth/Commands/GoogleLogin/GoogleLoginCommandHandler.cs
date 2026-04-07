@@ -1,4 +1,4 @@
-using System.Transactions;
+﻿using System.Transactions;
 using System.Text.Json;
 using MediatR;
 using Microsoft.Extensions.Logging;
@@ -41,7 +41,7 @@ public class GoogleLoginCommandHandler : IRequestHandler<GoogleLoginCommand, Res
     public async Task<Result<AuthResponse>> Handle(GoogleLoginCommand command, CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(command.Request.IdToken))
-            return Result<AuthResponse>.Failure("IdToken is required.", ErrorCodeEnum.InvalidInput);
+            return Result<AuthResponse>.Failure("IdToken là bắt buộc.", ErrorCodeEnum.InvalidInput);
 
         string? email = null;
         string? firstName = null;
@@ -61,11 +61,11 @@ public class GoogleLoginCommandHandler : IRequestHandler<GoogleLoginCommand, Res
             catch (Exception ex)
             {
                 _logger.LogWarning(ex, "Google userinfo request failed.");
-                return Result<AuthResponse>.Failure("Invalid Google token.", ErrorCodeEnum.InvalidCredentials);
+                return Result<AuthResponse>.Failure("Mã thông báo Google không hợp lệ.", ErrorCodeEnum.InvalidCredentials);
             }
 
             if (!response.IsSuccessStatusCode)
-                return Result<AuthResponse>.Failure("Invalid Google token.", ErrorCodeEnum.InvalidCredentials);
+                return Result<AuthResponse>.Failure("Mã thông báo Google không hợp lệ.", ErrorCodeEnum.InvalidCredentials);
 
             try
             {
@@ -81,7 +81,7 @@ public class GoogleLoginCommandHandler : IRequestHandler<GoogleLoginCommand, Res
             catch (Exception ex)
             {
                 _logger.LogWarning(ex, "Failed to parse Google userinfo response.");
-                return Result<AuthResponse>.Failure("Invalid Google token.", ErrorCodeEnum.InvalidCredentials);
+                return Result<AuthResponse>.Failure("Mã thông báo Google không hợp lệ.", ErrorCodeEnum.InvalidCredentials);
             }
         }
         else
@@ -104,12 +104,12 @@ public class GoogleLoginCommandHandler : IRequestHandler<GoogleLoginCommand, Res
             catch (Exception ex)
             {
                 _logger.LogWarning(ex, "Google id_token validation failed.");
-                return Result<AuthResponse>.Failure("Invalid Google token.", ErrorCodeEnum.InvalidCredentials);
+                return Result<AuthResponse>.Failure("Mã thông báo Google không hợp lệ.", ErrorCodeEnum.InvalidCredentials);
             }
         }
 
         if (string.IsNullOrWhiteSpace(email))
-            return Result<AuthResponse>.Failure("Google account email not found.", ErrorCodeEnum.InvalidCredentials);
+            return Result<AuthResponse>.Failure("Không tìm thấy email tài khoản Google.", ErrorCodeEnum.InvalidCredentials);
 
         var user = await _identityService.GetUserByFirstOrDefaultAsync(u => u.Email == email);
         if (user == null)
@@ -136,12 +136,12 @@ public class GoogleLoginCommandHandler : IRequestHandler<GoogleLoginCommand, Res
                 if (!createResult.Succeeded)
                 {
                     var errors = createResult.Errors?.Select(x => x.Description).ToList() ?? new List<string>();
-                    return Result<AuthResponse>.Failure("Failed to create user from Google.", ErrorCodeEnum.ValidationFailed, errors);
+                    return Result<AuthResponse>.Failure("Không tạo được người dùng từ Google.", ErrorCodeEnum.ValidationFailed, errors);
                 }
                 var roleResult = await _identityService.AddUserToRoleAsync(user, RoleEnum.Learner.ToString());
                 if (!roleResult.Succeeded)
                 {
-                    return Result<AuthResponse>.Failure("Failed to assign role.", ErrorCodeEnum.ValidationFailed);
+                    return Result<AuthResponse>.Failure("Không thể chỉ định vai trò.", ErrorCodeEnum.ValidationFailed);
                 }
                 await _unitOfWork.SaveChangesAsync(cancellationToken);
                 scope.Complete();
@@ -151,7 +151,7 @@ public class GoogleLoginCommandHandler : IRequestHandler<GoogleLoginCommand, Res
         // Avoid EF tracking conflicts: reload a tracked instance before update.
         var trackedUser = await _identityService.GetUserByIdAsync(user.Id.ToString());
         if (trackedUser == null)
-            return Result<AuthResponse>.Failure("User not found after Google login.", ErrorCodeEnum.InvalidCredentials);
+            return Result<AuthResponse>.Failure("Không tìm thấy người dùng sau khi đăng nhập Google.", ErrorCodeEnum.InvalidCredentials);
 
         // Align with normal Login flow: issue refresh token so subsequent auth validation passes.
         var (refreshToken, refreshTokenExpiryTime) = _jwtService.GenerateRefreshTokenWithExpiration();
@@ -168,7 +168,7 @@ public class GoogleLoginCommandHandler : IRequestHandler<GoogleLoginCommand, Res
             Roles = roles,
             ExpiresAt = expiresAt
         };
-        return Result<AuthResponse>.Success(authResponse, "Login with Google successfully.");
+        return Result<AuthResponse>.Success(authResponse, "Đăng nhập bằng Google thành công.");
     }
 
     private sealed class GoogleUserInfoResponse

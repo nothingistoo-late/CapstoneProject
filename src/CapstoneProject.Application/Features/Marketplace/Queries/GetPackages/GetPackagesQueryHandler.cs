@@ -1,4 +1,4 @@
-using MediatR;
+﻿using MediatR;
 using Microsoft.EntityFrameworkCore;
 using CapstoneProject.Application.Common.Enums;
 using CapstoneProject.Application.Common.Interfaces;
@@ -53,7 +53,7 @@ public class GetPackagesQueryHandler : IRequestHandler<GetPackagesQuery, Result<
             })
             .ToListAsync(cancellationToken);
 
-        var result = PaginationResult<PackageDto>.Success(list, pageNumber, pageSize, total, "Retrieved successfully");
+        var result = PaginationResult<PackageDto>.Success(list, pageNumber, pageSize, total, "Đã truy xuất thành công");
         return Result<PaginationResult<PackageDto>>.Success(result);
     }
 }

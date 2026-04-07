@@ -1,4 +1,4 @@
-using MediatR;
+﻿using MediatR;
 using CapstoneProject.Application.Common.Enums;
 using CapstoneProject.Application.Common.Interfaces;
 using CapstoneProject.Application.Common.Models;
@@ -25,10 +25,10 @@ public class GetOrbitCoinBalanceQueryHandler : IRequestHandler<GetOrbitCoinBalan
         {
             var (isValid, id) = await _currentUserService.IsUserValidAsync();
             if (!isValid || !id.HasValue)
-                return Result<OrbitCoinBalanceDto>.Failure("Authentication required.", ErrorCodeEnum.Unauthorized);
+                return Result<OrbitCoinBalanceDto>.Failure("Yêu cầu xác thực.", ErrorCodeEnum.Unauthorized);
             userId = id.Value;
         }
         var balance = await _orbitCoinService.GetBalanceAsync(userId.Value, cancellationToken);
-        return Result<OrbitCoinBalanceDto>.Success(new OrbitCoinBalanceDto { Balance = balance }, "Balance retrieved.");
+        return Result<OrbitCoinBalanceDto>.Success(new OrbitCoinBalanceDto { Balance = balance }, "Đã lấy lại số dư.");
     }
 }

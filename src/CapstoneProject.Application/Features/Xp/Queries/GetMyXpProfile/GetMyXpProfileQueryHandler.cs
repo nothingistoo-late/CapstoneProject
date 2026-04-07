@@ -1,4 +1,4 @@
-using CapstoneProject.Application.Common.Enums;
+﻿using CapstoneProject.Application.Common.Enums;
 using CapstoneProject.Application.Common.Interfaces;
 using CapstoneProject.Application.Common.Models;
 using CapstoneProject.Domain.Entities;
@@ -22,12 +22,12 @@ public class GetMyXpProfileQueryHandler : IRequestHandler<GetMyXpProfileQuery, R
     {
         var (isValid, userIdNullable) = await _currentUserService.IsUserValidAsync();
         if (!isValid || !userIdNullable.HasValue)
-            return Result<MyXpProfileDto>.Failure("Authentication required.", ErrorCodeEnum.Unauthorized);
+            return Result<MyXpProfileDto>.Failure("Yêu cầu xác thực.", ErrorCodeEnum.Unauthorized);
         var userId = userIdNullable.Value;
 
         var user = await _unitOfWork.Repository<AppUser>().GetQueryable().FirstOrDefaultAsync(x => x.Id == userId, cancellationToken);
         if (user == null)
-            return Result<MyXpProfileDto>.Failure("User not found.", ErrorCodeEnum.NotFound);
+            return Result<MyXpProfileDto>.Failure("Không tìm thấy người dùng.", ErrorCodeEnum.NotFound);
 
         var thresholds = await _unitOfWork.Repository<LevelThreshold>().GetQueryable()
             .Where(x => !x.IsDeleted)

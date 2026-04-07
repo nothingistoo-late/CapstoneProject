@@ -1,4 +1,4 @@
-using MediatR;
+﻿using MediatR;
 using CapstoneProject.Application.Common.Enums;
 using CapstoneProject.Application.Common.Interfaces;
 using CapstoneProject.Application.Common.Models;
@@ -24,7 +24,7 @@ public class GetOrbitCoinTransactionHistoryQueryHandler : IRequestHandler<GetOrb
         {
             var (isValid, id) = await _currentUserService.IsUserValidAsync();
             if (!isValid || !id.HasValue)
-                return Result<OrbitCoinTransactionHistoryResult>.Failure("Authentication required.", ErrorCodeEnum.Unauthorized);
+                return Result<OrbitCoinTransactionHistoryResult>.Failure("Yêu cầu xác thực.", ErrorCodeEnum.Unauthorized);
             userId = id.Value;
         }
         var (items, total) = await _orbitCoinService.GetTransactionHistoryAsync(
@@ -39,6 +39,6 @@ public class GetOrbitCoinTransactionHistoryQueryHandler : IRequestHandler<GetOrb
             PageNumber = request.PageNumber,
             PageSize = request.PageSize
         };
-        return Result<OrbitCoinTransactionHistoryResult>.Success(result, "Transaction history retrieved.");
+        return Result<OrbitCoinTransactionHistoryResult>.Success(result, "Lịch sử giao dịch được truy xuất.");
     }
 }

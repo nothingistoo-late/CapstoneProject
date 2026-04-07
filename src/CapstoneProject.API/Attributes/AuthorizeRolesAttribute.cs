@@ -1,4 +1,4 @@
-using System.Security.Claims;
+﻿using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
@@ -29,7 +29,7 @@ public class AuthorizeRolesAttribute : Microsoft.AspNetCore.Authorization.Author
         if (!context.HttpContext.User.Identity?.IsAuthenticated ?? true)
         {
             context.Result = new UnauthorizedObjectResult(
-                Result.Failure("You are not authenticated.", ErrorCodeEnum.Unauthorized));
+                Result.Failure("Bạn chưa được xác thực.", ErrorCodeEnum.Unauthorized));
             return;
         }
         

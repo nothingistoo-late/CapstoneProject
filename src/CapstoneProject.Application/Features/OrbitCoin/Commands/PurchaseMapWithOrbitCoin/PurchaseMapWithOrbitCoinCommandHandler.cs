@@ -1,4 +1,4 @@
-using MediatR;
+﻿using MediatR;
 using Microsoft.EntityFrameworkCore;
 using CapstoneProject.Application.Common.Enums;
 using CapstoneProject.Application.Common.Interfaces;
@@ -32,7 +32,7 @@ public class PurchaseMapWithOrbitCoinCommandHandler : IRequestHandler<PurchaseMa
     {
         var (isValid, buyerId) = await _currentUserService.IsUserValidAsync();
         if (!isValid || !buyerId.HasValue)
-            return Result.Failure("Authentication required.", ErrorCodeEnum.Unauthorized);
+            return Result.Failure("Yêu cầu xác thực.", ErrorCodeEnum.Unauthorized);
         var buyerUserId = buyerId.Value;
 
         var map = await _unitOfWork.Repository<Map>()
@@ -40,19 +40,19 @@ public class PurchaseMapWithOrbitCoinCommandHandler : IRequestHandler<PurchaseMa
             .AsNoTracking()
             .FirstOrDefaultAsync(m => m.Id == request.MapId && !m.IsDeleted, cancellationToken);
         if (map == null)
-            return Result.Failure("Map not found.", ErrorCodeEnum.NotFound);
+            return Result.Failure("Bản đồ không được tìm thấy.", ErrorCodeEnum.NotFound);
         if (map.Price == null || map.Price <= 0)
-            return Result.Failure("This map is free and cannot be purchased with OrbitCoin.", ErrorCodeEnum.InvalidOperation);
+            return Result.Failure("Bản đồ này miễn phí và không thể mua bằng OrbitCoin.", ErrorCodeEnum.InvalidOperation);
         var sellerUserId = map.CreatedBy ?? Guid.Empty;
         if (sellerUserId == Guid.Empty)
-            return Result.Failure("Map has no creator; cannot complete purchase.", ErrorCodeEnum.InvalidOperation);
+            return Result.Failure("Bản đồ không có người tạo; không thể hoàn tất việc mua hàng.", ErrorCodeEnum.InvalidOperation);
         if (sellerUserId == buyerUserId)
-            return Result.Failure("You cannot purchase your own map.", ErrorCodeEnum.InvalidOperation);
+            return Result.Failure("Bạn không thể mua bản đồ của riêng bạn.", ErrorCodeEnum.InvalidOperation);
 
         var amount = map.Price.Value;
         var feeAmount = Math.Round(amount * (PlatformFeePercent / 100m), 4);
 
-        // Người mua trả đúng giá map; người bán nhận = giá - phí (người bán chịu phí)
+        // NgÆ°á»i mua tráº£ Ä‘Ãºng giÃ¡ map; ngÆ°á»i bÃ¡n nháº­n = giÃ¡ - phÃ­ (ngÆ°á»i bÃ¡n chá»‹u phÃ­)
         var (success, error) = await _orbitCoinService.TransferWithSellerFeeAsync(
             buyerUserId,
             sellerUserId,
@@ -80,7 +80,7 @@ public class PurchaseMapWithOrbitCoinCommandHandler : IRequestHandler<PurchaseMa
             await _unitOfWork.Repository<PaymentRecord>().AddAsync(failedRecord);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-            return Result.Failure(error ?? "Transfer failed.", ErrorCodeEnum.InvalidOperation);
+            return Result.Failure(error ?? "Chuyển không thành công.", ErrorCodeEnum.InvalidOperation);
         }
 
         // Reuse PaymentRecords: record this map purchase (paid with OrbitCoin) for unified purchase history
@@ -107,7 +107,7 @@ public class PurchaseMapWithOrbitCoinCommandHandler : IRequestHandler<PurchaseMa
             await _unitOfWork.SaveChangesAsync(cancellationToken);
         }
 
-        return Result.Success("Map purchased with OrbitCoin. Platform fee is deducted from seller.");
+        return Result.Success("Bản đồ được mua bằng OrbitCoin. Phí nền tảng được khấu trừ từ người bán.");
     }
 }
 

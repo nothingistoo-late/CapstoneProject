@@ -1,4 +1,4 @@
-using FluentValidation;
+﻿using FluentValidation;
 using CapstoneProject.Application.Common.Interfaces;
 using CapstoneProject.Domain.Enums;
 
@@ -17,7 +17,7 @@ public class CloseConversationCommandValidator : AbstractValidator<CloseConversa
     private void SetupValidationRules()
     {
         RuleFor(x => x.ConversationId)
-            .NotEmpty().WithMessage("Conversation ID is required")
+            .NotEmpty().WithMessage("ID cuộc trò chuyện là bắt buộc")
             .MustAsync(async (conversationId, cancellation) =>
             {
                 if (conversationId == Guid.Empty)
@@ -28,7 +28,7 @@ public class CloseConversationCommandValidator : AbstractValidator<CloseConversa
                     c => c.Id == conversationId && !c.IsDeleted);
 
                 return conversation != null;
-            }).WithMessage("Conversation not found");
+            }).WithMessage("Không tìm thấy cuộc trò chuyện");
 
         RuleFor(x => x.ConversationId)
             .MustAsync(async (conversationId, cancellation) =>

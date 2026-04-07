@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
 using CapstoneProject.Application.Common.DTOs.Auth;
 using CapstoneProject.Application.Common.Enums;
@@ -43,9 +43,9 @@ public abstract class SystemAccessFilterBase : IActionFilter
             var allowedRoles = GetAllowedRolesDescription();
             
             context.Result = new ObjectResult(Result.Failure(
-                $"You do not have access to the {systemName}.",
+                $"Bạn không có quyền truy cập vào {systemName}.",
                 ErrorCodeEnum.InsufficientPermissions,
-                new List<string> { $"This area is only accessible to {allowedRoles}. Please use an appropriate account." }))
+                new List<string> { $"Chỉ có {allowedRoles} mới có thể truy cập khu vực này. Vui lòng sử dụng một tài khoản thích hợp." }))
             {
                 StatusCode = 403
             };
@@ -66,7 +66,7 @@ public abstract class SystemAccessFilterBase : IActionFilter
 }
 
 /// <summary>
-/// Filter that allows Learner (và Admin) truy cập khu vực learner.
+/// Filter that allows Learner (vÃ  Admin) truy cáº­p khu vá»±c learner.
 /// </summary>
 public class LearnerRoleAccessFilter : SystemAccessFilterBase
 {
@@ -87,7 +87,7 @@ public class LearnerRoleAccessFilter : SystemAccessFilterBase
 }
 
 /// <summary>
-/// Filter that allows Moderator and Admin access (portal kiểm duyệt).
+/// Filter that allows Moderator and Admin access (portal kiá»ƒm duyá»‡t).
 /// </summary>
 public class ModeratorRoleAccessFilter : SystemAccessFilterBase
 {

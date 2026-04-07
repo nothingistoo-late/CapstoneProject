@@ -1,4 +1,4 @@
-using System.Text.Json;
+﻿using System.Text.Json;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using CapstoneProject.Application.Common.Enums;
@@ -32,13 +32,13 @@ public class GetMapByIdQueryHandler : IRequestHandler<GetMapByIdQuery, Result<Ma
             .AsNoTracking()
             .FirstOrDefaultAsync(cancellationToken);
         if (map == null)
-            return Result<MapDetailDto>.Failure($"Map not found with Id: {request.MapId}.", ErrorCodeEnum.NotFound);
+            return Result<MapDetailDto>.Failure($"Không tìm thấy bản đồ có Id: {request.MapId}.", ErrorCodeEnum.NotFound);
 
         if (map.IsDeleted)
         {
             var (isValid, userIdNullable) = await _currentUserService.IsUserValidAsync();
             if (!isValid || !userIdNullable.HasValue)
-                return Result<MapDetailDto>.Failure($"Map not found with Id: {request.MapId}.", ErrorCodeEnum.NotFound);
+                return Result<MapDetailDto>.Failure($"Không tìm thấy bản đồ có Id: {request.MapId}.", ErrorCodeEnum.NotFound);
 
             var userId = userIdNullable.Value;
             var isAuthor = map.CreatedBy.HasValue && map.CreatedBy.Value == userId;
@@ -55,7 +55,7 @@ public class GetMapByIdQueryHandler : IRequestHandler<GetMapByIdQuery, Result<Ma
             }
 
             if (!isOwned)
-                return Result<MapDetailDto>.Failure($"Map not found with Id: {request.MapId}.", ErrorCodeEnum.NotFound);
+                return Result<MapDetailDto>.Failure($"Không tìm thấy bản đồ có Id: {request.MapId}.", ErrorCodeEnum.NotFound);
         }
 
         var learnedTagNameMap = await _unitOfWork.Repository<Tag>().GetQueryable()

@@ -1,4 +1,4 @@
-using FluentValidation;
+﻿using FluentValidation;
 using CapstoneProject.Application.Common.Interfaces;
 using CapstoneProject.Domain.Enums;
 
@@ -17,7 +17,7 @@ public class SendMessageCommandValidator : AbstractValidator<SendMessageCommand>
     private void SetupValidationRules()
     {
         RuleFor(x => x.Request.ChatRoomId)
-            .NotEmpty().WithMessage("Chat room ID is required")
+            .NotEmpty().WithMessage("Cần có ID phòng trò chuyện")
             .MustAsync(async (chatRoomId, cancellation) =>
             {
                 if (chatRoomId == Guid.Empty)
@@ -28,7 +28,7 @@ public class SendMessageCommandValidator : AbstractValidator<SendMessageCommand>
                     c => c.Id == chatRoomId && !c.IsDeleted);
 
                 return conversation != null;
-            }).WithMessage("Conversation not found");
+            }).WithMessage("Không tìm thấy cuộc trò chuyện");
 
         RuleFor(x => x.Request)
             .MustAsync(async (request, cancellation) =>
@@ -45,12 +45,12 @@ public class SendMessageCommandValidator : AbstractValidator<SendMessageCommand>
 
                 // Cannot send messages to closed conversations
                 return !conversation.IsClosed;
-            }).WithMessage("Cannot send messages to a closed conversation");
+            }).WithMessage("Không thể gửi tin nhắn đến cuộc trò chuyện đã đóng");
 
         RuleFor(x => x.Request.Content)
             .NotEmpty().WithMessage("Message content is required")
             .When(x => x.Request.MessageType == MessageTypeEnum.Text)
-            .MaximumLength(5000).WithMessage("Message content must not exceed 5000 characters");
+            .MaximumLength(5000).WithMessage("Nội dung tin nhắn không được vượt quá 5000 ký tự");
 
         RuleFor(x => x.Request.MessageType)
             .IsInEnum().WithMessage("Invalid message type");

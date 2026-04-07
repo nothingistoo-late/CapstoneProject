@@ -1,4 +1,4 @@
-using FluentValidation;
+﻿using FluentValidation;
 
 namespace CapstoneProject.Application.Features.Maps.Commands.DuplicateMapAsNew;
 
@@ -10,7 +10,7 @@ public class DuplicateMapAsNewCommandValidator : AbstractValidator<DuplicateMapA
         When(x => x.Request != null && !string.IsNullOrWhiteSpace(x.Request.Title), () =>
         {
             RuleFor(x => x.Request!.Title!)
-                .MaximumLength(200).WithMessage("Title must not exceed 200 characters.");
+                .MaximumLength(200).WithMessage("Tiêu đề không được vượt quá 200 ký tự.");
         });
         When(x => x.Request?.Difficulty != null, () =>
         {

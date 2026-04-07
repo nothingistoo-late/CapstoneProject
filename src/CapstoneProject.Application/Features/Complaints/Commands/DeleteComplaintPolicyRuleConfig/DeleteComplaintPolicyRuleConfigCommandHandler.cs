@@ -1,4 +1,4 @@
-using CapstoneProject.Application.Common.Enums;
+﻿using CapstoneProject.Application.Common.Enums;
 using CapstoneProject.Application.Common.Interfaces;
 using CapstoneProject.Application.Common.Models;
 using CapstoneProject.Domain.Common;
@@ -24,14 +24,14 @@ public class DeleteComplaintPolicyRuleConfigCommandHandler : IRequestHandler<Del
     {
         var (isValid, userIdNullable) = await _currentUserService.IsUserValidAsync();
         if (!isValid || !userIdNullable.HasValue)
-            return Result.Failure("Authentication required.", ErrorCodeEnum.Unauthorized);
+            return Result.Failure("Yêu cầu xác thực.", ErrorCodeEnum.Unauthorized);
 
         var roles = await _currentUserService.GetCurrentRolesAsync();
         if (!roles.Contains(RoleEnum.Admin) && !roles.Contains(RoleEnum.Moderator))
-            return Result.Failure("Only Admin/Moderator can delete complaint policy rule configs.", ErrorCodeEnum.Forbidden);
+            return Result.Failure("Chỉ Quản trị viên/Người điều hành mới có thể xóa cấu hình quy tắc chính sách khiếu nại.", ErrorCodeEnum.Forbidden);
 
         if (string.IsNullOrWhiteSpace(request.CategoryKey) || string.IsNullOrWhiteSpace(request.RuleKey))
-            return Result.Failure("CategoryKey and RuleKey are required.", ErrorCodeEnum.ValidationFailed);
+            return Result.Failure("CategoryKey và RuleKey là bắt buộc.", ErrorCodeEnum.ValidationFailed);
 
         var row = await _unitOfWork.Repository<ComplaintPolicyRuleConfig>().GetQueryable()
             .FirstOrDefaultAsync(x => !x.IsDeleted
@@ -39,12 +39,12 @@ public class DeleteComplaintPolicyRuleConfigCommandHandler : IRequestHandler<Del
                                       && x.RuleKey == request.RuleKey.Trim(),
                 cancellationToken);
         if (row == null)
-            return Result.Failure("Complaint policy rule config not found.", ErrorCodeEnum.NotFound);
+            return Result.Failure("Không tìm thấy cấu hình quy tắc chính sách khiếu nại.", ErrorCodeEnum.NotFound);
 
         row.SoftDeleteEntity(userIdNullable.Value);
         row.UpdateEntity(userIdNullable.Value);
         _unitOfWork.Repository<ComplaintPolicyRuleConfig>().Update(row);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
-        return Result.Success("Complaint policy rule config deleted.");
+        return Result.Success("Đã xóa cấu hình quy tắc chính sách khiếu nại.");
     }
 }

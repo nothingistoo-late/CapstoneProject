@@ -1,4 +1,4 @@
-using MediatR;
+﻿using MediatR;
 using CapstoneProject.Application.Common.Enums;
 using CapstoneProject.Application.Common.Interfaces;
 using CapstoneProject.Application.Common.Models;
@@ -21,14 +21,14 @@ public class LeaveLobbyRoomCommandHandler : IRequestHandler<LeaveLobbyRoomComman
     {
         var (isValid, userIdNullable) = await _currentUserService.IsUserValidAsync();
         if (!isValid || !userIdNullable.HasValue)
-            return Result.Failure("Authentication required.", ErrorCodeEnum.Unauthorized);
+            return Result.Failure("Yêu cầu xác thực.", ErrorCodeEnum.Unauthorized);
 
         var (success, errorMessage, _) = _roomManager.LeaveRoom(command.RoomId, userIdNullable.Value);
         if (!success)
         {
             var code = errorMessage?.Contains("not found", StringComparison.OrdinalIgnoreCase) == true ? ErrorCodeEnum.NotFound : ErrorCodeEnum.ValidationFailed;
-            return Result.Failure(errorMessage ?? "Could not leave room.", code);
+            return Result.Failure(errorMessage ?? "Không thể rời khỏi phòng.", code);
         }
-        return Result.Success("Left room.");
+        return Result.Success("Phòng bên trái.");
     }
 }

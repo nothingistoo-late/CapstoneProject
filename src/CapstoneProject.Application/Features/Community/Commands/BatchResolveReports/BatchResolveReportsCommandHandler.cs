@@ -1,4 +1,4 @@
-using MediatR;
+﻿using MediatR;
 using Microsoft.EntityFrameworkCore;
 using CapstoneProject.Application.Common.Enums;
 using CapstoneProject.Application.Common.Interfaces;
@@ -26,10 +26,10 @@ public class BatchResolveReportsCommandHandler : IRequestHandler<BatchResolveRep
     {
         var (isValid, userIdNullable) = await _currentUserService.IsUserValidAsync();
         if (!isValid || !userIdNullable.HasValue)
-            return Result<BatchReportResultDto>.Failure("Authentication required. Please log in to resolve reports.", ErrorCodeEnum.Unauthorized);
+            return Result<BatchReportResultDto>.Failure("Yêu cầu xác thực. Vui lòng đăng nhập để giải quyết các báo cáo.", ErrorCodeEnum.Unauthorized);
         var roles = await _currentUserService.GetCurrentRolesAsync();
         if (!roles.Contains(RoleEnum.Admin) && !roles.Contains(RoleEnum.Moderator))
-            return Result<BatchReportResultDto>.Failure("You do not have permission to resolve reports. Only Admin or Moderator can perform batch resolve.", ErrorCodeEnum.Forbidden);
+            return Result<BatchReportResultDto>.Failure("Bạn không có quyền giải quyết các báo cáo. Chỉ Quản trị viên hoặc Người điều hành mới có thể thực hiện giải quyết hàng loạt.", ErrorCodeEnum.Forbidden);
 
         var repo = _unitOfWork.Repository<MapReport>();
         var reports = await repo.GetQueryable()
@@ -47,6 +47,6 @@ public class BatchResolveReportsCommandHandler : IRequestHandler<BatchResolveRep
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         var dto = new BatchReportResultDto { SuccessCount = reports.Count, FailedCount = notFoundIds.Count, NotFoundIds = notFoundIds };
-        return Result<BatchReportResultDto>.Success(dto, $"Resolved {dto.SuccessCount} report(s).");
+        return Result<BatchReportResultDto>.Success(dto, $"Đã giải quyết (các) báo cáo {dto.SuccessCount}.");
     }
 }

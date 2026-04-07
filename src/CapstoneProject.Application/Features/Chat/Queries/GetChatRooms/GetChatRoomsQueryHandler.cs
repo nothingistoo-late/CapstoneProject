@@ -37,7 +37,7 @@ public class GetChatRoomsQueryHandler : IRequestHandler<GetChatRoomsQuery, Resul
             var userIdString = _currentUserService.UserId;
             if (string.IsNullOrEmpty(userIdString) || !Guid.TryParse(userIdString, out var currentUserId))
             {
-                return Result<PaginationResult<ChatRoomResponse>>.Failure("User not authenticated", ErrorCodeEnum.Unauthorized);
+                return Result<PaginationResult<ChatRoomResponse>>.Failure("Người dùng chưa được xác thực", ErrorCodeEnum.Unauthorized);
             }
 
             if (query == null)

@@ -1,4 +1,4 @@
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 using CapstoneProject.Domain.Enums;
 
 namespace CapstoneProject.Application.Commons.DTOs.Chat;
@@ -8,10 +8,10 @@ namespace CapstoneProject.Application.Commons.DTOs.Chat;
 /// </summary>
 public class SendMessageRequest
 {
-    [Required(ErrorMessage = "Chat room ID is required")]
+    [Required(ErrorMessage = "Cần có ID phòng trò chuyện")]
     public Guid ChatRoomId { get; set; }
 
-    [MaxLength(5000, ErrorMessage = "Message content must not exceed 5000 characters")]
+    [MaxLength(5000, ErrorMessage = "Nội dung tin nhắn không được vượt quá 5000 ký tự")]
     public string Content { get; set; } = string.Empty;
 
     [Required(ErrorMessage = "Message type is required")]

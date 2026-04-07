@@ -1,4 +1,4 @@
-using MediatR;
+﻿using MediatR;
 using Microsoft.EntityFrameworkCore;
 using CapstoneProject.Application.Common.Enums;
 using CapstoneProject.Application.Common.Interfaces;
@@ -31,13 +31,13 @@ public class GetMyMapsQueryHandler : IRequestHandler<GetMyMapsQuery, Result<Pagi
         var myMapRepo = _unitOfWork.Repository<MyMap>();
         var paymentRepo = _unitOfWork.Repository<PaymentRecord>();
 
-        // Map IDs từ bảng MyMap (nguồn chính: tạo map, mua map, thêm map free)
+        // Map IDs tá»« báº£ng MyMap (nguá»“n chÃ­nh: táº¡o map, mua map, thÃªm map free)
         var myMapIds = await myMapRepo.GetQueryable()
             .Where(mm => !mm.IsDeleted && mm.UserId == userId.Value)
             .Select(mm => mm.MapId)
             .ToListAsync(cancellationToken);
 
-        // Backward compat: map do user tạo hoặc đã mua (trước khi có bảng MyMap)
+        // Backward compat: map do user táº¡o hoáº·c Ä‘Ã£ mua (trÆ°á»›c khi cÃ³ báº£ng MyMap)
         var createdMapIds = await mapRepo.GetQueryable()
             .Where(m => !m.IsDeleted && m.Status == EntityStatusEnum.Active && m.CreatedBy == userId.Value)
             .Select(m => m.Id)
@@ -54,7 +54,7 @@ public class GetMyMapsQueryHandler : IRequestHandler<GetMyMapsQuery, Result<Pagi
             : allOwnedIds;
         if (ownedMapIds.Count == 0)
         {
-            var empty = PaginationResult<MapListItemDto>.Success(new List<MapListItemDto>(), 1, request.PageSize, 0, "Retrieved successfully");
+            var empty = PaginationResult<MapListItemDto>.Success(new List<MapListItemDto>(), 1, request.PageSize, 0, "Đã truy xuất thành công");
             return Result<PaginationResult<MapListItemDto>>.Success(empty);
         }
 
@@ -102,7 +102,7 @@ public class GetMyMapsQueryHandler : IRequestHandler<GetMyMapsQuery, Result<Pagi
             Price = m.Price,
             CreatedByUserId = m.CreatedBy ?? Guid.Empty,
             CreatedByUserName = m.Creator != null ? $"{m.Creator.FirstName} {m.Creator.LastName}".Trim() : null,
-            // IsAuthor = user đang gửi request có phải là người tạo map (CreatedBy), không phải kiểm tra sở hữu
+            // IsAuthor = user Ä‘ang gá»­i request cÃ³ pháº£i lÃ  ngÆ°á»i táº¡o map (CreatedBy), khÃ´ng pháº£i kiá»ƒm tra sá»Ÿ há»¯u
             IsAuthor = m.CreatedBy == userId.Value,
             CreatedAt = m.CreatedAt,
             UpdatedAt = m.UpdatedAt,
@@ -126,7 +126,7 @@ public class GetMyMapsQueryHandler : IRequestHandler<GetMyMapsQuery, Result<Pagi
         };
         }).ToList();
 
-        var result = PaginationResult<MapListItemDto>.Success(list, pageNumber, pageSize, total, "Retrieved successfully");
+        var result = PaginationResult<MapListItemDto>.Success(list, pageNumber, pageSize, total, "Đã truy xuất thành công");
         return Result<PaginationResult<MapListItemDto>>.Success(result);
     }
 }

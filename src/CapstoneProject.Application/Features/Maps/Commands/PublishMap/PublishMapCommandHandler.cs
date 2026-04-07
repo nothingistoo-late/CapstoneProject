@@ -1,4 +1,4 @@
-using MediatR;
+﻿using MediatR;
 using Microsoft.EntityFrameworkCore;
 using CapstoneProject.Application.Common.Enums;
 using CapstoneProject.Application.Common.Interfaces;
@@ -25,7 +25,7 @@ public class PublishMapCommandHandler : IRequestHandler<PublishMapCommand, Resul
     {
         var (isValid, userIdNullable) = await _currentUserService.IsUserValidAsync();
         if (!isValid || !userIdNullable.HasValue)
-            return Result.Failure("Authentication required. Please log in to publish a map.", ErrorCodeEnum.Unauthorized);
+            return Result.Failure("Yêu cầu xác thực. Vui lòng đăng nhập để xuất bản bản đồ.", ErrorCodeEnum.Unauthorized);
 
         var roles = await _currentUserService.GetCurrentRolesAsync();
         var isAdminOrModerator = roles.Contains(RoleEnum.Admin) || roles.Contains(RoleEnum.Moderator);
@@ -34,9 +34,9 @@ public class PublishMapCommandHandler : IRequestHandler<PublishMapCommand, Resul
         var mapRepo = _unitOfWork.Repository<Map>();
         var map = await mapRepo.GetQueryable().FirstOrDefaultAsync(m => m.Id == command.MapId && !m.IsDeleted, cancellationToken);
         if (map == null)
-            return Result.Failure($"Map not found with Id: {command.MapId}. The map may have been deleted or does not exist.", ErrorCodeEnum.NotFound);
+            return Result.Failure($"Không tìm thấy bản đồ có Id: {command.MapId}. Bản đồ có thể đã bị xóa hoặc không tồn tại.", ErrorCodeEnum.NotFound);
         if (map.MapStatus != MapStatusEnum.Approved)
-            return Result.Failure($"Map cannot be published. Expected status: Approved. Current status: {map.MapStatus}. Only approved maps can be published.", ErrorCodeEnum.InvalidOperation);
+            return Result.Failure($"Bản đồ không thể được xuất bản. Trạng thái dự kiến: Đã phê duyệt. Trạng thái hiện tại: {map.MapStatus}. Chỉ những bản đồ được phê duyệt mới có thể được xuất bản.", ErrorCodeEnum.InvalidOperation);
 
         if (isAdminOrModerator)
         {
@@ -45,16 +45,16 @@ public class PublishMapCommandHandler : IRequestHandler<PublishMapCommand, Resul
         else if (isLearner)
         {
             if (map.CreatedBy != userIdNullable.Value)
-                return Result.Failure("Only the author of this map can publish it.", ErrorCodeEnum.Forbidden);
+                return Result.Failure("Chỉ tác giả của bản đồ này mới có thể xuất bản nó.", ErrorCodeEnum.Forbidden);
         }
         else
-            return Result.Failure("You do not have permission to publish maps.", ErrorCodeEnum.Forbidden);
+            return Result.Failure("Bạn không có quyền xuất bản bản đồ.", ErrorCodeEnum.Forbidden);
 
         map.MapStatus = MapStatusEnum.Published;
         map.IsPublished = true;
         map.UpdateEntity(userIdNullable!.Value);
         mapRepo.Update(map);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
-        return Result.Success("Map published successfully.");
+        return Result.Success("Bản đồ được xuất bản thành công.");
     }
 }

@@ -1,4 +1,4 @@
-using CapstoneProject.Application.Common.Enums;
+﻿using CapstoneProject.Application.Common.Enums;
 using CapstoneProject.Application.Common.Interfaces;
 using CapstoneProject.Application.Common.Models;
 using CapstoneProject.Domain.Common;
@@ -24,16 +24,16 @@ public class UpsertComplaintCategoryConfigCommandHandler : IRequestHandler<Upser
     {
         var (isValid, userIdNullable) = await _currentUserService.IsUserValidAsync();
         if (!isValid || !userIdNullable.HasValue)
-            return Result<UpsertComplaintCategoryConfigDto>.Failure("Authentication required.", ErrorCodeEnum.Unauthorized);
+            return Result<UpsertComplaintCategoryConfigDto>.Failure("Yêu cầu xác thực.", ErrorCodeEnum.Unauthorized);
 
         var roles = await _currentUserService.GetCurrentRolesAsync();
         if (!roles.Contains(RoleEnum.Admin) && !roles.Contains(RoleEnum.Moderator))
-            return Result<UpsertComplaintCategoryConfigDto>.Failure("Only Admin/Moderator can update complaint category configs.", ErrorCodeEnum.Forbidden);
+            return Result<UpsertComplaintCategoryConfigDto>.Failure("Chỉ Quản trị viên/Người điều hành mới có thể cập nhật cấu hình danh mục khiếu nại.", ErrorCodeEnum.Forbidden);
 
         if (string.IsNullOrWhiteSpace(request.CategoryKey))
-            return Result<UpsertComplaintCategoryConfigDto>.Failure("CategoryKey is required.", ErrorCodeEnum.ValidationFailed);
+            return Result<UpsertComplaintCategoryConfigDto>.Failure("CategoryKey là bắt buộc.", ErrorCodeEnum.ValidationFailed);
         if (string.IsNullOrWhiteSpace(request.DisplayName))
-            return Result<UpsertComplaintCategoryConfigDto>.Failure("DisplayName is required.", ErrorCodeEnum.ValidationFailed);
+            return Result<UpsertComplaintCategoryConfigDto>.Failure("Tên hiển thị là bắt buộc.", ErrorCodeEnum.ValidationFailed);
 
         var userId = userIdNullable.Value;
         var categoryKey = request.CategoryKey.Trim();
@@ -77,6 +77,6 @@ public class UpsertComplaintCategoryConfigCommandHandler : IRequestHandler<Upser
             SortOrder = row.SortOrder
         };
 
-        return Result<UpsertComplaintCategoryConfigDto>.Success(result, "Complaint category config saved.");
+        return Result<UpsertComplaintCategoryConfigDto>.Success(result, "Đã lưu cấu hình danh mục khiếu nại.");
     }
 }

@@ -1,4 +1,4 @@
-using MediatR;
+﻿using MediatR;
 using CapstoneProject.Application.Common.Enums;
 using CapstoneProject.Application.Common.Interfaces;
 using CapstoneProject.Application.Common.Models;
@@ -30,18 +30,18 @@ public class SubmitLobbySolutionCommandHandler : IRequestHandler<SubmitLobbySolu
     {
         var (isValid, userIdNullable) = await _currentUserService.IsUserValidAsync();
         if (!isValid || !userIdNullable.HasValue)
-            return Result<SubmitGameResponse>.Failure("Authentication required.", ErrorCodeEnum.Unauthorized);
+            return Result<SubmitGameResponse>.Failure("Yêu cầu xác thực.", ErrorCodeEnum.Unauthorized);
 
         var userId = userIdNullable.Value;
         var room = _roomManager.GetRoomById(command.RoomId);
         if (room == null)
-            return Result<SubmitGameResponse>.Failure("Room not found.", ErrorCodeEnum.NotFound);
+            return Result<SubmitGameResponse>.Failure("Không tìm thấy phòng.", ErrorCodeEnum.NotFound);
         if (room.Status != RoomStatusEnum.Playing)
-            return Result<SubmitGameResponse>.Failure("Game is not in progress.", ErrorCodeEnum.ValidationFailed);
+            return Result<SubmitGameResponse>.Failure("Trò chơi không được tiến hành.", ErrorCodeEnum.ValidationFailed);
         if (!room.SelectedMapId.HasValue)
-            return Result<SubmitGameResponse>.Failure("Room has no map selected.", ErrorCodeEnum.ValidationFailed);
+            return Result<SubmitGameResponse>.Failure("Phòng chưa có bản đồ nào được chọn.", ErrorCodeEnum.ValidationFailed);
         if (!room.Players.ContainsKey(userId))
-            return Result<SubmitGameResponse>.Failure("You are not in this room.", ErrorCodeEnum.ValidationFailed);
+            return Result<SubmitGameResponse>.Failure("Bạn không ở trong phòng này.", ErrorCodeEnum.ValidationFailed);
 
         var validateRequest = new ValidateSolutionRequest
         {
@@ -59,15 +59,15 @@ public class SubmitLobbySolutionCommandHandler : IRequestHandler<SubmitLobbySolu
         };
         var validateResult = await _mediator.Send(new ValidateSolutionCommand(validateRequest), cancellationToken);
         if (!validateResult.IsSuccess || validateResult.Data == null)
-            return Result<SubmitGameResponse>.Failure(validateResult.Message ?? "Validation failed.", ErrorCodeEnum.ValidationFailed);
+            return Result<SubmitGameResponse>.Failure(validateResult.Message ?? "Xác thực không thành công.", ErrorCodeEnum.ValidationFailed);
 
-        // Điểm chỉ từ server (ValidateSolution) — không tin Score client.
+        // Äiá»ƒm chá»‰ tá»« server (ValidateSolution) â€” khÃ´ng tin Score client.
         var score = validateResult.Data.Score ?? 0;
         var status = validateResult.Data.Status.ToString();
         var (recordSuccess, recordError, ranking) = _roomManager.RecordSubmission(
             command.RoomId, userId, score, status, validateResult.Data.SubmissionId);
         if (!recordSuccess)
-            return Result<SubmitGameResponse>.Failure(recordError ?? "Could not record submission.", ErrorCodeEnum.ValidationFailed);
+            return Result<SubmitGameResponse>.Failure(recordError ?? "Không thể ghi lại bài nộp.", ErrorCodeEnum.ValidationFailed);
 
         var response = new SubmitGameResponse
         {
@@ -76,6 +76,6 @@ public class SubmitLobbySolutionCommandHandler : IRequestHandler<SubmitLobbySolu
             SubmissionId = validateResult.Data.SubmissionId,
             RankingIfAllSubmitted = ranking?.ToList()
         };
-        return Result<SubmitGameResponse>.Success(response, "Submission recorded.");
+        return Result<SubmitGameResponse>.Success(response, "Đã ghi lại nội dung gửi.");
     }
 }

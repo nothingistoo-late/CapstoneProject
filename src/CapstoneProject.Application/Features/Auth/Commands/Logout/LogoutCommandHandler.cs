@@ -1,4 +1,4 @@
-using MediatR;
+﻿using MediatR;
 using Microsoft.Extensions.Logging;
 using CapstoneProject.Application.Common.Enums;
 using CapstoneProject.Application.Common.Interfaces;
@@ -27,24 +27,24 @@ public class LogoutCommandHandler : IRequestHandler<LogoutCommand, Result>
             var userId = _currentUserService.UserId;
             if (userId == null)
             {
-                return Result.Failure("Not authorized", ErrorCodeEnum.Unauthorized);
+                return Result.Failure("Không được ủy quyền", ErrorCodeEnum.Unauthorized);
             }
             var result = await _identityService.GetUserByIdAsync(userId);
             if (result == null)
             {
-                return Result.Failure("User not found", ErrorCodeEnum.NotFound);
+                return Result.Failure("Không tìm thấy người dùng", ErrorCodeEnum.NotFound);
             }
             var user = result;
             user.RefreshToken = null;
             user.RefreshTokenExpiryTime = null;
             user.UpdateEntity(Guid.Parse(userId));
             await _identityService.UpdateUserAsync(user);
-            return Result.Success("Logout successfully!");
+            return Result.Success("Đăng xuất thành công!");
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error logging out");
-            return Result.Failure("An error occurred while logging out", ErrorCodeEnum.InternalError);
+            return Result.Failure("Đã xảy ra lỗi khi đăng xuất", ErrorCodeEnum.InternalError);
         }
     }
 }

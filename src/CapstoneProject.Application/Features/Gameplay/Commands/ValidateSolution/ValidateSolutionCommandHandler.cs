@@ -1,4 +1,4 @@
-using System.Text.Json;
+﻿using System.Text.Json;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using CapstoneProject.Application.Common.Enums;
@@ -15,8 +15,8 @@ using CapstoneProject.Domain.Enums;
 namespace CapstoneProject.Application.Features.Gameplay.Commands.ValidateSolution;
 
 /// <summary>
-/// Nhận block strategy, tạo Submission, mô phỏng đơn giản (hoặc gọi engine thật),
-/// lưu ExecutionsResult, cập nhật UserMapResult (score, stars, attempts) và cộng XP nếu Accepted.
+/// Nháº­n block strategy, táº¡o Submission, mÃ´ phá»ng Ä‘Æ¡n giáº£n (hoáº·c gá»i engine tháº­t),
+/// lÆ°u ExecutionsResult, cáº­p nháº­t UserMapResult (score, stars, attempts) vÃ  cá»™ng XP náº¿u Accepted.
 /// </summary>
 public class ValidateSolutionCommandHandler : IRequestHandler<ValidateSolutionCommand, Result<ValidateSolutionResultDto>>
 {
@@ -35,7 +35,7 @@ public class ValidateSolutionCommandHandler : IRequestHandler<ValidateSolutionCo
     {
         var (isValid, userIdNullable) = await _currentUserService.IsUserValidAsync();
         if (!isValid || !userIdNullable.HasValue)
-            return Result<ValidateSolutionResultDto>.Failure("Authentication required. Please log in to validate a solution.", ErrorCodeEnum.Unauthorized);
+            return Result<ValidateSolutionResultDto>.Failure("Yêu cầu xác thực. Vui lòng đăng nhập để xác nhận giải pháp.", ErrorCodeEnum.Unauthorized);
         var userId = userIdNullable.Value;
 
         var mapRepo = _unitOfWork.Repository<Map>();
@@ -43,7 +43,7 @@ public class ValidateSolutionCommandHandler : IRequestHandler<ValidateSolutionCo
             .Include(m => m.MapDetails)
             .FirstOrDefaultAsync(m => m.Id == command.Request.MapId, cancellationToken);
         if (map == null)
-            return Result<ValidateSolutionResultDto>.Failure("Map not found", ErrorCodeEnum.NotFound);
+            return Result<ValidateSolutionResultDto>.Failure("Không tìm thấy bản đồ", ErrorCodeEnum.NotFound);
 
         var isOwned = false;
         if (map.IsDeleted || map.FreeTrialAttemptLimit > 0)
@@ -52,17 +52,17 @@ public class ValidateSolutionCommandHandler : IRequestHandler<ValidateSolutionCo
         if (map.IsDeleted)
         {
             if (!isOwned)
-                return Result<ValidateSolutionResultDto>.Failure("Map not found", ErrorCodeEnum.NotFound);
+                return Result<ValidateSolutionResultDto>.Failure("Không tìm thấy bản đồ", ErrorCodeEnum.NotFound);
         }
 
         var levelsOrdered = map.MapDetails.OrderBy(d => d.LevelOrder).ToList();
         if (levelsOrdered.Count == 0)
-            return Result<ValidateSolutionResultDto>.Failure("Map data not found", ErrorCodeEnum.ValidationFailed);
+            return Result<ValidateSolutionResultDto>.Failure("Không tìm thấy dữ liệu bản đồ", ErrorCodeEnum.ValidationFailed);
 
         var mapDetail = ResolveMapDetail(command.Request.MapDetailId, levelsOrdered);
         if (mapDetail == null)
             return Result<ValidateSolutionResultDto>.Failure(
-                "MapDetailId is required when the map has multiple levels, or invalid for this map.",
+                "MapDetailId là bắt buộc khi bản đồ có nhiều cấp độ hoặc không hợp lệ đối với bản đồ này.",
                 ErrorCodeEnum.ValidationFailed);
 
         var umrRepo = _unitOfWork.Repository<UserMapResult>();
@@ -75,7 +75,7 @@ public class ValidateSolutionCommandHandler : IRequestHandler<ValidateSolutionCo
             .SumAsync(cancellationToken) ?? 0;
         var isTrialPlay = map.FreeTrialAttemptLimit > 0 && !isOwned;
         if (isTrialPlay && currentMapAttempts >= map.FreeTrialAttemptLimit)
-            return Result<ValidateSolutionResultDto>.Failure("No free trial attempts left for this map.", ErrorCodeEnum.ValidationFailed);
+            return Result<ValidateSolutionResultDto>.Failure("Không còn lượt dùng thử miễn phí nào cho bản đồ này.", ErrorCodeEnum.ValidationFailed);
 
         var mapSolveCfg = await _unitOfWork.Repository<MapSolveScoreConfig>().GetQueryable()
             .AsNoTracking()
@@ -192,7 +192,7 @@ public class ValidateSolutionCommandHandler : IRequestHandler<ValidateSolutionCo
                 Metadata = $"{{\"stars\":{stars},\"score\":{score}}}"
             }, cancellationToken);
             if (!xpResult.IsSuccess)
-                return Result<ValidateSolutionResultDto>.Failure(xpResult.Message ?? "Failed to grant XP.", ErrorCodeEnum.DatabaseError);
+                return Result<ValidateSolutionResultDto>.Failure(xpResult.Message ?? "Không cấp được XP.", ErrorCodeEnum.DatabaseError);
 
             var selectedGoal = await _unitOfWork.Repository<UserLearningGoal>().GetQueryable()
                 .Where(ug => ug.UserId == userId && !ug.IsDeleted)
@@ -243,7 +243,7 @@ public class ValidateSolutionCommandHandler : IRequestHandler<ValidateSolutionCo
                             Metadata = $"{{\"learningGoalId\":\"{selectedGoal}\"}}"
                         }, cancellationToken);
                         if (!pathXpResult.IsSuccess)
-                            return Result<ValidateSolutionResultDto>.Failure(pathXpResult.Message ?? "Failed to grant learning path XP.", ErrorCodeEnum.DatabaseError);
+                            return Result<ValidateSolutionResultDto>.Failure(pathXpResult.Message ?? "Không cấp được lộ trình học tập XP.", ErrorCodeEnum.DatabaseError);
                     }
                 }
             }
@@ -278,7 +278,7 @@ public class ValidateSolutionCommandHandler : IRequestHandler<ValidateSolutionCo
             .AnyAsync(mm => !mm.IsDeleted && mm.UserId == userId && mm.MapId == map.Id, cancellationToken);
     }
 
-    /// <summary>Null nếu map nhiều level mà không gửi MapDetailId hợp lệ.</summary>
+    /// <summary>Null náº¿u map nhiá»u level mÃ  khÃ´ng gá»­i MapDetailId há»£p lá»‡.</summary>
     private static MapDetail? ResolveMapDetail(Guid? requestedId, List<MapDetail> levelsOrdered)
     {
         if (levelsOrdered.Count == 1)
@@ -288,7 +288,7 @@ public class ValidateSolutionCommandHandler : IRequestHandler<ValidateSolutionCo
         return null;
     }
 
-    /// <summary>Client gửi IsWin (+ metrics) — chấm giống logic sao trên UI (thời gian / bước / block).</summary>
+    /// <summary>Client gá»­i IsWin (+ metrics) â€” cháº¥m giá»‘ng logic sao trÃªn UI (thá»i gian / bÆ°á»›c / block).</summary>
     private static bool HasEngineMetrics(ValidateSolutionRequest r) => r.IsWin.HasValue;
 
     private static (int score, int stars, SubmissionStatusEnum status, bool accepted, int stepsUsed, int blocksUsed) ScoreFromEngineMetrics(
@@ -313,7 +313,7 @@ public class ValidateSolutionCommandHandler : IRequestHandler<ValidateSolutionCo
         return (s, starCount, SubmissionStatusEnum.Accepted, true, stepsUsed, blocksUsed);
     }
 
-    /// <summary>Placeholder cũ: không được tin — AST rỗng <c>[]</c> vẫn bị tính ~100 điểm; thêm chặn trivial.</summary>
+    /// <summary>Placeholder cÅ©: khÃ´ng Ä‘Æ°á»£c tin â€” AST rá»—ng <c>[]</c> váº«n bá»‹ tÃ­nh ~100 Ä‘iá»ƒm; thÃªm cháº·n trivial.</summary>
     private static (int score, int stars, SubmissionStatusEnum status, bool accepted, int stepsUsed, int blocksUsed) ScoreFromLegacyPlaceholder(
         string ast,
         string bytecode)
@@ -373,7 +373,7 @@ public class ValidateSolutionCommandHandler : IRequestHandler<ValidateSolutionCo
         }
     }
 
-    /// <summary>Giống GameResultsModal: 0–3 sao theo time / steps / block so với limit map.</summary>
+    /// <summary>Giá»‘ng GameResultsModal: 0â€“3 sao theo time / steps / block so vá»›i limit map.</summary>
     private static int ComputeStarCount(double elapsedSeconds, int steps, int blocks, MissionLimits lim)
     {
         if (lim.TimeLimitSeconds >= double.PositiveInfinity &&
@@ -390,7 +390,7 @@ public class ValidateSolutionCommandHandler : IRequestHandler<ValidateSolutionCo
         return s;
     }
 
-    /// <summary>Điểm khi thắng có metrics: base + phần time/steps/blocks khi đạt; cả 3 limit vô cực thì chia đều pool 3 tiêu chí theo số sao.</summary>
+    /// <summary>Äiá»ƒm khi tháº¯ng cÃ³ metrics: base + pháº§n time/steps/blocks khi Ä‘áº¡t; cáº£ 3 limit vÃ´ cá»±c thÃ¬ chia Ä‘á»u pool 3 tiÃªu chÃ­ theo sá»‘ sao.</summary>
     private static int ScoreWinFromEngineCriteria(
         int starCount,
         MissionLimits lim,

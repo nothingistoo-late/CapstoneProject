@@ -1,4 +1,4 @@
-using MediatR;
+﻿using MediatR;
 using Microsoft.EntityFrameworkCore;
 using CapstoneProject.Application.Common.Enums;
 using CapstoneProject.Application.Common.Interfaces;
@@ -25,9 +25,9 @@ public class BatchUpdatePackageStatusCommandHandler : IRequestHandler<BatchUpdat
     {
         var (isValid, userIdNullable) = await _currentUserService.IsUserValidAsync();
         if (!isValid || !userIdNullable.HasValue)
-            return Result<BatchUpdatePackageStatusResultDto>.Failure("Authentication required. Please log in to update package status.", ErrorCodeEnum.Unauthorized);
+            return Result<BatchUpdatePackageStatusResultDto>.Failure("Yêu cầu xác thực. Vui lòng đăng nhập để cập nhật trạng thái gói.", ErrorCodeEnum.Unauthorized);
         if (!(await _currentUserService.GetCurrentRolesAsync()).Contains(RoleEnum.Admin))
-            return Result<BatchUpdatePackageStatusResultDto>.Failure("You do not have permission to update package status. Only Admin can perform this action.", ErrorCodeEnum.Forbidden);
+            return Result<BatchUpdatePackageStatusResultDto>.Failure("Bạn không có quyền cập nhật trạng thái gói. Chỉ Quản trị viên mới có thể thực hiện hành động này.", ErrorCodeEnum.Forbidden);
 
         var repo = _unitOfWork.Repository<Package>();
         var toUpdate = await repo.GetQueryable()
@@ -51,6 +51,6 @@ public class BatchUpdatePackageStatusCommandHandler : IRequestHandler<BatchUpdat
             FailedCount = notFoundIds.Count,
             NotFoundIds = notFoundIds
         };
-        return Result<BatchUpdatePackageStatusResultDto>.Success(dto, $"Updated {dto.SuccessCount} package(s).");
+        return Result<BatchUpdatePackageStatusResultDto>.Success(dto, $"Đã cập nhật (các) gói {dto.SuccessCount}.");
     }
 }

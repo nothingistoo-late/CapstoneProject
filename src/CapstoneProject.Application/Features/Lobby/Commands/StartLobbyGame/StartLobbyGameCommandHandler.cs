@@ -1,4 +1,4 @@
-using MediatR;
+﻿using MediatR;
 using CapstoneProject.Application.Common.Enums;
 using CapstoneProject.Application.Common.Interfaces;
 using CapstoneProject.Application.Common.Models;
@@ -26,21 +26,21 @@ public class StartLobbyGameCommandHandler : IRequestHandler<StartLobbyGameComman
     {
         var (isValid, userIdNullable) = await _currentUserService.IsUserValidAsync();
         if (!isValid || !userIdNullable.HasValue)
-            return Result<StartGameResponse>.Failure("Authentication required.", ErrorCodeEnum.Unauthorized);
+            return Result<StartGameResponse>.Failure("Yêu cầu xác thực.", ErrorCodeEnum.Unauthorized);
 
         var room = _roomManager.GetRoomById(command.RoomId);
         if (room?.SelectedMapId is { } selectedMapId && selectedMapId != Guid.Empty)
         {
             var mapExists = await _mediator.Send(new MapExistsQuery(selectedMapId), cancellationToken);
             if (!mapExists.IsSuccess || mapExists.Data != true)
-                return Result<StartGameResponse>.Failure(mapExists.Message ?? "Map not found or has been deleted. Choose another map.", ErrorCodeEnum.NotFound);
+                return Result<StartGameResponse>.Failure(mapExists.Message ?? "Bản đồ không được tìm thấy hoặc đã bị xóa. Chọn bản đồ khác.", ErrorCodeEnum.NotFound);
         }
 
         var (success, errorMessage, gameInstance, _) = _roomManager.StartGame(command.RoomId, userIdNullable.Value);
         if (!success || gameInstance == null)
         {
             var code = errorMessage?.Contains("not found", StringComparison.OrdinalIgnoreCase) == true ? ErrorCodeEnum.NotFound : ErrorCodeEnum.ValidationFailed;
-            return Result<StartGameResponse>.Failure(errorMessage ?? "Could not start game.", code);
+            return Result<StartGameResponse>.Failure(errorMessage ?? "Không thể bắt đầu trò chơi.", code);
         }
 
         var state = gameInstance.GameState as LobbyGameState;
@@ -54,6 +54,6 @@ public class StartLobbyGameCommandHandler : IRequestHandler<StartLobbyGameComman
             CurrentTurnIndex = state?.CurrentTurnIndex ?? 0,
             CurrentPlayerId = state?.CurrentPlayerId ?? Guid.Empty,
             RoundNumber = state?.RoundNumber ?? 1
-        }, "Game started. Connect to SignalR to receive real-time updates.");
+        }, "Trò chơi bắt đầu. Kết nối với SignalR để nhận thông tin cập nhật theo thời gian thực.");
     }
 }

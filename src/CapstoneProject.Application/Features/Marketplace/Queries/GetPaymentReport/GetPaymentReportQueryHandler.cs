@@ -1,4 +1,4 @@
-using MediatR;
+﻿using MediatR;
 using Microsoft.EntityFrameworkCore;
 using CapstoneProject.Application.Common.Enums;
 using CapstoneProject.Application.Common.Interfaces;
@@ -24,10 +24,10 @@ public class GetPaymentReportQueryHandler : IRequestHandler<GetPaymentReportQuer
     {
         var (isValid, _) = await _currentUserService.IsUserValidAsync();
         if (!isValid)
-            return Result<PaymentReportDto>.Failure("Authentication required. Please log in to view payment reports.", ErrorCodeEnum.Unauthorized);
+            return Result<PaymentReportDto>.Failure("Yêu cầu xác thực. Vui lòng đăng nhập để xem báo cáo thanh toán.", ErrorCodeEnum.Unauthorized);
         var roles = await _currentUserService.GetCurrentRolesAsync();
         if (!roles.Contains(RoleEnum.Admin))
-            return Result<PaymentReportDto>.Failure("You do not have permission to view payment reports. Only Admin can access this report.", ErrorCodeEnum.Forbidden);
+            return Result<PaymentReportDto>.Failure("Bạn không có quyền xem báo cáo thanh toán. Chỉ quản trị viên mới có thể truy cập báo cáo này.", ErrorCodeEnum.Forbidden);
 
         var from = request.From ?? CapstoneProject.Domain.Common.VietnamDateTime.DbNow.AddYears(-1);
         var to = request.To ?? CapstoneProject.Domain.Common.VietnamDateTime.DbNow;

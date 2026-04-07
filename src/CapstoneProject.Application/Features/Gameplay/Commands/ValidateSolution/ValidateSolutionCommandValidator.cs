@@ -1,4 +1,4 @@
-using FluentValidation;
+﻿using FluentValidation;
 
 namespace CapstoneProject.Application.Features.Gameplay.Commands.ValidateSolution;
 
@@ -11,7 +11,7 @@ public class ValidateSolutionCommandValidator : AbstractValidator<ValidateSoluti
         When(x => x.Request != null, () =>
         {
             RuleFor(x => x.Request!.MapId)
-                .NotEmpty().WithMessage("Map Id is required.");
+                .NotEmpty().WithMessage("Id bản đồ là bắt buộc.");
             RuleFor(x => x.Request!.Language)
                 .NotEmpty().WithMessage("Language is required.")
                 .MaximumLength(50).WithMessage("Language must not exceed 50 characters.");

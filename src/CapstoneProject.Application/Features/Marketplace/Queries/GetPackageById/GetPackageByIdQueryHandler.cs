@@ -1,4 +1,4 @@
-using MediatR;
+﻿using MediatR;
 using Microsoft.EntityFrameworkCore;
 using CapstoneProject.Application.Common.Enums;
 using CapstoneProject.Application.Common.Interfaces;
@@ -34,7 +34,7 @@ public class GetPackageByIdQueryHandler : IRequestHandler<GetPackageByIdQuery, R
             .FirstOrDefaultAsync(cancellationToken);
 
         if (pkg == null)
-            return Result<PackageDto>.Failure($"Package not found with Id: {request.PackageId}. The package may have been deleted or does not exist.", ErrorCodeEnum.NotFound);
+            return Result<PackageDto>.Failure($"Không tìm thấy gói có Id: {request.PackageId}. Gói có thể đã bị xóa hoặc không tồn tại.", ErrorCodeEnum.NotFound);
         return Result<PackageDto>.Success(pkg);
     }
 }

@@ -30,15 +30,15 @@ public class PurchasePackageCommandHandler : IRequestHandler<PurchasePackageComm
     {
         var (isValid, userIdNullable) = await _currentUserService.IsUserValidAsync();
         if (!isValid || !userIdNullable.HasValue)
-            return Result<Guid>.Failure("Authentication required. Please log in to purchase a package.", ErrorCodeEnum.Unauthorized);
+            return Result<Guid>.Failure("Yêu cầu xác thực. Vui lòng đăng nhập để mua gói.", ErrorCodeEnum.Unauthorized);
         var userId = userIdNullable.Value;
 
         var pkg = await _unitOfWork.Repository<Package>().GetQueryable()
             .FirstOrDefaultAsync(p => p.Id == command.PackageId && !p.IsDeleted && p.Status == EntityStatusEnum.Active, cancellationToken);
         if (pkg == null)
-            return Result<Guid>.Failure("Package not found or inactive.", ErrorCodeEnum.NotFound);
+            return Result<Guid>.Failure("Gói không được tìm thấy hoặc không hoạt động.", ErrorCodeEnum.NotFound);
         if (pkg.Price <= 0)
-            return Result<Guid>.Failure("This package has no price; contact support.", ErrorCodeEnum.InvalidOperation);
+            return Result<Guid>.Failure("Gói này không có giá; liên hệ hỗ trợ.", ErrorCodeEnum.InvalidOperation);
 
         // Deduct OrbitCoin (platform only accepts OrbitCoin; user must have topped up first)
         var (success, error) = await _orbitCoinService.DebitAsync(
@@ -66,7 +66,7 @@ public class PurchasePackageCommandHandler : IRequestHandler<PurchasePackageComm
             await _unitOfWork.Repository<PaymentRecord>().AddAsync(failedRecord);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-            return Result<Guid>.Failure(error ?? "Insufficient OrbitCoin. Please top up first.", ErrorCodeEnum.InvalidOperation);
+            return Result<Guid>.Failure(error ?? "OrbitCoin không đủ. Vui lòng nạp tiền trước.", ErrorCodeEnum.InvalidOperation);
         }
 
         var orbitCoinPayment = await _unitOfWork.Repository<Payment>()
@@ -98,7 +98,7 @@ public class PurchasePackageCommandHandler : IRequestHandler<PurchasePackageComm
         await _unitOfWork.Repository<UserPackage>().AddAsync(userPkg);
 
         await _unitOfWork.SaveChangesAsync(cancellationToken);
-        return Result<Guid>.Success(record.Id, "Package purchased with OrbitCoin.");
+        return Result<Guid>.Success(record.Id, "Gói mua bằng OrbitCoin.");
     }
 }
 

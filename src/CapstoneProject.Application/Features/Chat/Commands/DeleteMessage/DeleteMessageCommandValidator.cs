@@ -1,4 +1,4 @@
-using FluentValidation;
+﻿using FluentValidation;
 using CapstoneProject.Application.Common.Interfaces;
 
 namespace CapstoneProject.Application.Features.Chat.Commands.DeleteMessage;
@@ -16,7 +16,7 @@ public class DeleteMessageCommandValidator : AbstractValidator<DeleteMessageComm
     private void SetupValidationRules()
     {
         RuleFor(x => x.MessageId)
-            .NotEmpty().WithMessage("Message ID is required")
+            .NotEmpty().WithMessage("ID tin nhắn là bắt buộc")
             .MustAsync(async (messageId, cancellation) =>
             {
                 if (messageId == Guid.Empty)

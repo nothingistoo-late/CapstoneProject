@@ -1,4 +1,4 @@
-using MediatR;
+﻿using MediatR;
 using Microsoft.EntityFrameworkCore;
 using CapstoneProject.Application.Common.Enums;
 using CapstoneProject.Application.Common.Interfaces;
@@ -19,7 +19,7 @@ public class GetPathItemsByGoalQueryHandler : IRequestHandler<GetPathItemsByGoal
         var goalExists = await _unitOfWork.Repository<LearningGoal>().GetQueryable()
             .AnyAsync(g => g.Id == request.LearningGoalId && !g.IsDeleted && g.Status == EntityStatusEnum.Active, cancellationToken);
         if (!goalExists)
-            return Result<List<PathItemPreviewDto>>.Failure("Learning goal not found.", ErrorCodeEnum.NotFound);
+            return Result<List<PathItemPreviewDto>>.Failure("Không tìm thấy mục tiêu học tập.", ErrorCodeEnum.NotFound);
 
         var items = await _unitOfWork.Repository<LearningPathItem>().GetQueryable()
             .Where(i => i.LearningGoalId == request.LearningGoalId && !i.IsDeleted)

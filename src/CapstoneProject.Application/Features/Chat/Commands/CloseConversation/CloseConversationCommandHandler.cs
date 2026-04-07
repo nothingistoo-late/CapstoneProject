@@ -1,4 +1,4 @@
-using MediatR;
+﻿using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using CapstoneProject.Application.Commons.Interfaces;
@@ -34,17 +34,17 @@ public class CloseConversationCommandHandler : IRequestHandler<CloseConversation
             var userIdString = _currentUserService.UserId;
             if (string.IsNullOrEmpty(userIdString) || !Guid.TryParse(userIdString, out var currentUserId))
             {
-                return Result<bool>.Failure("User not authenticated", ErrorCodeEnum.Unauthorized);
+                return Result<bool>.Failure("Người dùng chưa được xác thực", ErrorCodeEnum.Unauthorized);
             }
 
             if (command == null)
             {
-                return Result<bool>.Failure("Command cannot be null", ErrorCodeEnum.InvalidInput);
+                return Result<bool>.Failure("Lệnh không thể rỗng", ErrorCodeEnum.InvalidInput);
             }
 
             if (command.ConversationId == Guid.Empty)
             {
-                return Result<bool>.Failure("Conversation ID is required", ErrorCodeEnum.InvalidInput);
+                return Result<bool>.Failure("ID cuộc trò chuyện là bắt buộc", ErrorCodeEnum.InvalidInput);
             }
 
             await _conversationService.CloseConversationAsync(command.ConversationId, currentUserId, cancellationToken);
@@ -75,12 +75,12 @@ public class CloseConversationCommandHandler : IRequestHandler<CloseConversation
         catch (DbUpdateException ex)
         {
             _logger.LogError(ex, "Database error while closing conversation {ConversationId}", command?.ConversationId);
-            return Result<bool>.Failure("Failed to close conversation due to database error", ErrorCodeEnum.DatabaseError);
+            return Result<bool>.Failure("Không thể đóng cuộc trò chuyện do lỗi cơ sở dữ liệu", ErrorCodeEnum.DatabaseError);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Unexpected error while closing conversation {ConversationId}", command?.ConversationId);
-            return Result<bool>.Failure("An unexpected error occurred while closing the conversation", ErrorCodeEnum.InternalError);
+            return Result<bool>.Failure("Đã xảy ra lỗi không mong muốn khi kết thúc cuộc trò chuyện", ErrorCodeEnum.InternalError);
         }
     }
 }

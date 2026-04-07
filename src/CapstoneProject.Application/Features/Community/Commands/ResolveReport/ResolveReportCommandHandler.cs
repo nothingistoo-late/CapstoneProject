@@ -25,14 +25,14 @@ public class ResolveReportCommandHandler : IRequestHandler<ResolveReportCommand,
     {
         var (isValid, userIdNullable) = await _currentUserService.IsUserValidAsync();
         if (!isValid || !userIdNullable.HasValue)
-            return Result.Failure("Authentication required. Please log in to resolve a report.", ErrorCodeEnum.Unauthorized);
+            return Result.Failure("Yêu cầu xác thực. Vui lòng đăng nhập để giải quyết báo cáo.", ErrorCodeEnum.Unauthorized);
         var roles = await _currentUserService.GetCurrentRolesAsync();
         if (!roles.Contains(RoleEnum.Admin) && !roles.Contains(RoleEnum.Moderator))
-            return Result.Failure("You do not have permission to resolve reports. Only Admin or Moderator can perform this action.", ErrorCodeEnum.Forbidden);
+            return Result.Failure("Bạn không có quyền giải quyết các báo cáo. Chỉ Quản trị viên hoặc Người điều hành mới có thể thực hiện hành động này.", ErrorCodeEnum.Forbidden);
 
         var report = await _unitOfWork.Repository<MapReport>().GetQueryable().FirstOrDefaultAsync(r => r.Id == command.ReportId && !r.IsDeleted, cancellationToken);
         if (report == null)
-            return Result.Failure($"Report not found with Id: {command.ReportId}. The report may have been deleted or does not exist.", ErrorCodeEnum.NotFound);
+            return Result.Failure($"Không tìm thấy báo cáo có Id: {command.ReportId}. Báo cáo có thể đã bị xóa hoặc không tồn tại.", ErrorCodeEnum.NotFound);
 
         report.ReportStatus = ReportStatusEnum.Resolved;
         report.ReviewedBy = userIdNullable!.Value;
@@ -41,7 +41,7 @@ public class ResolveReportCommandHandler : IRequestHandler<ResolveReportCommand,
         report.UpdateEntity(userIdNullable.Value);
         _unitOfWork.Repository<MapReport>().Update(report);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
-        return Result.Success("Report resolved.");
+        return Result.Success("Báo cáo đã được giải quyết.");
     }
 }
 

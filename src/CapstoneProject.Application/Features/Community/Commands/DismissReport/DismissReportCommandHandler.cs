@@ -25,14 +25,14 @@ public class DismissReportCommandHandler : IRequestHandler<DismissReportCommand,
     {
         var (isValid, userIdNullable) = await _currentUserService.IsUserValidAsync();
         if (!isValid || !userIdNullable.HasValue)
-            return Result.Failure("Authentication required. Please log in to dismiss a report.", ErrorCodeEnum.Unauthorized);
+            return Result.Failure("Yêu cầu xác thực. Vui lòng đăng nhập để loại bỏ báo cáo.", ErrorCodeEnum.Unauthorized);
         var roles = await _currentUserService.GetCurrentRolesAsync();
         if (!roles.Contains(RoleEnum.Admin) && !roles.Contains(RoleEnum.Moderator))
-            return Result.Failure("You do not have permission to dismiss reports. Only Admin or Moderator can perform this action.", ErrorCodeEnum.Forbidden);
+            return Result.Failure("Bạn không có quyền loại bỏ báo cáo. Chỉ Quản trị viên hoặc Người điều hành mới có thể thực hiện hành động này.", ErrorCodeEnum.Forbidden);
 
         var report = await _unitOfWork.Repository<MapReport>().GetQueryable().FirstOrDefaultAsync(r => r.Id == command.ReportId && !r.IsDeleted, cancellationToken);
         if (report == null)
-            return Result.Failure($"Report not found with Id: {command.ReportId}. The report may have been deleted or does not exist.", ErrorCodeEnum.NotFound);
+            return Result.Failure($"Không tìm thấy báo cáo có Id: {command.ReportId}. Báo cáo có thể đã bị xóa hoặc không tồn tại.", ErrorCodeEnum.NotFound);
 
         report.ReportStatus = ReportStatusEnum.Dismissed;
         report.ReviewedBy = userIdNullable!.Value;
@@ -41,7 +41,7 @@ public class DismissReportCommandHandler : IRequestHandler<DismissReportCommand,
         report.UpdateEntity(userIdNullable.Value);
         _unitOfWork.Repository<MapReport>().Update(report);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
-        return Result.Success("Report dismissed.");
+        return Result.Success("Báo cáo bị loại bỏ.");
     }
 }
 

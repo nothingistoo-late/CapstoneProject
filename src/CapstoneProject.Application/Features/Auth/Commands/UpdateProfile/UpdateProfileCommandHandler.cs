@@ -1,4 +1,4 @@
-using AutoMapper;
+﻿using AutoMapper;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -48,7 +48,7 @@ public class UpdateProfileCommandHandler : IRequestHandler<UpdateProfileCommand,
             var (isValid, userId, roles) = await _currentUserService.ValidateUserWithRolesAsync();
             if (!isValid || userId == null)
             {
-                return Result<ProfileResponse>.Failure("User is not authenticated", ErrorCodeEnum.Unauthorized);
+                return Result<ProfileResponse>.Failure("Người dùng chưa được xác thực", ErrorCodeEnum.Unauthorized);
             }
 
             var request = command.Request;
@@ -57,7 +57,7 @@ public class UpdateProfileCommandHandler : IRequestHandler<UpdateProfileCommand,
             var user = await _identityService.GetUserByIdIncludeProfileAsync(userId.Value);
             if (user == null)
             {
-                return Result<ProfileResponse>.Failure("User not found", ErrorCodeEnum.NotFound);
+                return Result<ProfileResponse>.Failure("Không tìm thấy người dùng", ErrorCodeEnum.NotFound);
             }
 
             // Check phone number duplication (if phone number is being changed)
@@ -69,7 +69,7 @@ public class UpdateProfileCommandHandler : IRequestHandler<UpdateProfileCommand,
                     
                 if (phoneExists)
                 {
-                    return Result<ProfileResponse>.Failure("Phone number already exists", ErrorCodeEnum.ValidationFailed);
+                    return Result<ProfileResponse>.Failure("Số điện thoại đã tồn tại", ErrorCodeEnum.ValidationFailed);
                 }
             }
 
@@ -114,7 +114,7 @@ public class UpdateProfileCommandHandler : IRequestHandler<UpdateProfileCommand,
             if (!updateResult.Succeeded)
             {
                 var errors = updateResult.Errors.Select(e => e.Description).ToList();
-                return Result<ProfileResponse>.Failure("Failed to update profile", ErrorCodeEnum.ValidationFailed, errors);
+                return Result<ProfileResponse>.Failure("Không thể cập nhật hồ sơ", ErrorCodeEnum.ValidationFailed, errors);
             }
 
             // Delete old avatar if a new one was uploaded (fire-and-forget)
@@ -139,12 +139,12 @@ public class UpdateProfileCommandHandler : IRequestHandler<UpdateProfileCommand,
 
             // Return updated profile
             var response = _mapper.Map<ProfileResponse>(user);
-            return Result<ProfileResponse>.Success(response, "Profile updated successfully");
+            return Result<ProfileResponse>.Success(response, "Hồ sơ được cập nhật thành công");
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error occurred while updating profile for user {UserId}", _currentUserService.UserId);
-            return Result<ProfileResponse>.Failure("An error occurred while updating profile", ErrorCodeEnum.InternalError);
+            return Result<ProfileResponse>.Failure("Đã xảy ra lỗi khi cập nhật hồ sơ", ErrorCodeEnum.InternalError);
         }
     }
 }

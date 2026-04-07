@@ -1,4 +1,4 @@
-using CapstoneProject.Application.Common.Enums;
+﻿using CapstoneProject.Application.Common.Enums;
 using CapstoneProject.Application.Common.Interfaces;
 using CapstoneProject.Application.Common.Models;
 using CapstoneProject.Domain.Entities;
@@ -22,7 +22,7 @@ public class GetXpLeaderboardQueryHandler : IRequestHandler<GetXpLeaderboardQuer
     {
         var (isValid, _) = await _currentUserService.IsUserValidAsync();
         if (!isValid)
-            return Result<PaginationResult<XpLeaderboardItemDto>>.Failure("Authentication required.", ErrorCodeEnum.Unauthorized);
+            return Result<PaginationResult<XpLeaderboardItemDto>>.Failure("Yêu cầu xác thực.", ErrorCodeEnum.Unauthorized);
 
         var query = _unitOfWork.Repository<AppUser>().GetQueryable()
             .Where(u => u.Status == Domain.Enums.EntityStatusEnum.Active)

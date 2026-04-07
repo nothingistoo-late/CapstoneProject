@@ -1,4 +1,4 @@
-using MediatR;
+﻿using MediatR;
 using Microsoft.EntityFrameworkCore;
 using CapstoneProject.Application.Common.Enums;
 using CapstoneProject.Application.Common.Interfaces;
@@ -23,7 +23,7 @@ public class CheckMapOwnershipQueryHandler : IRequestHandler<CheckMapOwnershipQu
     {
         var (isValid, userId) = await _currentUserService.IsUserValidAsync();
         if (!isValid || !userId.HasValue)
-            return Result<CheckMapOwnershipDto>.Failure("Authentication required. Please log in to check map ownership.", ErrorCodeEnum.Unauthorized);
+            return Result<CheckMapOwnershipDto>.Failure("Yêu cầu xác thực. Vui lòng đăng nhập để kiểm tra quyền sở hữu bản đồ.", ErrorCodeEnum.Unauthorized);
 
         var mapRepo = _unitOfWork.Repository<Map>();
         var map = await mapRepo.GetQueryable()

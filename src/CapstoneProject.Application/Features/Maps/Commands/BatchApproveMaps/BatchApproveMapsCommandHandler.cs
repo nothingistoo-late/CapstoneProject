@@ -1,4 +1,4 @@
-using MediatR;
+﻿using MediatR;
 using Microsoft.EntityFrameworkCore;
 using CapstoneProject.Application.Common.Enums;
 using CapstoneProject.Application.Common.Interfaces;
@@ -25,10 +25,10 @@ public class BatchApproveMapsCommandHandler : IRequestHandler<BatchApproveMapsCo
     {
         var (isValid, userIdNullable) = await _currentUserService.IsUserValidAsync();
         if (!isValid || !userIdNullable.HasValue)
-            return Result<BatchMapResultDto>.Failure("Authentication required. Please log in to perform batch approve.", ErrorCodeEnum.Unauthorized);
+            return Result<BatchMapResultDto>.Failure("Yêu cầu xác thực. Vui lòng đăng nhập để thực hiện phê duyệt hàng loạt.", ErrorCodeEnum.Unauthorized);
         var roles = await _currentUserService.GetCurrentRolesAsync();
         if (!roles.Contains(RoleEnum.Admin) && !roles.Contains(RoleEnum.Moderator))
-            return Result<BatchMapResultDto>.Failure("You do not have permission to approve maps. Only Admin or Moderator can perform batch approve.", ErrorCodeEnum.Forbidden);
+            return Result<BatchMapResultDto>.Failure("Bạn không có quyền phê duyệt bản đồ. Chỉ Quản trị viên hoặc Người điều hành mới có thể thực hiện phê duyệt hàng loạt.", ErrorCodeEnum.Forbidden);
 
         var repo = _unitOfWork.Repository<Map>();
         var maps = await repo.GetQueryable()
@@ -54,6 +54,6 @@ public class BatchApproveMapsCommandHandler : IRequestHandler<BatchApproveMapsCo
             NotFoundIds = notFoundIds,
             InvalidStatusIds = invalidStatusIds
         };
-        return Result<BatchMapResultDto>.Success(dto, $"Approved {dto.SuccessCount} map(s).");
+        return Result<BatchMapResultDto>.Success(dto, $"(Các) bản đồ {dto.SuccessCount} đã được phê duyệt.");
     }
 }

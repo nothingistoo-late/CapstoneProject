@@ -24,12 +24,12 @@ public class SelectLearningGoalCommandHandler : IRequestHandler<SelectLearningGo
     {
         var (isValid, userId) = await _currentUserService.IsUserValidAsync();
         if (!isValid || !userId.HasValue)
-            return Result.Failure("Authentication required. Please log in to select a learning goal.", ErrorCodeEnum.Unauthorized);
+            return Result.Failure("Yêu cầu xác thực. Vui lòng đăng nhập để chọn mục tiêu học tập.", ErrorCodeEnum.Unauthorized);
 
         var goalExists = await _unitOfWork.Repository<LearningGoal>().GetQueryable()
             .AnyAsync(g => g.Id == request.LearningGoalId && !g.IsDeleted && g.Status == EntityStatusEnum.Active, cancellationToken);
         if (!goalExists)
-            return Result.Failure("Learning goal not found.", ErrorCodeEnum.NotFound);
+            return Result.Failure("Không tìm thấy mục tiêu học tập.", ErrorCodeEnum.NotFound);
 
         var repo = _unitOfWork.Repository<UserLearningGoal>();
         var existing = await repo.GetQueryable()
@@ -56,7 +56,7 @@ public class SelectLearningGoalCommandHandler : IRequestHandler<SelectLearningGo
         }
 
         await _unitOfWork.SaveChangesAsync(cancellationToken);
-        return Result.Success("Learning goal selected. Your path has been updated.");
+        return Result.Success("Mục tiêu học tập đã chọn. Đường dẫn của bạn đã được cập nhật.");
     }
 }
 

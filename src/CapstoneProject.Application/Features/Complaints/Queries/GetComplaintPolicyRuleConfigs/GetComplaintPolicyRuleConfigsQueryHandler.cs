@@ -1,4 +1,4 @@
-using CapstoneProject.Application.Common.Enums;
+﻿using CapstoneProject.Application.Common.Enums;
 using CapstoneProject.Application.Common.Interfaces;
 using CapstoneProject.Application.Common.Models;
 using CapstoneProject.Domain.Entities;
@@ -23,7 +23,7 @@ public class GetComplaintPolicyRuleConfigsQueryHandler : IRequestHandler<GetComp
     {
         var (isValid, _) = await _currentUserService.IsUserValidAsync();
         if (!isValid)
-            return Result<List<ComplaintPolicyRuleConfigDto>>.Failure("Authentication required.", ErrorCodeEnum.Unauthorized);
+            return Result<List<ComplaintPolicyRuleConfigDto>>.Failure("Yêu cầu xác thực.", ErrorCodeEnum.Unauthorized);
 
         var roles = await _currentUserService.GetCurrentRolesAsync();
         if (!roles.Contains(RoleEnum.Admin) && !roles.Contains(RoleEnum.Moderator))

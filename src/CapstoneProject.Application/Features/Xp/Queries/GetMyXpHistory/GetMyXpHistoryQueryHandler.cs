@@ -1,4 +1,4 @@
-using CapstoneProject.Application.Common.Enums;
+﻿using CapstoneProject.Application.Common.Enums;
 using CapstoneProject.Application.Common.Interfaces;
 using CapstoneProject.Application.Common.Models;
 using CapstoneProject.Domain.Entities;
@@ -22,7 +22,7 @@ public class GetMyXpHistoryQueryHandler : IRequestHandler<GetMyXpHistoryQuery, R
     {
         var (isValid, userIdNullable) = await _currentUserService.IsUserValidAsync();
         if (!isValid || !userIdNullable.HasValue)
-            return Result<PaginationResult<XpHistoryItemDto>>.Failure("Authentication required.", ErrorCodeEnum.Unauthorized);
+            return Result<PaginationResult<XpHistoryItemDto>>.Failure("Yêu cầu xác thực.", ErrorCodeEnum.Unauthorized);
         var userId = userIdNullable.Value;
 
         var query = _unitOfWork.Repository<XpTransaction>().GetQueryable()

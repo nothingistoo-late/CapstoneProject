@@ -1,4 +1,4 @@
-using CapstoneProject.Application.Common.Enums;
+﻿using CapstoneProject.Application.Common.Enums;
 using CapstoneProject.Application.Common.Interfaces;
 using CapstoneProject.Application.Common.Models;
 using CapstoneProject.Application.Commons.DTOs.Maps;
@@ -25,7 +25,7 @@ public class DuplicateMapAsNewCommandHandler : IRequestHandler<DuplicateMapAsNew
     {
         var (isValid, userIdNullable) = await _currentUserService.IsUserValidAsync();
         if (!isValid || !userIdNullable.HasValue)
-            return Result<Guid>.Failure("Authentication required.", ErrorCodeEnum.Unauthorized);
+            return Result<Guid>.Failure("Yêu cầu xác thực.", ErrorCodeEnum.Unauthorized);
         var userId = userIdNullable.Value;
 
         var roles = await _currentUserService.GetCurrentRolesAsync();
@@ -41,21 +41,21 @@ public class DuplicateMapAsNewCommandHandler : IRequestHandler<DuplicateMapAsNew
             .FirstOrDefaultAsync(m => m.Id == command.SourceMapId && !m.IsDeleted, cancellationToken);
 
         if (source == null)
-            return Result<Guid>.Failure($"Map not found with Id: {command.SourceMapId}.", ErrorCodeEnum.NotFound);
+            return Result<Guid>.Failure($"Không tìm thấy bản đồ có Id: {command.SourceMapId}.", ErrorCodeEnum.NotFound);
 
         if (source.CreatedBy != userId && !isAdminOrMod)
-            return Result<Guid>.Failure("You do not have permission to duplicate this map.", ErrorCodeEnum.Forbidden);
+            return Result<Guid>.Failure("Bạn không được phép sao chép bản đồ này.", ErrorCodeEnum.Forbidden);
 
         var details = source.MapDetails.Where(d => !d.IsDeleted).OrderBy(d => d.LevelOrder).ToList();
         if (details.Count == 0)
-            return Result<Guid>.Failure("Source map has no levels to duplicate.", ErrorCodeEnum.ValidationFailed);
+            return Result<Guid>.Failure("Bản đồ nguồn không có cấp độ để sao chép.", ErrorCodeEnum.ValidationFailed);
 
         var req = command.Request ?? new DuplicateMapAsNewRequest();
         var title = string.IsNullOrWhiteSpace(req.Title)
             ? $"{source.Title} (Copy)"
             : req.Title.Trim();
         if (title.Length > 200)
-            return Result<Guid>.Failure("Title must not exceed 200 characters.", ErrorCodeEnum.ValidationFailed);
+            return Result<Guid>.Failure("Tiêu đề không được vượt quá 200 ký tự.", ErrorCodeEnum.ValidationFailed);
 
         var autoPublish = req.AutoPublish;
         var newMap = new Map

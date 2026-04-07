@@ -1,4 +1,4 @@
-using MediatR;
+﻿using MediatR;
 using Microsoft.EntityFrameworkCore;
 using CapstoneProject.Application.Common.Enums;
 using CapstoneProject.Application.Common.Interfaces;
@@ -25,23 +25,23 @@ public class RejectMapCommandHandler : IRequestHandler<RejectMapCommand, Result>
     {
         var (isValid, userIdNullable) = await _currentUserService.IsUserValidAsync();
         if (!isValid || !userIdNullable.HasValue)
-            return Result.Failure("Authentication required. Please log in to perform this action.", ErrorCodeEnum.Unauthorized);
+            return Result.Failure("Yêu cầu xác thực. Vui lòng đăng nhập để thực hiện hành động này.", ErrorCodeEnum.Unauthorized);
 
         var roles = await _currentUserService.GetCurrentRolesAsync();
         if (!roles.Contains(RoleEnum.Admin) && !roles.Contains(RoleEnum.Moderator))
-            return Result.Failure("You do not have permission to reject maps. Only Admin or Moderator can perform this action.", ErrorCodeEnum.Forbidden);
+            return Result.Failure("Bạn không có quyền từ chối bản đồ. Chỉ Quản trị viên hoặc Người điều hành mới có thể thực hiện hành động này.", ErrorCodeEnum.Forbidden);
 
         var mapRepo = _unitOfWork.Repository<Map>();
         var map = await mapRepo.GetQueryable().FirstOrDefaultAsync(m => m.Id == command.MapId && !m.IsDeleted, cancellationToken);
         if (map == null)
-            return Result.Failure($"Map not found with Id: {command.MapId}. The map may have been deleted or does not exist.", ErrorCodeEnum.NotFound);
+            return Result.Failure($"Không tìm thấy bản đồ có Id: {command.MapId}. Bản đồ có thể đã bị xóa hoặc không tồn tại.", ErrorCodeEnum.NotFound);
         if (map.MapStatus != MapStatusEnum.PendingReview)
-            return Result.Failure($"Map cannot be rejected. Expected status: PendingReview. Current status: {map.MapStatus}. Only maps awaiting review can be rejected.", ErrorCodeEnum.InvalidOperation);
+            return Result.Failure($"Bản đồ không thể bị từ chối. Trạng thái dự kiến: Đang chờ xem xét. Trạng thái hiện tại: {map.MapStatus}. Chỉ những bản đồ đang chờ xem xét mới có thể bị từ chối.", ErrorCodeEnum.InvalidOperation);
 
         map.MapStatus = MapStatusEnum.Rejected;
         map.UpdateEntity(userIdNullable!.Value);
         mapRepo.Update(map);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
-        return Result.Success("Map rejected successfully.");
+        return Result.Success("Bản đồ đã bị từ chối thành công.");
     }
 }

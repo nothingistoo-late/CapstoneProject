@@ -29,7 +29,7 @@ public class LoginCommandHandler : IRequestHandler<LoginCommand, Result<AuthResp
             var result = await _identityService.AuthenticateAsync(command.Request);
             if (!result.IsSuccess)
             {
-                return Result<AuthResponse>.Failure(result.Message?? "Invalid credentials", ErrorCodeEnum.InvalidCredentials);
+                return Result<AuthResponse>.Failure(result.Message?? "Thông tin xác thực không hợp lệ", ErrorCodeEnum.InvalidCredentials);
             }
 
             var user = result.Data!;
@@ -49,12 +49,12 @@ public class LoginCommandHandler : IRequestHandler<LoginCommand, Result<AuthResp
                 Roles = roles,
                 ExpiresAt = expiresAt
             };
-            return Result<AuthResponse>.Success(authResponse, "Login successfully!");
+            return Result<AuthResponse>.Success(authResponse, "Đăng nhập thành công!");
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error logging in");
-            return Result<AuthResponse>.Failure("An error occurred while logging in", ErrorCodeEnum.InternalError);
+            return Result<AuthResponse>.Failure("Đã xảy ra lỗi khi đăng nhập", ErrorCodeEnum.InternalError);
         }
     }
 }

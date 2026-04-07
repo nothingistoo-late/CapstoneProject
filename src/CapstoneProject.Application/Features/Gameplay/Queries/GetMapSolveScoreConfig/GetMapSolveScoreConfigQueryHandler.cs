@@ -1,4 +1,4 @@
-using CapstoneProject.Application.Common.Enums;
+﻿using CapstoneProject.Application.Common.Enums;
 using CapstoneProject.Application.Common.Interfaces;
 using CapstoneProject.Application.Common.Models;
 using CapstoneProject.Domain.Entities;
@@ -23,18 +23,18 @@ public class GetMapSolveScoreConfigQueryHandler : IRequestHandler<GetMapSolveSco
     {
         var (isValid, _) = await _currentUserService.IsUserValidAsync();
         if (!isValid)
-            return Result<MapSolveScoreConfigDto>.Failure("Authentication required.", ErrorCodeEnum.Unauthorized);
+            return Result<MapSolveScoreConfigDto>.Failure("Yêu cầu xác thực.", ErrorCodeEnum.Unauthorized);
 
         var roles = await _currentUserService.GetCurrentRolesAsync();
         if (!roles.Contains(RoleEnum.Admin) && !roles.Contains(RoleEnum.Moderator))
-            return Result<MapSolveScoreConfigDto>.Failure("Only Admin/Moderator can view map solve score config.", ErrorCodeEnum.Forbidden);
+            return Result<MapSolveScoreConfigDto>.Failure("Chỉ Quản trị viên/Người điều hành mới có thể xem cấu hình điểm giải quyết bản đồ.", ErrorCodeEnum.Forbidden);
 
         var row = await _unitOfWork.Repository<MapSolveScoreConfig>().GetQueryable()
             .AsNoTracking()
             .FirstOrDefaultAsync(x => x.ConfigKey == MapSolveScoreConfig.DefaultConfigKey, cancellationToken);
 
         if (row == null)
-            return Result<MapSolveScoreConfigDto>.Failure("Map solve score config not found.", ErrorCodeEnum.NotFound);
+            return Result<MapSolveScoreConfigDto>.Failure("Không tìm thấy cấu hình điểm giải quyết bản đồ.", ErrorCodeEnum.NotFound);
 
         return Result<MapSolveScoreConfigDto>.Success(new MapSolveScoreConfigDto
         {

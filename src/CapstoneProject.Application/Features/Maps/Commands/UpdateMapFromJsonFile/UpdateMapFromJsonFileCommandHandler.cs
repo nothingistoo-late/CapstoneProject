@@ -1,4 +1,4 @@
-using MediatR;
+﻿using MediatR;
 using CapstoneProject.Application.Common.Enums;
 using CapstoneProject.Application.Common.Models;
 using CapstoneProject.Application.Commons.DTOs.Maps;
@@ -23,7 +23,7 @@ public class UpdateMapFromJsonFileCommandHandler : IRequestHandler<UpdateMapFrom
         if (parseErr != null)
             return Result.Failure(parseErr, ErrorCodeEnum.ValidationFailed);
 
-        // Không dùng HintsJson nữa: hints được extract trực tiếp từ JSON map detail (mỗi level).
+        // KhÃ´ng dÃ¹ng HintsJson ná»¯a: hints Ä‘Æ°á»£c extract trá»±c tiáº¿p tá»« JSON map detail (má»—i level).
         if (levelsFromFile == null && detailJson.HasValue)
         {
             levelsFromFile = new List<MapLevelInputDto>
@@ -55,10 +55,10 @@ public class UpdateMapFromJsonFileCommandHandler : IRequestHandler<UpdateMapFrom
 
         var tagIds = ParseTagIdsCsv(input.TagIdsCsv);
         if (tagIds == null)
-            return Result.Failure("TagIdsCsv contains invalid Guid(s).", ErrorCodeEnum.ValidationFailed);
+            return Result.Failure("TagIdsCsv chứa (các) Hướng dẫn không hợp lệ.", ErrorCodeEnum.ValidationFailed);
         var learnedTags = ParseTagIdsCsv(input.LearnedTagsCsv);
         if (learnedTags == null)
-            return Result.Failure("LearnedTagsCsv contains invalid Guid(s).", ErrorCodeEnum.ValidationFailed);
+            return Result.Failure("LearnedTagsCsv chứa (các) Hướng dẫn không hợp lệ.", ErrorCodeEnum.ValidationFailed);
 
         var updateRequest = new UpdateMapRequest
         {

@@ -1,4 +1,4 @@
-using CapstoneProject.Application.Common.Enums;
+﻿using CapstoneProject.Application.Common.Enums;
 using CapstoneProject.Application.Common.Interfaces;
 using CapstoneProject.Application.Common.Models;
 using CapstoneProject.Application.Commons.DTOs.Complaints;
@@ -39,17 +39,17 @@ public class SendComplaintMessageAsStaffCommandHandler : IRequestHandler<SendCom
     {
         var (isValid, userIdNullable) = await _currentUserService.IsUserValidAsync();
         if (!isValid || !userIdNullable.HasValue)
-            return Result<ComplaintMessagePostedDto>.Failure("Authentication required. Please log in to send staff message.", ErrorCodeEnum.Unauthorized);
+            return Result<ComplaintMessagePostedDto>.Failure("Yêu cầu xác thực. Vui lòng đăng nhập để gửi tin nhắn cho nhân viên.", ErrorCodeEnum.Unauthorized);
         var userId = userIdNullable.Value;
 
         var roles = await _currentUserService.GetCurrentRolesAsync();
         if (!roles.Contains(RoleEnum.Admin) && !roles.Contains(RoleEnum.Moderator))
-            return Result<ComplaintMessagePostedDto>.Failure("You do not have permission to send staff messages. Only Admin or Moderator can perform this action.", ErrorCodeEnum.Forbidden);
+            return Result<ComplaintMessagePostedDto>.Failure("Bạn không có quyền gửi tin nhắn cho nhân viên. Chỉ Quản trị viên hoặc Người điều hành mới có thể thực hiện hành động này.", ErrorCodeEnum.Forbidden);
 
         if (command.ComplaintId == Guid.Empty)
-            return Result<ComplaintMessagePostedDto>.Failure("ComplaintId is required.", ErrorCodeEnum.ValidationFailed);
+            return Result<ComplaintMessagePostedDto>.Failure("Khiếu nạiId là bắt buộc.", ErrorCodeEnum.ValidationFailed);
         if (string.IsNullOrWhiteSpace(command.Content))
-            return Result<ComplaintMessagePostedDto>.Failure("Message content is required.", ErrorCodeEnum.ValidationFailed);
+            return Result<ComplaintMessagePostedDto>.Failure("Nội dung tin nhắn là bắt buộc.", ErrorCodeEnum.ValidationFailed);
 
         var attachmentValidationError = ValidateAttachments(command.Attachments);
         if (!string.IsNullOrWhiteSpace(attachmentValidationError))
@@ -58,7 +58,7 @@ public class SendComplaintMessageAsStaffCommandHandler : IRequestHandler<SendCom
         var complaint = await _unitOfWork.Repository<Complaint>().GetQueryable()
             .FirstOrDefaultAsync(c => c.Id == command.ComplaintId && !c.IsDeleted, cancellationToken);
         if (complaint == null)
-            return Result<ComplaintMessagePostedDto>.Failure($"Complaint not found with Id: {command.ComplaintId}.", ErrorCodeEnum.NotFound);
+            return Result<ComplaintMessagePostedDto>.Failure($"Không tìm thấy khiếu nại với Id: {command.ComplaintId}.", ErrorCodeEnum.NotFound);
 
         var message = new ComplaintMessage
         {
@@ -87,7 +87,7 @@ public class SendComplaintMessageAsStaffCommandHandler : IRequestHandler<SendCom
                 if (string.IsNullOrWhiteSpace(url))
                 {
                     await CleanupUploadedFilesAsync(uploadedUrls, cancellationToken);
-                    return Result<ComplaintMessagePostedDto>.Failure("Failed to upload one or more attachments.", ErrorCodeEnum.FileUploadFailed);
+                    return Result<ComplaintMessagePostedDto>.Failure("Không thể tải lên một hoặc nhiều tệp đính kèm.", ErrorCodeEnum.FileUploadFailed);
                 }
 
                 uploadedUrls.Add(url);
@@ -131,7 +131,7 @@ public class SendComplaintMessageAsStaffCommandHandler : IRequestHandler<SendCom
                 .ToList()
         };
 
-        return Result<ComplaintMessagePostedDto>.Success(response, "Message sent.");
+        return Result<ComplaintMessagePostedDto>.Success(response, "Đã gửi tin nhắn.");
     }
 
     private static string? ValidateAttachments(IReadOnlyCollection<IFormFile>? files)

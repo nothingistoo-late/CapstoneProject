@@ -37,27 +37,27 @@ public class UpdateMessageCommandHandler : IRequestHandler<UpdateMessageCommand,
             var userIdString = _currentUserService.UserId;
             if (string.IsNullOrEmpty(userIdString) || !Guid.TryParse(userIdString, out var currentUserId))
             {
-                return Result<MessageResponse>.Failure("User not authenticated", ErrorCodeEnum.Unauthorized);
+                return Result<MessageResponse>.Failure("Người dùng chưa được xác thực", ErrorCodeEnum.Unauthorized);
             }
 
             if (command == null)
             {
-                return Result<MessageResponse>.Failure("Command cannot be null", ErrorCodeEnum.InvalidInput);
+                return Result<MessageResponse>.Failure("Lệnh không thể rỗng", ErrorCodeEnum.InvalidInput);
             }
 
             if (command.MessageId == Guid.Empty)
             {
-                return Result<MessageResponse>.Failure("Message ID is required", ErrorCodeEnum.InvalidInput);
+                return Result<MessageResponse>.Failure("ID tin nhắn là bắt buộc", ErrorCodeEnum.InvalidInput);
             }
 
             if (string.IsNullOrWhiteSpace(command.Content))
             {
-                return Result<MessageResponse>.Failure("Message content cannot be empty", ErrorCodeEnum.InvalidInput);
+                return Result<MessageResponse>.Failure("Nội dung tin nhắn không được để trống", ErrorCodeEnum.InvalidInput);
             }
 
             if (command.Content.Length > 5000)
             {
-                return Result<MessageResponse>.Failure("Message content must not exceed 5000 characters", ErrorCodeEnum.InvalidInput);
+                return Result<MessageResponse>.Failure("Nội dung tin nhắn không được vượt quá 5000 ký tự", ErrorCodeEnum.InvalidInput);
             }
 
             var messageRepo = _unitOfWork.Repository<Message>();
@@ -71,17 +71,17 @@ public class UpdateMessageCommandHandler : IRequestHandler<UpdateMessageCommand,
 
             if (message == null)
             {
-                return Result<MessageResponse>.Failure("Message not found", ErrorCodeEnum.NotFound);
+                return Result<MessageResponse>.Failure("Không tìm thấy tin nhắn", ErrorCodeEnum.NotFound);
             }
 
             if (message.SenderId != currentUserId)
             {
-                return Result<MessageResponse>.Failure("You can only edit your own messages", ErrorCodeEnum.Forbidden);
+                return Result<MessageResponse>.Failure("Bạn chỉ có thể chỉnh sửa tin nhắn của riêng bạn", ErrorCodeEnum.Forbidden);
             }
 
             if (message.IsDeleted)
             {
-                return Result<MessageResponse>.Failure("Cannot edit deleted message", ErrorCodeEnum.InvalidOperation);
+                return Result<MessageResponse>.Failure("Không thể chỉnh sửa tin nhắn đã xóa", ErrorCodeEnum.InvalidOperation);
             }
 
             // Check if conversation is closed
@@ -89,7 +89,7 @@ public class UpdateMessageCommandHandler : IRequestHandler<UpdateMessageCommand,
             var conversation = await conversationRepo.GetFirstOrDefaultAsync(c => c.Id == message.ChatRoomId && !c.IsDeleted);
             if (conversation != null && !conversation.CanSendMessages())
             {
-                return Result<MessageResponse>.Failure("Cannot edit messages in a closed conversation", ErrorCodeEnum.InvalidOperation);
+                return Result<MessageResponse>.Failure("Không thể chỉnh sửa tin nhắn trong cuộc trò chuyện đã đóng", ErrorCodeEnum.InvalidOperation);
             }
 
             message.Content = command.Content.Trim();
@@ -125,12 +125,12 @@ public class UpdateMessageCommandHandler : IRequestHandler<UpdateMessageCommand,
         catch (DbUpdateException ex)
         {
             _logger.LogError(ex, "Database error while updating message {MessageId}", command?.MessageId);
-            return Result<MessageResponse>.Failure("Failed to update message due to database error", ErrorCodeEnum.DatabaseError);
+            return Result<MessageResponse>.Failure("Không cập nhật được tin nhắn do lỗi cơ sở dữ liệu", ErrorCodeEnum.DatabaseError);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Unexpected error while updating message {MessageId}", command?.MessageId);
-            return Result<MessageResponse>.Failure("An unexpected error occurred while updating the message", ErrorCodeEnum.InternalError);
+            return Result<MessageResponse>.Failure("Đã xảy ra lỗi không mong muốn khi cập nhật tin nhắn", ErrorCodeEnum.InternalError);
         }
     }
 }

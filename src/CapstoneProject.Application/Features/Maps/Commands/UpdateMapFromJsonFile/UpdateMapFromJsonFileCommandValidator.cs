@@ -1,4 +1,4 @@
-using FluentValidation;
+﻿using FluentValidation;
 
 namespace CapstoneProject.Application.Features.Maps.Commands.UpdateMapFromJsonFile;
 
@@ -16,15 +16,15 @@ public class UpdateMapFromJsonFileCommandValidator : AbstractValidator<UpdateMap
         {
             RuleFor(x => x.Input.Title)
                 .NotEmpty().WithMessage("Title is required.")
-                .MaximumLength(200).WithMessage("Title must not exceed 200 characters.");
+                .MaximumLength(200).WithMessage("Tiêu đề không được vượt quá 200 ký tự.");
             RuleFor(x => x.Input.Difficulty)
                 .InclusiveBetween(1, 5)
                 .WithMessage("Difficulty must be between 1 and 5.");
             RuleFor(x => x.Input.TagIdsCsv)
-                .Must(BeValidGuidCsv).WithMessage("TagIdsCsv contains invalid Guid(s).")
+                .Must(BeValidGuidCsv).WithMessage("TagIdsCsv chứa (các) Hướng dẫn không hợp lệ.")
                 .Must(NotContainDuplicatesInGuidCsv).WithMessage("TagIdsCsv must not contain duplicates.");
             RuleFor(x => x.Input.LearnedTagsCsv)
-                .Must(BeValidGuidCsv).WithMessage("LearnedTagsCsv contains invalid Guid(s).")
+                .Must(BeValidGuidCsv).WithMessage("LearnedTagsCsv chứa (các) Hướng dẫn không hợp lệ.")
                 .Must(NotContainDuplicatesInGuidCsv).WithMessage("LearnedTagsCsv must not contain duplicates.");
         });
     }

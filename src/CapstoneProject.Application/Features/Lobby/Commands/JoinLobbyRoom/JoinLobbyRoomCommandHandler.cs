@@ -1,4 +1,4 @@
-using MediatR;
+﻿using MediatR;
 using CapstoneProject.Application.Common.Enums;
 using CapstoneProject.Application.Common.Interfaces;
 using CapstoneProject.Application.Common.Models;
@@ -23,7 +23,7 @@ public class JoinLobbyRoomCommandHandler : IRequestHandler<JoinLobbyRoomCommand,
     {
         var (isValid, userIdNullable) = await _currentUserService.IsUserValidAsync();
         if (!isValid || !userIdNullable.HasValue)
-            return Result<JoinLobbyRoomResponse>.Failure("Authentication required.", ErrorCodeEnum.Unauthorized);
+            return Result<JoinLobbyRoomResponse>.Failure("Yêu cầu xác thực.", ErrorCodeEnum.Unauthorized);
 
         var request = command.Request;
         LobbyRoom? room;
@@ -31,22 +31,22 @@ public class JoinLobbyRoomCommandHandler : IRequestHandler<JoinLobbyRoomCommand,
         {
             room = _roomManager.GetRoomById(request.RoomId.Value);
             if (room == null)
-                return Result<JoinLobbyRoomResponse>.Failure("Room not found.", ErrorCodeEnum.NotFound);
+                return Result<JoinLobbyRoomResponse>.Failure("Không tìm thấy phòng.", ErrorCodeEnum.NotFound);
         }
         else if (!string.IsNullOrWhiteSpace(request.RoomCode))
         {
             room = _roomManager.GetRoomByCode(request.RoomCode.Trim());
             if (room == null)
-                return Result<JoinLobbyRoomResponse>.Failure("Room not found.", ErrorCodeEnum.NotFound);
+                return Result<JoinLobbyRoomResponse>.Failure("Không tìm thấy phòng.", ErrorCodeEnum.NotFound);
         }
         else
-            return Result<JoinLobbyRoomResponse>.Failure("Provide RoomId or RoomCode.", ErrorCodeEnum.ValidationFailed);
+            return Result<JoinLobbyRoomResponse>.Failure("Cung cấp RoomId hoặc RoomCode.", ErrorCodeEnum.ValidationFailed);
 
         var (success, errorMessage, updatedRoom) = _roomManager.JoinRoom(room.RoomId, userIdNullable.Value, "", request.RoomCode);
         if (!success || updatedRoom == null)
         {
             var code = errorMessage?.Contains("not found", StringComparison.OrdinalIgnoreCase) == true ? ErrorCodeEnum.NotFound : ErrorCodeEnum.ValidationFailed;
-            return Result<JoinLobbyRoomResponse>.Failure(errorMessage ?? "Could not join.", code);
+            return Result<JoinLobbyRoomResponse>.Failure(errorMessage ?? "Không thể tham gia.", code);
         }
 
         return Result<JoinLobbyRoomResponse>.Success(new JoinLobbyRoomResponse
@@ -55,6 +55,6 @@ public class JoinLobbyRoomCommandHandler : IRequestHandler<JoinLobbyRoomCommand,
             RoomCode = updatedRoom.RoomCode,
             CurrentPlayerCount = updatedRoom.PlayerCount,
             MaxPlayers = updatedRoom.MaxPlayers
-        }, "Joined room.");
+        }, "Đã tham gia phòng.");
     }
 }

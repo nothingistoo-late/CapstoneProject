@@ -33,17 +33,17 @@ public class DeleteMessageCommandHandler : IRequestHandler<DeleteMessageCommand,
             var userIdString = _currentUserService.UserId;
             if (string.IsNullOrEmpty(userIdString) || !Guid.TryParse(userIdString, out var currentUserId))
             {
-                return Result<bool>.Failure("User not authenticated", ErrorCodeEnum.Unauthorized);
+                return Result<bool>.Failure("Người dùng chưa được xác thực", ErrorCodeEnum.Unauthorized);
             }
 
             if (command == null)
             {
-                return Result<bool>.Failure("Command cannot be null", ErrorCodeEnum.InvalidInput);
+                return Result<bool>.Failure("Lệnh không thể rỗng", ErrorCodeEnum.InvalidInput);
             }
 
             if (command.MessageId == Guid.Empty)
             {
-                return Result<bool>.Failure("Message ID is required", ErrorCodeEnum.InvalidInput);
+                return Result<bool>.Failure("ID tin nhắn là bắt buộc", ErrorCodeEnum.InvalidInput);
             }
 
             var messageRepo = _unitOfWork.Repository<Message>();
@@ -54,12 +54,12 @@ public class DeleteMessageCommandHandler : IRequestHandler<DeleteMessageCommand,
 
             if (message == null)
             {
-                return Result<bool>.Failure("Message not found or already deleted", ErrorCodeEnum.NotFound);
+                return Result<bool>.Failure("Không tìm thấy tin nhắn hoặc đã bị xóa", ErrorCodeEnum.NotFound);
             }
 
             if (message.SenderId != currentUserId)
             {
-                return Result<bool>.Failure("You can only delete your own messages", ErrorCodeEnum.Forbidden);
+                return Result<bool>.Failure("Bạn chỉ có thể xóa tin nhắn của riêng bạn", ErrorCodeEnum.Forbidden);
             }
 
             message.IsDeleted = true;
@@ -78,12 +78,12 @@ public class DeleteMessageCommandHandler : IRequestHandler<DeleteMessageCommand,
         catch (DbUpdateException ex)
         {
             _logger.LogError(ex, "Database error while deleting message {MessageId}", command?.MessageId);
-            return Result<bool>.Failure("Failed to delete message due to database error", ErrorCodeEnum.DatabaseError);
+            return Result<bool>.Failure("Không xóa được tin nhắn do lỗi cơ sở dữ liệu", ErrorCodeEnum.DatabaseError);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Unexpected error while deleting message {MessageId}", command?.MessageId);
-            return Result<bool>.Failure("An unexpected error occurred while deleting the message", ErrorCodeEnum.InternalError);
+            return Result<bool>.Failure("Đã xảy ra lỗi không mong muốn khi xóa tin nhắn", ErrorCodeEnum.InternalError);
         }
     }
 }

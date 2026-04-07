@@ -1,4 +1,4 @@
-using System.Transactions;
+﻿using System.Transactions;
 using MediatR;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
@@ -43,7 +43,7 @@ public class QuickLoginCommandHandler : IRequestHandler<QuickLoginCommand, Resul
             if (!quickLoginEnabled)
             {
                 _logger.LogInformation("Quick login attempted but feature is disabled");
-                return Result<AuthResponse>.Failure("Quick login is temporarily disabled.", ErrorCodeEnum.Forbidden);
+                return Result<AuthResponse>.Failure("Đăng nhập nhanh tạm thời bị vô hiệu hóa.", ErrorCodeEnum.Forbidden);
             }
 
             // Get quick login configuration
@@ -53,14 +53,14 @@ public class QuickLoginCommandHandler : IRequestHandler<QuickLoginCommand, Resul
             if (string.IsNullOrWhiteSpace(configuredQuickCode))
             {
                 _logger.LogWarning("Quick login is not configured properly");
-                return Result<AuthResponse>.Failure("Quick login is not available", ErrorCodeEnum.InternalError);
+                return Result<AuthResponse>.Failure("Đăng nhập nhanh không có sẵn", ErrorCodeEnum.InternalError);
             }
 
             // Validate quick code
             if (command.Request.QuickCode != configuredQuickCode)
             {
                 _logger.LogWarning("Invalid quick code attempted: {QuickCode}", command.Request.QuickCode);
-                return Result<AuthResponse>.Failure("Invalid quick code", ErrorCodeEnum.InvalidCredentials);
+                return Result<AuthResponse>.Failure("Mã nhanh không hợp lệ", ErrorCodeEnum.InvalidCredentials);
             }
 
             // Generate random user info for testing
@@ -101,7 +101,7 @@ public class QuickLoginCommandHandler : IRequestHandler<QuickLoginCommand, Resul
                 {
                     var errors = createResult.Errors.Select(e => e.Description).ToList();
                     _logger.LogError("Failed to create QuickLogin user: {Errors}", string.Join(", ", errors));
-                    return Result<AuthResponse>.Failure("Failed to create user", ErrorCodeEnum.ValidationFailed, errors);
+                    return Result<AuthResponse>.Failure("Không tạo được người dùng", ErrorCodeEnum.ValidationFailed, errors);
                 }
 
                 // Add Learner role
@@ -110,7 +110,7 @@ public class QuickLoginCommandHandler : IRequestHandler<QuickLoginCommand, Resul
                 {
                     var errors = roleResult.Errors.Select(e => e.Description).ToList();
                     _logger.LogError("Failed to add QuickLogin user to role: {Errors}", string.Join(", ", errors));
-                    return Result<AuthResponse>.Failure("Failed to add user to role", ErrorCodeEnum.ValidationFailed, errors);
+                    return Result<AuthResponse>.Failure("Không thể thêm người dùng vào vai trò", ErrorCodeEnum.ValidationFailed, errors);
                 }
 
                 await _unitOfWork.SaveChangesAsync(cancellationToken);
@@ -128,12 +128,12 @@ public class QuickLoginCommandHandler : IRequestHandler<QuickLoginCommand, Resul
             };
 
             _logger.LogInformation("Quick login successful - User created in database: {Email} (Name: {Name}, UserId: {UserId})", randomEmail, $"{randomFirstName} {randomLastName}", user.Id);
-            return Result<AuthResponse>.Success(authResponse, "Quick login successful!");
+            return Result<AuthResponse>.Success(authResponse, "Đăng nhập nhanh thành công!");
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error in quick login");
-            return Result<AuthResponse>.Failure("An error occurred while quick logging in", ErrorCodeEnum.InternalError);
+            return Result<AuthResponse>.Failure("Đã xảy ra lỗi khi đăng nhập nhanh", ErrorCodeEnum.InternalError);
         }
     }
 }

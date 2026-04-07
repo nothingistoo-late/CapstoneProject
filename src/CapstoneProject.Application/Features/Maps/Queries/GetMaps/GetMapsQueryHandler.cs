@@ -1,4 +1,4 @@
-using MediatR;
+﻿using MediatR;
 using Microsoft.EntityFrameworkCore;
 using CapstoneProject.Application.Common.Enums;
 using CapstoneProject.Application.Common.Interfaces;
@@ -110,7 +110,7 @@ public class GetMapsQueryHandler : IRequestHandler<GetMapsQuery, Result<Paginati
         };
         }).ToList();
 
-        var result = PaginationResult<MapListItemDto>.Success(list, pageNumber, pageSize, total, "Retrieved successfully");
+        var result = PaginationResult<MapListItemDto>.Success(list, pageNumber, pageSize, total, "Đã truy xuất thành công");
         return Result<PaginationResult<MapListItemDto>>.Success(result);
     }
 }

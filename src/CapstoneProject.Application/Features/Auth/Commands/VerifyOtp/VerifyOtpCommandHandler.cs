@@ -53,14 +53,14 @@ public class VerifyOtpCommandHandler : IRequestHandler<VerifyOtpCommand, Result<
             var userData = otpResult.UserData;
             if (userData == null)
             {
-                return Result<AuthResponse>.Failure("User data is missing after OTP verification.", ErrorCodeEnum.NotFound);
+                return Result<AuthResponse>.Failure("Dữ liệu người dùng bị thiếu sau khi xác minh OTP.", ErrorCodeEnum.NotFound);
             }
 
             var result = command.Request.OtpType switch
             {
                 OtpTypeEnum.Registration => await HandleVerfiyOtpForRegister(command, cancellationToken, userData),
                 OtpTypeEnum.PasswordReset => await HandleVerfiyOtpForResetPassword(command, cancellationToken, userData),
-                _ => Result<AuthResponse>.Failure("Invalid OTP type.", ErrorCodeEnum.ValidationFailed)
+                _ => Result<AuthResponse>.Failure("Loại OTP không hợp lệ.", ErrorCodeEnum.ValidationFailed)
             };
             // remove OTP from cache and clear rate limiting tracker (no need to wait for the task to complete)
             if (result.IsSuccess)
@@ -76,7 +76,7 @@ public class VerifyOtpCommandHandler : IRequestHandler<VerifyOtpCommand, Result<
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error verifying OTP for {Contact}", command.Request.Contact);
-            return Result<AuthResponse>.Failure("An error occurred while verifying the OTP.", ErrorCodeEnum.InternalError);
+            return Result<AuthResponse>.Failure("Đã xảy ra lỗi khi xác minh OTP.", ErrorCodeEnum.InternalError);
         }
     }
 
@@ -102,14 +102,14 @@ public class VerifyOtpCommandHandler : IRequestHandler<VerifyOtpCommand, Result<
             if (!createResult.Succeeded)
             {
                 var errors = createResult.Errors.Select(e => e.Description).ToList();
-                return Result<AuthResponse>.Failure("Failed to create user", ErrorCodeEnum.ValidationFailed, errors);
+                return Result<AuthResponse>.Failure("Không tạo được người dùng", ErrorCodeEnum.ValidationFailed, errors);
             }
 
             var roleResult = await _identityService.AddUserToRoleAsync(user, RoleEnum.Learner.ToString());
             if (!roleResult.Succeeded)
             {
                 var errors = roleResult.Errors.Select(e => e.Description).ToList();
-                return Result<AuthResponse>.Failure("Failed to add user to role", ErrorCodeEnum.ValidationFailed, errors);
+                return Result<AuthResponse>.Failure("Không thể thêm người dùng vào vai trò", ErrorCodeEnum.ValidationFailed, errors);
             }
 
             await _unitOfWork.SaveChangesAsync(cancellationToken);
@@ -136,7 +136,7 @@ public class VerifyOtpCommandHandler : IRequestHandler<VerifyOtpCommand, Result<
             ExpiresAt = expiresAt
         };
 
-        return Result<AuthResponse>.Success(authResponse, "User registered successfully.");
+        return Result<AuthResponse>.Success(authResponse, "Người dùng đã đăng ký thành công.");
     }
 
     private async Task<Result<AuthResponse>> HandleVerfiyOtpForResetPassword(VerifyOtpCommand command, CancellationToken cancellationToken, object userData)
@@ -160,10 +160,10 @@ public class VerifyOtpCommandHandler : IRequestHandler<VerifyOtpCommand, Result<
         if (!updateResult.Succeeded)
         {
             var errors = updateResult.Errors.Select(e => e.Description).ToList();
-            return Result<AuthResponse>.Failure("Failed to update user", ErrorCodeEnum.InternalError, errors);
+            return Result<AuthResponse>.Failure("Không thể cập nhật người dùng", ErrorCodeEnum.InternalError, errors);
         }
 
-        return Result<AuthResponse>.Success(null!, "Password reset successfully.");
+        return Result<AuthResponse>.Success(null!, "Đặt lại mật khẩu thành công.");
     }
 }
 

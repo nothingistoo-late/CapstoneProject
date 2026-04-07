@@ -1,4 +1,4 @@
-using MediatR;
+﻿using MediatR;
 using Microsoft.EntityFrameworkCore;
 using CapstoneProject.Application.Common.Enums;
 using CapstoneProject.Application.Common.Interfaces;
@@ -25,22 +25,22 @@ public class SubmitMapForReviewCommandHandler : IRequestHandler<SubmitMapForRevi
     {
         var (isValid, userIdNullable) = await _currentUserService.IsUserValidAsync();
         if (!isValid || !userIdNullable.HasValue)
-            return Result.Failure("Authentication required. Please log in to submit a map for review.", ErrorCodeEnum.Unauthorized);
+            return Result.Failure("Yêu cầu xác thực. Vui lòng đăng nhập để gửi bản đồ để xem xét.", ErrorCodeEnum.Unauthorized);
         var userId = userIdNullable.Value;
 
         var mapRepo = _unitOfWork.Repository<Map>();
         var map = await mapRepo.GetQueryable().FirstOrDefaultAsync(m => m.Id == command.MapId && !m.IsDeleted, cancellationToken);
         if (map == null)
-            return Result.Failure($"Map not found with Id: {command.MapId}. The map may have been deleted or does not exist.", ErrorCodeEnum.NotFound);
+            return Result.Failure($"Không tìm thấy bản đồ có Id: {command.MapId}. Bản đồ có thể đã bị xóa hoặc không tồn tại.", ErrorCodeEnum.NotFound);
         if (map.CreatedBy != userId)
-            return Result.Failure("You can only submit your own maps for review. This map was created by another user.", ErrorCodeEnum.Forbidden);
+            return Result.Failure("Bạn chỉ có thể gửi bản đồ của riêng mình để xem xét. Bản đồ này được tạo bởi một người dùng khác.", ErrorCodeEnum.Forbidden);
         if (map.MapStatus != MapStatusEnum.Draft)
-            return Result.Failure($"Map cannot be submitted for review. Expected status: Draft. Current status: {map.MapStatus}. Only draft maps can be submitted.", ErrorCodeEnum.InvalidOperation);
+            return Result.Failure($"Bản đồ không thể được gửi để xem xét. Trạng thái dự kiến: Bản nháp. Trạng thái hiện tại: {map.MapStatus}. Chỉ có thể gửi bản đồ dự thảo.", ErrorCodeEnum.InvalidOperation);
 
         map.MapStatus = MapStatusEnum.PendingReview;
         map.UpdateEntity(userId);
         mapRepo.Update(map);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
-        return Result.Success("Map submitted for review successfully.");
+        return Result.Success("Bản đồ đã được gửi để xem xét thành công.");
     }
 }

@@ -1,4 +1,4 @@
-using CapstoneProject.Application.Common.Enums;
+﻿using CapstoneProject.Application.Common.Enums;
 using CapstoneProject.Application.Common.Interfaces;
 using CapstoneProject.Application.Common.Models;
 using CapstoneProject.Application.Features.Recommendations.DTOs;
@@ -22,10 +22,10 @@ public class GetRecommendationsQueryHandler : IRequestHandler<GetRecommendations
 
     public async Task<Result<RecommendationResultDto>> Handle(GetRecommendationsQuery request, CancellationToken cancellationToken)
     {
-        // Controller đã chặn bằng AuthorizeRoles, nhưng vẫn validate lại để trả ErrorCode consistent.
+        // Controller Ä‘Ã£ cháº·n báº±ng AuthorizeRoles, nhÆ°ng váº«n validate láº¡i Ä‘á»ƒ tráº£ ErrorCode consistent.
         var (isValid, userId) = await _currentUserService.IsUserValidAsync();
         if (!isValid || !userId.HasValue)
-            return Result<RecommendationResultDto>.Failure("Authentication required.", ErrorCodeEnum.Unauthorized);
+            return Result<RecommendationResultDto>.Failure("Yêu cầu xác thực.", ErrorCodeEnum.Unauthorized);
 
         var userIdValue = userId.Value;
 
@@ -38,7 +38,7 @@ public class GetRecommendationsQueryHandler : IRequestHandler<GetRecommendations
             .FirstOrDefaultAsync(cancellationToken);
 
         if (userGoal == Guid.Empty)
-            return Result<RecommendationResultDto>.Success(new RecommendationResultDto(), "Retrieved successfully");
+            return Result<RecommendationResultDto>.Success(new RecommendationResultDto(), "Đã truy xuất thành công");
 
         var learningGoalId = userGoal;
 
@@ -70,7 +70,7 @@ public class GetRecommendationsQueryHandler : IRequestHandler<GetRecommendations
             .ToList();
 
         if (mapIds.Count == 0 || conceptItems.Count == 0)
-            return Result<RecommendationResultDto>.Success(new RecommendationResultDto(), "Retrieved successfully");
+            return Result<RecommendationResultDto>.Success(new RecommendationResultDto(), "Đã truy xuất thành công");
 
         var firstConceptId = conceptItems.First().ConceptId;
 
@@ -137,7 +137,7 @@ public class GetRecommendationsQueryHandler : IRequestHandler<GetRecommendations
             .ToListAsync(cancellationToken);
         var mapById = maps.ToDictionary(m => m.Id, m => m);
         if (mapById.Count == 0)
-            return Result<RecommendationResultDto>.Success(new RecommendationResultDto(), "Retrieved successfully");
+            return Result<RecommendationResultDto>.Success(new RecommendationResultDto(), "Đã truy xuất thành công");
 
         // Preload user play history for these maps (single batch)
         var nowUtc = CapstoneProject.Domain.Common.VietnamDateTime.DbNow;
@@ -326,7 +326,7 @@ public class GetRecommendationsQueryHandler : IRequestHandler<GetRecommendations
             ReviewMaps = reviewMaps,
             SuggestedPracticeMaps = suggestedPracticeList,
             NextConcept = nextConceptDto
-        }, "Retrieved successfully");
+        }, "Đã truy xuất thành công");
     }
 }
 

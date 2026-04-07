@@ -1,4 +1,4 @@
-using CapstoneProject.Application.Common.Enums;
+﻿using CapstoneProject.Application.Common.Enums;
 using CapstoneProject.Application.Common.Interfaces;
 using CapstoneProject.Application.Common.Models;
 using CapstoneProject.Application.Commons.Models.Xp;
@@ -22,11 +22,11 @@ public class GrantXpToUserCommandHandler : IRequestHandler<GrantXpToUserCommand,
     {
         var (isValid, _) = await _currentUserService.IsUserValidAsync();
         if (!isValid)
-            return Result<XpGrantResult>.Failure("Authentication required.", ErrorCodeEnum.Unauthorized);
+            return Result<XpGrantResult>.Failure("Yêu cầu xác thực.", ErrorCodeEnum.Unauthorized);
 
         var roles = await _currentUserService.GetCurrentRolesAsync();
         if (!roles.Contains(RoleEnum.Admin) && !roles.Contains(RoleEnum.Moderator))
-            return Result<XpGrantResult>.Failure("Only Admin/Moderator can grant XP.", ErrorCodeEnum.Forbidden);
+            return Result<XpGrantResult>.Failure("Chỉ Quản trị viên/Người điều hành mới có thể cấp XP.", ErrorCodeEnum.Forbidden);
 
         var input = new XpGrantInput
         {

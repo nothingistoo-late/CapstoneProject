@@ -1,4 +1,4 @@
-using MediatR;
+﻿using MediatR;
 using Microsoft.EntityFrameworkCore;
 using CapstoneProject.Application.Common.Enums;
 using CapstoneProject.Application.Common.Interfaces;
@@ -25,22 +25,22 @@ public class UpdateTagCommandHandler : IRequestHandler<UpdateTagCommand, Result>
     {
         var (isValid, userIdNullable) = await _currentUserService.IsUserValidAsync();
         if (!isValid || !userIdNullable.HasValue)
-            return Result.Failure("Authentication required. Please log in to update a tag.", ErrorCodeEnum.Unauthorized);
+            return Result.Failure("Yêu cầu xác thực. Vui lòng đăng nhập để cập nhật thẻ.", ErrorCodeEnum.Unauthorized);
         var roles = await _currentUserService.GetCurrentRolesAsync();
         if (!roles.Contains(RoleEnum.Admin) && !roles.Contains(RoleEnum.Moderator))
-            return Result.Failure("You do not have permission to update tags. Only Admin or Moderator can perform this action.", ErrorCodeEnum.Forbidden);
+            return Result.Failure("Bạn không có quyền cập nhật thẻ. Chỉ Quản trị viên hoặc Người điều hành mới có thể thực hiện hành động này.", ErrorCodeEnum.Forbidden);
         if (string.IsNullOrWhiteSpace(command.Name))
-            return Result.Failure("Tag name is required and cannot be empty.", ErrorCodeEnum.ValidationFailed);
+            return Result.Failure("Tên thẻ là bắt buộc và không được để trống.", ErrorCodeEnum.ValidationFailed);
 
         var tag = await _unitOfWork.Repository<Tag>().GetQueryable()
             .FirstOrDefaultAsync(t => t.Id == command.TagId && !t.IsDeleted, cancellationToken);
         if (tag == null)
-            return Result.Failure($"Tag not found with Id: {command.TagId}. The tag may have been deleted or does not exist.", ErrorCodeEnum.NotFound);
+            return Result.Failure($"Không tìm thấy thẻ có Id: {command.TagId}. Thẻ có thể đã bị xóa hoặc không tồn tại.", ErrorCodeEnum.NotFound);
 
         tag.Name = command.Name.Trim();
         tag.UpdateEntity(userIdNullable!.Value);
         _unitOfWork.Repository<Tag>().Update(tag);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
-        return Result.Success("Tag updated.");
+        return Result.Success("Đã cập nhật thẻ.");
     }
 }

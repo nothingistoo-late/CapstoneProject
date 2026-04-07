@@ -1,4 +1,4 @@
-using MediatR;
+﻿using MediatR;
 using Microsoft.EntityFrameworkCore;
 using CapstoneProject.Application.Common.Interfaces;
 using CapstoneProject.Application.Common.Models;
@@ -85,7 +85,7 @@ public class GetAllMapsForAdminQueryHandler : IRequestHandler<GetAllMapsForAdmin
         };
         }).ToList();
 
-        var result = PaginationResult<MapListItemDto>.Success(list, pageNumber, pageSize, total, "Retrieved successfully");
+        var result = PaginationResult<MapListItemDto>.Success(list, pageNumber, pageSize, total, "Đã truy xuất thành công");
         return Result<PaginationResult<MapListItemDto>>.Success(result);
     }
 }

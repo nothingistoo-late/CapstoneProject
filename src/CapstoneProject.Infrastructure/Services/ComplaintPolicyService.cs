@@ -1,4 +1,4 @@
-using System.Text.Json;
+﻿using System.Text.Json;
 using CapstoneProject.Application.Common.Interfaces;
 using CapstoneProject.Application.Commons.Models.Complaints;
 using CapstoneProject.Domain.Common;
@@ -26,7 +26,7 @@ public class ComplaintPolicyService : IComplaintPolicyService
     {
         var categoryKey = (input.CategoryKey ?? string.Empty).Trim();
         if (string.IsNullOrWhiteSpace(categoryKey))
-            return Fail("CategoryKey is required.");
+            return Fail("CategoryKey là bắt buộc.");
 
         var category = await _unitOfWork.Repository<ComplaintCategoryCatalog>().GetQueryable()
             .AsNoTracking()

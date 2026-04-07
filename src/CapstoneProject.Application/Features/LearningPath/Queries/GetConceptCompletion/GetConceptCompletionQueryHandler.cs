@@ -1,4 +1,4 @@
-using MediatR;
+﻿using MediatR;
 using Microsoft.EntityFrameworkCore;
 using CapstoneProject.Application.Common.Enums;
 using CapstoneProject.Application.Common.Interfaces;
@@ -22,7 +22,7 @@ public class GetConceptCompletionQueryHandler : IRequestHandler<GetConceptComple
     {
         var (isValid, userId) = await _currentUserService.IsUserValidAsync();
         if (!isValid || !userId.HasValue)
-            return Result<ConceptCompletionDto>.Failure("Authentication required.", ErrorCodeEnum.Unauthorized);
+            return Result<ConceptCompletionDto>.Failure("Yêu cầu xác thực.", ErrorCodeEnum.Unauthorized);
 
         var progress = await _unitOfWork.Repository<UserConceptProgress>().GetQueryable()
             .Where(p => p.UserId == userId.Value && p.ConceptId == request.ConceptId && !p.IsDeleted)

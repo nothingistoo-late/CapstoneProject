@@ -1,4 +1,4 @@
-using MediatR;
+﻿using MediatR;
 using CapstoneProject.Application.Common.Enums;
 using CapstoneProject.Application.Common.Interfaces;
 using CapstoneProject.Application.Common.Models;
@@ -22,10 +22,10 @@ public class CreditOrbitCoinCommandHandler : IRequestHandler<CreditOrbitCoinComm
     {
         var (isValid, adminId) = await _currentUserService.IsUserValidAsync();
         if (!isValid || !adminId.HasValue)
-            return Result.Failure("Authentication required.", ErrorCodeEnum.Unauthorized);
+            return Result.Failure("Yêu cầu xác thực.", ErrorCodeEnum.Unauthorized);
 
         if (request.Amount <= 0)
-            return Result.Failure("Amount must be positive.", ErrorCodeEnum.ValidationFailed);
+            return Result.Failure("Số tiền phải dương.", ErrorCodeEnum.ValidationFailed);
 
         var (success, error) = await _orbitCoinService.CreditAsync(
             request.UserId,
@@ -39,7 +39,7 @@ public class CreditOrbitCoinCommandHandler : IRequestHandler<CreditOrbitCoinComm
             cancellationToken);
 
         if (!success)
-            return Result.Failure(error ?? "Credit failed.", ErrorCodeEnum.InvalidOperation);
-        return Result.Success("OrbitCoin credited (deposit recorded).");
+            return Result.Failure(error ?? "Tín dụng không thành công.", ErrorCodeEnum.InvalidOperation);
+        return Result.Success("OrbitCoin đã ghi có (tiền gửi được ghi lại).");
     }
 }

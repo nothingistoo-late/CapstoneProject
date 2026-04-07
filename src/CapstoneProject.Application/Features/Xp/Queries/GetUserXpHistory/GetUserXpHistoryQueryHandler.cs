@@ -1,4 +1,4 @@
-using CapstoneProject.Application.Common.Enums;
+﻿using CapstoneProject.Application.Common.Enums;
 using CapstoneProject.Application.Common.Interfaces;
 using CapstoneProject.Application.Common.Models;
 using CapstoneProject.Application.Features.Xp.Queries.GetMyXpHistory;
@@ -24,7 +24,7 @@ public class GetUserXpHistoryQueryHandler : IRequestHandler<GetUserXpHistoryQuer
     {
         var (isValid, _) = await _currentUserService.IsUserValidAsync();
         if (!isValid)
-            return Result<PaginationResult<XpHistoryItemDto>>.Failure("Authentication required.", ErrorCodeEnum.Unauthorized);
+            return Result<PaginationResult<XpHistoryItemDto>>.Failure("Yêu cầu xác thực.", ErrorCodeEnum.Unauthorized);
 
         var roles = await _currentUserService.GetCurrentRolesAsync();
         if (!roles.Contains(RoleEnum.Admin) && !roles.Contains(RoleEnum.Moderator))

@@ -1,4 +1,4 @@
-using CapstoneProject.Application.Common.Enums;
+﻿using CapstoneProject.Application.Common.Enums;
 using CapstoneProject.Application.Common.Interfaces;
 using CapstoneProject.Application.Common.Models;
 using CapstoneProject.Domain.Common;
@@ -24,18 +24,18 @@ public class UpdateMapSolveScoreConfigCommandHandler : IRequestHandler<UpdateMap
     {
         var (isValid, userIdNullable) = await _currentUserService.IsUserValidAsync();
         if (!isValid || !userIdNullable.HasValue)
-            return Result.Failure("Authentication required.", ErrorCodeEnum.Unauthorized);
+            return Result.Failure("Yêu cầu xác thực.", ErrorCodeEnum.Unauthorized);
         var userId = userIdNullable.Value;
 
         var roles = await _currentUserService.GetCurrentRolesAsync();
         if (!roles.Contains(RoleEnum.Admin) && !roles.Contains(RoleEnum.Moderator))
-            return Result.Failure("Only Admin/Moderator can update map solve score config.", ErrorCodeEnum.Forbidden);
+            return Result.Failure("Chỉ Quản trị viên/Người điều hành mới có thể cập nhật cấu hình điểm giải quyết bản đồ.", ErrorCodeEnum.Forbidden);
 
         var repo = _unitOfWork.Repository<MapSolveScoreConfig>();
         var row = await repo.GetQueryable()
             .FirstOrDefaultAsync(x => x.ConfigKey == MapSolveScoreConfig.DefaultConfigKey, cancellationToken);
         if (row == null)
-            return Result.Failure("Map solve score config not found.", ErrorCodeEnum.NotFound);
+            return Result.Failure("Không tìm thấy cấu hình điểm giải quyết bản đồ.", ErrorCodeEnum.NotFound);
 
         row.BaseScore = request.BaseScore;
         row.TimeScore = request.TimeScore;
@@ -44,6 +44,6 @@ public class UpdateMapSolveScoreConfigCommandHandler : IRequestHandler<UpdateMap
         row.UpdateEntity(userId);
         repo.Update(row);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
-        return Result.Success("Map solve score config updated.");
+        return Result.Success("Đã cập nhật cấu hình điểm giải quyết bản đồ.");
     }
 }

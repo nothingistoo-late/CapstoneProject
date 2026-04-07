@@ -1,4 +1,4 @@
-using MediatR;
+﻿using MediatR;
 using Microsoft.EntityFrameworkCore;
 using CapstoneProject.Application.Common.Enums;
 using CapstoneProject.Application.Common.Interfaces;
@@ -25,18 +25,18 @@ public class ReportMapCommandHandler : IRequestHandler<ReportMapCommand, Result<
     {
         var (isValid, userIdNullable) = await _currentUserService.IsUserValidAsync();
         if (!isValid || !userIdNullable.HasValue)
-            return Result<Guid>.Failure("Authentication required. Please log in to report a map.", ErrorCodeEnum.Unauthorized);
+            return Result<Guid>.Failure("Yêu cầu xác thực. Vui lòng đăng nhập để báo cáo bản đồ.", ErrorCodeEnum.Unauthorized);
         var userId = userIdNullable.Value;
         if (string.IsNullOrWhiteSpace(command.Reason))
-            return Result<Guid>.Failure("Report reason is required. Please provide a reason for reporting this content.", ErrorCodeEnum.ValidationFailed);
+            return Result<Guid>.Failure("Lý do báo cáo là bắt buộc. Vui lòng cung cấp lý do để báo cáo nội dung này.", ErrorCodeEnum.ValidationFailed);
 
         var mapRepo = _unitOfWork.Repository<Map>();
         var map = await mapRepo.GetQueryable()
             .FirstOrDefaultAsync(g => g.Id == command.MapId && !g.IsDeleted && g.Status == EntityStatusEnum.Active, cancellationToken);
         if (map == null)
-            return Result<Guid>.Failure($"Map not found with Id: {command.MapId}. The map may have been deleted or does not exist.", ErrorCodeEnum.NotFound);
+            return Result<Guid>.Failure($"Không tìm thấy bản đồ có Id: {command.MapId}. Bản đồ có thể đã bị xóa hoặc không tồn tại.", ErrorCodeEnum.NotFound);
         if (map.CreatedBy.HasValue && map.CreatedBy.Value == userId)
-            return Result<Guid>.Failure("You cannot report your own map.", ErrorCodeEnum.Forbidden);
+            return Result<Guid>.Failure("Bạn không thể báo cáo bản đồ của riêng bạn.", ErrorCodeEnum.Forbidden);
 
         // Only allow reporting maps the user can actually play:
         // - Free maps (Price null or <= 0)
@@ -52,7 +52,7 @@ public class ReportMapCommandHandler : IRequestHandler<ReportMapCommand, Result<
                                && p.PaymentStatus == PaymentStatusEnum.Completed,
                     cancellationToken);
             if (!hasPurchased)
-                return Result<Guid>.Failure("You can only report maps you have access to (free maps or maps you have purchased).", ErrorCodeEnum.Forbidden);
+                return Result<Guid>.Failure("Bạn chỉ có thể báo cáo những bản đồ mà bạn có quyền truy cập (bản đồ miễn phí hoặc bản đồ bạn đã mua).", ErrorCodeEnum.Forbidden);
         }
 
         var report = new MapReport
@@ -66,6 +66,6 @@ public class ReportMapCommandHandler : IRequestHandler<ReportMapCommand, Result<
         report.InitializeEntity(userId);
         await _unitOfWork.Repository<MapReport>().AddAsync(report);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
-        return Result<Guid>.Success(report.Id, "Report submitted.");
+        return Result<Guid>.Success(report.Id, "Đã gửi báo cáo.");
     }
 }

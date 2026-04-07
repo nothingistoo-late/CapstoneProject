@@ -1,4 +1,4 @@
-using MediatR;
+﻿using MediatR;
 using Microsoft.EntityFrameworkCore;
 using CapstoneProject.Application.Common.Enums;
 using CapstoneProject.Application.Common.Interfaces;
@@ -29,14 +29,14 @@ public class CompleteConceptCommandHandler : IRequestHandler<CompleteConceptComm
     {
         var (isValid, userId) = await _currentUserService.IsUserValidAsync();
         if (!isValid || !userId.HasValue)
-            return Result.Failure("Authentication required. Please log in to complete a concept.", ErrorCodeEnum.Unauthorized);
+            return Result.Failure("Yêu cầu xác thực. Vui lòng đăng nhập để hoàn thành một khái niệm.", ErrorCodeEnum.Unauthorized);
 
         var concept = await _unitOfWork.Repository<Concept>().GetQueryable()
             .Where(c => c.Id == request.ConceptId && !c.IsDeleted && c.Status == EntityStatusEnum.Active)
             .Select(c => new { c.Id, c.LearningGoalId })
             .FirstOrDefaultAsync(cancellationToken);
         if (concept == null)
-            return Result.Failure("Concept not found.", ErrorCodeEnum.NotFound);
+            return Result.Failure("Khái niệm không được tìm thấy.", ErrorCodeEnum.NotFound);
 
         var repo = _unitOfWork.Repository<UserConceptProgress>();
         var existing = await repo.GetQueryable()
@@ -46,7 +46,7 @@ public class CompleteConceptCommandHandler : IRequestHandler<CompleteConceptComm
         if (existing != null)
         {
             if (existing.IsCompleted)
-                return Result.Success("Concept already completed.");
+                return Result.Success("Khái niệm đã hoàn thành.");
             existing.IsCompleted = true;
             existing.CompletedAt = CapstoneProject.Domain.Common.VietnamDateTime.DbNow;
             existing.UpdatedAt = CapstoneProject.Domain.Common.VietnamDateTime.DbNow;
@@ -81,7 +81,7 @@ public class CompleteConceptCommandHandler : IRequestHandler<CompleteConceptComm
                 Metadata = $"{{\"conceptId\":\"{concept.Id}\"}}"
             }, cancellationToken);
             if (!conceptXpResult.IsSuccess)
-                return Result.Failure(conceptXpResult.Message ?? "Failed to grant concept XP.", ErrorCodeEnum.DatabaseError);
+                return Result.Failure(conceptXpResult.Message ?? "Không cấp được khái niệm XP.", ErrorCodeEnum.DatabaseError);
 
             var pathItems = await _unitOfWork.Repository<LearningPathItem>().GetQueryable()
                 .Where(i => i.LearningGoalId == concept.LearningGoalId && !i.IsDeleted)
@@ -125,13 +125,13 @@ public class CompleteConceptCommandHandler : IRequestHandler<CompleteConceptComm
                         Metadata = $"{{\"learningGoalId\":\"{concept.LearningGoalId}\"}}"
                     }, cancellationToken);
                     if (!pathXpResult.IsSuccess)
-                        return Result.Failure(pathXpResult.Message ?? "Failed to grant learning path XP.", ErrorCodeEnum.DatabaseError);
+                        return Result.Failure(pathXpResult.Message ?? "Không cấp được lộ trình học tập XP.", ErrorCodeEnum.DatabaseError);
                 }
             }
         }
 
         await _unitOfWork.SaveChangesAsync(cancellationToken);
-        return Result.Success("Concept completed. Next item in your path is now unlocked.");
+        return Result.Success("Khái niệm đã hoàn thành. Mục tiếp theo trong đường dẫn của bạn hiện đã được mở khóa.");
     }
 }
 

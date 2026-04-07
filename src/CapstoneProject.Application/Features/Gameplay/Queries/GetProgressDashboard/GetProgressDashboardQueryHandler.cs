@@ -1,4 +1,4 @@
-using MediatR;
+﻿using MediatR;
 using Microsoft.EntityFrameworkCore;
 using CapstoneProject.Application.Common.Enums;
 using CapstoneProject.Application.Common.Interfaces;
@@ -25,13 +25,13 @@ public class GetProgressDashboardQueryHandler : IRequestHandler<GetProgressDashb
     {
         var (isValid, userIdNullable) = await _currentUserService.IsUserValidAsync();
         if (!isValid || !userIdNullable.HasValue)
-            return Result<ProgressDashboardDto>.Failure("Authentication required. Please log in to view your progress dashboard.", ErrorCodeEnum.Unauthorized);
+            return Result<ProgressDashboardDto>.Failure("Yêu cầu xác thực. Vui lòng đăng nhập để xem bảng điều khiển tiến trình của bạn.", ErrorCodeEnum.Unauthorized);
         var userId = userIdNullable.Value;
 
         var user = await _unitOfWork.Repository<AppUser>().GetQueryable()
             .FirstOrDefaultAsync(x => x.Id == userId, cancellationToken);
         if (user == null)
-            return Result<ProgressDashboardDto>.Failure("User not found.", ErrorCodeEnum.NotFound);
+            return Result<ProgressDashboardDto>.Failure("Không tìm thấy người dùng.", ErrorCodeEnum.NotFound);
         var totalXp = user.CurrentXp;
 
         var umrRepo = _unitOfWork.Repository<UserMapResult>();

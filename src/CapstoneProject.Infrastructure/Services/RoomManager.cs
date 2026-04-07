@@ -1,4 +1,4 @@
-using System.Collections.Concurrent;
+﻿using System.Collections.Concurrent;
 using System.Linq;
 using System.Text;
 using CapstoneProject.Application.Commons.DTOs.Lobby;
@@ -99,7 +99,7 @@ public class RoomManager : IRoomManager
 
         var room = GetRoomById(roomId);
         if (room == null)
-            return (false, "Room not found.", null);
+            return (false, "Không tìm thấy phòng.", null);
         if (room.Status != RoomStatusEnum.Waiting)
             return (false, "Room is not accepting players.", null);
         if (room.Players.ContainsKey(playerId))
@@ -129,7 +129,7 @@ public class RoomManager : IRoomManager
     {
         var room = GetRoomByCode(roomCode);
         if (room == null)
-            return (false, "Room not found.", null);
+            return (false, "Không tìm thấy phòng.", null);
         return JoinRoom(room.RoomId, playerId, connectionId, roomCode);
     }
 
@@ -137,7 +137,7 @@ public class RoomManager : IRoomManager
     {
         var room = GetRoomById(roomId);
         if (room == null)
-            return (false, "Room not found.", null);
+            return (false, "Không tìm thấy phòng.", null);
         if (!room.Players.TryRemove(playerId, out _))
             return (false, "Player not in room.", null);
 
@@ -149,7 +149,7 @@ public class RoomManager : IRoomManager
             return (true, null, null);
         }
 
-        // Host rời (Waiting hoặc đang chơi): chuyển host cho người còn lại
+        // Host rá»i (Waiting hoáº·c Ä‘ang chÆ¡i): chuyá»ƒn host cho ngÆ°á»i cÃ²n láº¡i
         if (room.HostId == playerId)
         {
             foreach (var p in room.Players.Values) p.IsHost = false;
@@ -158,7 +158,7 @@ public class RoomManager : IRoomManager
             nextHost.IsHost = true;
         }
 
-        // Đang chơi: gỡ người rời khỏi GameInstance để ranking chỉ cần nộp đủ số người còn lại
+        // Äang chÆ¡i: gá»¡ ngÆ°á»i rá»i khá»i GameInstance Ä‘á»ƒ ranking chá»‰ cáº§n ná»™p Ä‘á»§ sá»‘ ngÆ°á»i cÃ²n láº¡i
         if (room.Status == RoomStatusEnum.Playing && _gameInstances.TryGetValue(roomId, out var gi))
         {
             var stillIn = gi.Players.Where(p => room.Players.ContainsKey(p.PlayerId)).ToList();
@@ -173,7 +173,7 @@ public class RoomManager : IRoomManager
     {
         var room = GetRoomById(roomId);
         if (room == null)
-            return (false, "Room not found.", null);
+            return (false, "Không tìm thấy phòng.", null);
         if (room.Status != RoomStatusEnum.Waiting)
             return (false, "Game already started.", null);
         if (!room.Players.TryGetValue(playerId, out var player))
@@ -187,7 +187,7 @@ public class RoomManager : IRoomManager
     {
         var room = GetRoomById(roomId);
         if (room == null)
-            return (false, "Room not found.", null, null);
+            return (false, "Không tìm thấy phòng.", null, null);
         if (room.Status != RoomStatusEnum.Waiting)
             return (false, "Game already started.", null, null);
         if (room.HostId != hostPlayerId)
@@ -226,7 +226,7 @@ public class RoomManager : IRoomManager
     {
         var room = GetRoomById(roomId);
         if (room == null)
-            return (false, "Room not found.", null);
+            return (false, "Không tìm thấy phòng.", null);
         if (room.HostId != hostPlayerId)
             return (false, "Only the host can kick players.", null);
         if (room.Status != RoomStatusEnum.Waiting)
@@ -243,7 +243,7 @@ public class RoomManager : IRoomManager
     {
         var room = GetRoomById(roomId);
         if (room == null)
-            return (false, "Room not found.", null);
+            return (false, "Không tìm thấy phòng.", null);
         if (room.HostId != hostPlayerId)
             return (false, "Only the host can lock/unlock the room.", null);
         if (room.Status != RoomStatusEnum.Waiting)
@@ -257,7 +257,7 @@ public class RoomManager : IRoomManager
     {
         var room = GetRoomById(roomId);
         if (room == null)
-            return (false, "Room not found.", null);
+            return (false, "Không tìm thấy phòng.", null);
         if (room.HostId != hostPlayerId)
             return (false, "Only the host can set the map.", null);
         if (room.Status != RoomStatusEnum.Waiting)
@@ -308,11 +308,11 @@ public class RoomManager : IRoomManager
     {
         var room = GetRoomById(roomId);
         if (room == null)
-            return (false, "Room not found.", null);
+            return (false, "Không tìm thấy phòng.", null);
         if (room.Status != RoomStatusEnum.Playing)
             return (false, "No game in progress.", null);
         if (!room.Players.ContainsKey(requestedByPlayerId))
-            return (false, "You are not in this room.", null);
+            return (false, "Bạn không ở trong phòng này.", null);
 
         _gameInstances.TryRemove(roomId, out _);
         room.Status = RoomStatusEnum.Waiting;

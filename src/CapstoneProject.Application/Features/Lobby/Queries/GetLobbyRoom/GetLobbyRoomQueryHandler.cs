@@ -1,4 +1,4 @@
-using MediatR;
+﻿using MediatR;
 using CapstoneProject.Application.Common.Enums;
 using CapstoneProject.Application.Common.Models;
 using CapstoneProject.Application.Commons.DTOs.Lobby;
@@ -17,7 +17,7 @@ public class GetLobbyRoomQueryHandler : IRequestHandler<GetLobbyRoomQuery, Resul
     {
         var room = _roomManager.GetRoomById(request.RoomId);
         if (room == null)
-            return Task.FromResult(Result<LobbyRoomDetailResponse>.Failure("Room not found.", ErrorCodeEnum.NotFound));
+            return Task.FromResult(Result<LobbyRoomDetailResponse>.Failure("Không tìm thấy phòng.", ErrorCodeEnum.NotFound));
 
         var response = new LobbyRoomDetailResponse
         {

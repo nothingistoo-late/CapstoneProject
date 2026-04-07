@@ -1,4 +1,4 @@
-using MediatR;
+﻿using MediatR;
 using CapstoneProject.Application.Common.Enums;
 using CapstoneProject.Application.Common.Interfaces;
 using CapstoneProject.Application.Common.Models;
@@ -31,7 +31,7 @@ public class CreateMapCommandHandler : IRequestHandler<CreateMapCommand, Result<
     {
         var (isValid, userIdNullable) = await _currentUserService.IsUserValidAsync();
         if (!isValid || !userIdNullable.HasValue)
-            return Result<Guid>.Failure("Authentication required. Please log in to create a map.", ErrorCodeEnum.Unauthorized);
+            return Result<Guid>.Failure("Yêu cầu xác thực. Vui lòng đăng nhập để tạo bản đồ.", ErrorCodeEnum.Unauthorized);
         var userId = userIdNullable.Value;
 
         var req = command.Request;
@@ -77,7 +77,7 @@ public class CreateMapCommandHandler : IRequestHandler<CreateMapCommand, Result<
         {
             if (lv.TimeLimitMs <= 0 || lv.WinCondition <= 0)
                 return Result<Guid>.Failure(
-                    "Each level requires TimeLimitMs and WinCondition > 0 (set in Levels[] or timeLimitMs / winCondition in each level JSON).",
+                    "Mỗi cấp độ yêu cầu TimeLimitMs và WinCondition > 0 (được đặt trong Levels[] hoặc timeLimitMs / winCondition trong JSON của mỗi cấp độ).",
                     ErrorCodeEnum.ValidationFailed);
             if (lv.Type == null)
                 return Result<Guid>.Failure(
@@ -122,7 +122,7 @@ public class CreateMapCommandHandler : IRequestHandler<CreateMapCommand, Result<
             var code = galleryResult.ErrorCode != null && Enum.TryParse<ErrorCodeEnum>(galleryResult.ErrorCode, out var ec)
                 ? ec
                 : ErrorCodeEnum.ValidationFailed;
-            return Result<Guid>.Failure(galleryResult.Message ?? "Gallery upload failed.", code);
+            return Result<Guid>.Failure(galleryResult.Message ?? "Tải lên thư viện không thành công.", code);
         }
 
         var myMap = new MyMap { MapId = map.Id, UserId = userId, IsAuthor = true };

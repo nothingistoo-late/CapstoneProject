@@ -25,12 +25,12 @@ public class CreateRoomCommandHandler : IRequestHandler<CreateRoomCommand, Resul
     {
         var (isValid, userIdNullable) = await _currentUserService.IsUserValidAsync();
         if (!isValid || !userIdNullable.HasValue)
-            return Result<CreateRoomResultDto>.Failure("Authentication required. Please log in to create a room.", ErrorCodeEnum.Unauthorized);
+            return Result<CreateRoomResultDto>.Failure("Yêu cầu xác thực. Vui lòng đăng nhập để tạo phòng.", ErrorCodeEnum.Unauthorized);
         var userId = userIdNullable.Value;
 
         var match = await _unitOfWork.Repository<Match>().GetQueryable().FirstOrDefaultAsync(m => m.Id == command.MatchId && !m.IsDeleted, cancellationToken);
         if (match == null)
-            return Result<CreateRoomResultDto>.Failure("Match not found", ErrorCodeEnum.NotFound);
+            return Result<CreateRoomResultDto>.Failure("Không tìm thấy trận đấu", ErrorCodeEnum.NotFound);
 
         var maxPlayers = Math.Clamp(command.MaxPlayers, 2, 8);
         var code = Guid.NewGuid().ToString("N")[..6].ToUpperInvariant();

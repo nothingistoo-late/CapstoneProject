@@ -1,4 +1,4 @@
-using System.Text.Json.Serialization;
+﻿using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Http;
 using CapstoneProject.Application.Common.Enums;
 using CapstoneProject.Application.Common.Extensions;
@@ -33,7 +33,7 @@ public class PaginationResult<T>
     public string? ErrorCode { get; set; } = null;
 
 
-    public static PaginationResult<T> Success(List<T> items, int pageNumber, int pageSize, int totalItems, string? message = "Retrieved successfully")
+    public static PaginationResult<T> Success(List<T> items, int pageNumber, int pageSize, int totalItems, string? message = "Đã truy xuất thành công")
     {
         return new PaginationResult<T>
         {

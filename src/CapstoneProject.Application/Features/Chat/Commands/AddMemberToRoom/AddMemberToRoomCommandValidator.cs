@@ -1,4 +1,4 @@
-using FluentValidation;
+﻿using FluentValidation;
 using CapstoneProject.Application.Common.Interfaces;
 using CapstoneProject.Domain.Enums;
 
@@ -17,7 +17,7 @@ public class AddMemberToRoomCommandValidator : AbstractValidator<AddMemberToRoom
     private void SetupValidationRules()
     {
         RuleFor(x => x.ChatRoomId)
-            .NotEmpty().WithMessage("Chat room ID is required")
+            .NotEmpty().WithMessage("Cần có ID phòng trò chuyện")
             .MustAsync(async (chatRoomId, cancellation) =>
             {
                 if (chatRoomId == Guid.Empty)
@@ -28,10 +28,10 @@ public class AddMemberToRoomCommandValidator : AbstractValidator<AddMemberToRoom
                     c => c.Id == chatRoomId && !c.IsDeleted);
 
                 return conversation != null;
-            }).WithMessage("Conversation not found");
+            }).WithMessage("Không tìm thấy cuộc trò chuyện");
 
         RuleFor(x => x.UserId)
-            .NotEmpty().WithMessage("User ID is required")
+            .NotEmpty().WithMessage("ID người dùng là bắt buộc")
             .MustAsync(async (userId, cancellation) =>
             {
                 if (userId == Guid.Empty)

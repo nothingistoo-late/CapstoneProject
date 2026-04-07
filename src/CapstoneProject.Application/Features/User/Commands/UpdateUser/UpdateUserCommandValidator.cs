@@ -1,4 +1,4 @@
-using FluentValidation;
+﻿using FluentValidation;
 using CapstoneProject.Application.Commons.Validators;
 using static CapstoneProject.Application.Common.Validators.FileValidatorExtension;
 
@@ -9,7 +9,7 @@ public class UpdateUserCommandValidator : AbstractValidator<UpdateUserCommand>
     public UpdateUserCommandValidator()
     {
         RuleFor(x => x.UserId)
-            .NotEmpty().WithMessage("User ID is required");
+            .NotEmpty().WithMessage("ID người dùng là bắt buộc");
 
         RuleFor(x => x.Request)
             .NotNull().WithMessage("Request data is required")

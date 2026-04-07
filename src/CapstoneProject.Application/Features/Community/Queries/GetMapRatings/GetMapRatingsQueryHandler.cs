@@ -1,4 +1,4 @@
-using MediatR;
+﻿using MediatR;
 using Microsoft.EntityFrameworkCore;
 using CapstoneProject.Application.Common.Enums;
 using CapstoneProject.Application.Common.Interfaces;
@@ -28,7 +28,7 @@ public class GetMapRatingsQueryHandler : IRequestHandler<GetMapRatingsQuery, Res
         var mapExists = await _unitOfWork.Repository<Map>().GetQueryable()
             .AnyAsync(m => m.Id == request.MapId && !m.IsDeleted, cancellationToken);
         if (!mapExists)
-            return Result<List<MapRatingDto>>.Failure($"Map not found with Id: {request.MapId}.", ErrorCodeEnum.NotFound);
+            return Result<List<MapRatingDto>>.Failure($"Không tìm thấy bản đồ có Id: {request.MapId}.", ErrorCodeEnum.NotFound);
 
         var ratingRepo = _unitOfWork.Repository<MapRating>();
         var ratingsQuery = ratingRepo.GetQueryable()

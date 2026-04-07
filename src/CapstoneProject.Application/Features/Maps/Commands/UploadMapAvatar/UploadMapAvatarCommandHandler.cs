@@ -1,4 +1,4 @@
-using MediatR;
+﻿using MediatR;
 using Microsoft.EntityFrameworkCore;
 using CapstoneProject.Application.Common.Enums;
 using CapstoneProject.Application.Common.Interfaces;
@@ -30,17 +30,17 @@ public class UploadMapAvatarCommandHandler : IRequestHandler<UploadMapAvatarComm
     {
         var (isValid, userId) = await _currentUserService.IsUserValidAsync();
         if (!isValid || !userId.HasValue)
-            return Result<string>.Failure("Authentication required.", ErrorCodeEnum.Unauthorized);
+            return Result<string>.Failure("Yêu cầu xác thực.", ErrorCodeEnum.Unauthorized);
 
         var map = await _unitOfWork.Repository<Map>().GetQueryable()
             .FirstOrDefaultAsync(m => m.Id == request.MapId && !m.IsDeleted, cancellationToken);
         if (map == null)
-            return Result<string>.Failure("Map not found.", ErrorCodeEnum.NotFound);
+            return Result<string>.Failure("Bản đồ không được tìm thấy.", ErrorCodeEnum.NotFound);
 
         var roles = await _currentUserService.GetCurrentRolesAsync();
         var isAdminOrMod = roles.Contains(RoleEnum.Admin) || roles.Contains(RoleEnum.Moderator);
         if (map.CreatedBy != userId && !isAdminOrMod)
-            return Result<string>.Failure("You do not have permission to update this map's avatar.", ErrorCodeEnum.Forbidden);
+            return Result<string>.Failure("Bạn không có quyền cập nhật hình đại diện của bản đồ này.", ErrorCodeEnum.Forbidden);
 
         var avatarUrl = await _cloudinaryService.UploadImageAsync(
             request.AvatarFile,
@@ -48,7 +48,7 @@ public class UploadMapAvatarCommandHandler : IRequestHandler<UploadMapAvatarComm
             $"map_{request.MapId:N}",
             cancellationToken);
         if (string.IsNullOrEmpty(avatarUrl))
-            return Result<string>.Failure("Upload avatar failed.", ErrorCodeEnum.FileUploadFailed);
+            return Result<string>.Failure("Tải lên hình đại diện không thành công.", ErrorCodeEnum.FileUploadFailed);
 
         var oldUrl = map.AvatarUrl;
         map.AvatarUrl = avatarUrl;
@@ -70,6 +70,6 @@ public class UploadMapAvatarCommandHandler : IRequestHandler<UploadMapAvatarComm
             }
         });
 
-        return Result<string>.Success(avatarUrl, "Map avatar updated.");
+        return Result<string>.Success(avatarUrl, "Đã cập nhật hình đại diện bản đồ.");
     }
 }

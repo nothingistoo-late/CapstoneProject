@@ -1,4 +1,4 @@
-using MediatR;
+﻿using MediatR;
 using Microsoft.EntityFrameworkCore;
 using CapstoneProject.Application.Common.Enums;
 using CapstoneProject.Application.Common.Interfaces;
@@ -27,19 +27,19 @@ public class UpdateExchangeRateCommandHandler : IRequestHandler<UpdateExchangeRa
         // Verify admin user
         var (isValid, adminIdNullable) = await _currentUserService.IsUserValidAsync();
         if (!isValid || !adminIdNullable.HasValue)
-            return Result<ExchangeRateDto>.Failure("Authentication required.", ErrorCodeEnum.Unauthorized);
+            return Result<ExchangeRateDto>.Failure("Yêu cầu xác thực.", ErrorCodeEnum.Unauthorized);
         var adminId = adminIdNullable.Value;
 
         // Validate rate
         if (request.Rate <= 0)
-            return Result<ExchangeRateDto>.Failure("Exchange rate must be positive.", ErrorCodeEnum.ValidationFailed);
+            return Result<ExchangeRateDto>.Failure("Tỷ giá hối đoái phải dương.", ErrorCodeEnum.ValidationFailed);
 
         var now = VietnamDateTime.DbNow;
         var normalizedEffectiveFrom = VietnamDateTime.ToDbDateTime(request.EffectiveFrom) ?? now;
         var normalizedEffectiveTo = VietnamDateTime.ToDbDateTime(request.EffectiveTo);
 
         if (normalizedEffectiveTo.HasValue && normalizedEffectiveTo.Value < normalizedEffectiveFrom)
-            return Result<ExchangeRateDto>.Failure("EffectiveTo must be greater than or equal to EffectiveFrom.", ErrorCodeEnum.ValidationFailed);
+            return Result<ExchangeRateDto>.Failure("Hiệu quảTo phải lớn hơn hoặc bằng Hiệu quảTừ.", ErrorCodeEnum.ValidationFailed);
 
         // Find existing active rate
         var existingRate = await _unitOfWork.Repository<ExchangeRate>()
@@ -95,6 +95,6 @@ public class UpdateExchangeRateCommandHandler : IRequestHandler<UpdateExchangeRa
             UpdatedAt = newRate.UpdatedAt,
         };
 
-        return Result<ExchangeRateDto>.Success(dto, "Exchange rate updated successfully.");
+        return Result<ExchangeRateDto>.Success(dto, "Tỷ giá hối đoái được cập nhật thành công.");
     }
 }

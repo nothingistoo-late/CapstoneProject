@@ -1,4 +1,4 @@
-using MediatR;
+﻿using MediatR;
 using Microsoft.EntityFrameworkCore;
 using CapstoneProject.Application.Common.Enums;
 using CapstoneProject.Application.Common.Interfaces;
@@ -22,7 +22,7 @@ public class GetSelectedGoalQueryHandler : IRequestHandler<GetSelectedGoalQuery,
     {
         var (isValid, userId) = await _currentUserService.IsUserValidAsync();
         if (!isValid || !userId.HasValue)
-            return Result<SelectedGoalDto?>.Failure("Authentication required.", ErrorCodeEnum.Unauthorized);
+            return Result<SelectedGoalDto?>.Failure("Yêu cầu xác thực.", ErrorCodeEnum.Unauthorized);
 
         var userGoal = await _unitOfWork.Repository<UserLearningGoal>().GetQueryable()
             .Where(ug => ug.UserId == userId.Value && !ug.IsDeleted)

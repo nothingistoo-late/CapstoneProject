@@ -1,4 +1,4 @@
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 using CapstoneProject.Application.Common.Enums;
 using Swashbuckle.AspNetCore.Annotations;
 using CapstoneProject.Application.Features.User.Commands.BatchUpdateUserStatus;
@@ -14,7 +14,7 @@ using CapstoneProject.Application.Commons.Interfaces;
 namespace CapstoneProject.API.Controllers.Cms;
 
 /// <summary>
-/// Controller quản lý users cho CMS
+/// Controller quáº£n lÃ½ users cho CMS
 /// </summary>
 [ApiController]
 [Route("api/cms/users")]
@@ -245,12 +245,12 @@ public class UserController : ControllerBase
         try
         {
             var deletedCount = await _cleanupService.CleanupInactiveUsersAsync(daysInactive);
-            return Ok(Result<int>.Success(deletedCount, $"Successfully deactivated {deletedCount} inactive QuickLogin users"));
+            return Ok(Result<int>.Success(deletedCount, $"Đã hủy kích hoạt thành công {deletedCount} người dùng QuickLogin không hoạt động"));
         }
         catch (Exception ex)
         {
             _logger?.LogError(ex, "Error during QuickLogin cleanup");
-            return StatusCode(500, Result<int>.Failure("An error occurred during cleanup", ErrorCodeEnum.InternalError));
+            return StatusCode(500, Result<int>.Failure("Đã xảy ra lỗi trong quá trình dọn dẹp", ErrorCodeEnum.InternalError));
         }
     }
 }

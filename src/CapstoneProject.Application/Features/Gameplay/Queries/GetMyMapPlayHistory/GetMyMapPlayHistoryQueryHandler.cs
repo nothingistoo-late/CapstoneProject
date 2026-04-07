@@ -1,4 +1,4 @@
-using CapstoneProject.Application.Commons.DTOs.Gameplay;
+﻿using CapstoneProject.Application.Commons.DTOs.Gameplay;
 using CapstoneProject.Application.Common.Enums;
 using CapstoneProject.Application.Common.Interfaces;
 using CapstoneProject.Application.Common.Models;
@@ -23,7 +23,7 @@ public class GetMyMapPlayHistoryQueryHandler : IRequestHandler<GetMyMapPlayHisto
     {
         var (isValid, userId) = await _currentUserService.IsUserValidAsync();
         if (!isValid || !userId.HasValue)
-            return Result<PaginationResult<MapPlayHistoryItemDto>>.Failure("Authentication required.", ErrorCodeEnum.Unauthorized);
+            return Result<PaginationResult<MapPlayHistoryItemDto>>.Failure("Yêu cầu xác thực.", ErrorCodeEnum.Unauthorized);
 
         var historyRepo = _unitOfWork.Repository<UserMapPlayHistory>();
         var query = historyRepo.GetQueryable()
@@ -72,7 +72,7 @@ public class GetMyMapPlayHistoryQueryHandler : IRequestHandler<GetMyMapPlayHisto
             Language = h.Language
         }).ToList();
 
-        var page = PaginationResult<MapPlayHistoryItemDto>.Success(list, pageNumber, pageSize, total, "Retrieved successfully");
+        var page = PaginationResult<MapPlayHistoryItemDto>.Success(list, pageNumber, pageSize, total, "Đã truy xuất thành công");
         return Result<PaginationResult<MapPlayHistoryItemDto>>.Success(page);
     }
 }

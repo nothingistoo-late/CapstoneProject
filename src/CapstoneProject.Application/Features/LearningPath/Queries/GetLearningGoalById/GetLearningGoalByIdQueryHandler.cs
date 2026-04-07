@@ -1,4 +1,4 @@
-using MediatR;
+﻿using MediatR;
 using Microsoft.EntityFrameworkCore;
 using CapstoneProject.Application.Common.Enums;
 using CapstoneProject.Application.Common.Interfaces;
@@ -31,7 +31,7 @@ public class GetLearningGoalByIdQueryHandler : IRequestHandler<GetLearningGoalBy
             .FirstOrDefaultAsync(cancellationToken);
 
         if (goal == null)
-            return Result<LearningGoalDto>.Failure("Learning goal not found.", ErrorCodeEnum.NotFound);
+            return Result<LearningGoalDto>.Failure("Không tìm thấy mục tiêu học tập.", ErrorCodeEnum.NotFound);
 
         return Result<LearningGoalDto>.Success(goal);
     }

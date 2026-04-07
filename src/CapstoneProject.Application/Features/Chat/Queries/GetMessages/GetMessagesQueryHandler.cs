@@ -37,7 +37,7 @@ public class GetMessagesQueryHandler : IRequestHandler<GetMessagesQuery, Result<
             var userIdString = _currentUserService.UserId;
             if (string.IsNullOrEmpty(userIdString) || !Guid.TryParse(userIdString, out var currentUserId))
             {
-                return Result<PaginationResult<MessageResponse>>.Failure("User not authenticated", ErrorCodeEnum.Unauthorized);
+                return Result<PaginationResult<MessageResponse>>.Failure("Người dùng chưa được xác thực", ErrorCodeEnum.Unauthorized);
             }
 
             if (query == null || query.Request == null)
@@ -60,7 +60,7 @@ public class GetMessagesQueryHandler : IRequestHandler<GetMessagesQuery, Result<
 
             if (request.ChatRoomId == Guid.Empty)
             {
-                return Result<PaginationResult<MessageResponse>>.Failure("Chat room ID is required", ErrorCodeEnum.InvalidInput);
+                return Result<PaginationResult<MessageResponse>>.Failure("Cần có ID phòng trò chuyện", ErrorCodeEnum.InvalidInput);
             }
 
             var memberRepo = _unitOfWork.Repository<ChatRoomMember>();

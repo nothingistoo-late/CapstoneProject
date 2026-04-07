@@ -1,4 +1,4 @@
-using MediatR;
+﻿using MediatR;
 using CapstoneProject.Application.Common.Enums;
 using CapstoneProject.Application.Common.Interfaces;
 using CapstoneProject.Application.Common.Models;
@@ -23,13 +23,13 @@ public class EndLobbyGameCommandHandler : IRequestHandler<EndLobbyGameCommand, R
     {
         var (isValid, userIdNullable) = await _currentUserService.IsUserValidAsync();
         if (!isValid || !userIdNullable.HasValue)
-            return Result<LobbyRoomDetailResponse>.Failure("Authentication required.", ErrorCodeEnum.Unauthorized);
+            return Result<LobbyRoomDetailResponse>.Failure("Yêu cầu xác thực.", ErrorCodeEnum.Unauthorized);
 
         var (success, errorMessage, room) = _roomManager.EndGame(command.RoomId, userIdNullable.Value);
         if (!success || room == null)
         {
             var code = errorMessage?.Contains("not found", StringComparison.OrdinalIgnoreCase) == true ? ErrorCodeEnum.NotFound : ErrorCodeEnum.ValidationFailed;
-            return Result<LobbyRoomDetailResponse>.Failure(errorMessage ?? "Could not end game.", code);
+            return Result<LobbyRoomDetailResponse>.Failure(errorMessage ?? "Không thể kết thúc trò chơi.", code);
         }
 
         var response = new LobbyRoomDetailResponse
@@ -44,6 +44,6 @@ public class EndLobbyGameCommandHandler : IRequestHandler<EndLobbyGameCommand, R
             SelectedMapId = room.SelectedMapId,
             Players = room.Players.Values.Select(p => new LobbyPlayerDto { PlayerId = p.PlayerId, IsReady = p.IsReady, IsHost = p.IsHost }).ToList()
         };
-        return Result<LobbyRoomDetailResponse>.Success(response, "Game ended. Room is waiting for next start.");
+        return Result<LobbyRoomDetailResponse>.Success(response, "Trò chơi kết thúc. Phòng đang chờ lần khởi động tiếp theo.");
     }
 }

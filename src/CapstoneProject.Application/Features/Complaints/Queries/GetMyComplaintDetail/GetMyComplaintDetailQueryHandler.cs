@@ -1,4 +1,4 @@
-using CapstoneProject.Application.Common.Enums;
+﻿using CapstoneProject.Application.Common.Enums;
 using CapstoneProject.Application.Common.Interfaces;
 using CapstoneProject.Application.Common.Models;
 using CapstoneProject.Application.Commons.DTOs.Complaints;
@@ -29,11 +29,11 @@ public class GetMyComplaintDetailQueryHandler : IRequestHandler<GetMyComplaintDe
     {
         var (isValid, userIdNullable) = await _currentUserService.IsUserValidAsync();
         if (!isValid || !userIdNullable.HasValue)
-            return Result<MyComplaintDetailDto>.Failure("Authentication required. Please log in to view complaint detail.", ErrorCodeEnum.Unauthorized);
+            return Result<MyComplaintDetailDto>.Failure("Yêu cầu xác thực. Vui lòng đăng nhập để xem chi tiết khiếu nại.", ErrorCodeEnum.Unauthorized);
         var userId = userIdNullable.Value;
 
         if (request.ComplaintId == Guid.Empty)
-            return Result<MyComplaintDetailDto>.Failure("ComplaintId is required.", ErrorCodeEnum.ValidationFailed);
+            return Result<MyComplaintDetailDto>.Failure("Khiếu nạiId là bắt buộc.", ErrorCodeEnum.ValidationFailed);
 
         var complaint = await _unitOfWork.Repository<Complaint>().GetQueryable()
             .Include(c => c.Messages)
@@ -42,9 +42,9 @@ public class GetMyComplaintDetailQueryHandler : IRequestHandler<GetMyComplaintDe
             .FirstOrDefaultAsync(c => c.Id == request.ComplaintId && !c.IsDeleted, cancellationToken);
 
         if (complaint == null)
-            return Result<MyComplaintDetailDto>.Failure($"Complaint not found with Id: {request.ComplaintId}.", ErrorCodeEnum.NotFound);
+            return Result<MyComplaintDetailDto>.Failure($"Không tìm thấy khiếu nại với Id: {request.ComplaintId}.", ErrorCodeEnum.NotFound);
         if (complaint.UserId != userId)
-            return Result<MyComplaintDetailDto>.Failure("You do not have permission to view this complaint.", ErrorCodeEnum.Forbidden);
+            return Result<MyComplaintDetailDto>.Failure("Bạn không có quyền xem khiếu nại này.", ErrorCodeEnum.Forbidden);
 
         var dto = new MyComplaintDetailDto
         {

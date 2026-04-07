@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
 using CapstoneProject.Application.Common.Enums;
 using CapstoneProject.Application.Common.Models;
@@ -22,7 +22,7 @@ public class ValidationFilterAttribute : ActionFilterAttribute
                 .SelectMany(m => m.Value!.Errors.Select(e => e.ErrorMessage))
                 .ToList();
 
-            var errorResponse = Result.Failure("Invalid input data", ErrorCodeEnum.ValidationFailed, errors);
+            var errorResponse = Result.Failure("Dữ liệu đầu vào không hợp lệ", ErrorCodeEnum.ValidationFailed, errors);
             context.Result = new BadRequestObjectResult(errorResponse);
         }
     }

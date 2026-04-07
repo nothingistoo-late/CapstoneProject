@@ -1,4 +1,4 @@
-using MediatR;
+﻿using MediatR;
 using Microsoft.EntityFrameworkCore;
 using CapstoneProject.Application.Common.Enums;
 using CapstoneProject.Application.Common.Interfaces;
@@ -25,18 +25,18 @@ public class RateMapCommandHandler : IRequestHandler<RateMapCommand, Result>
     {
         var (isValid, userIdNullable) = await _currentUserService.IsUserValidAsync();
         if (!isValid || !userIdNullable.HasValue)
-            return Result.Failure("Authentication required. Please log in to rate a map.", ErrorCodeEnum.Unauthorized);
+            return Result.Failure("Yêu cầu xác thực. Vui lòng đăng nhập để đánh giá bản đồ.", ErrorCodeEnum.Unauthorized);
         var userId = userIdNullable.Value;
         if (command.Rating < 1 || command.Rating > 5)
-            return Result.Failure("Rating must be between 1 and 5 stars. Please provide a valid rating.", ErrorCodeEnum.ValidationFailed);
+            return Result.Failure("Đánh giá phải từ 1 đến 5 sao. Vui lòng cung cấp đánh giá hợp lệ.", ErrorCodeEnum.ValidationFailed);
 
         var mapRepo = _unitOfWork.Repository<Map>();
         var map = await mapRepo.GetQueryable()
             .FirstOrDefaultAsync(g => g.Id == command.MapId && !g.IsDeleted && g.Status == EntityStatusEnum.Active, cancellationToken);
         if (map == null)
-            return Result.Failure($"Map not found with Id: {command.MapId}. The map may have been deleted or does not exist.", ErrorCodeEnum.NotFound);
+            return Result.Failure($"Không tìm thấy bản đồ có Id: {command.MapId}. Bản đồ có thể đã bị xóa hoặc không tồn tại.", ErrorCodeEnum.NotFound);
         if (map.CreatedBy.HasValue && map.CreatedBy.Value == userId)
-            return Result.Failure("You cannot rate your own map.", ErrorCodeEnum.Forbidden);
+            return Result.Failure("Bạn không thể xếp hạng bản đồ của riêng bạn.", ErrorCodeEnum.Forbidden);
 
         // Only allow rating maps the user can actually play:
         // - Free maps (Price null or <= 0)
@@ -52,7 +52,7 @@ public class RateMapCommandHandler : IRequestHandler<RateMapCommand, Result>
                                && p.PaymentStatus == PaymentStatusEnum.Completed,
                     cancellationToken);
             if (!hasPurchased)
-                return Result.Failure("You can only rate maps you have access to (free maps or maps you have purchased).", ErrorCodeEnum.Forbidden);
+                return Result.Failure("Bạn chỉ có thể xếp hạng bản đồ mà bạn có quyền truy cập (bản đồ miễn phí hoặc bản đồ bạn đã mua).", ErrorCodeEnum.Forbidden);
         }
 
         var repo = _unitOfWork.Repository<MapRating>();
@@ -71,6 +71,6 @@ public class RateMapCommandHandler : IRequestHandler<RateMapCommand, Result>
             await repo.AddAsync(rating);
         }
         await _unitOfWork.SaveChangesAsync(cancellationToken);
-        return Result.Success("Rating saved.");
+        return Result.Success("Đã lưu xếp hạng.");
     }
 }

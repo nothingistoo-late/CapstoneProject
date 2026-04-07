@@ -1,4 +1,4 @@
-using CapstoneProject.Application.Common.Enums;
+﻿using CapstoneProject.Application.Common.Enums;
 using CapstoneProject.Application.Common.Interfaces;
 using CapstoneProject.Application.Common.Models;
 using CapstoneProject.Application.Commons.DTOs.Complaints;
@@ -29,14 +29,14 @@ public class GetComplaintDetailQueryHandler : IRequestHandler<GetComplaintDetail
     {
         var (isValid, _) = await _currentUserService.IsUserValidAsync();
         if (!isValid)
-            return Result<ComplaintDetailDto>.Failure("Authentication required. Please log in to view complaint detail.", ErrorCodeEnum.Unauthorized);
+            return Result<ComplaintDetailDto>.Failure("Yêu cầu xác thực. Vui lòng đăng nhập để xem chi tiết khiếu nại.", ErrorCodeEnum.Unauthorized);
 
         var roles = await _currentUserService.GetCurrentRolesAsync();
         if (!roles.Contains(RoleEnum.Admin) && !roles.Contains(RoleEnum.Moderator))
-            return Result<ComplaintDetailDto>.Failure("You do not have permission to view complaint detail. Only Admin or Moderator can access.", ErrorCodeEnum.Forbidden);
+            return Result<ComplaintDetailDto>.Failure("Bạn không có quyền xem chi tiết khiếu nại. Chỉ có Quản trị viên hoặc Người điều hành mới có thể truy cập.", ErrorCodeEnum.Forbidden);
 
         if (request.ComplaintId == Guid.Empty)
-            return Result<ComplaintDetailDto>.Failure("ComplaintId is required.", ErrorCodeEnum.ValidationFailed);
+            return Result<ComplaintDetailDto>.Failure("Khiếu nạiId là bắt buộc.", ErrorCodeEnum.ValidationFailed);
 
         var complaint = await _unitOfWork.Repository<Complaint>().GetQueryable()
             .Include(c => c.Messages)
@@ -45,7 +45,7 @@ public class GetComplaintDetailQueryHandler : IRequestHandler<GetComplaintDetail
             .FirstOrDefaultAsync(c => c.Id == request.ComplaintId && !c.IsDeleted, cancellationToken);
 
         if (complaint == null)
-            return Result<ComplaintDetailDto>.Failure($"Complaint not found with Id: {request.ComplaintId}.", ErrorCodeEnum.NotFound);
+            return Result<ComplaintDetailDto>.Failure($"Không tìm thấy khiếu nại với Id: {request.ComplaintId}.", ErrorCodeEnum.NotFound);
 
         var dto = new ComplaintDetailDto
         {

@@ -1,4 +1,4 @@
-using CapstoneProject.Application.Common.Enums;
+﻿using CapstoneProject.Application.Common.Enums;
 using CapstoneProject.Application.Common.Interfaces;
 using CapstoneProject.Application.Common.Models;
 using CapstoneProject.Domain.Common;
@@ -24,17 +24,17 @@ public class UpdateXpSourceConfigCommandHandler : IRequestHandler<UpdateXpSource
     {
         var (isValid, userIdNullable) = await _currentUserService.IsUserValidAsync();
         if (!isValid || !userIdNullable.HasValue)
-            return Result.Failure("Authentication required.", ErrorCodeEnum.Unauthorized);
+            return Result.Failure("Yêu cầu xác thực.", ErrorCodeEnum.Unauthorized);
         var userId = userIdNullable.Value;
 
         var roles = await _currentUserService.GetCurrentRolesAsync();
         if (!roles.Contains(RoleEnum.Admin) && !roles.Contains(RoleEnum.Moderator))
-            return Result.Failure("Only Admin/Moderator can update XP source configs.", ErrorCodeEnum.Forbidden);
+            return Result.Failure("Chỉ Quản trị viên/Người điều hành mới có thể cập nhật cấu hình nguồn XP.", ErrorCodeEnum.Forbidden);
 
         var repo = _unitOfWork.Repository<XpSourceConfig>();
         var config = await repo.GetQueryable().FirstOrDefaultAsync(x => x.SourceType == request.SourceType && !x.IsDeleted, cancellationToken);
         if (config == null)
-            return Result.Failure($"Source config not found for source: {request.SourceType}.", ErrorCodeEnum.NotFound);
+            return Result.Failure($"Không tìm thấy cấu hình nguồn cho nguồn: {request.SourceType}.", ErrorCodeEnum.NotFound);
 
         config.IsEnabled = request.IsEnabled;
         config.BaseXp = request.BaseXp;
@@ -44,7 +44,7 @@ public class UpdateXpSourceConfigCommandHandler : IRequestHandler<UpdateXpSource
         config.UpdateEntity(userId);
         repo.Update(config);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
-        return Result.Success("XP source config updated.");
+        return Result.Success("Đã cập nhật cấu hình nguồn XP.");
     }
 }
 

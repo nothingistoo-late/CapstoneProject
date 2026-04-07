@@ -1,4 +1,4 @@
-using AutoMapper;
+﻿using AutoMapper;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using CapstoneProject.Application.Common.Interfaces;
@@ -34,7 +34,7 @@ public class GetUserByIdQueryHandler : IRequestHandler<GetUserByIdQuery, Result<
 
             if (user == null)
             {
-                throw new KeyNotFoundException("User not found");
+                throw new KeyNotFoundException("Không tìm thấy người dùng");
             }
 
             var userResponse = _mapper.Map<UserResponse>(user);
@@ -46,7 +46,7 @@ public class GetUserByIdQueryHandler : IRequestHandler<GetUserByIdQuery, Result<
                 userResponse.Roles = rolesResult.Data.Select(r => Enum.Parse<RoleEnum>(r)).ToList();
             }
 
-            return Result<UserResponse>.Success(userResponse, "Get user successfully");
+            return Result<UserResponse>.Success(userResponse, "Nhận người dùng thành công");
         }
         catch
         {

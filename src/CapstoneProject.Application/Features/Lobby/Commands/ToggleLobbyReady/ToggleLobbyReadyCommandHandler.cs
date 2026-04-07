@@ -1,4 +1,4 @@
-using MediatR;
+﻿using MediatR;
 using CapstoneProject.Application.Common.Enums;
 using CapstoneProject.Application.Common.Interfaces;
 using CapstoneProject.Application.Common.Models;
@@ -23,13 +23,13 @@ public class ToggleLobbyReadyCommandHandler : IRequestHandler<ToggleLobbyReadyCo
     {
         var (isValid, userIdNullable) = await _currentUserService.IsUserValidAsync();
         if (!isValid || !userIdNullable.HasValue)
-            return Result<LobbyRoomDetailResponse>.Failure("Authentication required.", ErrorCodeEnum.Unauthorized);
+            return Result<LobbyRoomDetailResponse>.Failure("Yêu cầu xác thực.", ErrorCodeEnum.Unauthorized);
 
         var (success, errorMessage, room) = _roomManager.ToggleReady(command.RoomId, userIdNullable.Value);
         if (!success || room == null)
         {
             var code = errorMessage?.Contains("not found", StringComparison.OrdinalIgnoreCase) == true ? ErrorCodeEnum.NotFound : ErrorCodeEnum.ValidationFailed;
-            return Result<LobbyRoomDetailResponse>.Failure(errorMessage ?? "Could not toggle ready.", code);
+            return Result<LobbyRoomDetailResponse>.Failure(errorMessage ?? "Không thể chuyển đổi sẵn sàng.", code);
         }
 
         var response = new LobbyRoomDetailResponse
@@ -44,6 +44,6 @@ public class ToggleLobbyReadyCommandHandler : IRequestHandler<ToggleLobbyReadyCo
             SelectedMapId = room.SelectedMapId,
             Players = room.Players.Values.Select(p => new LobbyPlayerDto { PlayerId = p.PlayerId, IsReady = p.IsReady, IsHost = p.IsHost }).ToList()
         };
-        return Result<LobbyRoomDetailResponse>.Success(response, "Ready state updated.");
+        return Result<LobbyRoomDetailResponse>.Success(response, "Đã cập nhật trạng thái sẵn sàng.");
     }
 }

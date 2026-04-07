@@ -47,7 +47,7 @@ public class SendMessageCommandHandler : IRequestHandler<SendMessageCommand, Res
             var userIdString = _currentUserService.UserId;
             if (string.IsNullOrEmpty(userIdString) || !Guid.TryParse(userIdString, out var currentUserId))
             {
-                return Result<MessageResponse>.Failure("User not authenticated", ErrorCodeEnum.Unauthorized);
+                return Result<MessageResponse>.Failure("Người dùng chưa được xác thực", ErrorCodeEnum.Unauthorized);
             }
 
             var request = command.Request;
@@ -55,38 +55,38 @@ public class SendMessageCommandHandler : IRequestHandler<SendMessageCommand, Res
             // Validate request
             if (request == null)
             {
-                return Result<MessageResponse>.Failure("Request cannot be null", ErrorCodeEnum.InvalidInput);
+                return Result<MessageResponse>.Failure("Yêu cầu không thể rỗng", ErrorCodeEnum.InvalidInput);
             }
 
             if (request.ChatRoomId == Guid.Empty)
             {
-                return Result<MessageResponse>.Failure("Chat room ID is required", ErrorCodeEnum.InvalidInput);
+                return Result<MessageResponse>.Failure("Cần có ID phòng trò chuyện", ErrorCodeEnum.InvalidInput);
             }
 
             // Get conversation and validate
             var conversation = await _conversationService.GetConversationAsync(request.ChatRoomId, cancellationToken);
             if (conversation == null)
             {
-                return Result<MessageResponse>.Failure("Conversation not found", ErrorCodeEnum.NotFound);
+                return Result<MessageResponse>.Failure("Không tìm thấy cuộc trò chuyện", ErrorCodeEnum.NotFound);
             }
 
             // Validate conversation is not closed
             if (!conversation.CanSendMessages())
             {
-                return Result<MessageResponse>.Failure("Cannot send messages to a closed conversation", ErrorCodeEnum.InvalidOperation);
+                return Result<MessageResponse>.Failure("Không thể gửi tin nhắn đến cuộc trò chuyện đã đóng", ErrorCodeEnum.InvalidOperation);
             }
 
             // Verify user is a participant
             var isParticipant = await _conversationService.IsParticipantAsync(request.ChatRoomId, currentUserId, cancellationToken);
             if (!isParticipant)
             {
-                return Result<MessageResponse>.Failure("You are not a participant in this conversation", ErrorCodeEnum.Forbidden);
+                return Result<MessageResponse>.Failure("Bạn không phải là người tham gia vào cuộc trò chuyện này", ErrorCodeEnum.Forbidden);
             }
 
             // Validate content based on message type
             if (request.MessageType == MessageTypeEnum.Text && string.IsNullOrWhiteSpace(request.Content))
             {
-                return Result<MessageResponse>.Failure("Message content is required for text messages", ErrorCodeEnum.InvalidInput);
+                return Result<MessageResponse>.Failure("Nội dung tin nhắn là bắt buộc đối với tin nhắn văn bản", ErrorCodeEnum.InvalidInput);
             }
 
         // Create message
@@ -128,7 +128,7 @@ public class SendMessageCommandHandler : IRequestHandler<SendMessageCommand, Res
 
         if (messageWithSender == null)
         {
-            return Result<MessageResponse>.Failure("Failed to create message", ErrorCodeEnum.InternalError);
+            return Result<MessageResponse>.Failure("Không tạo được tin nhắn", ErrorCodeEnum.InternalError);
         }
 
         // Map to response
@@ -173,12 +173,12 @@ public class SendMessageCommandHandler : IRequestHandler<SendMessageCommand, Res
         catch (DbUpdateException ex)
         {
             _logger.LogError(ex, "Database error while sending message to conversation {ConversationId}", command.Request?.ChatRoomId);
-            return Result<MessageResponse>.Failure("Failed to send message due to database error", ErrorCodeEnum.DatabaseError);
+            return Result<MessageResponse>.Failure("Không gửi được tin nhắn do lỗi cơ sở dữ liệu", ErrorCodeEnum.DatabaseError);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Unexpected error while sending message to conversation {ConversationId}", command.Request?.ChatRoomId);
-            return Result<MessageResponse>.Failure("An unexpected error occurred while sending the message", ErrorCodeEnum.InternalError);
+            return Result<MessageResponse>.Failure("Đã xảy ra lỗi không mong muốn khi gửi tin nhắn", ErrorCodeEnum.InternalError);
         }
     }
 }

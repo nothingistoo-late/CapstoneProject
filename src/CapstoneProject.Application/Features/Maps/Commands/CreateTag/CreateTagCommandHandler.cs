@@ -1,4 +1,4 @@
-using MediatR;
+﻿using MediatR;
 using CapstoneProject.Application.Common.Enums;
 using CapstoneProject.Application.Common.Interfaces;
 using CapstoneProject.Application.Common.Models;
@@ -24,17 +24,17 @@ public class CreateTagCommandHandler : IRequestHandler<CreateTagCommand, Result<
     {
         var (isValid, userIdNullable) = await _currentUserService.IsUserValidAsync();
         if (!isValid || !userIdNullable.HasValue)
-            return Result<Guid>.Failure("Authentication required. Please log in to create a tag.", ErrorCodeEnum.Unauthorized);
+            return Result<Guid>.Failure("Yêu cầu xác thực. Vui lòng đăng nhập để tạo thẻ.", ErrorCodeEnum.Unauthorized);
         var roles = await _currentUserService.GetCurrentRolesAsync();
         if (!roles.Contains(RoleEnum.Admin) && !roles.Contains(RoleEnum.Moderator))
-            return Result<Guid>.Failure("You do not have permission to create tags. Only Admin or Moderator can perform this action.", ErrorCodeEnum.Forbidden);
+            return Result<Guid>.Failure("Bạn không có quyền tạo thẻ. Chỉ Quản trị viên hoặc Người điều hành mới có thể thực hiện hành động này.", ErrorCodeEnum.Forbidden);
         if (string.IsNullOrWhiteSpace(command.Name))
-            return Result<Guid>.Failure("Tag name is required and cannot be empty.", ErrorCodeEnum.ValidationFailed);
+            return Result<Guid>.Failure("Tên thẻ là bắt buộc và không được để trống.", ErrorCodeEnum.ValidationFailed);
 
         var tag = new Tag { Name = command.Name.Trim() };
         tag.InitializeEntity(userIdNullable.Value);
         await _unitOfWork.Repository<Tag>().AddAsync(tag);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
-        return Result<Guid>.Success(tag.Id, "Tag created.");
+        return Result<Guid>.Success(tag.Id, "Đã tạo thẻ.");
     }
 }

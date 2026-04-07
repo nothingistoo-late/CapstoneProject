@@ -1,4 +1,4 @@
-using MediatR;
+﻿using MediatR;
 using Microsoft.EntityFrameworkCore;
 using CapstoneProject.Application.Common.Enums;
 using CapstoneProject.Application.Common.Interfaces;
@@ -30,7 +30,7 @@ public class GetExchangeRateQueryHandler : IRequestHandler<GetExchangeRateQuery,
 
         if (exchangeRate == null)
             return Result<ExchangeRateDto>.Failure(
-                $"Exchange rate for {request.FromCurrency}/{request.ToCurrency} not found.", 
+                $"Không tìm thấy tỷ giá hối đoái cho {request.FromCurrency}/{request.ToCurrency}.", 
                 ErrorCodeEnum.NotFound);
 
         var dto = new ExchangeRateDto
@@ -47,6 +47,6 @@ public class GetExchangeRateQueryHandler : IRequestHandler<GetExchangeRateQuery,
             UpdatedAt = exchangeRate.UpdatedAt,
         };
 
-        return Result<ExchangeRateDto>.Success(dto, "Exchange rate retrieved successfully.");
+        return Result<ExchangeRateDto>.Success(dto, "Tỷ giá hối đoái được truy xuất thành công.");
     }
 }

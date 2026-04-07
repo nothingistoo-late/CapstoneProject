@@ -1,4 +1,4 @@
-using MediatR;
+﻿using MediatR;
 using CapstoneProject.Application.Common.Enums;
 using CapstoneProject.Application.Common.Interfaces;
 using CapstoneProject.Application.Common.Models;
@@ -24,11 +24,11 @@ public class CreatePackageCommandHandler : IRequestHandler<CreatePackageCommand,
     {
         var (isValid, userIdNullable) = await _currentUserService.IsUserValidAsync();
         if (!isValid || !userIdNullable.HasValue)
-            return Result<Guid>.Failure("Authentication required. Please log in to create a package.", ErrorCodeEnum.Unauthorized);
+            return Result<Guid>.Failure("Yêu cầu xác thực. Vui lòng đăng nhập để tạo gói.", ErrorCodeEnum.Unauthorized);
 
         var roles = await _currentUserService.GetCurrentRolesAsync();
         if (!roles.Contains(Domain.Enums.RoleEnum.Admin))
-            return Result<Guid>.Failure("You do not have permission to create packages. Only Admin can perform this action.", ErrorCodeEnum.Forbidden);
+            return Result<Guid>.Failure("Bạn không có quyền tạo gói. Chỉ Quản trị viên mới có thể thực hiện hành động này.", ErrorCodeEnum.Forbidden);
 
         var req = command.Request;
         var pkg = new Package

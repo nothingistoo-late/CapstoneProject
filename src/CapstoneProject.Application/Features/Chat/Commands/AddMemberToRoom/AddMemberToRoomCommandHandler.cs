@@ -1,4 +1,4 @@
-using MediatR;
+﻿using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using CapstoneProject.Application.Commons.DTOs.Chat;
@@ -44,22 +44,22 @@ public class AddMemberToRoomCommandHandler : IRequestHandler<AddMemberToRoomComm
             var userIdString = _currentUserService.UserId;
             if (string.IsNullOrEmpty(userIdString) || !Guid.TryParse(userIdString, out var currentUserId))
             {
-                return Result<ChatRoomMemberResponse>.Failure("User not authenticated", ErrorCodeEnum.Unauthorized);
+                return Result<ChatRoomMemberResponse>.Failure("Người dùng chưa được xác thực", ErrorCodeEnum.Unauthorized);
             }
 
             if (command == null)
             {
-                return Result<ChatRoomMemberResponse>.Failure("Command cannot be null", ErrorCodeEnum.InvalidInput);
+                return Result<ChatRoomMemberResponse>.Failure("Lệnh không thể rỗng", ErrorCodeEnum.InvalidInput);
             }
 
             if (command.ChatRoomId == Guid.Empty)
             {
-                return Result<ChatRoomMemberResponse>.Failure("Chat room ID is required", ErrorCodeEnum.InvalidInput);
+                return Result<ChatRoomMemberResponse>.Failure("Cần có ID phòng trò chuyện", ErrorCodeEnum.InvalidInput);
             }
 
             if (command.UserId == Guid.Empty)
             {
-                return Result<ChatRoomMemberResponse>.Failure("User ID is required", ErrorCodeEnum.InvalidInput);
+                return Result<ChatRoomMemberResponse>.Failure("ID người dùng là bắt buộc", ErrorCodeEnum.InvalidInput);
             }
 
             var member = await _conversationService.AddParticipantAsync(command.ChatRoomId, command.UserId, cancellationToken);
@@ -74,7 +74,7 @@ public class AddMemberToRoomCommandHandler : IRequestHandler<AddMemberToRoomComm
             if (memberWithUser == null)
             {
                 _logger.LogError("Failed to retrieve member {MemberId} after adding to conversation {ConversationId}", member.Id, command.ChatRoomId);
-                return Result<ChatRoomMemberResponse>.Failure("Failed to retrieve member information", ErrorCodeEnum.InternalError);
+                return Result<ChatRoomMemberResponse>.Failure("Không lấy được thông tin thành viên", ErrorCodeEnum.InternalError);
             }
 
             var response = new ChatRoomMemberResponse
@@ -103,12 +103,12 @@ public class AddMemberToRoomCommandHandler : IRequestHandler<AddMemberToRoomComm
         catch (DbUpdateException ex)
         {
             _logger.LogError(ex, "Database error while adding member {UserId} to conversation {ConversationId}", command?.UserId, command?.ChatRoomId);
-            return Result<ChatRoomMemberResponse>.Failure("Failed to add member due to database error", ErrorCodeEnum.DatabaseError);
+            return Result<ChatRoomMemberResponse>.Failure("Không thể thêm thành viên do lỗi cơ sở dữ liệu", ErrorCodeEnum.DatabaseError);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Unexpected error while adding member {UserId} to conversation {ConversationId}", command?.UserId, command?.ChatRoomId);
-            return Result<ChatRoomMemberResponse>.Failure("An unexpected error occurred while adding the member", ErrorCodeEnum.InternalError);
+            return Result<ChatRoomMemberResponse>.Failure("Đã xảy ra lỗi không mong muốn khi thêm thành viên", ErrorCodeEnum.InternalError);
         }
     }
 }

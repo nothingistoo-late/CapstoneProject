@@ -1,4 +1,4 @@
-using MediatR;
+﻿using MediatR;
 using Microsoft.EntityFrameworkCore;
 using CapstoneProject.Application.Common.Enums;
 using CapstoneProject.Application.Common.Interfaces;
@@ -26,10 +26,10 @@ public class BatchRejectMapsCommandHandler : IRequestHandler<BatchRejectMapsComm
     {
         var (isValid, userIdNullable) = await _currentUserService.IsUserValidAsync();
         if (!isValid || !userIdNullable.HasValue)
-            return Result<BatchMapResultDto>.Failure("Authentication required. Please log in to perform batch reject.", ErrorCodeEnum.Unauthorized);
+            return Result<BatchMapResultDto>.Failure("Yêu cầu xác thực. Vui lòng đăng nhập để thực hiện từ chối hàng loạt.", ErrorCodeEnum.Unauthorized);
         var roles = await _currentUserService.GetCurrentRolesAsync();
         if (!roles.Contains(RoleEnum.Admin) && !roles.Contains(RoleEnum.Moderator))
-            return Result<BatchMapResultDto>.Failure("You do not have permission to reject maps. Only Admin or Moderator can perform batch reject.", ErrorCodeEnum.Forbidden);
+            return Result<BatchMapResultDto>.Failure("Bạn không có quyền từ chối bản đồ. Chỉ Quản trị viên hoặc Người điều hành mới có thể thực hiện từ chối hàng loạt.", ErrorCodeEnum.Forbidden);
 
         var repo = _unitOfWork.Repository<Map>();
         var maps = await repo.GetQueryable()
@@ -55,6 +55,6 @@ public class BatchRejectMapsCommandHandler : IRequestHandler<BatchRejectMapsComm
             NotFoundIds = notFoundIds,
             InvalidStatusIds = invalidStatusIds
         };
-        return Result<BatchMapResultDto>.Success(dto, $"Rejected {dto.SuccessCount} map(s).");
+        return Result<BatchMapResultDto>.Success(dto, $"Đã từ chối (các) bản đồ {dto.SuccessCount}.");
     }
 }

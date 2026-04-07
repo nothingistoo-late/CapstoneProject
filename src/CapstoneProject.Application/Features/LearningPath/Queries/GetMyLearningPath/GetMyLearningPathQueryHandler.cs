@@ -1,4 +1,4 @@
-using MediatR;
+﻿using MediatR;
 using Microsoft.EntityFrameworkCore;
 using CapstoneProject.Application.Common.Enums;
 using CapstoneProject.Application.Common.Interfaces;
@@ -23,7 +23,7 @@ public class GetMyLearningPathQueryHandler : IRequestHandler<GetMyLearningPathQu
     {
         var (isValid, userId) = await _currentUserService.IsUserValidAsync();
         if (!isValid || !userId.HasValue)
-            return Result<MyLearningPathDto>.Failure("Authentication required. Please log in to view your learning path.", ErrorCodeEnum.Unauthorized);
+            return Result<MyLearningPathDto>.Failure("Yêu cầu xác thực. Vui lòng đăng nhập để xem lộ trình học tập của bạn.", ErrorCodeEnum.Unauthorized);
 
         var userGoal = await _unitOfWork.Repository<UserLearningGoal>().GetQueryable()
             .Where(ug => ug.UserId == userId.Value && !ug.IsDeleted)

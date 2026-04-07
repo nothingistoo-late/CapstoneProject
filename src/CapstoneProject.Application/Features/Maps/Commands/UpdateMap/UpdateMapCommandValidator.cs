@@ -1,4 +1,4 @@
-using CapstoneProject.Application.Commons.Helpers;
+﻿using CapstoneProject.Application.Commons.Helpers;
 using FluentValidation;
 
 namespace CapstoneProject.Application.Features.Maps.Commands.UpdateMap;
@@ -7,7 +7,7 @@ public class UpdateMapCommandValidator : AbstractValidator<UpdateMapCommand>
 {
     public UpdateMapCommandValidator()
     {
-        RuleFor(x => x.MapId).NotEmpty().WithMessage("Map Id is required.");
+        RuleFor(x => x.MapId).NotEmpty().WithMessage("Id bản đồ là bắt buộc.");
         RuleFor(x => x.Request).NotNull().WithMessage("Request is required.");
         When(x => x.Request != null, () =>
         {

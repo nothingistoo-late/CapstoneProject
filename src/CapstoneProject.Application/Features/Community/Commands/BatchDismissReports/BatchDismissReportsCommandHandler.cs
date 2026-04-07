@@ -26,10 +26,10 @@ public class BatchDismissReportsCommandHandler : IRequestHandler<BatchDismissRep
     {
         var (isValid, userIdNullable) = await _currentUserService.IsUserValidAsync();
         if (!isValid || !userIdNullable.HasValue)
-            return Result<BatchReportResultDto>.Failure("Authentication required. Please log in to dismiss reports.", ErrorCodeEnum.Unauthorized);
+            return Result<BatchReportResultDto>.Failure("Yêu cầu xác thực. Vui lòng đăng nhập để loại bỏ báo cáo.", ErrorCodeEnum.Unauthorized);
         var roles = await _currentUserService.GetCurrentRolesAsync();
         if (!roles.Contains(RoleEnum.Admin) && !roles.Contains(RoleEnum.Moderator))
-            return Result<BatchReportResultDto>.Failure("You do not have permission to dismiss reports. Only Admin or Moderator can perform batch dismiss.", ErrorCodeEnum.Forbidden);
+            return Result<BatchReportResultDto>.Failure("Bạn không có quyền loại bỏ báo cáo. Chỉ Quản trị viên hoặc Người điều hành mới có thể thực hiện loại bỏ hàng loạt.", ErrorCodeEnum.Forbidden);
 
         var repo = _unitOfWork.Repository<MapReport>();
         var reports = await repo.GetQueryable()
@@ -50,7 +50,7 @@ public class BatchDismissReportsCommandHandler : IRequestHandler<BatchDismissRep
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         var dto = new BatchReportResultDto { SuccessCount = reports.Count, FailedCount = notFoundIds.Count, NotFoundIds = notFoundIds };
-        return Result<BatchReportResultDto>.Success(dto, $"Dismissed {dto.SuccessCount} report(s).");
+        return Result<BatchReportResultDto>.Success(dto, $"Đã loại bỏ (các) báo cáo {dto.SuccessCount}.");
     }
 }
 

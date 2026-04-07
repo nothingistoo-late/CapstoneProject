@@ -44,17 +44,17 @@ public class CreateTemporaryGroupConversationCommandHandler : IRequestHandler<Cr
             var userIdString = _currentUserService.UserId;
             if (string.IsNullOrEmpty(userIdString) || !Guid.TryParse(userIdString, out var currentUserId))
             {
-                return Result<ChatRoomResponse>.Failure("User not authenticated", ErrorCodeEnum.Unauthorized);
+                return Result<ChatRoomResponse>.Failure("Người dùng chưa được xác thực", ErrorCodeEnum.Unauthorized);
             }
 
             if (command == null)
             {
-                return Result<ChatRoomResponse>.Failure("Command cannot be null", ErrorCodeEnum.InvalidInput);
+                return Result<ChatRoomResponse>.Failure("Lệnh không thể rỗng", ErrorCodeEnum.InvalidInput);
             }
 
             if (string.IsNullOrWhiteSpace(command.Name))
             {
-                return Result<ChatRoomResponse>.Failure("Group name is required", ErrorCodeEnum.InvalidInput);
+                return Result<ChatRoomResponse>.Failure("Tên nhóm là bắt buộc", ErrorCodeEnum.InvalidInput);
             }
 
             var conversation = await _conversationService.CreateTemporaryGroupConversationAsync(command.Name, currentUserId, cancellationToken);
@@ -75,12 +75,12 @@ public class CreateTemporaryGroupConversationCommandHandler : IRequestHandler<Cr
         catch (DbUpdateException ex)
         {
             _logger.LogError(ex, "Database error while creating temporary group conversation");
-            return Result<ChatRoomResponse>.Failure("Failed to create conversation due to database error", ErrorCodeEnum.DatabaseError);
+            return Result<ChatRoomResponse>.Failure("Không tạo được cuộc trò chuyện do lỗi cơ sở dữ liệu", ErrorCodeEnum.DatabaseError);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Unexpected error while creating temporary group conversation");
-            return Result<ChatRoomResponse>.Failure("An unexpected error occurred while creating the conversation", ErrorCodeEnum.InternalError);
+            return Result<ChatRoomResponse>.Failure("Đã xảy ra lỗi không mong muốn khi tạo cuộc trò chuyện", ErrorCodeEnum.InternalError);
         }
     }
 

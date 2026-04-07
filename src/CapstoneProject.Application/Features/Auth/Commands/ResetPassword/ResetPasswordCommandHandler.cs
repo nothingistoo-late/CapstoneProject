@@ -1,4 +1,4 @@
-using System.Linq.Expressions;
+﻿using System.Linq.Expressions;
 using AutoMapper;
 using MediatR;
 using Microsoft.Extensions.Configuration;
@@ -43,7 +43,7 @@ public class ResetPasswordCommandHandler : IRequestHandler<ResetPasswordCommand,
             var user = await _identityService.GetUserByFirstOrDefaultAsync(expression);
             if (user == null)
             {
-                return Result.Failure("User not found", ErrorCodeEnum.NotFound);
+                return Result.Failure("Không tìm thấy người dùng", ErrorCodeEnum.NotFound);
             }
             //encrypt password
             var passwordEncrypt = PasswordCryptoHelper.Encrypt(command.Request.NewPassword, _passwordEncryptKey);
@@ -96,19 +96,19 @@ public class ResetPasswordCommandHandler : IRequestHandler<ResetPasswordCommand,
             {
                 _logger.LogInformation("OTP sent successfully to {Contact} via {Channel} for reset password", 
                     command.Request.Contact, command.Request.OtpSentChannel.ToString().ToLower());                    
-                return Result.Success($"Reset password initiated. Please verify the OTP sent to your {command.Request.OtpSentChannel.ToString().ToLower()} to complete the reset password process.");
+                return Result.Success($"Đã bắt đầu đặt lại mật khẩu. Vui lòng xác minh OTP được gửi tới {command.Request.OtpSentChannel.ToString().ToLower()} của bạn để hoàn tất quy trình đặt lại mật khẩu.");
 
             }
             else
             {
                     _logger.LogError("Failed to send OTP to {Contact} via {Channel}", command.Request.Contact, command.Request.OtpSentChannel.ToString().ToLower());
-                    return Result.Failure("Failed to send verification code. Please try again.", ErrorCodeEnum.InternalError);
+                    return Result.Failure("Không gửi được mã xác minh. Vui lòng thử lại.", ErrorCodeEnum.InternalError);
             }
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error during reset password process");
-            return Result.Failure("Error during reset password process",  ErrorCodeEnum.InternalError);
+            _logger.LogError(ex, "Lỗi trong quá trình đặt lại mật khẩu");
+            return Result.Failure("Lỗi trong quá trình đặt lại mật khẩu",  ErrorCodeEnum.InternalError);
         }
     }
 }

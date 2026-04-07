@@ -1,4 +1,4 @@
-using MediatR;
+﻿using MediatR;
 using Microsoft.Extensions.Logging;
 using CapstoneProject.Application.Common.DTOs.Auth;
 using CapstoneProject.Application.Common.Enums;
@@ -29,13 +29,13 @@ public class RefreshTokenCommandHandler : IRequestHandler<RefreshTokenCommand, R
             var (isValid, userId) = await _currentUserService.IsUserValidAsync();
             if (!isValid || userId == null)
             {
-                return Result<AuthResponse>.Failure("Not authorized", ErrorCodeEnum.Unauthorized);
+                return Result<AuthResponse>.Failure("Không được ủy quyền", ErrorCodeEnum.Unauthorized);
             }
 
             var user = await _identityService.GetUserByIdAsync(userId.ToString() ?? throw new InvalidOperationException("User ID is null"));
             if (user == null)
             {
-                return Result<AuthResponse>.Failure("User not found", ErrorCodeEnum.NotFound);
+                return Result<AuthResponse>.Failure("Không tìm thấy người dùng", ErrorCodeEnum.NotFound);
             }
             var (token, roles, expiresInMinutes, expiresAt) = _jwtService.GenerateJwtTokenWithExpiration(user);
             var authResponse = new AuthResponse
@@ -44,13 +44,13 @@ public class RefreshTokenCommandHandler : IRequestHandler<RefreshTokenCommand, R
                 Roles = roles,
                 ExpiresAt = expiresAt
             };
-            return Result<AuthResponse>.Success(authResponse, "Refresh token successfully!");
+            return Result<AuthResponse>.Success(authResponse, "Làm mới mã thông báo thành công!");
 
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error refreshing token for user {UserId}", _currentUserService.UserId);
-            return Result<AuthResponse>.Failure("Error refreshing token", ErrorCodeEnum.InternalError);
+            return Result<AuthResponse>.Failure("Lỗi làm mới mã thông báo", ErrorCodeEnum.InternalError);
         }
     }
 }

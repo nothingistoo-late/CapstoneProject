@@ -1,4 +1,4 @@
-using MediatR;
+﻿using MediatR;
 using Microsoft.EntityFrameworkCore;
 using CapstoneProject.Application.Common.Enums;
 using CapstoneProject.Application.Common.Interfaces;
@@ -26,7 +26,7 @@ public class UpdateMapCommandHandler : IRequestHandler<UpdateMapCommand, Result>
     {
         var (isValid, userIdNullable) = await _currentUserService.IsUserValidAsync();
         if (!isValid || !userIdNullable.HasValue)
-            return Result.Failure("Authentication required. Please log in to update a map.", ErrorCodeEnum.Unauthorized);
+            return Result.Failure("Yêu cầu xác thực. Vui lòng đăng nhập để cập nhật bản đồ.", ErrorCodeEnum.Unauthorized);
         var userId = userIdNullable.Value;
 
         var mapRepo = _unitOfWork.Repository<Map>();
@@ -35,12 +35,12 @@ public class UpdateMapCommandHandler : IRequestHandler<UpdateMapCommand, Result>
             .Include(m => m.MapTags)
             .FirstOrDefaultAsync(m => m.Id == command.MapId && !m.IsDeleted, cancellationToken);
         if (map == null)
-            return Result.Failure($"Map not found with Id: {command.MapId}.", ErrorCodeEnum.NotFound);
+            return Result.Failure($"Không tìm thấy bản đồ có Id: {command.MapId}.", ErrorCodeEnum.NotFound);
 
         var roles = await _currentUserService.GetCurrentRolesAsync();
         bool isAdminOrMod = roles.Contains(RoleEnum.Admin) || roles.Contains(RoleEnum.Moderator);
         if (map.CreatedBy != userId && !isAdminOrMod)
-            return Result.Failure("You do not have permission to update this map.", ErrorCodeEnum.Forbidden);
+            return Result.Failure("Bạn không có quyền cập nhật bản đồ này.", ErrorCodeEnum.Forbidden);
 
         var req = command.Request;
         map.Title = req.Title;
@@ -94,7 +94,7 @@ public class UpdateMapCommandHandler : IRequestHandler<UpdateMapCommand, Result>
                 MapLevelMetadataExtractor.MergeFromJson(lv);
                 if (lv.TimeLimitMs <= 0 || lv.WinCondition <= 0)
                     return Result.Failure(
-                        "Each level requires TimeLimitMs and WinCondition > 0 (set in Levels[] or in each level JSON).",
+                        "Mỗi cấp độ yêu cầu TimeLimitMs và WinCondition > 0 (được đặt trong Levels[] hoặc trong JSON của mỗi cấp độ).",
                         ErrorCodeEnum.ValidationFailed);
                 if (lv.Type == null)
                     return Result.Failure(
@@ -138,7 +138,7 @@ public class UpdateMapCommandHandler : IRequestHandler<UpdateMapCommand, Result>
                 MapLevelMetadataExtractor.MergeFromJson(tmp);
                 if (tmp.TimeLimitMs <= 0 || tmp.WinCondition <= 0)
                     return Result.Failure(
-                        "Level requires TimeLimitMs and WinCondition > 0 (set in JSON or Levels when using multi-level API).",
+                        "Cấp độ yêu cầu TimeLimitMs và WinCondition > 0 (được đặt trong JSON hoặc Levels khi sử dụng API nhiều cấp).",
                         ErrorCodeEnum.ValidationFailed);
                 if (tmp.Type == null)
                     return Result.Failure(
@@ -180,7 +180,7 @@ public class UpdateMapCommandHandler : IRequestHandler<UpdateMapCommand, Result>
                 MapLevelMetadataExtractor.MergeFromJson(tmp);
                 if (tmp.TimeLimitMs <= 0 || tmp.WinCondition <= 0)
                     return Result.Failure(
-                        "Level requires TimeLimitMs and WinCondition > 0 (set in JSON or Levels when using multi-level API).",
+                        "Cấp độ yêu cầu TimeLimitMs và WinCondition > 0 (được đặt trong JSON hoặc Levels khi sử dụng API nhiều cấp).",
                         ErrorCodeEnum.ValidationFailed);
                 if (tmp.Type == null)
                     return Result.Failure(
@@ -204,6 +204,6 @@ public class UpdateMapCommandHandler : IRequestHandler<UpdateMapCommand, Result>
         map.ContentVersion++;
         mapRepo.Update(map);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
-        return Result.Success("Map updated and moved back to Draft status.");
+        return Result.Success("Bản đồ đã được cập nhật và chuyển về trạng thái Bản nháp.");
     }
 }

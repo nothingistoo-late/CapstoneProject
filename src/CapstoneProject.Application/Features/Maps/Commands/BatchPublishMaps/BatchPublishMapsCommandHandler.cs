@@ -1,4 +1,4 @@
-using MediatR;
+﻿using MediatR;
 using Microsoft.EntityFrameworkCore;
 using CapstoneProject.Application.Common.Enums;
 using CapstoneProject.Application.Common.Interfaces;
@@ -26,10 +26,10 @@ public class BatchPublishMapsCommandHandler : IRequestHandler<BatchPublishMapsCo
     {
         var (isValid, userIdNullable) = await _currentUserService.IsUserValidAsync();
         if (!isValid || !userIdNullable.HasValue)
-            return Result<BatchMapResultDto>.Failure("Authentication required. Please log in to perform batch publish.", ErrorCodeEnum.Unauthorized);
+            return Result<BatchMapResultDto>.Failure("Yêu cầu xác thực. Vui lòng đăng nhập để thực hiện xuất bản hàng loạt.", ErrorCodeEnum.Unauthorized);
         var roles = await _currentUserService.GetCurrentRolesAsync();
         if (!roles.Contains(RoleEnum.Admin) && !roles.Contains(RoleEnum.Moderator))
-            return Result<BatchMapResultDto>.Failure("You do not have permission to publish maps. Only Admin or Moderator can perform batch publish.", ErrorCodeEnum.Forbidden);
+            return Result<BatchMapResultDto>.Failure("Bạn không có quyền xuất bản bản đồ. Chỉ Quản trị viên hoặc Người điều hành mới có thể thực hiện xuất bản hàng loạt.", ErrorCodeEnum.Forbidden);
 
         var repo = _unitOfWork.Repository<Map>();
         var maps = await repo.GetQueryable()
@@ -56,6 +56,6 @@ public class BatchPublishMapsCommandHandler : IRequestHandler<BatchPublishMapsCo
             NotFoundIds = notFoundIds,
             InvalidStatusIds = invalidStatusIds
         };
-        return Result<BatchMapResultDto>.Success(dto, $"Published {dto.SuccessCount} map(s).");
+        return Result<BatchMapResultDto>.Success(dto, $"Đã xuất bản {dto.SuccessCount} bản đồ.");
     }
 }

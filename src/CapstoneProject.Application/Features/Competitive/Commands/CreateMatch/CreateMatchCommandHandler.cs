@@ -1,4 +1,4 @@
-using MediatR;
+﻿using MediatR;
 using Microsoft.EntityFrameworkCore;
 using CapstoneProject.Application.Common.Enums;
 using CapstoneProject.Application.Common.Interfaces;
@@ -24,12 +24,12 @@ public class CreateMatchCommandHandler : IRequestHandler<CreateMatchCommand, Res
     {
         var (isValid, userIdNullable) = await _currentUserService.IsUserValidAsync();
         if (!isValid || !userIdNullable.HasValue)
-            return Result<Guid>.Failure("Authentication required. Please log in to create a match.", ErrorCodeEnum.Unauthorized);
+            return Result<Guid>.Failure("Yêu cầu xác thực. Vui lòng đăng nhập để tạo trận đấu.", ErrorCodeEnum.Unauthorized);
         var userId = userIdNullable.Value;
 
         var mapExists = await _unitOfWork.Repository<Map>().GetQueryable().AnyAsync(m => m.Id == command.MapId && !m.IsDeleted, cancellationToken);
         if (!mapExists)
-            return Result<Guid>.Failure("Map not found", ErrorCodeEnum.NotFound);
+            return Result<Guid>.Failure("Không tìm thấy bản đồ", ErrorCodeEnum.NotFound);
 
         var match = new Match
         {
@@ -39,6 +39,6 @@ public class CreateMatchCommandHandler : IRequestHandler<CreateMatchCommand, Res
         match.InitializeEntity(userId);
         await _unitOfWork.Repository<Match>().AddAsync(match);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
-        return Result<Guid>.Success(match.Id, "Match created.");
+        return Result<Guid>.Success(match.Id, "Đã tạo trận đấu.");
     }
 }

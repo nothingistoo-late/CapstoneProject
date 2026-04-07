@@ -1,4 +1,4 @@
-using MediatR;
+﻿using MediatR;
 using Microsoft.EntityFrameworkCore;
 using CapstoneProject.Application.Common.Enums;
 using CapstoneProject.Application.Common.Interfaces;
@@ -23,9 +23,9 @@ public class BatchUpdateUserStatusCommandHandler : IRequestHandler<BatchUpdateUs
     {
         var (isValid, _) = await _currentUserService.IsUserValidAsync();
         if (!isValid)
-            return Result<BatchUpdateUserStatusResultDto>.Failure("Authentication required. Please log in to update user status.", ErrorCodeEnum.Unauthorized);
+            return Result<BatchUpdateUserStatusResultDto>.Failure("Yêu cầu xác thực. Vui lòng đăng nhập để cập nhật trạng thái người dùng.", ErrorCodeEnum.Unauthorized);
         if (!(await _currentUserService.GetCurrentRolesAsync()).Contains(RoleEnum.Admin))
-            return Result<BatchUpdateUserStatusResultDto>.Failure("You do not have permission to update user status. Only Admin can perform this action.", ErrorCodeEnum.Forbidden);
+            return Result<BatchUpdateUserStatusResultDto>.Failure("Bạn không có quyền cập nhật trạng thái người dùng. Chỉ Quản trị viên mới có thể thực hiện hành động này.", ErrorCodeEnum.Forbidden);
 
         var repo = _unitOfWork.Repository<AppUser>();
         var users = await repo.GetQueryable()
@@ -47,6 +47,6 @@ public class BatchUpdateUserStatusCommandHandler : IRequestHandler<BatchUpdateUs
             FailedCount = notFoundIds.Count,
             NotFoundIds = notFoundIds
         };
-        return Result<BatchUpdateUserStatusResultDto>.Success(dto, $"Updated status for {dto.SuccessCount} user(s).");
+        return Result<BatchUpdateUserStatusResultDto>.Success(dto, $"Đã cập nhật trạng thái cho {dto.SuccessCount} người dùng.");
     }
 }

@@ -1,4 +1,4 @@
-using MediatR;
+﻿using MediatR;
 using Microsoft.EntityFrameworkCore;
 using CapstoneProject.Application.Common.Enums;
 using CapstoneProject.Application.Common.Interfaces;
@@ -32,7 +32,7 @@ public class GetConceptByIdQueryHandler : IRequestHandler<GetConceptByIdQuery, R
             .FirstOrDefaultAsync(cancellationToken);
 
         if (concept == null)
-            return Result<ConceptDetailDto>.Failure("Concept not found.", ErrorCodeEnum.NotFound);
+            return Result<ConceptDetailDto>.Failure("Khái niệm không được tìm thấy.", ErrorCodeEnum.NotFound);
 
         return Result<ConceptDetailDto>.Success(concept);
     }

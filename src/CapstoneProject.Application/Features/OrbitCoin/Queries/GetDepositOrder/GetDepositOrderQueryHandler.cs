@@ -1,4 +1,4 @@
-using MediatR;
+﻿using MediatR;
 using Microsoft.EntityFrameworkCore;
 using CapstoneProject.Application.Common.Enums;
 using CapstoneProject.Application.Common.Interfaces;
@@ -24,7 +24,7 @@ public class GetDepositOrderQueryHandler : IRequestHandler<GetDepositOrderQuery,
     {
         var (isValid, userId) = await _currentUserService.IsUserValidAsync();
         if (!isValid || !userId.HasValue)
-            return Result<DepositOrderDetailDto>.Failure("Authentication required.", ErrorCodeEnum.Unauthorized);
+            return Result<DepositOrderDetailDto>.Failure("Yêu cầu xác thực.", ErrorCodeEnum.Unauthorized);
 
         var record = await _unitOfWork.Repository<PaymentRecord>()
             .GetQueryable()
@@ -38,7 +38,7 @@ public class GetDepositOrderQueryHandler : IRequestHandler<GetDepositOrderQuery,
                 cancellationToken);
 
         if (record == null)
-            return Result<DepositOrderDetailDto>.Failure("Order not found or access denied.", ErrorCodeEnum.NotFound);
+            return Result<DepositOrderDetailDto>.Failure("Không tìm thấy đơn đặt hàng hoặc quyền truy cập bị từ chối.", ErrorCodeEnum.NotFound);
 
         var code = record.Payment?.Code?.Trim();
         var name = record.Payment?.Name?.Trim();
@@ -58,6 +58,6 @@ public class GetDepositOrderQueryHandler : IRequestHandler<GetDepositOrderQuery,
             PaymentMethodName = name,
         };
 
-        return Result<DepositOrderDetailDto>.Success(dto, "Deposit order retrieved.");
+        return Result<DepositOrderDetailDto>.Success(dto, "Đã lấy lại lệnh gửi tiền.");
     }
 }

@@ -1,4 +1,4 @@
-using CapstoneProject.Application.Common.Enums;
+﻿using CapstoneProject.Application.Common.Enums;
 using CapstoneProject.Application.Common.Interfaces;
 using CapstoneProject.Application.Common.Models;
 using CapstoneProject.Application.Features.Xp.Queries.GetMyXpProfile;
@@ -24,15 +24,15 @@ public class GetUserXpProfileQueryHandler : IRequestHandler<GetUserXpProfileQuer
     {
         var (isValid, _) = await _currentUserService.IsUserValidAsync();
         if (!isValid)
-            return Result<MyXpProfileDto>.Failure("Authentication required.", ErrorCodeEnum.Unauthorized);
+            return Result<MyXpProfileDto>.Failure("Yêu cầu xác thực.", ErrorCodeEnum.Unauthorized);
 
         var roles = await _currentUserService.GetCurrentRolesAsync();
         if (!roles.Contains(RoleEnum.Admin) && !roles.Contains(RoleEnum.Moderator))
-            return Result<MyXpProfileDto>.Failure("Only Admin/Moderator can view user XP profile.", ErrorCodeEnum.Forbidden);
+            return Result<MyXpProfileDto>.Failure("Chỉ Quản trị viên/Người điều hành mới có thể xem hồ sơ XP của người dùng.", ErrorCodeEnum.Forbidden);
 
         var user = await _unitOfWork.Repository<AppUser>().GetQueryable().FirstOrDefaultAsync(x => x.Id == request.UserId, cancellationToken);
         if (user == null)
-            return Result<MyXpProfileDto>.Failure("User not found.", ErrorCodeEnum.NotFound);
+            return Result<MyXpProfileDto>.Failure("Không tìm thấy người dùng.", ErrorCodeEnum.NotFound);
 
         var thresholds = await _unitOfWork.Repository<LevelThreshold>().GetQueryable()
             .Where(x => !x.IsDeleted)
