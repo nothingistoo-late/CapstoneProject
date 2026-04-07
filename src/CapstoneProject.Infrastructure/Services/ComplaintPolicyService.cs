@@ -11,6 +11,8 @@ namespace CapstoneProject.Infrastructure.Services;
 
 public class ComplaintPolicyService : IComplaintPolicyService
 {
+    private const string OtherCategoryKey = "Other";
+
     private readonly IUnitOfWork _unitOfWork;
     private readonly CapstoneProjectDbContext _dbContext;
 
@@ -79,12 +81,18 @@ public class ComplaintPolicyService : IComplaintPolicyService
         {
             var maxPerDay = ReadIntConfig(rateRule.ConfigJson, "maxPerDay", 3);
             var dayStart = VietnamDateTime.DbNow.Date;
-            var countToday = await _unitOfWork.Repository<Complaint>().GetQueryable()
-                .CountAsync(c => !c.IsDeleted
-                                 && c.UserId == input.UserId
-                                 && c.CreatedAt.HasValue
-                                 && c.CreatedAt.Value >= dayStart,
-                    cancellationToken);
+            var dayEnd = dayStart.AddDays(1);
+            var complaintQuery = _unitOfWork.Repository<Complaint>().GetQueryable()
+                .Where(c => !c.IsDeleted
+                            && c.UserId == input.UserId
+                            && c.CreatedAt.HasValue
+                            && c.CreatedAt.Value >= dayStart
+                            && c.CreatedAt.Value < dayEnd);
+
+            if (string.Equals(categoryKey, OtherCategoryKey, StringComparison.OrdinalIgnoreCase))
+                complaintQuery = complaintQuery.Where(c => c.CategoryKey == categoryKey);
+
+            var countToday = await complaintQuery.CountAsync(cancellationToken);
             if (countToday >= maxPerDay)
                 return Fail("Daily complaint limit reached.");
         }

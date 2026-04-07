@@ -728,7 +728,8 @@ public static class SeedingExtension
             new { Key = "AccessIssue", Name = "Access Issue", Description = "Purchased map/package but cannot access", Sort = 20 },
             new { Key = "GameplayScoringIssue", Name = "Gameplay Scoring Issue", Description = "Unexpected score/stars/status after playing", Sort = 30 },
             new { Key = "RewardBalanceIssue", Name = "Reward Balance Issue", Description = "XP or OrbitCoin balance mismatch", Sort = 40 },
-            new { Key = "TrialIssue", Name = "Trial Issue", Description = "Free trial attempts blocked or deducted incorrectly", Sort = 50 }
+            new { Key = "TrialIssue", Name = "Trial Issue", Description = "Free trial attempts blocked or deducted incorrectly", Sort = 50 },
+            new { Key = "Other", Name = "Other", Description = "General issue report that does not match predefined categories", Sort = 60 }
         };
 
         foreach (var seed in categorySeeds)
@@ -787,7 +788,9 @@ public static class SeedingExtension
             new { Category = "TrialIssue", Rule = "required_context", Enabled = true, Priority = 10, Config = "{\"anyOf\":[\"mapId\",\"playHistoryId\"]}" },
             new { Category = "TrialIssue", Rule = "time_window", Enabled = true, Priority = 20, Config = "{\"hours\":24}" },
             new { Category = "TrialIssue", Rule = "duplicate_window", Enabled = true, Priority = 30, Config = "{\"hours\":72}" },
-            new { Category = "TrialIssue", Rule = "rate_limit", Enabled = true, Priority = 40, Config = "{\"maxPerDay\":3}" }
+            new { Category = "TrialIssue", Rule = "rate_limit", Enabled = true, Priority = 40, Config = "{\"maxPerDay\":3}" },
+
+            new { Category = "Other", Rule = "rate_limit", Enabled = true, Priority = 40, Config = "{\"maxPerDay\":2}" }
         };
 
         foreach (var seed in ruleSeeds)
