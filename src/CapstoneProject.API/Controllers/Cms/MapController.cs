@@ -149,7 +149,7 @@ public class CmsMapController : ControllerBase
     ///
     /// **Body (JSON):**
     /// - title (string, required), description (string, required), difficulty (int), timeLimitMs (int), winCondition (int).
-    /// - type (int, optional): 0 = Topdown, 1 = Platform. Mặc định 0 (Topdown).
+    /// - type (string, optional): Topdown | Platform | Snake. Mặc định Topdown.
     /// - price (decimal?, optional), mapDetailJson (object, required), hints (array, optional), tagIds (array of Guid, optional).
     ///
     /// **Example request body:** { "title": "Official Map", "description": "Desc", "difficulty": 1, "timeLimitMs": 60000, "winCondition": 10, "mapDetailJson": { "id": "level-1", "layers": {} }, "hints": [], "tagIds": [] }
@@ -229,7 +229,7 @@ public class CmsMapController : ControllerBase
     [ProducesResponseType(typeof(Result), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(Result), StatusCodes.Status403Forbidden)]
     [ProducesResponseType(typeof(Result), StatusCodes.Status500InternalServerError)]
-    [SwaggerOperation(Summary = "Create and publish map from JSON file", Description = "Admin uploads JSON file(s) and publishes map immediately. Form: title, description, difficulty, type? (Topdown|Platform), timeLimitMs, winCondition, price?, tagIdsCsv?, mapDetailFiles (required), avatarFile? (optional).", OperationId = "Cms_CreateAndPublishMapFromJsonFile", Tags = new[] { "CMS - Maps" })]
+    [SwaggerOperation(Summary = "Create and publish map from JSON file", Description = "Admin uploads JSON file(s) and publishes map immediately. Form: title, description, difficulty, type? (Topdown|Platform|Snake), timeLimitMs, winCondition, price?, tagIdsCsv?, mapDetailFiles (required), avatarFile? (optional).", OperationId = "Cms_CreateAndPublishMapFromJsonFile", Tags = new[] { "CMS - Maps" })]
     public async Task<IActionResult> CreateAndPublishMapFromJsonFile([FromForm] CreateMapFromJsonFileRequest request)
     {
         var (input, formErr) = await MapJsonUploadFormReader.BuildCreateInputAsync(request, Request);

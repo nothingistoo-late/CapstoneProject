@@ -57,6 +57,10 @@ public class UpdateMapCommandHandler : IRequestHandler<UpdateMapCommand, Result>
         if (req.AvatarUrl != null)
             map.AvatarUrl = req.AvatarUrl;
 
+        MapTypeEnum? requestedType = null;
+        if (MapLevelMetadataExtractor.TryParseMapType(req.Type, out var parsedType))
+            requestedType = parsedType;
+
         map.MapStatus = MapStatusEnum.Draft;
         map.IsPublished = false;
         map.UpdateEntity(userId);
@@ -74,6 +78,14 @@ public class UpdateMapCommandHandler : IRequestHandler<UpdateMapCommand, Result>
 
         if (req.Levels is { Count: > 0 })
         {
+            if (requestedType.HasValue)
+            {
+                foreach (var level in req.Levels)
+                {
+                    if (level.Type == null)
+                        level.Type = requestedType.Value;
+                }
+            }
             foreach (var d in map.MapDetails.ToList())
                 _unitOfWork.Repository<MapDetail>().Delete(d);
             foreach (var lv in req.Levels.OrderBy(x => x.LevelOrder))
@@ -86,7 +98,7 @@ public class UpdateMapCommandHandler : IRequestHandler<UpdateMapCommand, Result>
                         ErrorCodeEnum.ValidationFailed);
                 if (lv.Type == null)
                     return Result.Failure(
-                        "Each level must declare map type: type or mapType (0|1 or Topdown|Platform) in level JSON root, on the wrapper next to jsonContent, or as type on each item in Levels[].",
+                        MapLevelMetadataExtractor.InvalidMapTypeMessage,
                         ErrorCodeEnum.ValidationFailed);
                 var detail = new MapDetail
                 {
@@ -120,6 +132,8 @@ public class UpdateMapCommandHandler : IRequestHandler<UpdateMapCommand, Result>
                     JsonContent = req.MapDetailJson.Value,
                     Hints = req.Hints?.ToList() ?? new List<HintItemDto>()
                 };
+                if (requestedType.HasValue)
+                    tmp.Type = requestedType.Value;
                 MapHintsExtractor.MergeHintsFromJson(tmp);
                 MapLevelMetadataExtractor.MergeFromJson(tmp);
                 if (tmp.TimeLimitMs <= 0 || tmp.WinCondition <= 0)
@@ -128,7 +142,7 @@ public class UpdateMapCommandHandler : IRequestHandler<UpdateMapCommand, Result>
                         ErrorCodeEnum.ValidationFailed);
                 if (tmp.Type == null)
                     return Result.Failure(
-                        "The level must declare map type: type or mapType (0|1 or Topdown|Platform) in JSON root or as type in Levels[].",
+                        MapLevelMetadataExtractor.InvalidMapTypeMessage,
                         ErrorCodeEnum.ValidationFailed);
                 var mapMap = new MapDetail
                 {
@@ -160,6 +174,8 @@ public class UpdateMapCommandHandler : IRequestHandler<UpdateMapCommand, Result>
                     JsonContent = req.MapDetailJson.Value,
                     Hints = req.Hints?.ToList() ?? new List<HintItemDto>()
                 };
+                if (requestedType.HasValue)
+                    tmp.Type = requestedType.Value;
                 MapHintsExtractor.MergeHintsFromJson(tmp);
                 MapLevelMetadataExtractor.MergeFromJson(tmp);
                 if (tmp.TimeLimitMs <= 0 || tmp.WinCondition <= 0)
@@ -168,7 +184,7 @@ public class UpdateMapCommandHandler : IRequestHandler<UpdateMapCommand, Result>
                         ErrorCodeEnum.ValidationFailed);
                 if (tmp.Type == null)
                     return Result.Failure(
-                        "The level must declare map type: type or mapType (0|1 or Topdown|Platform) in JSON root or as type in Levels[].",
+                        MapLevelMetadataExtractor.InvalidMapTypeMessage,
                         ErrorCodeEnum.ValidationFailed);
                 first.TimeLimitMs = tmp.TimeLimitMs;
                 first.WinCondition = tmp.WinCondition;

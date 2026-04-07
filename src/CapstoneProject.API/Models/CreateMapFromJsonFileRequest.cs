@@ -9,6 +9,8 @@ public class CreateMapFromJsonFileRequest
     public string Description { get; set; } = string.Empty;
     public int Difficulty { get; set; }
     public decimal? Price { get; set; }
+    /// <summary>Loại map mặc định cho level nếu JSON không tự khai báo. Hỗ trợ Topdown | Platform | Snake.</summary>
+    public string? Type { get; set; }
     /// <summary>Số lượt chơi thử miễn phí cho mỗi người chơi. Null/0 = không có trial.</summary>
     public int? FreeTrialAttemptLimit { get; set; }
     public string TagIdsCsv { get; set; } = string.Empty;

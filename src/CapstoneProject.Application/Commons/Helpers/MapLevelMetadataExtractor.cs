@@ -7,6 +7,23 @@ namespace CapstoneProject.Application.Commons.Helpers;
 /// <summary>Đọc <c>timeLimitMs</c> / <c>winCondition</c> / <c>type</c> từ JSON level (wrapper hoặc nội dung JSON).</summary>
 public static class MapLevelMetadataExtractor
 {
+    public const string InvalidMapTypeMessage = "Map type is invalid.";
+
+    public static bool TryParseMapType(string? raw, out MapTypeEnum mapType)
+    {
+        mapType = MapTypeEnum.Topdown;
+        if (string.IsNullOrWhiteSpace(raw)) return false;
+
+        if (int.TryParse(raw, out var n) && Enum.IsDefined(typeof(MapTypeEnum), n))
+        {
+            mapType = (MapTypeEnum)n;
+            return true;
+        }
+
+        return Enum.TryParse(raw, ignoreCase: true, out mapType)
+            && Enum.IsDefined(typeof(MapTypeEnum), mapType);
+    }
+
     /// <summary>
     /// Gộp từ object bọc ngoài (vd. <c>{ "jsonContent", "timeLimitMs" }</c>); chỉ điền khi DTO đang = 0 (time/win) hoặc chưa có type từ API.
     /// </summary>
@@ -77,18 +94,7 @@ public static class MapLevelMetadataExtractor
 
         if (p.ValueKind == JsonValueKind.String)
         {
-            var s = p.GetString();
-            if (string.Equals(s, "Platform", StringComparison.OrdinalIgnoreCase))
-            {
-                mapType = MapTypeEnum.Platform;
-                return true;
-            }
-
-            if (string.Equals(s, "Topdown", StringComparison.OrdinalIgnoreCase))
-            {
-                mapType = MapTypeEnum.Topdown;
-                return true;
-            }
+            return TryParseMapType(p.GetString(), out mapType);
         }
 
         return false;

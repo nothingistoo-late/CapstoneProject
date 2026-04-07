@@ -16,7 +16,7 @@ public class CreateMapsRequest
     /// <summary>Tên level. Nếu không gửi sẽ lấy từ level.name.</summary>
     public string? Name { get; set; }
 
-    /// <summary>Loại: platform | topdown. Nếu không gửi sẽ lấy từ level.type hoặc level.metadata.</summary>
+    /// <summary>Loại: platform | topdown | snake. Nếu không gửi sẽ lấy từ level.type hoặc level.metadata.</summary>
     public string? Type { get; set; }
 
     /// <summary>Độ khó: easy | medium | hard. Nếu không gửi sẽ lấy từ level.metadata.difficulty.</summary>

@@ -14,7 +14,7 @@ public class GetMapsQuery : IRequest<Result<PaginationResult<MapListItemDto>>>
     /// </summary>
     public int? Difficulty { get; set; }
     public Guid? TagId { get; set; }
-    /// <summary>Filter by map type: 0 = Topdown, 1 = Platform. Null = all.</summary>
+    /// <summary>Filter by map type: 0 = Topdown, 1 = Platform, 2 = Snake. Null = all.</summary>
     public MapTypeEnum? Type { get; set; }
     public bool? PublishedOnly { get; set; } = true;
     public MapStatusEnum? MapStatus { get; set; }

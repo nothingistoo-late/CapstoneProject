@@ -20,6 +20,8 @@ public class CreateMapRequest
     public List<Guid> TagIds { get; set; } = new();
     /// <summary>Tag map (UID) theo taxonomy hệ thống.</summary>
     public List<Guid> LearnedTags { get; set; } = new();
+    /// <summary>Loại: platform | topdown | snake. Nếu không gửi sẽ lấy từ level.type hoặc level.metadata.</summary>
+    public string? Type { get; set; }
     /// <summary>URL avatar map (Cloudinary). Optional khi tạo map.</summary>
     public string? AvatarUrl { get; set; }
 }

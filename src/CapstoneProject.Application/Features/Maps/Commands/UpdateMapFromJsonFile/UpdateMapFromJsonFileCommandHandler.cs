@@ -35,6 +35,24 @@ public class UpdateMapFromJsonFileCommandHandler : IRequestHandler<UpdateMapFrom
         if (levelsFromFile != null)
             MapHintsExtractor.MergeHintsFromJson(levelsFromFile);
 
+        if (MapLevelMetadataExtractor.TryParseMapType(input.Type, out var defaultType) && levelsFromFile != null)
+        {
+            foreach (var level in levelsFromFile)
+            {
+                if (level.Type == null)
+                    level.Type = defaultType;
+            }
+        }
+
+        if (levelsFromFile == null && detailJson.HasValue && MapLevelMetadataExtractor.TryParseMapType(input.Type, out var singleType))
+        {
+            levelsFromFile = new List<MapLevelInputDto>
+            {
+                new() { LevelOrder = 0, Title = null, JsonContent = detailJson.Value, Type = singleType }
+            };
+            detailJson = null;
+        }
+
         var tagIds = ParseTagIdsCsv(input.TagIdsCsv);
         if (tagIds == null)
             return Result.Failure("TagIdsCsv contains invalid Guid(s).", ErrorCodeEnum.ValidationFailed);
@@ -48,6 +66,7 @@ public class UpdateMapFromJsonFileCommandHandler : IRequestHandler<UpdateMapFrom
             Description = input.Description,
             Difficulty = input.Difficulty,
             Price = input.Price,
+            AvatarUrl = null,
             FreeTrialAttemptLimit = input.FreeTrialAttemptLimit,
             TagIds = tagIds,
             LearnedTags = learnedTags,

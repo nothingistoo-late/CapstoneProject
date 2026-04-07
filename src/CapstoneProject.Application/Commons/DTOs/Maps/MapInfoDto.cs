@@ -9,7 +9,7 @@ public class MapInfoDto
     public string Title { get; set; } = string.Empty;
     public string Description { get; set; } = string.Empty;
     public int Difficulty { get; set; }
-    /// <summary>Loại level đầu tiên: "Topdown" hoặc "Platform".</summary>
+    /// <summary>Loại level đầu tiên: "Topdown", "Platform", hoặc "Snake".</summary>
     public string Type { get; set; } = string.Empty;
     /// <summary>Giới hạn thời gian (ms) của level đầu tiên.</summary>
     public int TimeLimitMs { get; set; }

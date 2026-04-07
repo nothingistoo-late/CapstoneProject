@@ -6,7 +6,7 @@ public class MapListItemDto
     public string Title { get; set; } = string.Empty;
     public string Description { get; set; } = string.Empty;
     public int Difficulty { get; set; }
-    /// <summary>Loại level đầu tiên: "Topdown" hoặc "Platform" (tóm tắt cho list).</summary>
+    /// <summary>Loại level đầu tiên: "Topdown", "Platform", hoặc "Snake" (tóm tắt cho list).</summary>
     public string Type { get; set; } = string.Empty;
     /// <summary>Giới hạn thời gian (ms) của level đầu tiên (tóm tắt cho list).</summary>
     public int TimeLimitMs { get; set; }

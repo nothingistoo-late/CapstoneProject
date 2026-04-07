@@ -51,7 +51,7 @@ public class LearnerMapController : ControllerBase
     /// - publishedOnly (bool?, optional): true = only published maps (catalog). Ignored when mapStatus is set. Default true.
     /// - mapStatus (int?, optional): Filter by map status: 0=Draft, 1=PendingReview, 2=Approved, 3=Rejected, 4=Published. When set, publishedOnly is ignored.
     /// - difficulty (int?, optional): Filter by difficulty level (1-5).
-    /// - type (int?, optional): Filter by map type: 0=Topdown, 1=Platform.
+    /// - type (int?, optional): Filter by map type: 0=Topdown, 1=Platform, 2=Snake.
     /// - tagId (Guid?, optional): Filter by tag ID.
     /// - search (string, optional): Search in title and description.
     /// - sortBy (string, optional): Sort by: CreatedAt, Title, Difficulty, TimeLimitMs.
@@ -253,8 +253,8 @@ public class LearnerMapController : ControllerBase
     ///
     /// **METHOD and path:** POST /api/learner/maps
     ///
-    /// **Body:** type (int, optional): 0 = Topdown, 1 = Platform. Mặc định Topdown.
-    /// **Example request body:** { "title": "My Map", "description": "Description", "difficulty": 1, "type": 0, "timeLimitMs": 60000, "winCondition": 10, "mapDetailJson": { "id": "level-1", "layers": {} }, "hints": [], "tagIds": [] }
+    /// **Body:** type (string, optional): Topdown | Platform | Snake. Mặc định Topdown.
+    /// **Example request body:** { "title": "My Map", "description": "Description", "difficulty": 1, "type": "Topdown", "timeLimitMs": 60000, "winCondition": 10, "mapDetailJson": { "id": "level-1", "layers": {} }, "hints": [], "tagIds": [] }
     /// </remarks>
     /// <response code="201">Map created. Returns message and data (mapId).</response>
     /// <response code="400">Validation error</response>

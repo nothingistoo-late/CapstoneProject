@@ -62,6 +62,14 @@ public class CreateMapCommandHandler : IRequestHandler<CreateMapCommand, Result<
         }
 
         var levelInputs = ResolveLevelInputs(req);
+        if (MapLevelMetadataExtractor.TryParseMapType(req.Type, out var defaultType))
+        {
+            foreach (var lv in levelInputs)
+            {
+                if (lv.Type == null)
+                    lv.Type = defaultType;
+            }
+        }
         foreach (var lv in levelInputs)
             MapHintsExtractor.MergeHintsFromJson(lv);
         MapLevelMetadataExtractor.MergeFromJson(levelInputs);
@@ -73,7 +81,7 @@ public class CreateMapCommandHandler : IRequestHandler<CreateMapCommand, Result<
                     ErrorCodeEnum.ValidationFailed);
             if (lv.Type == null)
                 return Result<Guid>.Failure(
-                    "Each level must declare map type: type or mapType (0|1 or Topdown|Platform) in level JSON root, on the wrapper next to jsonContent, or as type on each item in Levels[].",
+                    MapLevelMetadataExtractor.InvalidMapTypeMessage,
                     ErrorCodeEnum.ValidationFailed);
         }
 

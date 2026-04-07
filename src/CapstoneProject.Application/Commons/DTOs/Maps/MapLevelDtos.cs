@@ -15,7 +15,7 @@ public class MapLevelInputDto
     public int TimeLimitMs { get; set; }
     /// <summary>Điều kiện thắng cho level; có thể lấy từ JSON (<c>winCondition</c>) hoặc body API.</summary>
     public int WinCondition { get; set; }
-    /// <summary>Topdown hoặc Platform; bắt buộc trong JSON level (root hoặc wrapper cạnh <c>jsonContent</c>) hoặc trong body API (<c>type</c>).</summary>
+    /// <summary>Topdown, Platform, hoặc Snake; bắt buộc trong JSON level (root hoặc wrapper cạnh <c>jsonContent</c>) hoặc trong body API (<c>type</c>).</summary>
     public MapTypeEnum? Type { get; set; }
 }
 
@@ -29,6 +29,6 @@ public class MapLevelItemDto
     public List<HintItemDto> Hints { get; set; } = new();
     public int TimeLimitMs { get; set; }
     public int WinCondition { get; set; }
-    /// <summary>Topdown hoặc Platform.</summary>
+    /// <summary>Topdown, Platform, hoặc Snake.</summary>
     public string Type { get; set; } = string.Empty;
 }

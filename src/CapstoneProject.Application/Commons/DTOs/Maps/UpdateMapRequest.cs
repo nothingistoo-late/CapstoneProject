@@ -14,6 +14,8 @@ public class UpdateMapRequest
     public List<MapLevelInputDto>? Levels { get; set; }
     /// <summary>Cập nhật một level: level đầu (order nhỏ nhất) hoặc order 0 khi không dùng <see cref="Levels"/>.</summary>
     public JsonElement? MapDetailJson { get; set; }
+    /// <summary>Loại map mặc định cho level nếu JSON không tự khai báo. Hỗ trợ Topdown | Platform | Snake.</summary>
+    public string? Type { get; set; }
     public string? EditorialContent { get; set; }
     public int? UnlockEditorialAfterStars { get; set; }
     /// <summary>Gợi ý khi chỉ cập nhật <see cref="MapDetailJson"/> (một level). Khi gửi <see cref="Levels"/> thì dùng hint trên từng phần tử.</summary>
