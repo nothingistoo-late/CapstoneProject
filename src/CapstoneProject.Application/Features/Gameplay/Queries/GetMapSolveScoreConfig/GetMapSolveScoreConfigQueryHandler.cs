@@ -43,6 +43,7 @@ public class GetMapSolveScoreConfigQueryHandler : IRequestHandler<GetMapSolveSco
             TimeScore = row.TimeScore,
             StepsScore = row.StepsScore,
             BlocksScore = row.BlocksScore
-        });
+        }, "Đã lấy cấu hình điểm giải bản đồ.");
     }
 }
+

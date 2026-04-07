@@ -35,6 +35,6 @@ public class GetPackageByIdQueryHandler : IRequestHandler<GetPackageByIdQuery, R
 
         if (pkg == null)
             return Result<PackageDto>.Failure($"Không tìm thấy gói có Id: {request.PackageId}. Gói có thể đã bị xóa hoặc không tồn tại.", ErrorCodeEnum.NotFound);
-        return Result<PackageDto>.Success(pkg);
+        return Result<PackageDto>.Success(pkg, "Đã lấy thông tin gói.");
     }
 }

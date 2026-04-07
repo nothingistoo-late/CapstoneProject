@@ -35,6 +35,6 @@ public class GetConceptCompletionQueryHandler : IRequestHandler<GetConceptComple
             .FirstOrDefaultAsync(cancellationToken);
 
         var dto = progress ?? new ConceptCompletionDto { IsCompleted = false, CompletedAt = null };
-        return Result<ConceptCompletionDto>.Success(dto);
+        return Result<ConceptCompletionDto>.Success(dto, "Đã lấy trạng thái hoàn thành khái niệm.");
     }
 }

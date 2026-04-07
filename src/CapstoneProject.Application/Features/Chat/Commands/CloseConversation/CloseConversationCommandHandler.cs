@@ -60,7 +60,7 @@ public class CloseConversationCommandHandler : IRequestHandler<CloseConversation
                 // Don't fail the operation if broadcast fails - conversation is already closed
             }
             
-            return Result<bool>.Success(true);
+            return Result<bool>.Success(true, "Đã đóng cuộc trò chuyện.");
         }
         catch (ArgumentException ex)
         {

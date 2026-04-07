@@ -34,6 +34,6 @@ public class GetConceptByIdQueryHandler : IRequestHandler<GetConceptByIdQuery, R
         if (concept == null)
             return Result<ConceptDetailDto>.Failure("Khái niệm không được tìm thấy.", ErrorCodeEnum.NotFound);
 
-        return Result<ConceptDetailDto>.Success(concept);
+        return Result<ConceptDetailDto>.Success(concept, "Đã lấy chi tiết khái niệm.");
     }
 }

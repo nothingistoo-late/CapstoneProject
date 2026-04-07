@@ -46,7 +46,7 @@ Dự án base được xây dựng với .NET 8, Clean Architecture, CQRS (Media
   - Role-based authorization
   - Password hashing và validation
   
-- ✅ **Google OAuth** (Cấu hình sẵn, chưa implement endpoint)
+- ✅ **Google OAuth** (đã có endpoint `POST /api/learner/auth/google`)
   - GoogleSettings trong appsettings
   
 - ✅ **OTP Verification System**
@@ -148,6 +148,7 @@ Dự án base được xây dựng với .NET 8, Clean Architecture, CQRS (Media
   
 - ✅ **File Upload Support**
   - Avatar upload cho users
+  - Upload avatar/gallery/map JSON cho map
   - File validation (size, type)
   - Unique filename generation
 
@@ -681,7 +682,6 @@ DTOs tập trung tại **Application/Commons/DTOs/** theo từng domain.
 ### 🚧 Interface Sẵn, Chưa Implement
 - [ ] SMS Service (NotificationChannelEnum.SMS)
 - [ ] Firebase Service (NotificationChannelEnum.Firebase)
-- [ ] Google OAuth endpoint
 
 ---
 

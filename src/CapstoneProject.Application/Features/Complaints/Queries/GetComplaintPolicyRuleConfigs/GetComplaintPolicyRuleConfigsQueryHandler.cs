@@ -54,6 +54,7 @@ public class GetComplaintPolicyRuleConfigsQueryHandler : IRequestHandler<GetComp
             })
             .ToListAsync(cancellationToken);
 
-        return Result<List<ComplaintPolicyRuleConfigDto>>.Success(list);
+        return Result<List<ComplaintPolicyRuleConfigDto>>.Success(list, "Đã lấy cấu hình quy tắc chính sách khiếu nại.");
     }
 }
+

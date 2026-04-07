@@ -42,7 +42,8 @@ public class GetXpSourceConfigsQueryHandler : IRequestHandler<GetXpSourceConfigs
             })
             .ToListAsync(cancellationToken);
 
-        return Result<List<XpSourceConfigDto>>.Success(list);
+        return Result<List<XpSourceConfigDto>>.Success(list, "Đã lấy cấu hình nguồn XP.");
     }
 }
+
 

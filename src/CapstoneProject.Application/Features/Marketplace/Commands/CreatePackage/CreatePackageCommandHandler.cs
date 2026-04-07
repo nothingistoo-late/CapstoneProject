@@ -42,6 +42,6 @@ public class CreatePackageCommandHandler : IRequestHandler<CreatePackageCommand,
         pkg.InitializeEntity(userIdNullable.Value);
         await _unitOfWork.Repository<Package>().AddAsync(pkg);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
-        return Result<Guid>.Success(pkg.Id);
+        return Result<Guid>.Success(pkg.Id, "Đã tạo gói thành công.");
     }
 }

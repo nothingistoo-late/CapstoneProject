@@ -33,6 +33,6 @@ public class GetLearningGoalByIdQueryHandler : IRequestHandler<GetLearningGoalBy
         if (goal == null)
             return Result<LearningGoalDto>.Failure("Không tìm thấy mục tiêu học tập.", ErrorCodeEnum.NotFound);
 
-        return Result<LearningGoalDto>.Success(goal);
+        return Result<LearningGoalDto>.Success(goal, "Đã lấy chi tiết mục tiêu học tập.");
     }
 }

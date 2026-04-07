@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Http;
+﻿using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using CapstoneProject.Application.Common.Enums;
 using CapstoneProject.Application.Common.Interfaces;
@@ -11,12 +11,12 @@ using CapstoneProject.Domain.Enums;
 
 namespace CapstoneProject.Application.Commons.Helpers;
 
-/// <summary>Upload Cloudinary + gắn <see cref="MapMedia"/> vào context (chưa SaveChanges).</summary>
+/// <summary>Upload Cloudinary + gáº¯n <see cref="MapMedia"/> vÃ o context (chÆ°a SaveChanges).</summary>
 public static class MapGalleryMediaHelper
 {
     public const int MaxFilesPerRequest = 20;
 
-    /// <param name="requireAtLeastOneFile">true = endpoint gallery độc lập; false = tạo map kèm gallery (optional).</param>
+    /// <param name="requireAtLeastOneFile">true = endpoint gallery Ä‘á»™c láº­p; false = táº¡o map kÃ¨m gallery (optional).</param>
     public static async Task<Result<List<MapMediaItemDto>>> StageGalleryMediaAsync(
         Guid mapId,
         Guid userId,
@@ -33,7 +33,7 @@ public static class MapGalleryMediaHelper
                 return Result<List<MapMediaItemDto>>.Failure(
                     "At least one image or video file is required.",
                     ErrorCodeEnum.ValidationFailed);
-            return Result<List<MapMediaItemDto>>.Success(new List<MapMediaItemDto>());
+            return Result<List<MapMediaItemDto>>.Success(new List<MapMediaItemDto>(), "Đã xử lý thư viện media thành công.");
         }
 
         if (filtered.Count > MaxFilesPerRequest)
@@ -83,6 +83,6 @@ public static class MapGalleryMediaHelper
             });
         }
 
-        return Result<List<MapMediaItemDto>>.Success(created);
+        return Result<List<MapMediaItemDto>>.Success(created, "Đã xử lý thư viện media thành công.");
     }
 }

@@ -1,4 +1,4 @@
-using MediatR;
+﻿using MediatR;
 using CapstoneProject.Application.Common.Models;
 using CapstoneProject.Application.Commons.DTOs.Lobby;
 using CapstoneProject.Application.Commons.Interfaces;
@@ -14,6 +14,7 @@ public class GetLobbyRoomsQueryHandler : IRequestHandler<GetLobbyRoomsQuery, Res
     public Task<Result<IReadOnlyList<LobbyRoomListItemDto>>> Handle(GetLobbyRoomsQuery request, CancellationToken cancellationToken)
     {
         var rooms = _roomManager.GetLobbyRooms();
-        return Task.FromResult(Result<IReadOnlyList<LobbyRoomListItemDto>>.Success(rooms));
+        return Task.FromResult(Result<IReadOnlyList<LobbyRoomListItemDto>>.Success(rooms, "Đã lấy danh sách phòng chờ."));
     }
 }
+

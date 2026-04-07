@@ -109,7 +109,7 @@ public class GetComplaintDetailQueryHandler : IRequestHandler<GetComplaintDetail
                 .ToList()
         };
 
-        return Result<ComplaintDetailDto>.Success(dto);
+        return Result<ComplaintDetailDto>.Success(dto, "Đã lấy chi tiết khiếu nại.");
     }
 }
 

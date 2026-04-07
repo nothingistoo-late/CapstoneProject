@@ -66,7 +66,7 @@ public class GetAvailableComplaintCategoriesQueryHandler : IRequestHandler<GetAv
             })
             .ToList();
 
-        return Result<List<ComplaintCategoryConfigDto>>.Success(list);
+        return Result<List<ComplaintCategoryConfigDto>>.Success(list, "Đã lấy danh sách danh mục khiếu nại khả dụng.");
     }
 
     private static IEnumerable<string> ReadAnyOfFields(string? configJson)
@@ -96,3 +96,4 @@ public class GetAvailableComplaintCategoriesQueryHandler : IRequestHandler<GetAv
         }
     }
 }
+

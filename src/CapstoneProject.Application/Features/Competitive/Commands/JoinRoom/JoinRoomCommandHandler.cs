@@ -46,7 +46,7 @@ public class JoinRoomCommandHandler : IRequestHandler<JoinRoomCommand, Result<Jo
                 RoomCode = room.Code!,
                 CurrentPlayers = room.RoomParticipants.Count,
                 MaxPlayers = room.MaxPlayers
-            });
+            }, "Đã tham gia phòng thành công.");
 
         var participant = new RoomParticipant
         {
@@ -68,7 +68,7 @@ public class JoinRoomCommandHandler : IRequestHandler<JoinRoomCommand, Result<Jo
             RoomCode = room.Code!,
             CurrentPlayers = count,
             MaxPlayers = room.MaxPlayers
-        });
+        }, "Đã tham gia phòng thành công.");
     }
 }
 

@@ -88,7 +88,7 @@ public class AddMemberToRoomCommandHandler : IRequestHandler<AddMemberToRoomComm
                 LastReadAt = memberWithUser.LastReadAt
             };
 
-            return Result<ChatRoomMemberResponse>.Success(response);
+            return Result<ChatRoomMemberResponse>.Success(response, "Đã thêm thành viên vào cuộc trò chuyện.");
         }
         catch (ArgumentException ex)
         {

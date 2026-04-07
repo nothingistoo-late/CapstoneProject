@@ -1,481 +1,515 @@
 ﻿# API Response Messages By Module (VI)
 
-Nguon: cac chuoi message trong Result.Success/Result.Failure sau khi da Viet hoa.
-
-Ghi chu: Cac section bat dau bang API/_ hien thi endpoint theo dang METHOD /api/...; cac section Application/_ va Infrastructure giu nguyen vi tri source code de trace handler/service.
+Nguon: cac chuoi message trong Result.Success/Result.Failure tu source code hien tai.
 
 ## API/Cms
 
-| STT | Message (VI)                                                                     | Message (EN)                                                      | API Endpoint                           |
-| --: | -------------------------------------------------------------------------------- | ----------------------------------------------------------------- | -------------------------------------- |
-|   1 | Cần có tập tin Avatar.                                                           | Avatar file is required.                                          | POST /api/cms/maps/{id}/avatar         |
-|   2 | Đã hủy kích hoạt thành công {deletedCount} người dùng QuickLogin không hoạt động | Successfully deactivated {deletedCount} inactive QuickLogin users | POST /api/cms/users/quicklogin/cleanup |
-|   3 | Đã xảy ra lỗi trong quá trình dọn dẹp                                            | An error occurred during cleanup                                  | POST /api/cms/users/quicklogin/cleanup |
-|   4 | Đầu vào tệp bản đồ không hợp lệ.                                                 | Invalid map file input.                                           | POST /api/cms/maps/upload-json         |
-|   5 | Trường 'dữ liệu' (JSON) là bắt buộc.                                             | Field 'data' (JSON) is required.                                  | POST /api/cms/maps/with-files          |
-|   6 | Trường 'dữ liệu' không phải là JSON hợp lệ.                                      | Field 'data' is not valid JSON.                                   | POST /api/cms/maps/with-files          |
-|   7 | Trường 'dữ liệu' không thể được giải tuần tự hóa.                                | Field 'data' could not be deserialized.                           | POST /api/cms/maps/with-files          |
+| STT | Message (VI) | Message (EN) | API Endpoint |
+|---:|---|---|
+| 1 | Cần có tập tin Avatar. | N/A | POST /api/cms/maps |
+| 2 | Đã hủy kích hoạt thành công {deletedCount} người dùng QuickLogin không hoạt động | N/A | POST /api/cms/users/cleanup-inactive-quick-login |
+| 3 | Đã xảy ra lỗi trong quá trình dọn dẹp | N/A | POST /api/cms/users/cleanup-inactive-quick-login |
+| 4 | Đầu vào tệp bản đồ không hợp lệ. | N/A | POST /api/cms/maps |
+| 5 | Trường 'dữ liệu' (JSON) là bắt buộc. | N/A | POST /api/cms/maps |
+| 6 | Trường 'dữ liệu' không phải là JSON hợp lệ. | N/A | POST /api/cms/maps |
+| 7 | Trường 'dữ liệu' không thể được giải tuần tự hóa. | N/A | POST /api/cms/maps |
 
 ## API/Learner
 
-| STT | Message (VI)                                                                    | Message (EN)                                                           | API Endpoint                       |
-| --: | ------------------------------------------------------------------------------- | ---------------------------------------------------------------------- | ---------------------------------- |
-|   1 | Cần có tập tin Avatar.                                                          | Avatar file is required.                                               | POST /api/learner/maps/{id}/avatar |
-|   2 | Đầu vào tệp bản đồ không hợp lệ.                                                | Invalid map file input.                                                | POST /api/learner/maps/upload-json |
-|   3 | Không thể giải tuần tự hóa trường 'dữ liệu' thành CreateMapRequest.             | Field 'data' could not be deserialized to CreateMapRequest.            | POST /api/learner/maps/with-files  |
-|   4 | Nội dung yêu cầu là bắt buộc                                                    | Request body is required                                               | POST /api/learner/auth/quick-login |
-|   5 | Trường 'dữ liệu' (chuỗi JSON, giống như nội dung CreateMapRequest) là bắt buộc. | Field 'data' (JSON string, same as CreateMapRequest body) is required. | POST /api/learner/maps/with-files  |
-|   6 | Trường 'dữ liệu' không phải là JSON hợp lệ.                                     | Field 'data' is not valid JSON.                                        | POST /api/learner/maps/with-files  |
+| STT | Message (VI) | Message (EN) | API Endpoint |
+|---:|---|---|
+| 1 | Cần có tập tin Avatar. | N/A | POST /api/learner/maps |
+| 2 | Đầu vào tệp bản đồ không hợp lệ. | N/A | POST /api/learner/maps |
+| 3 | Không thể giải tuần tự hóa trường 'dữ liệu' thành CreateMapRequest. | N/A | POST /api/learner/maps |
+| 4 | Nội dung yêu cầu là bắt buộc | N/A | POST /api/learner/auth/google-login |
+| 5 | Trường 'dữ liệu' (chuỗi JSON, giống như nội dung CreateMapRequest) là bắt buộc. | N/A | POST /api/learner/maps |
+| 6 | Trường 'dữ liệu' không phải là JSON hợp lệ. | N/A | POST /api/learner/maps |
 
 ## API/Other
 
-| STT | Message (VI)                                                                                     | Message (EN)                                                                       | API Endpoint                                           |
-| --: | ------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------- | ------------------------------------------------------ |
-|   1 | Bạn chưa được xác thực.                                                                          | You are not authenticated.                                                         | Global filter: các endpoint có [AuthorizeRoles]        |
-|   2 | Bạn không có quyền truy cập vào {systemName}.                                                    | You do not have access to the {systemName}.                                        | Global filter: role-based access control               |
-|   3 | Chỉ có {allowedRoles} mới có thể truy cập khu vực này. Vui lòng sử dụng một tài khoản thích hợp. | This area is only accessible to {allowedRoles}. Please use an appropriate account. | Global filter: role-based access control               |
-|   4 | Dữ liệu đầu vào không hợp lệ                                                                     | Invalid input data                                                                 | Global middleware: tất cả endpoint có model validation |
+| STT | Message (VI) | Message (EN) | API Endpoint |
+|---:|---|---|
+| 1 | Bạn chưa được xác thực. | N/A | Global auth filter (áp dụng cho endpoint yêu cầu quyền) |
+| 2 | Bạn không có quyền truy cập vào {systemName}. | N/A | Global role filter (áp dụng cho endpoint phân quyền) |
+| 3 | Chỉ có {allowedRoles} mới có thể truy cập khu vực này. Vui lòng sử dụng một tài khoản thích hợp. | N/A | Global role filter (áp dụng cho endpoint phân quyền) |
+| 4 | Dữ liệu đầu vào không hợp lệ | N/A | Global validation middleware (áp dụng cho tất cả endpoint) |
 
 ## Application/Auth
 
-| STT | Message (VI)                                                                                                                                                          | Message (EN)                                                                                                                                               | API Endpoint                                                            |
-| --: | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------- |
-|   1 | Đã bắt đầu đặt lại mật khẩu. Vui lòng xác minh OTP được gửi tới {command.Request.OtpSentChannel.ToString().ToLower()} của bạn để hoàn tất quy trình đặt lại mật khẩu. | Reset password initiated. Please verify the OTP sent to your {command.Request.OtpSentChannel.ToString().ToLower()} to complete the reset password process. | POST /api/learner/auth/reset-password                                   |
-|   2 | Đã thay đổi mật khẩu thành công                                                                                                                                       | Password changed successfully                                                                                                                              | POST /api/learner/auth/change-password                                  |
-|   3 | Đã xảy ra lỗi khi cập nhật hồ sơ                                                                                                                                      | An error occurred while updating profile                                                                                                                   | PUT /api/cms/auth/profile ; PUT /api/learner/auth/profile               |
-|   4 | Đã xảy ra lỗi khi đăng nhập                                                                                                                                           | An error occurred while logging in                                                                                                                         | POST /api/cms/auth/login ; POST /api/learner/auth/login                 |
-|   5 | Đã xảy ra lỗi khi đăng nhập nhanh                                                                                                                                     | An error occurred while quick logging in                                                                                                                   | POST /api/learner/auth/quick-login                                      |
-|   6 | Đã xảy ra lỗi khi đăng xuất                                                                                                                                           | An error occurred while logging out                                                                                                                        | POST /api/cms/auth/logout ; POST /api/learner/auth/logout               |
-|   7 | Đã xảy ra lỗi khi truy xuất hồ sơ                                                                                                                                     | An error occurred while retrieving profile                                                                                                                 | GET /api/cms/auth/profile ; GET /api/learner/auth/profile               |
-|   8 | Đã xảy ra lỗi khi xác minh OTP.                                                                                                                                       | An error occurred while verifying the OTP.                                                                                                                 | POST /api/learner/auth/verify-otp                                       |
-|   9 | Đăng ký bắt đầu. Vui lòng xác minh OTP được gửi tới {channel.ToString().ToLower()} của bạn để hoàn tất quá trình đăng ký.                                             | Registration initiated. Please verify the OTP sent to your {channel.ToString().ToLower()} to complete the registration process.                            | POST /api/learner/auth/register                                         |
-|  10 | Đăng nhập bằng Google thành công.                                                                                                                                     | Login with Google successfully.                                                                                                                            | POST /api/learner/auth/google                                           |
-|  11 | Đăng nhập nhanh không có sẵn                                                                                                                                          | Quick login is not available                                                                                                                               | POST /api/learner/auth/quick-login                                      |
-|  12 | Đăng nhập nhanh tạm thời bị vô hiệu hóa.                                                                                                                              | Quick login is temporarily disabled.                                                                                                                       | POST /api/learner/auth/quick-login                                      |
-|  13 | Đăng nhập nhanh thành công!                                                                                                                                           | Quick login successful!                                                                                                                                    | POST /api/learner/auth/quick-login                                      |
-|  14 | Đăng nhập thành công!                                                                                                                                                 | Login successfully!                                                                                                                                        | POST /api/cms/auth/login ; POST /api/learner/auth/login                 |
-|  15 | Đăng xuất thành công!                                                                                                                                                 | Logout successfully!                                                                                                                                       | POST /api/cms/auth/logout ; POST /api/learner/auth/logout               |
-|  16 | Đặt lại mật khẩu thành công.                                                                                                                                          | Password reset successfully.                                                                                                                               | POST /api/learner/auth/verify-otp                                       |
-|  17 | Dữ liệu người dùng bị thiếu sau khi xác minh OTP.                                                                                                                     | User data is missing after OTP verification.                                                                                                               | POST /api/learner/auth/verify-otp                                       |
-|  18 | Hồ sơ được cập nhật thành công                                                                                                                                        | Profile updated successfully                                                                                                                               | PUT /api/cms/auth/profile ; PUT /api/learner/auth/profile               |
-|  19 | Hồ sơ được truy xuất thành công                                                                                                                                       | Profile retrieved successfully                                                                                                                             | GET /api/cms/auth/profile ; GET /api/learner/auth/profile               |
-|  20 | IdToken là bắt buộc.                                                                                                                                                  | IdToken is required.                                                                                                                                       | POST /api/learner/auth/google                                           |
-|  21 | Không được ủy quyền                                                                                                                                                   | Not authorized                                                                                                                                             | POST /api/learner/auth/change-password                                  |
-|  22 | Không gửi được mã xác minh. Vui lòng thử lại.                                                                                                                         | Failed to send verification code. Please try again.                                                                                                        | POST /api/learner/auth/register                                         |
-|  23 | Không tạo được người dùng                                                                                                                                             | Failed to create user                                                                                                                                      | POST /api/learner/auth/quick-login                                      |
-|  24 | Không tạo được người dùng từ Google.                                                                                                                                  | Failed to create user from Google.                                                                                                                         | POST /api/learner/auth/google                                           |
-|  25 | Không thể cập nhật hồ sơ                                                                                                                                              | Failed to update profile                                                                                                                                   | PUT /api/cms/auth/profile ; PUT /api/learner/auth/profile               |
-|  26 | Không thể cập nhật người dùng                                                                                                                                         | Failed to update user                                                                                                                                      | POST /api/learner/auth/verify-otp                                       |
-|  27 | Không thể chỉ định vai trò.                                                                                                                                           | Failed to assign role.                                                                                                                                     | POST /api/learner/auth/google                                           |
-|  28 | Không thể thêm người dùng vào vai trò                                                                                                                                 | Failed to add user to role                                                                                                                                 | POST /api/learner/auth/quick-login                                      |
-|  29 | Không tìm thấy email tài khoản Google.                                                                                                                                | Google account email not found.                                                                                                                            | POST /api/learner/auth/google                                           |
-|  30 | Không tìm thấy người dùng                                                                                                                                             | User not found                                                                                                                                             | POST /api/cms/auth/logout ; POST /api/learner/auth/logout               |
-|  31 | Không tìm thấy người dùng sau khi đăng nhập Google.                                                                                                                   | User not found after Google login.                                                                                                                         | POST /api/learner/auth/google                                           |
-|  32 | Làm mới mã thông báo thành công!                                                                                                                                      | Refresh token successfully!                                                                                                                                | POST /api/cms/auth/refresh-token ; POST /api/learner/auth/refresh-token |
-|  33 | Loại OTP không hợp lệ.                                                                                                                                                | Invalid OTP type.                                                                                                                                          | POST /api/learner/auth/verify-otp                                       |
-|  34 | Lỗi đổi mật khẩu                                                                                                                                                      | Error changing password                                                                                                                                    | POST /api/learner/auth/change-password                                  |
-|  35 | Lỗi làm mới mã thông báo                                                                                                                                              | Error refreshing token                                                                                                                                     | POST /api/cms/auth/refresh-token ; POST /api/learner/auth/refresh-token |
-|  36 | Lỗi trong quá trình đăng ký                                                                                                                                           | Error during registration process                                                                                                                          | POST /api/learner/auth/register                                         |
-|  37 | Lỗi trong quá trình đặt lại mật khẩu                                                                                                                                  | Error during reset password process                                                                                                                        | POST /api/learner/auth/reset-password                                   |
-|  38 | Mã nhanh không hợp lệ                                                                                                                                                 | Invalid quick code                                                                                                                                         | POST /api/learner/auth/quick-login                                      |
-|  39 | Mã thông báo Google không hợp lệ.                                                                                                                                     | Invalid Google token.                                                                                                                                      | POST /api/learner/auth/google                                           |
-|  40 | Mật khẩu hiện tại không chính xác                                                                                                                                     | Current password is incorrect                                                                                                                              | POST /api/learner/auth/change-password                                  |
-|  41 | Người dùng chưa được xác thực                                                                                                                                         | User is not authenticated                                                                                                                                  | PUT /api/cms/auth/profile ; PUT /api/learner/auth/profile               |
-|  42 | Người dùng đã đăng ký thành công.                                                                                                                                     | User registered successfully.                                                                                                                              | POST /api/learner/auth/verify-otp                                       |
-|  43 | Số điện thoại đã tồn tại                                                                                                                                              | Phone number already exists                                                                                                                                | PUT /api/cms/auth/profile ; PUT /api/learner/auth/profile               |
-|  44 | Thông tin liên hệ là bắt buộc                                                                                                                                         | Contact information is required                                                                                                                            | POST /api/learner/auth/register                                         |
-|  45 | Thông tin xác thực không hợp lệ                                                                                                                                       | Invalid credentials                                                                                                                                        | POST /api/cms/auth/login ; POST /api/learner/auth/login                 |
+| STT | Message (VI) | Message (EN) | API Endpoint |
+|---:|---|---|
+| 1 | Đã bắt đầu đặt lại mật khẩu. Vui lòng xác minh OTP được gửi tới {command.Request.OtpSentChannel.ToString().ToLower()} của bạn để hoàn tất quy trình đặt lại mật khẩu. | N/A | POST /api/learner/auth/reset-password |
+| 2 | Đã thay đổi mật khẩu thành công | N/A | POST /api/learner/auth/change-password |
+| 3 | Đã xảy ra lỗi khi cập nhật hồ sơ | N/A | PUT /api/cms/auth/profile ; PUT /api/learner/auth/profile |
+| 4 | Đã xảy ra lỗi khi đăng nhập | N/A | POST /api/cms/auth/login ; POST /api/learner/auth/login |
+| 5 | Đã xảy ra lỗi khi đăng nhập nhanh | N/A | POST /api/learner/auth/quick-login |
+| 6 | Đã xảy ra lỗi khi đăng xuất | N/A | POST /api/cms/auth/logout ; POST /api/learner/auth/logout |
+| 7 | Đã xảy ra lỗi khi truy xuất hồ sơ | N/A | GET /api/cms/auth/profile ; GET /api/learner/auth/profile |
+| 8 | Đã xảy ra lỗi khi xác minh OTP. | N/A | POST /api/learner/auth/verify-otp |
+| 9 | Đăng ký bắt đầu. Vui lòng xác minh OTP được gửi tới {channel.ToString().ToLower()} của bạn để hoàn tất quá trình đăng ký. | N/A | POST /api/learner/auth/register |
+| 10 | Đăng nhập bằng Google thành công. | N/A | POST /api/learner/auth/google |
+| 11 | Đăng nhập nhanh không có sẵn | N/A | POST /api/learner/auth/quick-login |
+| 12 | Đăng nhập nhanh tạm thời bị vô hiệu hóa. | N/A | POST /api/learner/auth/quick-login |
+| 13 | Đăng nhập nhanh thành công! | N/A | POST /api/learner/auth/quick-login |
+| 14 | Đăng nhập thành công! | N/A | POST /api/cms/auth/login ; POST /api/learner/auth/login |
+| 15 | Đăng xuất thành công! | N/A | POST /api/cms/auth/logout ; POST /api/learner/auth/logout |
+| 16 | Đặt lại mật khẩu thành công. | N/A | POST /api/learner/auth/verify-otp |
+| 17 | Dữ liệu người dùng bị thiếu sau khi xác minh OTP. | N/A | POST /api/learner/auth/verify-otp |
+| 18 | Hồ sơ được cập nhật thành công | N/A | PUT /api/cms/auth/profile ; PUT /api/learner/auth/profile |
+| 19 | Hồ sơ được truy xuất thành công | N/A | GET /api/cms/auth/profile ; GET /api/learner/auth/profile |
+| 20 | IdToken là bắt buộc. | N/A | POST /api/learner/auth/google |
+| 21 | Không được ủy quyền | N/A | POST /api/learner/auth/change-password |
+| 22 | Không gửi được mã xác minh. Vui lòng thử lại. | N/A | POST /api/learner/auth/register |
+| 23 | Không tạo được người dùng | N/A | POST /api/learner/auth/quick-login |
+| 24 | Không tạo được người dùng từ Google. | N/A | POST /api/learner/auth/google |
+| 25 | Không thể cập nhật hồ sơ | N/A | PUT /api/cms/auth/profile ; PUT /api/learner/auth/profile |
+| 26 | Không thể cập nhật người dùng | N/A | POST /api/learner/auth/verify-otp |
+| 27 | Không thể chỉ định vai trò. | N/A | POST /api/learner/auth/google |
+| 28 | Không thể thêm người dùng vào vai trò | N/A | POST /api/learner/auth/quick-login |
+| 29 | Không tìm thấy email tài khoản Google. | N/A | POST /api/learner/auth/google |
+| 30 | Không tìm thấy người dùng | N/A | POST /api/cms/auth/logout ; POST /api/learner/auth/logout |
+| 31 | Không tìm thấy người dùng sau khi đăng nhập Google. | N/A | POST /api/learner/auth/google |
+| 32 | Làm mới mã thông báo thành công! | N/A | POST /api/cms/auth/refresh-token ; POST /api/learner/auth/refresh-token |
+| 33 | Loại OTP không hợp lệ. | N/A | POST /api/learner/auth/verify-otp |
+| 34 | Lỗi đổi mật khẩu | N/A | POST /api/learner/auth/change-password |
+| 35 | Lỗi làm mới mã thông báo | N/A | POST /api/cms/auth/refresh-token ; POST /api/learner/auth/refresh-token |
+| 36 | Lỗi trong quá trình đăng ký | N/A | POST /api/learner/auth/register |
+| 37 | Lỗi trong quá trình đặt lại mật khẩu | N/A | POST /api/learner/auth/reset-password |
+| 38 | Mã nhanh không hợp lệ | N/A | POST /api/learner/auth/quick-login |
+| 39 | Mã thông báo Google không hợp lệ. | N/A | POST /api/learner/auth/google |
+| 40 | Mật khẩu hiện tại không chính xác | N/A | POST /api/learner/auth/change-password |
+| 41 | Người dùng chưa được xác thực | N/A | PUT /api/cms/auth/profile ; PUT /api/learner/auth/profile |
+| 42 | Người dùng đã đăng ký thành công. | N/A | POST /api/learner/auth/verify-otp |
+| 43 | Số điện thoại đã tồn tại | N/A | PUT /api/cms/auth/profile ; PUT /api/learner/auth/profile |
+| 44 | Thông tin liên hệ là bắt buộc | N/A | POST /api/learner/auth/register |
+| 45 | Thông tin xác thực không hợp lệ | N/A | POST /api/cms/auth/login ; POST /api/learner/auth/login |
 
 ## Application/Chat
 
-| STT | Message (VI)                                               | Message (EN)                                                 | API Endpoint                                                   |
-| --: | ---------------------------------------------------------- | ------------------------------------------------------------ | -------------------------------------------------------------- |
-|   1 | Bạn chỉ có thể chỉnh sửa tin nhắn của riêng bạn            | You can only edit your own messages                          | PUT /api/learner/chat/messages/{messageId}                     |
-|   2 | Bạn chỉ có thể xóa tin nhắn của riêng bạn                  | You can only delete your own messages                        | DELETE /api/learner/chat/messages/{messageId}                  |
-|   3 | Bạn không phải là người tham gia vào cuộc trò chuyện này   | You are not a participant in this conversation               | POST /api/learner/chat/conversations/{conversationId}/messages |
-|   4 | Cần có ID người dùng khác                                  | Other user ID is required                                    | POST /api/learner/chat/conversations/private                   |
-|   5 | Cần có ID phòng trò chuyện                                 | Chat room ID is required                                     | SignalR /hubs/chat (không có endpoint REST công khai)          |
-|   6 | Đã xảy ra lỗi không mong muốn khi cập nhật tin nhắn        | An unexpected error occurred while updating the message      | PUT /api/learner/chat/messages/{messageId}                     |
-|   7 | Đã xảy ra lỗi không mong muốn khi gửi tin nhắn             | An unexpected error occurred while sending the message       | POST /api/learner/chat/conversations/{conversationId}/messages |
-|   8 | Đã xảy ra lỗi không mong muốn khi kết thúc cuộc trò chuyện | An unexpected error occurred while closing the conversation  | POST /api/learner/chat/conversations/{conversationId}/close    |
-|   9 | Đã xảy ra lỗi không mong muốn khi tạo cuộc trò chuyện      | An unexpected error occurred while creating the conversation | POST /api/learner/chat/conversations/private                   |
-|  10 | Đã xảy ra lỗi không mong muốn khi thêm thành viên          | An unexpected error occurred while adding the member         | SignalR /hubs/chat (không có endpoint REST công khai)          |
-|  11 | Đã xảy ra lỗi không mong muốn khi xóa tin nhắn             | An unexpected error occurred while deleting the message      | DELETE /api/learner/chat/messages/{messageId}                  |
-|  12 | ID cuộc trò chuyện là bắt buộc                             | Conversation ID is required                                  | POST /api/learner/chat/conversations/{conversationId}/close    |
-|  13 | ID người dùng là bắt buộc                                  | User ID is required                                          | SignalR /hubs/chat (không có endpoint REST công khai)          |
-|  14 | ID tin nhắn là bắt buộc                                    | Message ID is required                                       | DELETE /api/learner/chat/messages/{messageId}                  |
-|  15 | Không cập nhật được tin nhắn do lỗi cơ sở dữ liệu          | Failed to update message due to database error               | PUT /api/learner/chat/messages/{messageId}                     |
-|  16 | Không gửi được tin nhắn do lỗi cơ sở dữ liệu               | Failed to send message due to database error                 | POST /api/learner/chat/conversations/{conversationId}/messages |
-|  17 | Không lấy được thông tin thành viên                        | Failed to retrieve member information                        | SignalR /hubs/chat (không có endpoint REST công khai)          |
-|  18 | Không tạo được cuộc trò chuyện do lỗi cơ sở dữ liệu        | Failed to create conversation due to database error          | POST /api/learner/chat/conversations/private                   |
-|  19 | Không tạo được tin nhắn                                    | Failed to create message                                     | POST /api/learner/chat/conversations/{conversationId}/messages |
-|  20 | Không thể chỉnh sửa tin nhắn đã xóa                        | Cannot edit deleted message                                  | PUT /api/learner/chat/messages/{messageId}                     |
-|  21 | Không thể chỉnh sửa tin nhắn trong cuộc trò chuyện đã đóng | Cannot edit messages in a closed conversation                | PUT /api/learner/chat/messages/{messageId}                     |
-|  22 | Không thể đóng cuộc trò chuyện do lỗi cơ sở dữ liệu        | Failed to close conversation due to database error           | POST /api/learner/chat/conversations/{conversationId}/close    |
-|  23 | Không thể gửi tin nhắn đến cuộc trò chuyện đã đóng         | Cannot send messages to a closed conversation                | POST /api/learner/chat/conversations/{conversationId}/messages |
-|  24 | Không thể tạo cuộc trò chuyện với chính mình               | Cannot create a conversation with yourself                   | POST /api/learner/chat/conversations/private                   |
-|  25 | Không thể thêm thành viên do lỗi cơ sở dữ liệu             | Failed to add member due to database error                   | SignalR /hubs/chat (không có endpoint REST công khai)          |
-|  26 | Không tìm thấy cuộc trò chuyện                             | Conversation not found                                       | POST /api/learner/chat/conversations/{conversationId}/messages |
-|  27 | Không tìm thấy tin nhắn                                    | Message not found                                            | PUT /api/learner/chat/messages/{messageId}                     |
-|  28 | Không tìm thấy tin nhắn hoặc đã bị xóa                     | Message not found or already deleted                         | DELETE /api/learner/chat/messages/{messageId}                  |
-|  29 | Không xóa được tin nhắn do lỗi cơ sở dữ liệu               | Failed to delete message due to database error               | DELETE /api/learner/chat/messages/{messageId}                  |
-|  30 | Lệnh không thể rỗng                                        | Command cannot be null                                       | SignalR /hubs/chat (không có endpoint REST công khai)          |
-|  31 | Người dùng chưa được xác thực                              | User is not authenticated                                    | SignalR /hubs/chat (không có endpoint REST công khai)          |
-|  32 | Nội dung tin nhắn không được để trống                      | Message content cannot be empty                              | PUT /api/learner/chat/messages/{messageId}                     |
-|  33 | Nội dung tin nhắn không được vượt quá 5000 ký tự           | Message content must not exceed 5000 characters              | PUT /api/learner/chat/messages/{messageId}                     |
-|  34 | Nội dung tin nhắn là bắt buộc đối với tin nhắn văn bản     | Message content is required for text messages                | POST /api/learner/chat/conversations/{conversationId}/messages |
-|  35 | Tên nhóm là bắt buộc                                       | Group name is required                                       | POST /api/learner/chat/conversations/temporary-group           |
-|  36 | Yêu cầu không thể rỗng                                     | Request cannot be null                                       | POST /api/learner/chat/conversations/{conversationId}/messages |
+| STT | Message (VI) | Message (EN) | API Endpoint |
+|---:|---|---|
+| 1 | Bạn chỉ có thể chỉnh sửa tin nhắn của riêng bạn | N/A | PUT /api/learner/chat/messages/{messageId} |
+| 2 | Bạn chỉ có thể xóa tin nhắn của riêng bạn | N/A | DELETE /api/learner/chat/messages/{messageId} |
+| 3 | Bạn không phải là người tham gia vào cuộc trò chuyện này | N/A | POST /api/learner/chat/conversations/{conversationId}/messages |
+| 4 | Cần có ID người dùng khác | N/A | POST /api/learner/chat/conversations/private |
+| 5 | Cần có ID phòng trò chuyện | N/A | SignalR /hubs/chat (không có endpoint REST công khai) |
+| 6 | Đã cập nhật tin nhắn. | N/A | PUT /api/learner/chat/messages/{messageId} |
+| 7 | Đã đóng cuộc trò chuyện. | N/A | POST /api/learner/chat/conversations/{conversationId}/close |
+| 8 | Đã gửi tin nhắn. | N/A | POST /api/learner/chat/conversations/{conversationId}/messages |
+| 9 | Đã tạo cuộc trò chuyện nhóm tạm thời. | N/A | POST /api/learner/chat/conversations/temporary-group |
+| 10 | Đã tạo hoặc lấy cuộc trò chuyện riêng tư. | N/A | POST /api/learner/chat/conversations/private |
+| 11 | Đã thêm thành viên vào cuộc trò chuyện. | N/A | SignalR /hubs/chat (không có endpoint REST công khai) |
+| 12 | Đã xảy ra lỗi không mong muốn khi cập nhật tin nhắn | N/A | PUT /api/learner/chat/messages/{messageId} |
+| 13 | Đã xảy ra lỗi không mong muốn khi gửi tin nhắn | N/A | POST /api/learner/chat/conversations/{conversationId}/messages |
+| 14 | Đã xảy ra lỗi không mong muốn khi kết thúc cuộc trò chuyện | N/A | POST /api/learner/chat/conversations/{conversationId}/close |
+| 15 | Đã xảy ra lỗi không mong muốn khi tạo cuộc trò chuyện | N/A | POST /api/learner/chat/conversations/private |
+| 16 | Đã xảy ra lỗi không mong muốn khi thêm thành viên | N/A | SignalR /hubs/chat (không có endpoint REST công khai) |
+| 17 | Đã xảy ra lỗi không mong muốn khi xóa tin nhắn | N/A | DELETE /api/learner/chat/messages/{messageId} |
+| 18 | Đã xóa tin nhắn. | N/A | DELETE /api/learner/chat/messages/{messageId} |
+| 19 | ID cuộc trò chuyện là bắt buộc | N/A | POST /api/learner/chat/conversations/{conversationId}/close |
+| 20 | ID người dùng là bắt buộc | N/A | SignalR /hubs/chat (không có endpoint REST công khai) |
+| 21 | ID tin nhắn là bắt buộc | N/A | DELETE /api/learner/chat/messages/{messageId} |
+| 22 | Không cập nhật được tin nhắn do lỗi cơ sở dữ liệu | N/A | PUT /api/learner/chat/messages/{messageId} |
+| 23 | Không gửi được tin nhắn do lỗi cơ sở dữ liệu | N/A | POST /api/learner/chat/conversations/{conversationId}/messages |
+| 24 | Không lấy được thông tin thành viên | N/A | SignalR /hubs/chat (không có endpoint REST công khai) |
+| 25 | Không tạo được cuộc trò chuyện do lỗi cơ sở dữ liệu | N/A | POST /api/learner/chat/conversations/private |
+| 26 | Không tạo được tin nhắn | N/A | POST /api/learner/chat/conversations/{conversationId}/messages |
+| 27 | Không thể chỉnh sửa tin nhắn đã xóa | N/A | PUT /api/learner/chat/messages/{messageId} |
+| 28 | Không thể chỉnh sửa tin nhắn trong cuộc trò chuyện đã đóng | N/A | PUT /api/learner/chat/messages/{messageId} |
+| 29 | Không thể đóng cuộc trò chuyện do lỗi cơ sở dữ liệu | N/A | POST /api/learner/chat/conversations/{conversationId}/close |
+| 30 | Không thể gửi tin nhắn đến cuộc trò chuyện đã đóng | N/A | POST /api/learner/chat/conversations/{conversationId}/messages |
+| 31 | Không thể tạo cuộc trò chuyện với chính mình | N/A | POST /api/learner/chat/conversations/private |
+| 32 | Không thể thêm thành viên do lỗi cơ sở dữ liệu | N/A | SignalR /hubs/chat (không có endpoint REST công khai) |
+| 33 | Không tìm thấy cuộc trò chuyện | N/A | POST /api/learner/chat/conversations/{conversationId}/messages |
+| 34 | Không tìm thấy tin nhắn | N/A | PUT /api/learner/chat/messages/{messageId} |
+| 35 | Không tìm thấy tin nhắn hoặc đã bị xóa | N/A | DELETE /api/learner/chat/messages/{messageId} |
+| 36 | Không xóa được tin nhắn do lỗi cơ sở dữ liệu | N/A | DELETE /api/learner/chat/messages/{messageId} |
+| 37 | Lệnh không thể rỗng | N/A | SignalR /hubs/chat (không có endpoint REST công khai) |
+| 38 | Người dùng chưa được xác thực | N/A | SignalR /hubs/chat (không có endpoint REST công khai) |
+| 39 | Nội dung tin nhắn không được để trống | N/A | PUT /api/learner/chat/messages/{messageId} |
+| 40 | Nội dung tin nhắn không được vượt quá 5000 ký tự | N/A | PUT /api/learner/chat/messages/{messageId} |
+| 41 | Nội dung tin nhắn là bắt buộc đối với tin nhắn văn bản | N/A | POST /api/learner/chat/conversations/{conversationId}/messages |
+| 42 | Tên nhóm là bắt buộc | N/A | POST /api/learner/chat/conversations/temporary-group |
+| 43 | Yêu cầu không thể rỗng | N/A | POST /api/learner/chat/conversations/{conversationId}/messages |
 
 ## Application/Community
 
-| STT | Message (VI)                                                                                                                 | Message (EN)                                                                                      | API Endpoint                                            |
-| --: | ---------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- | ------------------------------------------------------- |
-|   1 | Bạn chỉ có thể báo cáo những bản đồ mà bạn có quyền truy cập (bản đồ miễn phí hoặc bản đồ bạn đã mua).                       | You can only report maps you have access to (free maps or maps you have purchased).               | POST /api/learner/community/maps/{mapId:guid}/report    |
-|   2 | Bạn chỉ có thể xếp hạng bản đồ mà bạn có quyền truy cập (bản đồ miễn phí hoặc bản đồ bạn đã mua).                            | You can only rate maps you have access to (free maps or maps you have purchased).                 | POST /api/learner/community/maps/{mapId:guid}/rate      |
-|   3 | Bạn không có quyền giải quyết các báo cáo. Chỉ Quản trị viên hoặc Người điều hành mới có thể thực hiện giải quyết hàng loạt. | You do not have permission to resolve reports. Only Admin or Moderator can perform batch resolve. | POST /api/cms/community/reports/batch/resolve           |
-|   4 | Bạn không có quyền giải quyết các báo cáo. Chỉ Quản trị viên hoặc Người điều hành mới có thể thực hiện hành động này.        | You do not have permission to resolve reports. Only Admin or Moderator can perform this action.   | POST /api/cms/community/reports/{reportId:guid}/resolve |
-|   5 | Bạn không có quyền loại bỏ báo cáo. Chỉ Quản trị viên hoặc Người điều hành mới có thể thực hiện hành động này.               | You do not have permission to dismiss reports. Only Admin or Moderator can perform this action.   | POST /api/cms/community/reports/{reportId:guid}/dismiss |
-|   6 | Bạn không có quyền loại bỏ báo cáo. Chỉ Quản trị viên hoặc Người điều hành mới có thể thực hiện loại bỏ hàng loạt.           | You do not have permission to dismiss reports. Only Admin or Moderator can perform batch dismiss. | POST /api/cms/community/reports/batch/dismiss           |
-|   7 | Bạn không thể báo cáo bản đồ của riêng bạn.                                                                                  | You cannot report your own map.                                                                   | POST /api/learner/community/maps/{mapId:guid}/report    |
-|   8 | Bạn không thể xếp hạng bản đồ của riêng bạn.                                                                                 | You cannot rate your own map.                                                                     | POST /api/learner/community/maps/{mapId:guid}/rate      |
-|   9 | Báo cáo bị loại bỏ.                                                                                                          | Report dismissed.                                                                                 | POST /api/cms/community/reports/{reportId:guid}/dismiss |
-|  10 | Báo cáo đã được giải quyết.                                                                                                  | Report resolved.                                                                                  | POST /api/cms/community/reports/{reportId:guid}/resolve |
-|  11 | Đã giải quyết (các) báo cáo {dto.SuccessCount}.                                                                              | Resolved {dto.SuccessCount} report(s).                                                            | POST /api/cms/community/reports/batch/resolve           |
-|  12 | Đã gửi báo cáo.                                                                                                              | Report submitted.                                                                                 | POST /api/learner/community/maps/{mapId:guid}/report    |
-|  13 | Đã loại bỏ (các) báo cáo {dto.SuccessCount}.                                                                                 | Dismissed {dto.SuccessCount} report(s).                                                           | POST /api/cms/community/reports/batch/dismiss           |
-|  14 | Đã lưu xếp hạng.                                                                                                             | Rating saved.                                                                                     | POST /api/learner/community/maps/{mapId:guid}/rate      |
-|  15 | Đánh giá phải từ 1 đến 5 sao. Vui lòng cung cấp đánh giá hợp lệ.                                                             | Rating must be between 1 and 5 stars. Please provide a valid rating.                              | POST /api/learner/community/maps/{mapId:guid}/rate      |
-|  16 | Không tìm thấy bản đồ có Id: {command.MapId}. Bản đồ có thể đã bị xóa hoặc không tồn tại.                                    | Map not found with Id: {command.MapId}. The map may have been deleted or does not exist.          | POST /api/learner/community/maps/{mapId:guid}/rate      |
-|  17 | Không tìm thấy báo cáo có Id: {command.ReportId}. Báo cáo có thể đã bị xóa hoặc không tồn tại.                               | Report not found with Id: {command.ReportId}. The report may have been deleted or does not exist. | POST /api/cms/community/reports/{reportId:guid}/dismiss |
-|  18 | Lý do báo cáo là bắt buộc. Vui lòng cung cấp lý do để báo cáo nội dung này.                                                  | Report reason is required. Please provide a reason for reporting this content.                    | POST /api/learner/community/maps/{mapId:guid}/report    |
-|  19 | Yêu cầu xác thực. Vui lòng đăng nhập để báo cáo bản đồ.                                                                      | Authentication required. Please log in to report a map.                                           | POST /api/learner/community/maps/{mapId:guid}/report    |
-|  20 | Yêu cầu xác thực. Vui lòng đăng nhập để đánh giá bản đồ.                                                                     | Authentication required. Please log in to rate a map.                                             | POST /api/learner/community/maps/{mapId:guid}/rate      |
-|  21 | Yêu cầu xác thực. Vui lòng đăng nhập để giải quyết báo cáo.                                                                  | Authentication required. Please log in to resolve a report.                                       | POST /api/cms/community/reports/{reportId:guid}/resolve |
-|  22 | Yêu cầu xác thực. Vui lòng đăng nhập để giải quyết các báo cáo.                                                              | Authentication required. Please log in to resolve reports.                                        | POST /api/cms/community/reports/batch/resolve           |
-|  23 | Yêu cầu xác thực. Vui lòng đăng nhập để loại bỏ báo cáo.                                                                     | Authentication required. Please log in to dismiss a report.                                       | POST /api/cms/community/reports/batch/dismiss           |
+| STT | Message (VI) | Message (EN) | API Endpoint |
+|---:|---|---|
+| 1 | Bạn chỉ có thể báo cáo những bản đồ mà bạn có quyền truy cập (bản đồ miễn phí hoặc bản đồ bạn đã mua). | N/A | POST /api/learner/community/maps/{mapId:guid}/report |
+| 2 | Bạn chỉ có thể xếp hạng bản đồ mà bạn có quyền truy cập (bản đồ miễn phí hoặc bản đồ bạn đã mua). | N/A | POST /api/learner/community/maps/{mapId:guid}/rate |
+| 3 | Bạn không có quyền giải quyết các báo cáo. Chỉ Quản trị viên hoặc Người điều hành mới có thể thực hiện giải quyết hàng loạt. | N/A | POST /api/cms/community/reports/batch/resolve |
+| 4 | Bạn không có quyền giải quyết các báo cáo. Chỉ Quản trị viên hoặc Người điều hành mới có thể thực hiện hành động này. | N/A | POST /api/cms/community/reports/{reportId:guid}/resolve |
+| 5 | Bạn không có quyền loại bỏ báo cáo. Chỉ Quản trị viên hoặc Người điều hành mới có thể thực hiện hành động này. | N/A | POST /api/cms/community/reports/{reportId:guid}/dismiss |
+| 6 | Bạn không có quyền loại bỏ báo cáo. Chỉ Quản trị viên hoặc Người điều hành mới có thể thực hiện loại bỏ hàng loạt. | N/A | POST /api/cms/community/reports/batch/dismiss |
+| 7 | Bạn không thể báo cáo bản đồ của riêng bạn. | N/A | POST /api/learner/community/maps/{mapId:guid}/report |
+| 8 | Bạn không thể xếp hạng bản đồ của riêng bạn. | N/A | POST /api/learner/community/maps/{mapId:guid}/rate |
+| 9 | Báo cáo bị loại bỏ. | N/A | POST /api/cms/community/reports/{reportId:guid}/dismiss |
+| 10 | Báo cáo đã được giải quyết. | N/A | POST /api/cms/community/reports/{reportId:guid}/resolve |
+| 11 | Đã giải quyết (các) báo cáo {dto.SuccessCount}. | N/A | POST /api/cms/community/reports/batch/resolve |
+| 12 | Đã gửi báo cáo. | N/A | POST /api/learner/community/maps/{mapId:guid}/report |
+| 13 | Đã loại bỏ (các) báo cáo {dto.SuccessCount}. | N/A | POST /api/cms/community/reports/batch/dismiss |
+| 14 | Đã lưu xếp hạng. | N/A | POST /api/learner/community/maps/{mapId:guid}/rate |
+| 15 | Đánh giá phải từ 1 đến 5 sao. Vui lòng cung cấp đánh giá hợp lệ. | N/A | POST /api/learner/community/maps/{mapId:guid}/rate |
+| 16 | Không tìm thấy bản đồ có Id: {command.MapId}. Bản đồ có thể đã bị xóa hoặc không tồn tại. | N/A | POST /api/learner/community/maps/{mapId:guid}/rate |
+| 17 | Không tìm thấy báo cáo có Id: {command.ReportId}. Báo cáo có thể đã bị xóa hoặc không tồn tại. | N/A | POST /api/cms/community/reports/{reportId:guid}/dismiss |
+| 18 | Lý do báo cáo là bắt buộc. Vui lòng cung cấp lý do để báo cáo nội dung này. | N/A | POST /api/learner/community/maps/{mapId:guid}/report |
+| 19 | Yêu cầu xác thực. Vui lòng đăng nhập để báo cáo bản đồ. | N/A | POST /api/learner/community/maps/{mapId:guid}/report |
+| 20 | Yêu cầu xác thực. Vui lòng đăng nhập để đánh giá bản đồ. | N/A | POST /api/learner/community/maps/{mapId:guid}/rate |
+| 21 | Yêu cầu xác thực. Vui lòng đăng nhập để giải quyết báo cáo. | N/A | POST /api/cms/community/reports/{reportId:guid}/resolve |
+| 22 | Yêu cầu xác thực. Vui lòng đăng nhập để giải quyết các báo cáo. | N/A | POST /api/cms/community/reports/batch/resolve |
+| 23 | Yêu cầu xác thực. Vui lòng đăng nhập để loại bỏ báo cáo. | N/A | POST /api/cms/community/reports/batch/dismiss |
 
 ## Application/Competitive
 
-| STT | Message (VI)                                            | Message (EN)                                              | API Endpoint                                               |
-| --: | ------------------------------------------------------- | --------------------------------------------------------- | ---------------------------------------------------------- |
-|   1 | Đã tạo trận đấu.                                        | Match created.                                            | POST /api/learner/competitive/matches                      |
-|   2 | Không tìm thấy bản đồ                                   | Map not found                                             | POST /api/learner/competitive/matches                      |
-|   3 | Không tìm thấy phòng                                    | Room not found                                            | POST /api/learner/competitive/rooms/join                   |
-|   4 | Không tìm thấy trận đấu                                 | Match not found                                           | POST /api/learner/competitive/matches/{matchId:guid}/rooms |
-|   5 | Phòng đã đầy                                            | Room is full                                              | POST /api/learner/competitive/rooms/join                   |
-|   6 | Phòng không chờ                                         | Room is not waiting                                       | POST /api/learner/competitive/rooms/join                   |
-|   7 | Yêu cầu xác thực. Vui lòng đăng nhập để tạo phòng.      | Authentication required. Please log in to create a room.  | POST /api/learner/competitive/matches/{matchId:guid}/rooms |
-|   8 | Yêu cầu xác thực. Vui lòng đăng nhập để tạo trận đấu.   | Authentication required. Please log in to create a match. | POST /api/learner/competitive/matches                      |
-|   9 | Yêu cầu xác thực. Vui lòng đăng nhập để tham gia phòng. | Authentication required. Please log in to join a room.    | POST /api/learner/competitive/rooms/join                   |
+| STT | Message (VI) | Message (EN) | API Endpoint |
+|---:|---|---|
+| 1 | Đã tạo trận đấu. | N/A | POST /api/learner/competitive/matches |
+| 2 | Không tìm thấy bản đồ | N/A | POST /api/learner/competitive/matches |
+| 3 | Không tìm thấy phòng | N/A | POST /api/learner/competitive/rooms/join |
+| 4 | Không tìm thấy trận đấu | N/A | POST /api/learner/competitive/matches/{matchId:guid}/rooms |
+| 5 | Phòng đã đầy | N/A | POST /api/learner/competitive/rooms/join |
+| 6 | Phòng không chờ | N/A | POST /api/learner/competitive/rooms/join |
+| 7 | Yêu cầu xác thực. Vui lòng đăng nhập để tạo phòng. | N/A | POST /api/learner/competitive/matches/{matchId:guid}/rooms |
+| 8 | Yêu cầu xác thực. Vui lòng đăng nhập để tạo trận đấu. | N/A | POST /api/learner/competitive/matches |
+| 9 | Yêu cầu xác thực. Vui lòng đăng nhập để tham gia phòng. | N/A | POST /api/learner/competitive/rooms/join |
 
 ## Application/Complaints
 
-| STT | Message (VI)                                                                                                                 | Message (EN)                                                                                            | API Endpoint                                                    |
-| --: | ---------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------- |
-|   1 | Bạn không có quyền gửi tin nhắn cho khiếu nại này.                                                                           | You do not have permission to send messages for this complaint.                                         | POST /api/learner/complaints/{complaintId:guid}/messages        |
-|   2 | Bạn không có quyền gửi tin nhắn cho nhân viên. Chỉ Quản trị viên hoặc Người điều hành mới có thể thực hiện hành động này.    | You do not have permission to send staff messages. Only Admin or Moderator can perform this action.     | POST /api/cms/complaints/{complaintId:guid}/messages            |
-|   3 | Bạn không có quyền thay đổi trạng thái khiếu nại. Chỉ Quản trị viên hoặc Người điều hành mới có thể thực hiện hành động này. | You do not have permission to change complaint status. Only Admin or Moderator can perform this action. | POST /api/cms/complaints/{complaintId:guid}/status              |
-|   4 | Bạn không có quyền xem chi tiết khiếu nại. Chỉ có Quản trị viên hoặc Người điều hành mới có thể truy cập.                    | You do not have permission to view complaint detail. Only Admin or Moderator can access.                | GET /api/cms/complaints/{complaintId:guid}                      |
-|   5 | Bạn không có quyền xem khiếu nại này.                                                                                        | You do not have permission to view this complaint.                                                      | GET /api/learner/complaints/{complaintId:guid}                  |
-|   6 | CategoryKey là bắt buộc.                                                                                                     | CategoryKey is required.                                                                                | POST /api/learner/complaints                                    |
-|   7 | CategoryKey và RuleKey là bắt buộc.                                                                                          | CategoryKey and RuleKey are required.                                                                   | DELETE /api/cms/complaints/config/rules/{categoryKey}/{ruleKey} |
-|   8 | Chỉ Quản trị viên/Người điều hành mới có thể cập nhật cấu hình danh mục khiếu nại.                                           | Only Admin/Moderator can update complaint category configs.                                             | PUT /api/cms/complaints/config/categories/{categoryKey}         |
-|   9 | Chỉ Quản trị viên/Người điều hành mới có thể cập nhật cấu hình quy tắc chính sách khiếu nại.                                 | Only Admin/Moderator can update complaint policy rule configs.                                          | PUT /api/cms/complaints/config/rules/{categoryKey}/{ruleKey}    |
-|  10 | Chỉ Quản trị viên/Người điều hành mới có thể xóa cấu hình danh mục khiếu nại.                                                | Only Admin/Moderator can delete complaint category configs.                                             | DELETE /api/cms/complaints/config/categories/{categoryKey}      |
-|  11 | Chỉ Quản trị viên/Người điều hành mới có thể xóa cấu hình quy tắc chính sách khiếu nại.                                      | Only Admin/Moderator can delete complaint policy rule configs.                                          | DELETE /api/cms/complaints/config/rules/{categoryKey}/{ruleKey} |
-|  12 | Chủ đề là bắt buộc.                                                                                                          | Subject is required.                                                                                    | POST /api/learner/complaints                                    |
-|  13 | Chuyển đổi trạng thái không hợp lệ: {fromStatus} -> {toStatus}.                                                              | Invalid status transition: {fromStatus} -> {toStatus}.                                                  | POST /api/cms/complaints/{complaintId:guid}/status              |
-|  14 | Đã cập nhật trạng thái khiếu nại.                                                                                            | Complaint status updated.                                                                               | POST /api/cms/complaints/{complaintId:guid}/status              |
-|  15 | Đã gửi đơn khiếu nại.                                                                                                        | Complaint submitted.                                                                                    | POST /api/learner/complaints                                    |
-|  16 | Đã gửi tin nhắn.                                                                                                             | Message sent.                                                                                           | POST /api/learner/complaints/{complaintId:guid}/messages        |
-|  17 | Đã lưu cấu hình danh mục khiếu nại.                                                                                          | Complaint category config saved.                                                                        | PUT /api/cms/complaints/config/categories/{categoryKey}         |
-|  18 | Đã lưu cấu hình quy tắc chính sách khiếu nại.                                                                                | Complaint policy rule config saved.                                                                     | PUT /api/cms/complaints/config/rules/{categoryKey}/{ruleKey}    |
-|  19 | Đã xóa cấu hình danh mục khiếu nại.                                                                                          | Complaint category config deleted.                                                                      | DELETE /api/cms/complaints/config/categories/{categoryKey}      |
-|  20 | Đã xóa cấu hình quy tắc chính sách khiếu nại.                                                                                | Complaint policy rule config deleted.                                                                   | DELETE /api/cms/complaints/config/rules/{categoryKey}/{ruleKey} |
-|  21 | Khiếu nại này đã được giải quyết. Bạn không thể gửi tin nhắn mới.                                                            | This complaint is already resolved. You cannot send new messages.                                       | POST /api/learner/complaints/{complaintId:guid}/messages        |
-|  22 | Khiếu nạiId là bắt buộc.                                                                                                     | ComplaintId is required.                                                                                | POST /api/cms/complaints/{complaintId:guid}/status              |
-|  23 | Không có thay đổi trạng thái.                                                                                                | No status change.                                                                                       | POST /api/cms/complaints/{complaintId:guid}/status              |
-|  24 | Không thể tải lên một hoặc nhiều tệp đính kèm.                                                                               | Failed to upload one or more attachments.                                                               | POST /api/learner/complaints                                    |
-|  25 | Không tìm thấy cấu hình danh mục khiếu nại cho quy tắc này.                                                                  | Complaint category config not found for this rule.                                                      | PUT /api/cms/complaints/config/rules/{categoryKey}/{ruleKey}    |
-|  26 | Không tìm thấy cấu hình danh mục khiếu nại.                                                                                  | Complaint category config not found.                                                                    | DELETE /api/cms/complaints/config/categories/{categoryKey}      |
-|  27 | Không tìm thấy cấu hình quy tắc chính sách khiếu nại.                                                                        | Complaint policy rule config not found.                                                                 | DELETE /api/cms/complaints/config/rules/{categoryKey}/{ruleKey} |
-|  28 | Không tìm thấy khiếu nại với Id: {command.ComplaintId}.                                                                      | Complaint not found with Id: {command.ComplaintId}.                                                     | POST /api/cms/complaints/{complaintId:guid}/status              |
-|  29 | Không tìm thấy khiếu nại với Id: {request.ComplaintId}.                                                                      | Complaint not found with Id: {request.ComplaintId}.                                                     | GET /api/cms/complaints/{complaintId:guid}                      |
-|  30 | Mô tả là bắt buộc.                                                                                                           | Description is required.                                                                                | POST /api/learner/complaints                                    |
-|  31 | Nội dung tin nhắn là bắt buộc.                                                                                               | Message content is required.                                                                            | POST /api/learner/complaints/{complaintId:guid}/messages        |
-|  32 | RuleKey là bắt buộc.                                                                                                         | RuleKey is required.                                                                                    | PUT /api/cms/complaints/config/rules/{categoryKey}/{ruleKey}    |
-|  33 | Tên hiển thị là bắt buộc.                                                                                                    | DisplayName is required.                                                                                | PUT /api/cms/complaints/config/categories/{categoryKey}         |
-|  34 | Xác thực chính sách khiếu nại không thành công.                                                                              | Complaint policy validation failed.                                                                     | POST /api/learner/complaints                                    |
-|  35 | Yêu cầu xác thực.                                                                                                            | Authentication required.                                                                                | DELETE /api/cms/complaints/config/categories/{categoryKey}      |
-|  36 | Yêu cầu xác thực. Vui lòng đăng nhập để gửi khiếu nại.                                                                       | Authentication required. Please log in to submit a complaint.                                           | POST /api/learner/complaints                                    |
-|  37 | Yêu cầu xác thực. Vui lòng đăng nhập để gửi tin nhắn cho nhân viên.                                                          | Authentication required. Please log in to send staff message.                                           | POST /api/cms/complaints/{complaintId:guid}/messages            |
-|  38 | Yêu cầu xác thực. Vui lòng đăng nhập để gửi tin nhắn.                                                                        | Authentication required. Please log in to send a message.                                               | POST /api/learner/complaints/{complaintId:guid}/messages        |
-|  39 | Yêu cầu xác thực. Vui lòng đăng nhập để thay đổi trạng thái khiếu nại.                                                       | Authentication required. Please log in to change complaint status.                                      | POST /api/cms/complaints/{complaintId:guid}/status              |
-|  40 | Yêu cầu xác thực. Vui lòng đăng nhập để xem chi tiết khiếu nại.                                                              | Authentication required. Please log in to view complaint detail.                                        | GET /api/cms/complaints/{complaintId:guid}                      |
+| STT | Message (VI) | Message (EN) | API Endpoint |
+|---:|---|---|
+| 1 | Bạn không có quyền gửi tin nhắn cho khiếu nại này. | N/A | POST /api/learner/complaints/{complaintId:guid}/messages |
+| 2 | Bạn không có quyền gửi tin nhắn cho nhân viên. Chỉ Quản trị viên hoặc Người điều hành mới có thể thực hiện hành động này. | N/A | POST /api/cms/complaints/{complaintId:guid}/messages |
+| 3 | Bạn không có quyền thay đổi trạng thái khiếu nại. Chỉ Quản trị viên hoặc Người điều hành mới có thể thực hiện hành động này. | N/A | POST /api/cms/complaints/{complaintId:guid}/status |
+| 4 | Bạn không có quyền xem chi tiết khiếu nại. Chỉ có Quản trị viên hoặc Người điều hành mới có thể truy cập. | N/A | GET /api/cms/complaints/{complaintId:guid} |
+| 5 | Bạn không có quyền xem khiếu nại này. | N/A | GET /api/learner/complaints/{complaintId:guid} |
+| 6 | CategoryKey là bắt buộc. | N/A | POST /api/learner/complaints |
+| 7 | CategoryKey và RuleKey là bắt buộc. | N/A | DELETE /api/cms/complaints/config/rules/{categoryKey}/{ruleKey} |
+| 8 | Chỉ Quản trị viên/Người điều hành mới có thể cập nhật cấu hình danh mục khiếu nại. | N/A | PUT /api/cms/complaints/config/categories/{categoryKey} |
+| 9 | Chỉ Quản trị viên/Người điều hành mới có thể cập nhật cấu hình quy tắc chính sách khiếu nại. | N/A | PUT /api/cms/complaints/config/rules/{categoryKey}/{ruleKey} |
+| 10 | Chỉ Quản trị viên/Người điều hành mới có thể xóa cấu hình danh mục khiếu nại. | N/A | DELETE /api/cms/complaints/config/categories/{categoryKey} |
+| 11 | Chỉ Quản trị viên/Người điều hành mới có thể xóa cấu hình quy tắc chính sách khiếu nại. | N/A | DELETE /api/cms/complaints/config/rules/{categoryKey}/{ruleKey} |
+| 12 | Chủ đề là bắt buộc. | N/A | POST /api/learner/complaints |
+| 13 | Chuyển đổi trạng thái không hợp lệ: {fromStatus} -> {toStatus}. | N/A | POST /api/cms/complaints/{complaintId:guid}/status |
+| 14 | Đã cập nhật trạng thái khiếu nại. | N/A | POST /api/cms/complaints/{complaintId:guid}/status |
+| 15 | Đã gửi đơn khiếu nại. | N/A | POST /api/learner/complaints |
+| 16 | Đã gửi tin nhắn. | N/A | POST /api/learner/complaints/{complaintId:guid}/messages |
+| 17 | Đã lấy chi tiết khiếu nại của bạn. | N/A | GET /api/learner/complaints/{complaintId:guid} |
+| 18 | Đã lấy chi tiết khiếu nại. | N/A | GET /api/cms/complaints/{complaintId:guid} |
+| 19 | Đã lưu cấu hình danh mục khiếu nại. | N/A | PUT /api/cms/complaints/config/categories/{categoryKey} |
+| 20 | Đã lưu cấu hình quy tắc chính sách khiếu nại. | N/A | PUT /api/cms/complaints/config/rules/{categoryKey}/{ruleKey} |
+| 21 | Đã xóa cấu hình danh mục khiếu nại. | N/A | DELETE /api/cms/complaints/config/categories/{categoryKey} |
+| 22 | Đã xóa cấu hình quy tắc chính sách khiếu nại. | N/A | DELETE /api/cms/complaints/config/rules/{categoryKey}/{ruleKey} |
+| 23 | Khiếu nại này đã được giải quyết. Bạn không thể gửi tin nhắn mới. | N/A | POST /api/learner/complaints/{complaintId:guid}/messages |
+| 24 | Khiếu nạiId là bắt buộc. | N/A | POST /api/cms/complaints/{complaintId:guid}/status |
+| 25 | Không có thay đổi trạng thái. | N/A | POST /api/cms/complaints/{complaintId:guid}/status |
+| 26 | Không thể tải lên một hoặc nhiều tệp đính kèm. | N/A | POST /api/learner/complaints |
+| 27 | Không tìm thấy cấu hình danh mục khiếu nại cho quy tắc này. | N/A | PUT /api/cms/complaints/config/rules/{categoryKey}/{ruleKey} |
+| 28 | Không tìm thấy cấu hình danh mục khiếu nại. | N/A | DELETE /api/cms/complaints/config/categories/{categoryKey} |
+| 29 | Không tìm thấy cấu hình quy tắc chính sách khiếu nại. | N/A | DELETE /api/cms/complaints/config/rules/{categoryKey}/{ruleKey} |
+| 30 | Không tìm thấy khiếu nại với Id: {command.ComplaintId}. | N/A | POST /api/cms/complaints/{complaintId:guid}/status |
+| 31 | Không tìm thấy khiếu nại với Id: {request.ComplaintId}. | N/A | GET /api/cms/complaints/{complaintId:guid} |
+| 32 | Mô tả là bắt buộc. | N/A | POST /api/learner/complaints |
+| 33 | Nội dung tin nhắn là bắt buộc. | N/A | POST /api/learner/complaints/{complaintId:guid}/messages |
+| 34 | RuleKey là bắt buộc. | N/A | PUT /api/cms/complaints/config/rules/{categoryKey}/{ruleKey} |
+| 35 | Tên hiển thị là bắt buộc. | N/A | PUT /api/cms/complaints/config/categories/{categoryKey} |
+| 36 | Xác thực chính sách khiếu nại không thành công. | N/A | POST /api/learner/complaints |
+| 37 | Yêu cầu xác thực. | N/A | DELETE /api/cms/complaints/config/categories/{categoryKey} |
+| 38 | Yêu cầu xác thực. Vui lòng đăng nhập để gửi khiếu nại. | N/A | POST /api/learner/complaints |
+| 39 | Yêu cầu xác thực. Vui lòng đăng nhập để gửi tin nhắn cho nhân viên. | N/A | POST /api/cms/complaints/{complaintId:guid}/messages |
+| 40 | Yêu cầu xác thực. Vui lòng đăng nhập để gửi tin nhắn. | N/A | POST /api/learner/complaints/{complaintId:guid}/messages |
+| 41 | Yêu cầu xác thực. Vui lòng đăng nhập để thay đổi trạng thái khiếu nại. | N/A | POST /api/cms/complaints/{complaintId:guid}/status |
+| 42 | Yêu cầu xác thực. Vui lòng đăng nhập để xem chi tiết khiếu nại. | N/A | GET /api/cms/complaints/{complaintId:guid} |
 
 ## Application/Gameplay
 
-| STT | Message (VI)                                                                             | Message (EN)                                                                       | API Endpoint                              |
-| --: | ---------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------- | ----------------------------------------- |
-|   1 | Chỉ Quản trị viên/Người điều hành mới có thể cập nhật cấu hình điểm giải quyết bản đồ.   | Only Admin/Moderator can update map solve score config.                            | PUT /api/cms/gameplay/map-solve-score     |
-|   2 | Chỉ Quản trị viên/Người điều hành mới có thể xem cấu hình điểm giải quyết bản đồ.        | Only Admin/Moderator can view map solve score config.                              | GET /api/cms/gameplay/map-solve-score     |
-|   3 | Đã cập nhật cấu hình điểm giải quyết bản đồ.                                             | Map solve score config updated.                                                    | PUT /api/cms/gameplay/map-solve-score     |
-|   4 | Đã truy xuất thành công                                                                  | Retrieved successfully                                                             | GET /api/learner/gameplay/my-play-history |
-|   5 | Không cấp được lộ trình học tập XP.                                                      | Failed to grant learning path XP.                                                  | POST /api/learner/gameplay/validate       |
-|   6 | Không cấp được XP.                                                                       | Failed to grant XP.                                                                | POST /api/learner/gameplay/validate       |
-|   7 | Không còn lượt dùng thử miễn phí nào cho bản đồ này.                                     | No free trial attempts left for this map.                                          | POST /api/learner/gameplay/validate       |
-|   8 | Không tìm thấy bản đồ                                                                    | Map not found                                                                      | POST /api/learner/gameplay/validate       |
-|   9 | Không tìm thấy cấu hình điểm giải quyết bản đồ.                                          | Map solve score config not found.                                                  | PUT /api/cms/gameplay/map-solve-score     |
-|  10 | Không tìm thấy dữ liệu bản đồ                                                            | Map data not found                                                                 | POST /api/learner/gameplay/validate       |
-|  11 | Không tìm thấy người dùng.                                                               | User not found.                                                                    | GET /api/learner/gameplay/dashboard       |
-|  12 | MapDetailId là bắt buộc khi bản đồ có nhiều cấp độ hoặc không hợp lệ đối với bản đồ này. | MapDetailId is required when the map has multiple levels, or invalid for this map. | POST /api/learner/gameplay/validate       |
-|  13 | Yêu cầu xác thực.                                                                        | Authentication required.                                                           | PUT /api/cms/gameplay/map-solve-score     |
-|  14 | Yêu cầu xác thực. Vui lòng đăng nhập để xác nhận giải pháp.                              | Authentication required. Please log in to validate a solution.                     | POST /api/learner/gameplay/validate       |
-|  15 | Yêu cầu xác thực. Vui lòng đăng nhập để xem bảng điều khiển tiến trình của bạn.          | Authentication required. Please log in to view your progress dashboard.            | GET /api/learner/gameplay/dashboard       |
+| STT | Message (VI) | Message (EN) | API Endpoint |
+|---:|---|---|
+| 1 | Chỉ Quản trị viên/Người điều hành mới có thể cập nhật cấu hình điểm giải quyết bản đồ. | N/A | PUT /api/cms/gameplay/map-solve-score |
+| 2 | Chỉ Quản trị viên/Người điều hành mới có thể xem cấu hình điểm giải quyết bản đồ. | N/A | GET /api/cms/gameplay/map-solve-score |
+| 3 | Đã cập nhật cấu hình điểm giải quyết bản đồ. | N/A | PUT /api/cms/gameplay/map-solve-score |
+| 4 | Đã chấm lời giải thành công. | N/A | POST /api/learner/gameplay/validate |
+| 5 | Đã lấy bảng điều khiển tiến trình. | N/A | GET /api/learner/gameplay/dashboard |
+| 6 | Đã truy xuất thành công | N/A | GET /api/learner/gameplay/my-play-history |
+| 7 | Không cấp được lộ trình học tập XP. | N/A | POST /api/learner/gameplay/validate |
+| 8 | Không cấp được XP. | N/A | POST /api/learner/gameplay/validate |
+| 9 | Không còn lượt dùng thử miễn phí nào cho bản đồ này. | N/A | POST /api/learner/gameplay/validate |
+| 10 | Không tìm thấy bản đồ | N/A | POST /api/learner/gameplay/validate |
+| 11 | Không tìm thấy cấu hình điểm giải quyết bản đồ. | N/A | PUT /api/cms/gameplay/map-solve-score |
+| 12 | Không tìm thấy dữ liệu bản đồ | N/A | POST /api/learner/gameplay/validate |
+| 13 | Không tìm thấy người dùng. | N/A | GET /api/learner/gameplay/dashboard |
+| 14 | MapDetailId là bắt buộc khi bản đồ có nhiều cấp độ hoặc không hợp lệ đối với bản đồ này. | N/A | POST /api/learner/gameplay/validate |
+| 15 | Yêu cầu xác thực. | N/A | PUT /api/cms/gameplay/map-solve-score |
+| 16 | Yêu cầu xác thực. Vui lòng đăng nhập để xác nhận giải pháp. | N/A | POST /api/learner/gameplay/validate |
+| 17 | Yêu cầu xác thực. Vui lòng đăng nhập để xem bảng điều khiển tiến trình của bạn. | N/A | GET /api/learner/gameplay/dashboard |
 
 ## Application/LearningPath
 
-| STT | Message (VI)                                                                         | Message (EN)                                                       | API Endpoint                                                        |
-| --: | ------------------------------------------------------------------------------------ | ------------------------------------------------------------------ | ------------------------------------------------------------------- |
-|   1 | Khái niệm đã hoàn thành.                                                             | Concept already completed.                                         | POST /api/learner/learning-path/concepts/{conceptId:guid}/complete  |
-|   2 | Khái niệm đã hoàn thành. Mục tiếp theo trong đường dẫn của bạn hiện đã được mở khóa. | Concept completed. Next item in your path is now unlocked.         | POST /api/learner/learning-path/concepts/{conceptId:guid}/complete  |
-|   3 | Khái niệm không được tìm thấy.                                                       | Concept not found.                                                 | POST /api/learner/learning-path/concepts/{conceptId:guid}/complete  |
-|   4 | Không cấp được khái niệm XP.                                                         | Failed to grant concept XP.                                        | POST /api/learner/learning-path/concepts/{conceptId:guid}/complete  |
-|   5 | Không cấp được lộ trình học tập XP.                                                  | Failed to grant learning path XP.                                  | POST /api/learner/learning-path/concepts/{conceptId:guid}/complete  |
-|   6 | Không tìm thấy mục tiêu học tập.                                                     | Learning goal not found.                                           | POST /api/learner/learning-path/goals/select                        |
-|   7 | Mục tiêu học tập đã chọn. Đường dẫn của bạn đã được cập nhật.                        | Learning goal selected. Your path has been updated.                | POST /api/learner/learning-path/goals/select                        |
-|   8 | Yêu cầu xác thực.                                                                    | Authentication required.                                           | GET /api/learner/learning-path/concepts/{conceptId:guid}/completion |
-|   9 | Yêu cầu xác thực. Vui lòng đăng nhập để chọn mục tiêu học tập.                       | Authentication required. Please log in to select a learning goal.  | POST /api/learner/learning-path/goals/select                        |
-|  10 | Yêu cầu xác thực. Vui lòng đăng nhập để hoàn thành một khái niệm.                    | Authentication required. Please log in to complete a concept.      | POST /api/learner/learning-path/concepts/{conceptId:guid}/complete  |
-|  11 | Yêu cầu xác thực. Vui lòng đăng nhập để xem lộ trình học tập của bạn.                | Authentication required. Please log in to view your learning path. | GET /api/learner/learning-path/my-path                              |
+| STT | Message (VI) | Message (EN) | API Endpoint |
+|---:|---|---|
+| 1 | Đã lấy chi tiết khái niệm. | N/A | GET /api/learner/learning-path/concepts/{conceptId:guid} |
+| 2 | Đã lấy chi tiết mục tiêu học tập. | N/A | GET /api/learner/learning-path/goals/{goalId:guid} |
+| 3 | Đã lấy lộ trình học tập của bạn. | N/A | GET /api/learner/learning-path/my-path |
+| 4 | Đã lấy mục tiêu học tập đã chọn. | N/A | GET /api/learner/learning-path/my-path/selected-goal |
+| 5 | Đã lấy tiến độ lộ trình học tập của bạn. | N/A | GET /api/learner/learning-path/my-path/progress |
+| 6 | Đã lấy trạng thái hoàn thành khái niệm. | N/A | GET /api/learner/learning-path/concepts/{conceptId:guid}/completion |
+| 7 | Khái niệm đã hoàn thành. | N/A | POST /api/learner/learning-path/concepts/{conceptId:guid}/complete |
+| 8 | Khái niệm đã hoàn thành. Mục tiếp theo trong đường dẫn của bạn hiện đã được mở khóa. | N/A | POST /api/learner/learning-path/concepts/{conceptId:guid}/complete |
+| 9 | Khái niệm không được tìm thấy. | N/A | POST /api/learner/learning-path/concepts/{conceptId:guid}/complete |
+| 10 | Không cấp được khái niệm XP. | N/A | POST /api/learner/learning-path/concepts/{conceptId:guid}/complete |
+| 11 | Không cấp được lộ trình học tập XP. | N/A | POST /api/learner/learning-path/concepts/{conceptId:guid}/complete |
+| 12 | Không tìm thấy mục tiêu học tập. | N/A | POST /api/learner/learning-path/goals/select |
+| 13 | Mục tiêu học tập đã chọn. Đường dẫn của bạn đã được cập nhật. | N/A | POST /api/learner/learning-path/goals/select |
+| 14 | Yêu cầu xác thực. | N/A | GET /api/learner/learning-path/concepts/{conceptId:guid}/completion |
+| 15 | Yêu cầu xác thực. Vui lòng đăng nhập để chọn mục tiêu học tập. | N/A | POST /api/learner/learning-path/goals/select |
+| 16 | Yêu cầu xác thực. Vui lòng đăng nhập để hoàn thành một khái niệm. | N/A | POST /api/learner/learning-path/concepts/{conceptId:guid}/complete |
+| 17 | Yêu cầu xác thực. Vui lòng đăng nhập để xem lộ trình học tập của bạn. | N/A | GET /api/learner/learning-path/my-path |
 
 ## Application/Lobby
 
-| STT | Message (VI)                                                                                                                | Message (EN)                                                                                                                            | API Endpoint                                       |
-| --: | --------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------- |
-|   1 | Bản đồ được cập nhật.                                                                                                       | Map updated.                                                                                                                            | POST /api/learner/lobby/rooms/{roomId:guid}/map    |
-|   2 | Bản đồ không được tìm thấy hoặc đã bị xóa.                                                                                  | Map not found or has been deleted.                                                                                                      | POST /api/learner/lobby/rooms                      |
-|   3 | Bản đồ không được tìm thấy hoặc đã bị xóa. Chọn bản đồ khác.                                                                | Map not found or has been deleted. Choose another map.                                                                                  | POST /api/learner/lobby/rooms/{roomId:guid}/start  |
-|   4 | Bạn không ở trong phòng này.                                                                                                | You are not in this room.                                                                                                               | POST /api/learner/lobby/rooms/{roomId:guid}/submit |
-|   5 | Cung cấp RoomId hoặc RoomCode.                                                                                              | Provide RoomId or RoomCode.                                                                                                             | POST /api/learner/lobby/rooms/join                 |
-|   6 | Đã cập nhật trạng thái sẵn sàng.                                                                                            | Ready state updated.                                                                                                                    | POST /api/learner/lobby/rooms/{roomId:guid}/ready  |
-|   7 | Đã ghi lại nội dung gửi.                                                                                                    | Submission recorded.                                                                                                                    | POST /api/learner/lobby/rooms/{roomId:guid}/submit |
-|   8 | Đã tham gia phòng.                                                                                                          | Joined room.                                                                                                                            | POST /api/learner/lobby/rooms/join                 |
-|   9 | Không tạo được phòng.                                                                                                       | Failed to create room.                                                                                                                  | POST /api/learner/lobby/rooms                      |
-|  10 | Không thể bắt đầu trò chơi.                                                                                                 | Could not start game.                                                                                                                   | POST /api/learner/lobby/rooms/{roomId:guid}/start  |
-|  11 | Không thể chuyển đổi sẵn sàng.                                                                                              | Could not toggle ready.                                                                                                                 | POST /api/learner/lobby/rooms/{roomId:guid}/ready  |
-|  12 | Không thể ghi lại bài nộp.                                                                                                  | Could not record submission.                                                                                                            | POST /api/learner/lobby/rooms/{roomId:guid}/submit |
-|  13 | Không thể kết thúc trò chơi.                                                                                                | Could not end game.                                                                                                                     | POST /api/learner/lobby/rooms/{roomId:guid}/end    |
-|  14 | Không thể rời khỏi phòng.                                                                                                   | Could not leave room.                                                                                                                   | POST /api/learner/lobby/rooms/{roomId:guid}/leave  |
-|  15 | Không thể tham gia.                                                                                                         | Could not join.                                                                                                                         | POST /api/learner/lobby/rooms/join                 |
-|  16 | Không thể thiết lập bản đồ.                                                                                                 | Could not set map.                                                                                                                      | POST /api/learner/lobby/rooms/{roomId:guid}/map    |
-|  17 | Không thông tá. Bá ¡n Ä‘Ã £ á»Ÿ trong má»™t phương rá»“i. Vui vẻ rá»i phÃ²ng hiá»‡n táù¡i trÆ°á»»c khi táù¡o phÃ²ng má»>>i. | KhÃ´ng thá»ƒ táº¡o phÃ²ng. Báº¡n Ä‘Ã£ á»Ÿ trong má»™t phÃ²ng rá»“i. Vui lÃ²ng rá»i phÃ²ng hiá»‡n táº¡i trÆ°á»›c khi táº¡o phÃ²ng má»›i. | POST /api/learner/lobby/rooms                      |
-|  18 | Không tìm thấy phòng.                                                                                                       | Room not found.                                                                                                                         | POST /api/learner/lobby/rooms/join                 |
-|  19 | Phòng bên trái.                                                                                                             | Left room.                                                                                                                              | POST /api/learner/lobby/rooms/{roomId:guid}/leave  |
-|  20 | Phòng chưa có bản đồ nào được chọn.                                                                                         | Room has no map selected.                                                                                                               | POST /api/learner/lobby/rooms/{roomId:guid}/submit |
-|  21 | Phòng được tạo.                                                                                                             | Room created.                                                                                                                           | POST /api/learner/lobby/rooms                      |
-|  22 | Trò chơi bắt đầu. Kết nối với SignalR để nhận thông tin cập nhật theo thời gian thực.                                       | Game started. Connect to SignalR to receive real-time updates.                                                                          | POST /api/learner/lobby/rooms/{roomId:guid}/start  |
-|  23 | Trò chơi kết thúc. Phòng đang chờ lần khởi động tiếp theo.                                                                  | Game ended. Room is waiting for next start.                                                                                             | POST /api/learner/lobby/rooms/{roomId:guid}/end    |
-|  24 | Trò chơi không được tiến hành.                                                                                              | Game is not in progress.                                                                                                                | POST /api/learner/lobby/rooms/{roomId:guid}/submit |
-|  25 | Xác thực không thành công.                                                                                                  | Validation failed.                                                                                                                      | POST /api/learner/lobby/rooms/{roomId:guid}/submit |
-|  26 | Yêu cầu xác thực.                                                                                                           | Authentication required.                                                                                                                | POST /api/learner/lobby/rooms                      |
+| STT | Message (VI) | Message (EN) | API Endpoint |
+|---:|---|---|
+| 1 | Bản đồ được cập nhật. | N/A | POST /api/learner/lobby/rooms/{roomId:guid}/map |
+| 2 | Bản đồ không được tìm thấy hoặc đã bị xóa. | N/A | POST /api/learner/lobby/rooms |
+| 3 | Bản đồ không được tìm thấy hoặc đã bị xóa. Chọn bản đồ khác. | N/A | POST /api/learner/lobby/rooms/{roomId:guid}/start |
+| 4 | Bạn không ở trong phòng này. | N/A | POST /api/learner/lobby/rooms/{roomId:guid}/submit |
+| 5 | Cung cấp RoomId hoặc RoomCode. | N/A | POST /api/learner/lobby/rooms/join |
+| 6 | Đã cập nhật trạng thái sẵn sàng. | N/A | POST /api/learner/lobby/rooms/{roomId:guid}/ready |
+| 7 | Đã ghi lại nội dung gửi. | N/A | POST /api/learner/lobby/rooms/{roomId:guid}/submit |
+| 8 | Đã lấy thông tin phòng. | N/A | GET /api/learner/lobby/rooms/{roomId:guid} ; POST /api/learner/lobby/rooms/{roomId:guid}/map |
+| 9 | Đã tham gia phòng. | N/A | POST /api/learner/lobby/rooms/join |
+| 10 | Không tạo được phòng. | N/A | POST /api/learner/lobby/rooms |
+| 11 | Không thể bắt đầu trò chơi. | N/A | POST /api/learner/lobby/rooms/{roomId:guid}/start |
+| 12 | Không thể chuyển đổi sẵn sàng. | N/A | POST /api/learner/lobby/rooms/{roomId:guid}/ready |
+| 13 | Không thể ghi lại bài nộp. | N/A | POST /api/learner/lobby/rooms/{roomId:guid}/submit |
+| 14 | Không thể kết thúc trò chơi. | N/A | POST /api/learner/lobby/rooms/{roomId:guid}/end |
+| 15 | Không thể rời khỏi phòng. | N/A | POST /api/learner/lobby/rooms/{roomId:guid}/leave |
+| 16 | Không thể tạo phòng. Bạn đã ở trong một phòng rồi. Vui lòng rời phòng hiện tại trước khi tạo phòng mới. | N/A | POST /api/learner/lobby/rooms |
+| 17 | Không thể tham gia. | N/A | POST /api/learner/lobby/rooms/join |
+| 18 | Không thể thiết lập bản đồ. | N/A | POST /api/learner/lobby/rooms/{roomId:guid}/map |
+| 19 | Không tìm thấy phòng. | N/A | POST /api/learner/lobby/rooms/join |
+| 20 | Phòng bên trái. | N/A | POST /api/learner/lobby/rooms/{roomId:guid}/leave |
+| 21 | Phòng chưa có bản đồ nào được chọn. | N/A | POST /api/learner/lobby/rooms/{roomId:guid}/submit |
+| 22 | Phòng được tạo. | N/A | POST /api/learner/lobby/rooms |
+| 23 | Trò chơi bắt đầu. Kết nối với SignalR để nhận thông tin cập nhật theo thời gian thực. | N/A | POST /api/learner/lobby/rooms/{roomId:guid}/start |
+| 24 | Trò chơi kết thúc. Phòng đang chờ lần khởi động tiếp theo. | N/A | POST /api/learner/lobby/rooms/{roomId:guid}/end |
+| 25 | Trò chơi không được tiến hành. | N/A | POST /api/learner/lobby/rooms/{roomId:guid}/submit |
+| 26 | Xác thực không thành công. | N/A | POST /api/learner/lobby/rooms/{roomId:guid}/submit |
+| 27 | Yêu cầu xác thực. | N/A | POST /api/learner/lobby/rooms |
 
 ## Application/Maps
 
-| STT | Message (VI)                                                                                                                                                              | Message (EN)                                                                                                                        | API Endpoint                                                                                                      |
-| --: | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
-|   1 | (Các) bản đồ {dto.SuccessCount} đã được phê duyệt.                                                                                                                        | Approved {dto.SuccessCount} map(s).                                                                                                 | POST /api/cms/maps/batch/approve                                                                                  |
-|   2 | Bạn chỉ có thể gửi bản đồ của riêng mình để xem xét. Bản đồ này được tạo bởi một người dùng khác.                                                                         | You can only submit your own maps for review. This map was created by another user.                                                 | POST /api/learner/maps/{id:guid}/submit                                                                           |
-|   3 | Bản đồ đã bị từ chối thành công.                                                                                                                                          | Map rejected successfully.                                                                                                          | POST /api/cms/maps/{id:guid}/reject                                                                               |
-|   4 | Bản đồ đã có trong bộ sưu tập của bạn.                                                                                                                                    | Map is already in your collection.                                                                                                  | POST /api/learner/maps/{id:guid}/add-to-my-maps                                                                   |
-|   5 | Bản đồ đã được cập nhật và chuyển về trạng thái Bản nháp.                                                                                                                 | Map updated and moved back to Draft status.                                                                                         | PUT /api/learner/maps/{id:guid}                                                                                   |
-|   6 | Bản đồ đã được gửi để xem xét thành công.                                                                                                                                 | Map submitted for review successfully.                                                                                              | POST /api/learner/maps/{id:guid}/submit                                                                           |
-|   7 | Bản đồ đã được phê duyệt thành công.                                                                                                                                      | Map approved successfully.                                                                                                          | POST /api/cms/maps/{id:guid}/approve                                                                              |
-|   8 | Bản đồ đã được xóa thành công.                                                                                                                                            | Map deleted successfully.                                                                                                           | DELETE /api/cms/maps/{id:guid} ; DELETE /api/learner/maps/{id:guid}                                               |
-|   9 | Bản đồ được xuất bản thành công.                                                                                                                                          | Map published successfully.                                                                                                         | POST /api/cms/maps/{id:guid}/publish ; POST /api/learner/maps/{id:guid}/publish                                   |
-|  10 | Bản đồ không được tìm thấy hoặc đã bị xóa.                                                                                                                                | Map not found or has been deleted.                                                                                                  | SignalR /hubs/gamelobby (CreateRoom/SetSelectedMap/StartGame)                                                     |
-|  11 | Bản đồ không được tìm thấy hoặc không hoạt động.                                                                                                                          | Map not found or inactive.                                                                                                          | POST /api/learner/maps/{id:guid}/add-to-my-maps                                                                   |
-|  12 | Bản đồ không được tìm thấy.                                                                                                                                               | Map not found.                                                                                                                      | DELETE /api/cms/maps/{id:guid}/gallery/{mediaId:guid} ; DELETE /api/learner/maps/{id:guid}/gallery/{mediaId:guid} |
-|  13 | Bản đồ không thể bị từ chối. Trạng thái dự kiến: Đang chờ xem xét. Trạng thái hiện tại: {map.MapStatus}. Chỉ những bản đồ đang chờ xem xét mới có thể bị từ chối.         | Map cannot be rejected. Expected status: PendingReview. Current status: {map.MapStatus}. Only maps awaiting review can be rejected. | POST /api/cms/maps/{id:guid}/reject                                                                               |
-|  14 | Bản đồ không thể được gửi để xem xét. Trạng thái dự kiến: Bản nháp. Trạng thái hiện tại: {map.MapStatus}. Chỉ có thể gửi bản đồ dự thảo.                                  | Map cannot be submitted for review. Expected status: Draft. Current status: {map.MapStatus}. Only draft maps can be submitted.      | POST /api/learner/maps/{id:guid}/submit                                                                           |
-|  15 | Bản đồ không thể được phê duyệt. Trạng thái dự kiến: Đang chờ xem xét. Trạng thái hiện tại: {map.MapStatus}. Chỉ những bản đồ đang chờ xem xét mới có thể được phê duyệt. | Map cannot be approved. Expected status: PendingReview. Current status: {map.MapStatus}. Only maps awaiting review can be approved. | POST /api/cms/maps/{id:guid}/approve                                                                              |
-|  16 | Bản đồ không thể được xuất bản. Trạng thái dự kiến: Đã phê duyệt. Trạng thái hiện tại: {map.MapStatus}. Chỉ những bản đồ được phê duyệt mới có thể được xuất bản.         | Map cannot be published. Expected status: Approved. Current status: {map.MapStatus}. Only approved maps can be published.           | POST /api/cms/maps/{id:guid}/publish ; POST /api/learner/maps/{id:guid}/publish                                   |
-|  17 | Bản đồ miễn phí được thêm vào bộ sưu tập của bạn.                                                                                                                         | Free map added to your collection.                                                                                                  | POST /api/learner/maps/{id:guid}/add-to-my-maps                                                                   |
-|  18 | Bản đồ nguồn không có cấp độ để sao chép.                                                                                                                                 | Source map has no levels to duplicate.                                                                                              | POST /api/cms/maps/{id:guid}/duplicate-as-new ; POST /api/learner/maps/{id:guid}/duplicate-as-new                 |
-|  19 | Bản đồ tồn tại.                                                                                                                                                           | Map exists.                                                                                                                         | SignalR /hubs/gamelobby (CreateRoom/SetSelectedMap/StartGame)                                                     |
-|  20 | Bạn không có quyền cập nhật bản đồ này.                                                                                                                                   | You do not have permission to update this map.                                                                                      | DELETE /api/cms/maps/{id:guid}/gallery/{mediaId:guid} ; DELETE /api/learner/maps/{id:guid}/gallery/{mediaId:guid} |
-|  21 | Bạn không có quyền cập nhật hình đại diện của bản đồ này.                                                                                                                 | You do not have permission to update this map's avatar.                                                                             | POST /api/cms/maps/{id:guid}/avatar ; POST /api/learner/maps/{id:guid}/avatar                                     |
-|  22 | Bạn không có quyền cập nhật thẻ. Chỉ Quản trị viên hoặc Người điều hành mới có thể thực hiện hành động này.                                                               | You do not have permission to update tags. Only Admin or Moderator can perform this action.                                         | PUT /api/cms/maps/tags/{id:guid}                                                                                  |
-|  23 | Bạn không có quyền phê duyệt bản đồ. Chỉ Quản trị viên hoặc Người điều hành mới có thể thực hiện hành động này.                                                           | You do not have permission to approve maps. Only Admin or Moderator can perform this action.                                        | POST /api/cms/maps/{id:guid}/approve                                                                              |
-|  24 | Bạn không có quyền phê duyệt bản đồ. Chỉ Quản trị viên hoặc Người điều hành mới có thể thực hiện phê duyệt hàng loạt.                                                     | You do not have permission to approve maps. Only Admin or Moderator can perform batch approve.                                      | POST /api/cms/maps/batch/approve                                                                                  |
-|  25 | Bạn không có quyền tạo thẻ. Chỉ Quản trị viên hoặc Người điều hành mới có thể thực hiện hành động này.                                                                    | You do not have permission to create tags. Only Admin or Moderator can perform this action.                                         | POST /api/cms/maps/tags                                                                                           |
-|  26 | Bạn không có quyền từ chối bản đồ. Chỉ Quản trị viên hoặc Người điều hành mới có thể thực hiện hành động này.                                                             | You do not have permission to reject maps. Only Admin or Moderator can perform this action.                                         | POST /api/cms/maps/{id:guid}/reject                                                                               |
-|  27 | Bạn không có quyền từ chối bản đồ. Chỉ Quản trị viên hoặc Người điều hành mới có thể thực hiện từ chối hàng loạt.                                                         | You do not have permission to reject maps. Only Admin or Moderator can perform batch reject.                                        | POST /api/cms/maps/batch/reject                                                                                   |
-|  28 | Bạn không có quyền xóa bản đồ này. Chỉ tác giả bản đồ hoặc Quản trị viên/Người điều hành mới có thể xóa nó.                                                               | You do not have permission to delete this map. Only the map author or Admin/Moderator can delete it.                                | DELETE /api/cms/maps/{id:guid} ; DELETE /api/learner/maps/{id:guid}                                               |
-|  29 | Bạn không có quyền xóa thẻ. Chỉ Quản trị viên hoặc Người điều hành mới có thể thực hiện hành động này.                                                                    | You do not have permission to delete tags. Only Admin or Moderator can perform this action.                                         | DELETE /api/cms/maps/tags/{id:guid}                                                                               |
-|  30 | Bạn không có quyền xuất bản bản đồ.                                                                                                                                       | You do not have permission to publish maps.                                                                                         | POST /api/cms/maps/{id:guid}/publish ; POST /api/learner/maps/{id:guid}/publish                                   |
-|  31 | Bạn không có quyền xuất bản bản đồ. Chỉ Quản trị viên hoặc Người điều hành mới có thể thực hiện xuất bản hàng loạt.                                                       | You do not have permission to publish maps. Only Admin or Moderator can perform batch publish.                                      | POST /api/cms/maps/batch/publish                                                                                  |
-|  32 | Bạn không được phép sao chép bản đồ này.                                                                                                                                  | You do not have permission to duplicate this map.                                                                                   | POST /api/cms/maps/{id:guid}/duplicate-as-new ; POST /api/learner/maps/{id:guid}/duplicate-as-new                 |
-|  33 | Cấp độ yêu cầu TimeLimitMs và WinCondition > 0 (được đặt trong JSON hoặc Levels khi sử dụng API nhiều cấp).                                                               | Level requires TimeLimitMs and WinCondition > 0 (set in JSON or Levels when using multi-level API).                                 | PUT /api/learner/maps/{id:guid}                                                                                   |
-|  34 | Chỉ có thể thêm bản đồ miễn phí vào bộ sưu tập của bạn. Bản đồ này được trả tiền.                                                                                         | Only free maps can be added to your collection. This map is paid.                                                                   | POST /api/learner/maps/{id:guid}/add-to-my-maps                                                                   |
-|  35 | Chỉ những bản đồ miễn phí đã xuất bản mới có thể được thêm vào bộ sưu tập của bạn.                                                                                        | Only published free maps can be added to your collection.                                                                           | POST /api/learner/maps/{id:guid}/add-to-my-maps                                                                   |
-|  36 | Chỉ tác giả của bản đồ này mới có thể xuất bản nó.                                                                                                                        | Only the author of this map can publish it.                                                                                         | POST /api/cms/maps/{id:guid}/publish ; POST /api/learner/maps/{id:guid}/publish                                   |
-|  37 | Đã cập nhật hình đại diện bản đồ.                                                                                                                                         | Map avatar updated.                                                                                                                 | POST /api/cms/maps/{id:guid}/avatar ; POST /api/learner/maps/{id:guid}/avatar                                     |
-|  38 | Đã cập nhật thẻ.                                                                                                                                                          | Tag updated.                                                                                                                        | PUT /api/cms/maps/tags/{id:guid}                                                                                  |
-|  39 | Đã tạo thẻ.                                                                                                                                                               | Tag created.                                                                                                                        | POST /api/cms/maps/tags                                                                                           |
-|  40 | Đã truy xuất thành công                                                                                                                                                   | Retrieved successfully                                                                                                              | GET /api/cms/maps/all                                                                                             |
-|  41 | Đã từ chối (các) bản đồ {dto.SuccessCount}.                                                                                                                               | Rejected {dto.SuccessCount} map(s).                                                                                                 | POST /api/cms/maps/batch/reject                                                                                   |
-|  42 | Đã xóa thẻ.                                                                                                                                                               | Tag deleted.                                                                                                                        | DELETE /api/cms/maps/tags/{id:guid}                                                                               |
-|  43 | Đã xuất bản {dto.SuccessCount} bản đồ.                                                                                                                                    | Published {dto.SuccessCount} map(s).                                                                                                | POST /api/cms/maps/batch/publish                                                                                  |
-|  44 | Id bản đồ là bắt buộc.                                                                                                                                                    | Map Id is required.                                                                                                                 | SignalR /hubs/gamelobby (CreateRoom/SetSelectedMap/StartGame)                                                     |
-|  45 | Không tìm thấy bản đồ có Id: {command.MapId}.                                                                                                                             | Map not found with Id: {command.MapId}.                                                                                             | PUT /api/learner/maps/{id:guid}                                                                                   |
-|  46 | Không tìm thấy bản đồ có Id: {command.MapId}. Bản đồ có thể đã bị xóa hoặc không tồn tại.                                                                                 | Map not found with Id: {command.MapId}. The map may have been deleted or does not exist.                                            | POST /api/cms/maps/{id:guid}/approve                                                                              |
-|  47 | Không tìm thấy bản đồ có Id: {command.SourceMapId}.                                                                                                                       | Map not found with Id: {command.SourceMapId}.                                                                                       | POST /api/cms/maps/{id:guid}/duplicate-as-new ; POST /api/learner/maps/{id:guid}/duplicate-as-new                 |
-|  48 | Không tìm thấy bản đồ có Id: {request.MapId}.                                                                                                                             | Map not found with Id: {request.MapId}.                                                                                             | GET /api/cms/maps/{id:guid} ; GET /api/learner/maps/{id:guid}                                                     |
-|  49 | Không tìm thấy mục thư viện.                                                                                                                                              | Gallery item not found.                                                                                                             | DELETE /api/cms/maps/{id:guid}/gallery/{mediaId:guid} ; DELETE /api/learner/maps/{id:guid}/gallery/{mediaId:guid} |
-|  50 | Không tìm thấy thẻ có Id: {command.TagId}. Thẻ có thể đã bị xóa hoặc không tồn tại.                                                                                       | Tag not found with Id: {command.TagId}. The tag may have been deleted or does not exist.                                            | DELETE /api/cms/maps/tags/{id:guid}                                                                               |
-|  51 | LearnedTagsCsv chứa (các) Hướng dẫn không hợp lệ.                                                                                                                         | LearnedTagsCsv contains invalid Guid(s).                                                                                            | POST /api/cms/maps/upload-json ; POST /api/learner/maps/upload-json                                               |
-|  52 | Mỗi cấp độ yêu cầu TimeLimitMs và WinCondition > 0 (được đặt trong Levels[] hoặc timeLimitMs / winCondition trong JSON của mỗi cấp độ).                                   | Each level requires TimeLimitMs and WinCondition > 0 (set in Levels[] or timeLimitMs / winCondition in each level JSON).            | POST /api/cms/maps ; POST /api/cms/maps/with-files ; POST /api/learner/maps ; POST /api/learner/maps/with-files   |
-|  53 | Mỗi cấp độ yêu cầu TimeLimitMs và WinCondition > 0 (được đặt trong Levels[] hoặc trong JSON của mỗi cấp độ).                                                              | Each level requires TimeLimitMs and WinCondition > 0 (set in Levels[] or in each level JSON).                                       | PUT /api/learner/maps/{id:guid}                                                                                   |
-|  54 | Mục thư viện đã bị xóa.                                                                                                                                                   | Gallery item removed.                                                                                                               | DELETE /api/cms/maps/{id:guid}/gallery/{mediaId:guid} ; DELETE /api/learner/maps/{id:guid}/gallery/{mediaId:guid} |
-|  55 | TagIdsCsv chứa (các) Hướng dẫn không hợp lệ.                                                                                                                              | TagIdsCsv contains invalid Guid(s).                                                                                                 | POST /api/cms/maps/upload-json ; POST /api/learner/maps/upload-json                                               |
-|  56 | Tải lên hình đại diện không thành công.                                                                                                                                   | Upload avatar failed.                                                                                                               | POST /api/cms/maps/{id:guid}/avatar ; POST /api/learner/maps/{id:guid}/avatar                                     |
-|  57 | Tải lên thư viện không thành công.                                                                                                                                        | Gallery upload failed.                                                                                                              | POST /api/cms/maps ; POST /api/cms/maps/with-files ; POST /api/learner/maps ; POST /api/learner/maps/with-files   |
-|  58 | Tên thẻ là bắt buộc và không được để trống.                                                                                                                               | Tag name is required and cannot be empty.                                                                                           | POST /api/cms/maps/tags                                                                                           |
-|  59 | Tiêu đề không được vượt quá 200 ký tự.                                                                                                                                    | Title must not exceed 200 characters.                                                                                               | POST /api/cms/maps/{id:guid}/duplicate-as-new ; POST /api/learner/maps/{id:guid}/duplicate-as-new                 |
-|  60 | Yêu cầu xác thực.                                                                                                                                                         | Authentication required.                                                                                                            | DELETE /api/cms/maps/{id:guid}/gallery/{mediaId:guid} ; DELETE /api/learner/maps/{id:guid}/gallery/{mediaId:guid} |
-|  61 | Yêu cầu xác thực. Vui lòng đăng nhập để cập nhật bản đồ.                                                                                                                  | Authentication required. Please log in to update a map.                                                                             | PUT /api/learner/maps/{id:guid}                                                                                   |
-|  62 | Yêu cầu xác thực. Vui lòng đăng nhập để cập nhật thẻ.                                                                                                                     | Authentication required. Please log in to update a tag.                                                                             | PUT /api/cms/maps/tags/{id:guid}                                                                                  |
-|  63 | Yêu cầu xác thực. Vui lòng đăng nhập để gửi bản đồ để xem xét.                                                                                                            | Authentication required. Please log in to submit a map for review.                                                                  | POST /api/learner/maps/{id:guid}/submit                                                                           |
-|  64 | Yêu cầu xác thực. Vui lòng đăng nhập để kiểm tra quyền sở hữu bản đồ.                                                                                                     | Authentication required. Please log in to check map ownership.                                                                      | GET /api/learner/maps/{id:guid}/check-ownership                                                                   |
-|  65 | Yêu cầu xác thực. Vui lòng đăng nhập để tạo bản đồ.                                                                                                                       | Authentication required. Please log in to create a map.                                                                             | POST /api/cms/maps ; POST /api/cms/maps/with-files ; POST /api/learner/maps ; POST /api/learner/maps/with-files   |
-|  66 | Yêu cầu xác thực. Vui lòng đăng nhập để tạo thẻ.                                                                                                                          | Authentication required. Please log in to create a tag.                                                                             | POST /api/cms/maps/tags                                                                                           |
-|  67 | Yêu cầu xác thực. Vui lòng đăng nhập để thêm bản đồ vào bộ sưu tập của bạn.                                                                                               | Authentication required. Please log in to add maps to your collection.                                                              | POST /api/learner/maps/{id:guid}/add-to-my-maps                                                                   |
-|  68 | Yêu cầu xác thực. Vui lòng đăng nhập để thực hiện hành động này.                                                                                                          | Authentication required. Please log in to perform this action.                                                                      | POST /api/cms/maps/{id:guid}/approve                                                                              |
-|  69 | Yêu cầu xác thực. Vui lòng đăng nhập để thực hiện phê duyệt hàng loạt.                                                                                                    | Authentication required. Please log in to perform batch approve.                                                                    | POST /api/cms/maps/batch/approve                                                                                  |
-|  70 | Yêu cầu xác thực. Vui lòng đăng nhập để thực hiện từ chối hàng loạt.                                                                                                      | Authentication required. Please log in to perform batch reject.                                                                     | POST /api/cms/maps/batch/reject                                                                                   |
-|  71 | Yêu cầu xác thực. Vui lòng đăng nhập để thực hiện xuất bản hàng loạt.                                                                                                     | Authentication required. Please log in to perform batch publish.                                                                    | POST /api/cms/maps/batch/publish                                                                                  |
-|  72 | Yêu cầu xác thực. Vui lòng đăng nhập để xóa bản đồ.                                                                                                                       | Authentication required. Please log in to delete a map.                                                                             | DELETE /api/cms/maps/{id:guid} ; DELETE /api/learner/maps/{id:guid}                                               |
-|  73 | Yêu cầu xác thực. Vui lòng đăng nhập để xóa thẻ.                                                                                                                          | Authentication required. Please log in to delete a tag.                                                                             | DELETE /api/cms/maps/tags/{id:guid}                                                                               |
-|  74 | Yêu cầu xác thực. Vui lòng đăng nhập để xuất bản bản đồ.                                                                                                                  | Authentication required. Please log in to publish a map.                                                                            | POST /api/cms/maps/{id:guid}/publish ; POST /api/learner/maps/{id:guid}/publish                                   |
+| STT | Message (VI) | Message (EN) | API Endpoint |
+|---:|---|---|
+| 1 | (Các) bản đồ {dto.SuccessCount} đã được phê duyệt. | N/A | POST /api/cms/maps/batch/approve |
+| 2 | Bạn chỉ có thể gửi bản đồ của riêng mình để xem xét. Bản đồ này được tạo bởi một người dùng khác. | N/A | POST /api/learner/maps/{id:guid}/submit |
+| 3 | Bản đồ đã bị từ chối thành công. | N/A | POST /api/cms/maps/{id:guid}/reject |
+| 4 | Bản đồ đã có trong bộ sưu tập của bạn. | N/A | POST /api/learner/maps/{id:guid}/add-to-my-maps |
+| 5 | Bản đồ đã được cập nhật và chuyển về trạng thái Bản nháp. | N/A | PUT /api/learner/maps/{id:guid} |
+| 6 | Bản đồ đã được gửi để xem xét thành công. | N/A | POST /api/learner/maps/{id:guid}/submit |
+| 7 | Bản đồ đã được phê duyệt thành công. | N/A | POST /api/cms/maps/{id:guid}/approve |
+| 8 | Bản đồ đã được xóa thành công. | N/A | DELETE /api/cms/maps/{id:guid} ; DELETE /api/learner/maps/{id:guid} |
+| 9 | Bản đồ được xuất bản thành công. | N/A | POST /api/cms/maps/{id:guid}/publish ; POST /api/learner/maps/{id:guid}/publish |
+| 10 | Bản đồ không được tìm thấy hoặc đã bị xóa. | N/A | SignalR /hubs/gamelobby (CreateRoom/SetSelectedMap/StartGame) |
+| 11 | Bản đồ không được tìm thấy hoặc không hoạt động. | N/A | POST /api/learner/maps/{id:guid}/add-to-my-maps |
+| 12 | Bản đồ không được tìm thấy. | N/A | DELETE /api/cms/maps/{id:guid}/gallery/{mediaId:guid} ; DELETE /api/learner/maps/{id:guid}/gallery/{mediaId:guid} |
+| 13 | Bản đồ không thể bị từ chối. Trạng thái dự kiến: Đang chờ xem xét. Trạng thái hiện tại: {map.MapStatus}. Chỉ những bản đồ đang chờ xem xét mới có thể bị từ chối. | N/A | POST /api/cms/maps/{id:guid}/reject |
+| 14 | Bản đồ không thể được gửi để xem xét. Trạng thái dự kiến: Bản nháp. Trạng thái hiện tại: {map.MapStatus}. Chỉ có thể gửi bản đồ dự thảo. | N/A | POST /api/learner/maps/{id:guid}/submit |
+| 15 | Bản đồ không thể được phê duyệt. Trạng thái dự kiến: Đang chờ xem xét. Trạng thái hiện tại: {map.MapStatus}. Chỉ những bản đồ đang chờ xem xét mới có thể được phê duyệt. | N/A | POST /api/cms/maps/{id:guid}/approve |
+| 16 | Bản đồ không thể được xuất bản. Trạng thái dự kiến: Đã phê duyệt. Trạng thái hiện tại: {map.MapStatus}. Chỉ những bản đồ được phê duyệt mới có thể được xuất bản. | N/A | POST /api/cms/maps/{id:guid}/publish ; POST /api/learner/maps/{id:guid}/publish |
+| 17 | Bản đồ miễn phí được thêm vào bộ sưu tập của bạn. | N/A | POST /api/learner/maps/{id:guid}/add-to-my-maps |
+| 18 | Bản đồ nguồn không có cấp độ để sao chép. | N/A | POST /api/cms/maps/{id:guid}/duplicate-as-new ; POST /api/learner/maps/{id:guid}/duplicate-as-new |
+| 19 | Bản đồ tồn tại. | N/A | SignalR /hubs/gamelobby (CreateRoom/SetSelectedMap/StartGame) |
+| 20 | Bạn không có quyền cập nhật bản đồ này. | N/A | DELETE /api/cms/maps/{id:guid}/gallery/{mediaId:guid} ; DELETE /api/learner/maps/{id:guid}/gallery/{mediaId:guid} |
+| 21 | Bạn không có quyền cập nhật hình đại diện của bản đồ này. | N/A | POST /api/cms/maps/{id:guid}/avatar ; POST /api/learner/maps/{id:guid}/avatar |
+| 22 | Bạn không có quyền cập nhật thẻ. Chỉ Quản trị viên hoặc Người điều hành mới có thể thực hiện hành động này. | N/A | PUT /api/cms/maps/tags/{id:guid} |
+| 23 | Bạn không có quyền phê duyệt bản đồ. Chỉ Quản trị viên hoặc Người điều hành mới có thể thực hiện hành động này. | N/A | POST /api/cms/maps/{id:guid}/approve |
+| 24 | Bạn không có quyền phê duyệt bản đồ. Chỉ Quản trị viên hoặc Người điều hành mới có thể thực hiện phê duyệt hàng loạt. | N/A | POST /api/cms/maps/batch/approve |
+| 25 | Bạn không có quyền tạo thẻ. Chỉ Quản trị viên hoặc Người điều hành mới có thể thực hiện hành động này. | N/A | POST /api/cms/maps/tags |
+| 26 | Bạn không có quyền từ chối bản đồ. Chỉ Quản trị viên hoặc Người điều hành mới có thể thực hiện hành động này. | N/A | POST /api/cms/maps/{id:guid}/reject |
+| 27 | Bạn không có quyền từ chối bản đồ. Chỉ Quản trị viên hoặc Người điều hành mới có thể thực hiện từ chối hàng loạt. | N/A | POST /api/cms/maps/batch/reject |
+| 28 | Bạn không có quyền xóa bản đồ này. Chỉ tác giả bản đồ hoặc Quản trị viên/Người điều hành mới có thể xóa nó. | N/A | DELETE /api/cms/maps/{id:guid} ; DELETE /api/learner/maps/{id:guid} |
+| 29 | Bạn không có quyền xóa thẻ. Chỉ Quản trị viên hoặc Người điều hành mới có thể thực hiện hành động này. | N/A | DELETE /api/cms/maps/tags/{id:guid} |
+| 30 | Bạn không có quyền xuất bản bản đồ. | N/A | POST /api/cms/maps/{id:guid}/publish ; POST /api/learner/maps/{id:guid}/publish |
+| 31 | Bạn không có quyền xuất bản bản đồ. Chỉ Quản trị viên hoặc Người điều hành mới có thể thực hiện xuất bản hàng loạt. | N/A | POST /api/cms/maps/batch/publish |
+| 32 | Bạn không được phép sao chép bản đồ này. | N/A | POST /api/cms/maps/{id:guid}/duplicate-as-new ; POST /api/learner/maps/{id:guid}/duplicate-as-new |
+| 33 | Cấp độ yêu cầu TimeLimitMs và WinCondition > 0 (được đặt trong JSON hoặc Levels khi sử dụng API nhiều cấp). | N/A | PUT /api/learner/maps/{id:guid} |
+| 34 | Chỉ có thể thêm bản đồ miễn phí vào bộ sưu tập của bạn. Bản đồ này được trả tiền. | N/A | POST /api/learner/maps/{id:guid}/add-to-my-maps |
+| 35 | Chỉ những bản đồ miễn phí đã xuất bản mới có thể được thêm vào bộ sưu tập của bạn. | N/A | POST /api/learner/maps/{id:guid}/add-to-my-maps |
+| 36 | Chỉ tác giả của bản đồ này mới có thể xuất bản nó. | N/A | POST /api/cms/maps/{id:guid}/publish ; POST /api/learner/maps/{id:guid}/publish |
+| 37 | Đã cập nhật hình đại diện bản đồ. | N/A | POST /api/cms/maps/{id:guid}/avatar ; POST /api/learner/maps/{id:guid}/avatar |
+| 38 | Đã cập nhật thẻ. | N/A | PUT /api/cms/maps/tags/{id:guid} |
+| 39 | Đã kiểm tra quyền sở hữu bản đồ. | N/A | GET /api/learner/maps/{id:guid}/check-ownership |
+| 40 | Đã lấy chi tiết bản đồ. | N/A | GET /api/cms/maps/{id:guid} ; GET /api/learner/maps/{id:guid} |
+| 41 | Đã lấy thông tin bản đồ. | N/A | GET /api/learner/maps/{id:guid}/info |
+| 42 | Đã tạo thẻ. | N/A | POST /api/cms/maps/tags |
+| 43 | Đã truy xuất thành công | N/A | GET /api/cms/maps/all |
+| 44 | Đã từ chối (các) bản đồ {dto.SuccessCount}. | N/A | POST /api/cms/maps/batch/reject |
+| 45 | Đã xóa thẻ. | N/A | DELETE /api/cms/maps/tags/{id:guid} |
+| 46 | Đã xuất bản {dto.SuccessCount} bản đồ. | N/A | POST /api/cms/maps/batch/publish |
+| 47 | Id bản đồ là bắt buộc. | N/A | SignalR /hubs/gamelobby (CreateRoom/SetSelectedMap/StartGame) |
+| 48 | Không tìm thấy bản đồ có Id: {command.MapId}. | N/A | PUT /api/learner/maps/{id:guid} |
+| 49 | Không tìm thấy bản đồ có Id: {command.MapId}. Bản đồ có thể đã bị xóa hoặc không tồn tại. | N/A | POST /api/cms/maps/{id:guid}/approve |
+| 50 | Không tìm thấy bản đồ có Id: {command.SourceMapId}. | N/A | POST /api/cms/maps/{id:guid}/duplicate-as-new ; POST /api/learner/maps/{id:guid}/duplicate-as-new |
+| 51 | Không tìm thấy bản đồ có Id: {request.MapId}. | N/A | GET /api/cms/maps/{id:guid} ; GET /api/learner/maps/{id:guid} |
+| 52 | Không tìm thấy mục thư viện. | N/A | DELETE /api/cms/maps/{id:guid}/gallery/{mediaId:guid} ; DELETE /api/learner/maps/{id:guid}/gallery/{mediaId:guid} |
+| 53 | Không tìm thấy thẻ có Id: {command.TagId}. Thẻ có thể đã bị xóa hoặc không tồn tại. | N/A | DELETE /api/cms/maps/tags/{id:guid} |
+| 54 | LearnedTagsCsv chứa (các) Hướng dẫn không hợp lệ. | N/A | POST /api/cms/maps/upload-json ; POST /api/learner/maps/upload-json |
+| 55 | Mỗi cấp độ yêu cầu TimeLimitMs và WinCondition > 0 (được đặt trong Levels[] hoặc timeLimitMs / winCondition trong JSON của mỗi cấp độ). | N/A | POST /api/cms/maps ; POST /api/cms/maps/with-files ; POST /api/learner/maps ; POST /api/learner/maps/with-files |
+| 56 | Mỗi cấp độ yêu cầu TimeLimitMs và WinCondition > 0 (được đặt trong Levels[] hoặc trong JSON của mỗi cấp độ). | N/A | PUT /api/learner/maps/{id:guid} |
+| 57 | Mục thư viện đã bị xóa. | N/A | DELETE /api/cms/maps/{id:guid}/gallery/{mediaId:guid} ; DELETE /api/learner/maps/{id:guid}/gallery/{mediaId:guid} |
+| 58 | TagIdsCsv chứa (các) Hướng dẫn không hợp lệ. | N/A | POST /api/cms/maps/upload-json ; POST /api/learner/maps/upload-json |
+| 59 | Tải lên hình đại diện không thành công. | N/A | POST /api/cms/maps/{id:guid}/avatar ; POST /api/learner/maps/{id:guid}/avatar |
+| 60 | Tải lên thư viện không thành công. | N/A | POST /api/cms/maps ; POST /api/cms/maps/with-files ; POST /api/learner/maps ; POST /api/learner/maps/with-files |
+| 61 | Tên thẻ là bắt buộc và không được để trống. | N/A | POST /api/cms/maps/tags |
+| 62 | Tiêu đề không được vượt quá 200 ký tự. | N/A | POST /api/cms/maps/{id:guid}/duplicate-as-new ; POST /api/learner/maps/{id:guid}/duplicate-as-new |
+| 63 | Yêu cầu xác thực. | N/A | DELETE /api/cms/maps/{id:guid}/gallery/{mediaId:guid} ; DELETE /api/learner/maps/{id:guid}/gallery/{mediaId:guid} |
+| 64 | Yêu cầu xác thực. Vui lòng đăng nhập để cập nhật bản đồ. | N/A | PUT /api/learner/maps/{id:guid} |
+| 65 | Yêu cầu xác thực. Vui lòng đăng nhập để cập nhật thẻ. | N/A | PUT /api/cms/maps/tags/{id:guid} |
+| 66 | Yêu cầu xác thực. Vui lòng đăng nhập để gửi bản đồ để xem xét. | N/A | POST /api/learner/maps/{id:guid}/submit |
+| 67 | Yêu cầu xác thực. Vui lòng đăng nhập để kiểm tra quyền sở hữu bản đồ. | N/A | GET /api/learner/maps/{id:guid}/check-ownership |
+| 68 | Yêu cầu xác thực. Vui lòng đăng nhập để tạo bản đồ. | N/A | POST /api/cms/maps ; POST /api/cms/maps/with-files ; POST /api/learner/maps ; POST /api/learner/maps/with-files |
+| 69 | Yêu cầu xác thực. Vui lòng đăng nhập để tạo thẻ. | N/A | POST /api/cms/maps/tags |
+| 70 | Yêu cầu xác thực. Vui lòng đăng nhập để thêm bản đồ vào bộ sưu tập của bạn. | N/A | POST /api/learner/maps/{id:guid}/add-to-my-maps |
+| 71 | Yêu cầu xác thực. Vui lòng đăng nhập để thực hiện hành động này. | N/A | POST /api/cms/maps/{id:guid}/approve |
+| 72 | Yêu cầu xác thực. Vui lòng đăng nhập để thực hiện phê duyệt hàng loạt. | N/A | POST /api/cms/maps/batch/approve |
+| 73 | Yêu cầu xác thực. Vui lòng đăng nhập để thực hiện từ chối hàng loạt. | N/A | POST /api/cms/maps/batch/reject |
+| 74 | Yêu cầu xác thực. Vui lòng đăng nhập để thực hiện xuất bản hàng loạt. | N/A | POST /api/cms/maps/batch/publish |
+| 75 | Yêu cầu xác thực. Vui lòng đăng nhập để xóa bản đồ. | N/A | DELETE /api/cms/maps/{id:guid} ; DELETE /api/learner/maps/{id:guid} |
+| 76 | Yêu cầu xác thực. Vui lòng đăng nhập để xóa thẻ. | N/A | DELETE /api/cms/maps/tags/{id:guid} |
+| 77 | Yêu cầu xác thực. Vui lòng đăng nhập để xuất bản bản đồ. | N/A | POST /api/cms/maps/{id:guid}/publish ; POST /api/learner/maps/{id:guid}/publish |
 
 ## Application/Marketplace
 
-| STT | Message (VI)                                                                                      | Message (EN)                                                                                         | API Endpoint                                                                                  |
-| --: | ------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
-|   1 | Bạn không có quyền cập nhật gói. Chỉ Quản trị viên mới có thể thực hiện hành động này.            | You do not have permission to update packages. Only Admin can perform this action.                   | PUT /api/cms/marketplace/packages/{id:guid}                                                   |
-|   2 | Bạn không có quyền cập nhật trạng thái gói. Chỉ Quản trị viên mới có thể thực hiện hành động này. | You do not have permission to update package status. Only Admin can perform this action.             | POST /api/cms/marketplace/packages/batch/status                                               |
-|   3 | Bạn không có quyền tạo gói. Chỉ Quản trị viên mới có thể thực hiện hành động này.                 | You do not have permission to create packages. Only Admin can perform this action.                   | POST /api/cms/marketplace/packages                                                            |
-|   4 | Bạn không có quyền xem báo cáo thanh toán. Chỉ quản trị viên mới có thể truy cập báo cáo này.     | You do not have permission to view payment reports. Only Admin can access this report.               | GET /api/cms/marketplace/reports/payments                                                     |
-|   5 | Bạn không có quyền xóa các gói. Chỉ Quản trị viên mới có thể thực hiện hành động này.             | You do not have permission to delete packages. Only Admin can perform this action.                   | DELETE /api/cms/marketplace/packages/{id:guid}                                                |
-|   6 | Đã cập nhật (các) gói {dto.SuccessCount}.                                                         | Updated {dto.SuccessCount} package(s).                                                               | POST /api/cms/marketplace/packages/batch/status                                               |
-|   7 | Đã cập nhật gói.                                                                                  | Package updated.                                                                                     | PUT /api/cms/marketplace/packages/{id:guid}                                                   |
-|   8 | Đã truy xuất thành công                                                                           | Retrieved successfully                                                                               | GET /api/cms/marketplace/packages ; GET /api/learner/marketplace/packages                     |
-|   9 | Đã xóa gói.                                                                                       | Package deleted.                                                                                     | DELETE /api/cms/marketplace/packages/{id:guid}                                                |
-|  10 | Gói không được tìm thấy hoặc không hoạt động.                                                     | Package not found or inactive.                                                                       | POST /api/learner/marketplace/packages/{id:guid}/purchase                                     |
-|  11 | Gói mua bằng OrbitCoin.                                                                           | Package purchased with OrbitCoin.                                                                    | POST /api/learner/marketplace/packages/{id:guid}/purchase                                     |
-|  12 | Gói này không có giá; liên hệ hỗ trợ.                                                             | This package has no price; contact support.                                                          | POST /api/learner/marketplace/packages/{id:guid}/purchase                                     |
-|  13 | Không tìm thấy gói có Id: {command.PackageId}. Gói có thể đã bị xóa hoặc không tồn tại.           | Package not found with Id: {command.PackageId}. The package may have been deleted or does not exist. | DELETE /api/cms/marketplace/packages/{id:guid}                                                |
-|  14 | Không tìm thấy gói có Id: {request.PackageId}. Gói có thể đã bị xóa hoặc không tồn tại.           | Package not found with Id: {request.PackageId}. The package may have been deleted or does not exist. | GET /api/cms/marketplace/packages/{id:guid} ; GET /api/learner/marketplace/packages/{id:guid} |
-|  15 | OrbitCoin không đủ. Vui lòng nạp tiền trước.                                                      | Insufficient OrbitCoin. Please top up first.                                                         | POST /api/learner/marketplace/packages/{id:guid}/purchase                                     |
-|  16 | Yêu cầu xác thực. Vui lòng đăng nhập để cập nhật một gói.                                         | Authentication required. Please log in to update a package.                                          | PUT /api/cms/marketplace/packages/{id:guid}                                                   |
-|  17 | Yêu cầu xác thực. Vui lòng đăng nhập để cập nhật trạng thái gói.                                  | Authentication required. Please log in to update package status.                                     | POST /api/cms/marketplace/packages/batch/status                                               |
-|  18 | Yêu cầu xác thực. Vui lòng đăng nhập để mua gói.                                                  | Authentication required. Please log in to purchase a package.                                        | POST /api/learner/marketplace/packages/{id:guid}/purchase                                     |
-|  19 | Yêu cầu xác thực. Vui lòng đăng nhập để tạo gói.                                                  | Authentication required. Please log in to create a package.                                          | POST /api/cms/marketplace/packages                                                            |
-|  20 | Yêu cầu xác thực. Vui lòng đăng nhập để xem báo cáo thanh toán.                                   | Authentication required. Please log in to view payment reports.                                      | GET /api/cms/marketplace/reports/payments                                                     |
-|  21 | Yêu cầu xác thực. Vui lòng đăng nhập để xóa một gói.                                              | Authentication required. Please log in to delete a package.                                          | DELETE /api/cms/marketplace/packages/{id:guid}                                                |
+| STT | Message (VI) | Message (EN) | API Endpoint |
+|---:|---|---|
+| 1 | Bạn không có quyền cập nhật gói. Chỉ Quản trị viên mới có thể thực hiện hành động này. | N/A | PUT /api/cms/marketplace/packages/{id:guid} |
+| 2 | Bạn không có quyền cập nhật trạng thái gói. Chỉ Quản trị viên mới có thể thực hiện hành động này. | N/A | POST /api/cms/marketplace/packages/batch/status |
+| 3 | Bạn không có quyền tạo gói. Chỉ Quản trị viên mới có thể thực hiện hành động này. | N/A | POST /api/cms/marketplace/packages |
+| 4 | Bạn không có quyền xem báo cáo thanh toán. Chỉ quản trị viên mới có thể truy cập báo cáo này. | N/A | GET /api/cms/marketplace/reports/payments |
+| 5 | Bạn không có quyền xóa các gói. Chỉ Quản trị viên mới có thể thực hiện hành động này. | N/A | DELETE /api/cms/marketplace/packages/{id:guid} |
+| 6 | Đã cập nhật (các) gói {dto.SuccessCount}. | N/A | POST /api/cms/marketplace/packages/batch/status |
+| 7 | Đã cập nhật gói. | N/A | PUT /api/cms/marketplace/packages/{id:guid} |
+| 8 | Đã lấy thông tin gói. | N/A | GET /api/cms/marketplace/packages/{id:guid} ; GET /api/learner/marketplace/packages/{id:guid} |
+| 9 | Đã tạo gói thành công. | N/A | POST /api/cms/marketplace/packages |
+| 10 | Đã truy xuất thành công | N/A | GET /api/cms/marketplace/packages ; GET /api/learner/marketplace/packages |
+| 11 | Đã xóa gói. | N/A | DELETE /api/cms/marketplace/packages/{id:guid} |
+| 12 | Gói không được tìm thấy hoặc không hoạt động. | N/A | POST /api/learner/marketplace/packages/{id:guid}/purchase |
+| 13 | Gói mua bằng OrbitCoin. | N/A | POST /api/learner/marketplace/packages/{id:guid}/purchase |
+| 14 | Gói này không có giá; liên hệ hỗ trợ. | N/A | POST /api/learner/marketplace/packages/{id:guid}/purchase |
+| 15 | Không tìm thấy gói có Id: {command.PackageId}. Gói có thể đã bị xóa hoặc không tồn tại. | N/A | DELETE /api/cms/marketplace/packages/{id:guid} |
+| 16 | Không tìm thấy gói có Id: {request.PackageId}. Gói có thể đã bị xóa hoặc không tồn tại. | N/A | GET /api/cms/marketplace/packages/{id:guid} ; GET /api/learner/marketplace/packages/{id:guid} |
+| 17 | OrbitCoin không đủ. Vui lòng nạp tiền trước. | N/A | POST /api/learner/marketplace/packages/{id:guid}/purchase |
+| 18 | Yêu cầu xác thực. Vui lòng đăng nhập để cập nhật một gói. | N/A | PUT /api/cms/marketplace/packages/{id:guid} |
+| 19 | Yêu cầu xác thực. Vui lòng đăng nhập để cập nhật trạng thái gói. | N/A | POST /api/cms/marketplace/packages/batch/status |
+| 20 | Yêu cầu xác thực. Vui lòng đăng nhập để mua gói. | N/A | POST /api/learner/marketplace/packages/{id:guid}/purchase |
+| 21 | Yêu cầu xác thực. Vui lòng đăng nhập để tạo gói. | N/A | POST /api/cms/marketplace/packages |
+| 22 | Yêu cầu xác thực. Vui lòng đăng nhập để xem báo cáo thanh toán. | N/A | GET /api/cms/marketplace/reports/payments |
+| 23 | Yêu cầu xác thực. Vui lòng đăng nhập để xóa một gói. | N/A | DELETE /api/cms/marketplace/packages/{id:guid} |
 
 ## Application/OrbitCoin
 
-| STT | Message (VI)                                                                                | Message (EN)                                                             | API Endpoint                                             |
-| --: | ------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------ | -------------------------------------------------------- |
-|   1 | Bản đồ được mua bằng OrbitCoin. Phí nền tảng được khấu trừ từ người bán.                    | Map purchased with OrbitCoin. Platform fee is deducted from seller.      | POST /api/learner/marketplace/maps/{mapId:guid}/purchase |
-|   2 | Bản đồ không có người tạo; không thể hoàn tất việc mua hàng.                                | Map has no creator; cannot complete purchase.                            | POST /api/learner/marketplace/maps/{mapId:guid}/purchase |
-|   3 | Bản đồ không được tìm thấy.                                                                 | Map not found.                                                           | POST /api/learner/marketplace/maps/{mapId:guid}/purchase |
-|   4 | Bản đồ này miễn phí và không thể mua bằng OrbitCoin.                                        | This map is free and cannot be purchased with OrbitCoin.                 | POST /api/learner/marketplace/maps/{mapId:guid}/purchase |
-|   5 | Bạn không thể mua bản đồ của riêng bạn.                                                     | You cannot purchase your own map.                                        | POST /api/learner/marketplace/maps/{mapId:guid}/purchase |
-|   6 | Chuyển hướng người dùng đến CheckoutUrl để hoàn tất thanh toán.                             | Redirect user to CheckoutUrl to complete payment.                        | POST /api/learner/orbitcoin/deposit                      |
-|   7 | Chuyển không thành công.                                                                    | Transfer failed.                                                         | POST /api/learner/marketplace/maps/{mapId:guid}/purchase |
-|   8 | Đã lấy lại lệnh gửi tiền.                                                                   | Deposit order retrieved.                                                 | GET /api/learner/orbitcoin/deposit/order                 |
-|   9 | Đã lấy lại số dư.                                                                           | Balance retrieved.                                                       | GET /api/learner/orbitcoin/balance                       |
-|  10 | Đã xác nhận tiền gửi. OrbitCoin đã được ghi có.                                             | Deposit confirmed. OrbitCoin has been credited.                          | POST /api/learner/orbitcoin/deposit/confirm              |
-|  11 | Dữ liệu đơn hàng không hợp lệ.                                                              | Invalid order data.                                                      | POST /api/learner/orbitcoin/deposit/confirm              |
-|  12 | Hiệu quảTo phải lớn hơn hoặc bằng Hiệu quảTừ.                                               | EffectiveTo must be greater than or equal to EffectiveFrom.              | PUT /api/cms/orbitcoin/exchange-rate                     |
-|  13 | Không thể tạo liên kết thanh toán.                                                          | Could not create payment link.                                           | POST /api/learner/orbitcoin/deposit                      |
-|  14 | Không thể xác minh trạng thái thanh toán. Vui lòng thử lại hoặc liên hệ với bộ phận hỗ trợ. | Could not verify payment status. Please try again or contact support.    | POST /api/learner/orbitcoin/deposit/confirm              |
-|  15 | Không tìm thấy đơn đặt hàng hoặc quyền truy cập bị từ chối.                                 | Order not found or access denied.                                        | POST /api/learner/orbitcoin/deposit/confirm              |
-|  16 | Không tìm thấy tỷ giá hối đoái cho {request.FromCurrency}/{request.ToCurrency}.             | Exchange rate for {request.FromCurrency}/{request.ToCurrency} not found. | GET /api/cms/orbitcoin/exchange-rate                     |
-|  17 | Lịch sử giao dịch được truy xuất.                                                           | Transaction history retrieved.                                           | GET /api/learner/orbitcoin/transactions                  |
-|  18 | OrbitCoin đã ghi có (tiền gửi được ghi lại).                                                | OrbitCoin credited (deposit recorded).                                   | POST /api/cms/orbitcoin/credit                           |
-|  19 | Phương thức thanh toán PayOS chưa được định cấu hình. Liên hệ hỗ trợ.                       | PayOS payment method is not configured. Contact support.                 | POST /api/learner/orbitcoin/deposit                      |
-|  20 | Số tiền phải dương.                                                                         | Amount must be positive.                                                 | POST /api/learner/orbitcoin/deposit                      |
-|  21 | Số tiền quá nhỏ để chuyển đổi.                                                              | Amount too small for conversion.                                         | POST /api/learner/orbitcoin/deposit                      |
-|  22 | Thanh toán chưa hoàn tất. Vui lòng chờ hoặc kiểm tra PayOS.                                 | Payment not completed yet. Please wait or check PayOS.                   | POST /api/learner/orbitcoin/deposit/confirm              |
-|  23 | Tín dụng không thành công.                                                                  | Credit failed.                                                           | POST /api/learner/orbitcoin/deposit/confirm              |
-|  24 | Tỷ giá hối đoái được cập nhật thành công.                                                   | Exchange rate updated successfully.                                      | PUT /api/cms/orbitcoin/exchange-rate                     |
-|  25 | Tỷ giá hối đoái được truy xuất thành công.                                                  | Exchange rate retrieved successfully.                                    | GET /api/cms/orbitcoin/exchange-rate                     |
-|  26 | Tỷ giá hối đoái phải dương.                                                                 | Exchange rate must be positive.                                          | PUT /api/cms/orbitcoin/exchange-rate                     |
-|  27 | Việc gửi tiền đã hoàn tất. OrbitCoin đã được ghi có.                                        | Deposit already completed. OrbitCoin was credited.                       | POST /api/learner/orbitcoin/deposit/confirm              |
-|  28 | Yêu cầu xác thực.                                                                           | Authentication required.                                                 | POST /api/learner/orbitcoin/deposit/confirm              |
+| STT | Message (VI) | Message (EN) | API Endpoint |
+|---:|---|---|
+| 1 | Bản đồ được mua bằng OrbitCoin. Phí nền tảng được khấu trừ từ người bán. | N/A | POST /api/learner/marketplace/maps/{mapId:guid}/purchase |
+| 2 | Bản đồ không có người tạo; không thể hoàn tất việc mua hàng. | N/A | POST /api/learner/marketplace/maps/{mapId:guid}/purchase |
+| 3 | Bản đồ không được tìm thấy. | N/A | POST /api/learner/marketplace/maps/{mapId:guid}/purchase |
+| 4 | Bản đồ này miễn phí và không thể mua bằng OrbitCoin. | N/A | POST /api/learner/marketplace/maps/{mapId:guid}/purchase |
+| 5 | Bạn không thể mua bản đồ của riêng bạn. | N/A | POST /api/learner/marketplace/maps/{mapId:guid}/purchase |
+| 6 | Chuyển hướng người dùng đến CheckoutUrl để hoàn tất thanh toán. | N/A | POST /api/learner/orbitcoin/deposit |
+| 7 | Chuyển không thành công. | N/A | POST /api/learner/marketplace/maps/{mapId:guid}/purchase |
+| 8 | Đã lấy lại lệnh gửi tiền. | N/A | GET /api/learner/orbitcoin/deposit/order |
+| 9 | Đã lấy lại số dư. | N/A | GET /api/learner/orbitcoin/balance |
+| 10 | Đã xác nhận tiền gửi. OrbitCoin đã được ghi có. | N/A | POST /api/learner/orbitcoin/deposit/confirm |
+| 11 | Dữ liệu đơn hàng không hợp lệ. | N/A | POST /api/learner/orbitcoin/deposit/confirm |
+| 12 | Hiệu quảTo phải lớn hơn hoặc bằng Hiệu quảTừ. | N/A | PUT /api/cms/orbitcoin/exchange-rate |
+| 13 | Không thể tạo liên kết thanh toán. | N/A | POST /api/learner/orbitcoin/deposit |
+| 14 | Không thể xác minh trạng thái thanh toán. Vui lòng thử lại hoặc liên hệ với bộ phận hỗ trợ. | N/A | POST /api/learner/orbitcoin/deposit/confirm |
+| 15 | Không tìm thấy đơn đặt hàng hoặc quyền truy cập bị từ chối. | N/A | POST /api/learner/orbitcoin/deposit/confirm |
+| 16 | Không tìm thấy tỷ giá hối đoái cho {request.FromCurrency}/{request.ToCurrency}. | N/A | GET /api/cms/orbitcoin/exchange-rate |
+| 17 | Lịch sử giao dịch được truy xuất. | N/A | GET /api/learner/orbitcoin/transactions |
+| 18 | OrbitCoin đã ghi có (tiền gửi được ghi lại). | N/A | POST /api/cms/orbitcoin/credit |
+| 19 | Phương thức thanh toán PayOS chưa được định cấu hình. Liên hệ hỗ trợ. | N/A | POST /api/learner/orbitcoin/deposit |
+| 20 | Số tiền phải dương. | N/A | POST /api/learner/orbitcoin/deposit |
+| 21 | Số tiền quá nhỏ để chuyển đổi. | N/A | POST /api/learner/orbitcoin/deposit |
+| 22 | Thanh toán chưa hoàn tất. Vui lòng chờ hoặc kiểm tra PayOS. | N/A | POST /api/learner/orbitcoin/deposit/confirm |
+| 23 | Tín dụng không thành công. | N/A | POST /api/learner/orbitcoin/deposit/confirm |
+| 24 | Tỷ giá hối đoái được cập nhật thành công. | N/A | PUT /api/cms/orbitcoin/exchange-rate |
+| 25 | Tỷ giá hối đoái được truy xuất thành công. | N/A | GET /api/cms/orbitcoin/exchange-rate |
+| 26 | Tỷ giá hối đoái phải dương. | N/A | PUT /api/cms/orbitcoin/exchange-rate |
+| 27 | Việc gửi tiền đã hoàn tất. OrbitCoin đã được ghi có. | N/A | POST /api/learner/orbitcoin/deposit/confirm |
+| 28 | Yêu cầu xác thực. | N/A | POST /api/learner/orbitcoin/deposit/confirm |
 
 ## Application/Other
 
-| STT | Message (VI)                                                                   | Message (EN)                                                                        | API Endpoint                                           |
-| --: | ------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------- | ------------------------------------------------------ |
-|   1 | Đã xảy ra lỗi không mong muốn khi xử lý yêu cầu của bạn. Vui lòng thử lại sau. | An unexpected error occurred while processing your request. Please try again later. | Global exception handler (áp dụng cho tất cả endpoint) |
+| STT | Message (VI) | Message (EN) | API Endpoint |
+|---:|---|---|
+| 1 | Đã xảy ra lỗi không mong muốn khi xử lý yêu cầu của bạn. Vui lòng thử lại sau. | N/A | Global exception handler (áp dụng cho tất cả endpoint) |
 
 ## Application/Recommendations
 
-| STT | Message (VI)            | Message (EN)             | API Endpoint             |
-| --: | ----------------------- | ------------------------ | ------------------------ |
-|   1 | Đã truy xuất thành công | Retrieved successfully   | GET /api/recommendations |
-|   2 | Yêu cầu xác thực.       | Authentication required. | GET /api/recommendations |
+| STT | Message (VI) | Message (EN) | API Endpoint |
+|---:|---|---|
+| 1 | Đã truy xuất thành công | N/A | GET /api/recommendations |
+| 2 | Yêu cầu xác thực. | N/A | GET /api/recommendations |
 
 ## Application/User
 
-| STT | Message (VI)                                                                                             | Message (EN)                                                                          | API Endpoint                     |
-| --: | -------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------- | -------------------------------- |
-|   1 | Bạn không có quyền cập nhật trạng thái người dùng. Chỉ Quản trị viên mới có thể thực hiện hành động này. | You do not have permission to update user status. Only Admin can perform this action. | POST /api/cms/users/batch/status |
-|   2 | Đã cập nhật trạng thái cho {dto.SuccessCount} người dùng.                                                | Updated status for {dto.SuccessCount} user(s).                                        | POST /api/cms/users/batch/status |
-|   3 | Không cập nhật được vai trò người dùng                                                                   | Failed to update user role                                                            | PUT /api/cms/users/{id}          |
-|   4 | Không tạo được người dùng                                                                                | Failed to create user                                                                 | POST /api/cms/users              |
-|   5 | Không thể cập nhật người dùng                                                                            | Failed to update user                                                                 | PUT /api/cms/users/{id}          |
-|   6 | Không thể thêm người dùng vào vai trò                                                                    | Failed to add user to role                                                            | POST /api/cms/users              |
-|   7 | Không thể xóa người dùng                                                                                 | Failed to delete user                                                                 | DELETE /api/cms/users/{id}       |
-|   8 | Người dùng đã cập nhật thành công                                                                        | User updated successfully                                                             | PUT /api/cms/users/{id}          |
-|   9 | Người dùng đã xóa thành công                                                                             | User deleted successfully                                                             | DELETE /api/cms/users/{id}       |
-|  10 | Người dùng được tạo thành công                                                                           | User created successfully                                                             | POST /api/cms/users              |
-|  11 | Nhận người dùng thành công                                                                               | Get user successfully                                                                 | GET /api/cms/users/{id}          |
-|  12 | Yêu cầu xác thực. Vui lòng đăng nhập để cập nhật trạng thái người dùng.                                  | Authentication required. Please log in to update user status.                         | POST /api/cms/users/batch/status |
+| STT | Message (VI) | Message (EN) | API Endpoint |
+|---:|---|---|
+| 1 | Bạn không có quyền cập nhật trạng thái người dùng. Chỉ Quản trị viên mới có thể thực hiện hành động này. | N/A | POST /api/cms/users/batch/status |
+| 2 | Đã cập nhật trạng thái cho {dto.SuccessCount} người dùng. | N/A | POST /api/cms/users/batch/status |
+| 3 | Không cập nhật được vai trò người dùng | N/A | PUT /api/cms/users/{id} |
+| 4 | Không tạo được người dùng | N/A | POST /api/cms/users |
+| 5 | Không thể cập nhật người dùng | N/A | PUT /api/cms/users/{id} |
+| 6 | Không thể thêm người dùng vào vai trò | N/A | POST /api/cms/users |
+| 7 | Không thể xóa người dùng | N/A | DELETE /api/cms/users/{id} |
+| 8 | Người dùng đã cập nhật thành công | N/A | PUT /api/cms/users/{id} |
+| 9 | Người dùng đã xóa thành công | N/A | DELETE /api/cms/users/{id} |
+| 10 | Người dùng được tạo thành công | N/A | POST /api/cms/users |
+| 11 | Nhận người dùng thành công | N/A | GET /api/cms/users/{id} |
+| 12 | Yêu cầu xác thực. Vui lòng đăng nhập để cập nhật trạng thái người dùng. | N/A | POST /api/cms/users/batch/status |
 
 ## Application/Xp
 
-| STT | Message (VI)                                                                  | Message (EN)                                              | API Endpoint                                |
-| --: | ----------------------------------------------------------------------------- | --------------------------------------------------------- | ------------------------------------------- |
-|   1 | Chỉ Quản trị viên/Người điều hành mới có thể cập nhật cấu hình chính sách XP. | Only Admin/Moderator can update XP policy configs.        | PUT /api/cms/xp/config/policies/{policyKey} |
-|   2 | Chỉ Quản trị viên/Người điều hành mới có thể cập nhật cấu hình nguồn XP.      | Only Admin/Moderator can update XP source configs.        | PUT /api/cms/xp/config/sources/{sourceType} |
-|   3 | Chỉ Quản trị viên/Người điều hành mới có thể cấp XP.                          | Only Admin/Moderator can grant XP.                        | POST /api/cms/xp/grant                      |
-|   4 | Chỉ Quản trị viên/Người điều hành mới có thể xem hồ sơ XP của người dùng.     | Only Admin/Moderator can view user XP profile.            | GET /api/cms/xp/users/{userId:guid}         |
-|   5 | Đã cập nhật cấu hình chính sách XP.                                           | XP policy config updated.                                 | PUT /api/cms/xp/config/policies/{policyKey} |
-|   6 | Đã cập nhật cấu hình nguồn XP.                                                | XP source config updated.                                 | PUT /api/cms/xp/config/sources/{sourceType} |
-|   7 | Không tìm thấy cấu hình chính sách cho khóa: {request.PolicyKey}.             | Policy config not found for key: {request.PolicyKey}.     | PUT /api/cms/xp/config/policies/{policyKey} |
-|   8 | Không tìm thấy cấu hình nguồn cho nguồn: {request.SourceType}.                | Source config not found for source: {request.SourceType}. | PUT /api/cms/xp/config/sources/{sourceType} |
-|   9 | Không tìm thấy người dùng.                                                    | User not found.                                           | GET /api/learner/xp/profile                 |
-|  10 | Yêu cầu xác thực.                                                             | Authentication required.                                  | POST /api/cms/xp/grant                      |
+| STT | Message (VI) | Message (EN) | API Endpoint |
+|---:|---|---|
+| 1 | Chỉ Quản trị viên/Người điều hành mới có thể cập nhật cấu hình chính sách XP. | N/A | PUT /api/cms/xp/config/policies/{policyKey} |
+| 2 | Chỉ Quản trị viên/Người điều hành mới có thể cập nhật cấu hình nguồn XP. | N/A | PUT /api/cms/xp/config/sources/{sourceType} |
+| 3 | Chỉ Quản trị viên/Người điều hành mới có thể cấp XP. | N/A | POST /api/cms/xp/grant |
+| 4 | Chỉ Quản trị viên/Người điều hành mới có thể xem hồ sơ XP của người dùng. | N/A | GET /api/cms/xp/users/{userId:guid} |
+| 5 | Đã cập nhật cấu hình chính sách XP. | N/A | PUT /api/cms/xp/config/policies/{policyKey} |
+| 6 | Đã cập nhật cấu hình nguồn XP. | N/A | PUT /api/cms/xp/config/sources/{sourceType} |
+| 7 | Không tìm thấy cấu hình chính sách cho khóa: {request.PolicyKey}. | N/A | PUT /api/cms/xp/config/policies/{policyKey} |
+| 8 | Không tìm thấy cấu hình nguồn cho nguồn: {request.SourceType}. | N/A | PUT /api/cms/xp/config/sources/{sourceType} |
+| 9 | Không tìm thấy người dùng. | N/A | GET /api/learner/xp/profile |
+| 10 | Yêu cầu xác thực. | N/A | POST /api/cms/xp/grant |
 
 ## Infrastructure
 
-| STT | Message (VI)                                      | Message (EN)                            | API Endpoint                                                |
-| --: | ------------------------------------------------- | --------------------------------------- | ----------------------------------------------------------- |
-|   1 | Email chưa được xác nhận                          | Email is not confirmed                  | Shared auth service (nhiều endpoint Auth)                   |
-|   2 | Email không hợp lệ                                | Invalid email                           | Shared auth service (nhiều endpoint Auth)                   |
-|   3 | Id người dùng là bắt buộc.                        | UserId is required.                     | Shared XP service (nhiều endpoint Gameplay/LearningPath/XP) |
-|   4 | IdempotencyKey là bắt buộc.                       | IdempotencyKey is required.             | Shared XP service (nhiều endpoint Gameplay/LearningPath/XP) |
-|   5 | Không có XP được cấp sau khi đánh giá chính sách. | No XP granted after policy evaluation.  | Shared XP service (nhiều endpoint Gameplay/LearningPath/XP) |
-|   6 | Không tìm thấy người dùng có Id: {input.UserId}.  | User not found with Id: {input.UserId}. | Shared XP service (nhiều endpoint Gameplay/LearningPath/XP) |
-|   7 | Mật khẩu không hợp lệ                             | Invalid password                        | Shared auth service (nhiều endpoint Auth)                   |
-|   8 | Người dùng không hoạt động                        | User is not active                      | Shared auth service (nhiều endpoint Auth)                   |
-|   9 | Nguồn XP bị vô hiệu hóa.                          | XP source is disabled.                  | Shared XP service (nhiều endpoint Gameplay/LearningPath/XP) |
-|  10 | Phần thưởng XP đã được xử lý.                     | XP reward already processed.            | Shared XP service (nhiều endpoint Gameplay/LearningPath/XP) |
-|  11 | XP được cấp thành công.                           | XP granted successfully.                | Shared XP service (nhiều endpoint Gameplay/LearningPath/XP) |
+| STT | Message (VI) | Message (EN) | API Endpoint |
+|---:|---|---|
+| 1 | Đã kiểm tra trùng email. | N/A | Shared auth service (nhiều endpoint Auth) |
+| 2 | Đã kiểm tra trùng số điện thoại. | N/A | Shared auth service (nhiều endpoint Auth) |
+| 3 | Email chưa được xác nhận | N/A | Shared auth service (nhiều endpoint Auth) |
+| 4 | Email không hợp lệ | N/A | Shared auth service (nhiều endpoint Auth) |
+| 5 | Id người dùng là bắt buộc. | N/A | Shared XP service (nhiều endpoint Gameplay/LearningPath/XP) |
+| 6 | IdempotencyKey là bắt buộc. | N/A | Shared XP service (nhiều endpoint Gameplay/LearningPath/XP) |
+| 7 | Không có XP được cấp sau khi đánh giá chính sách. | N/A | Shared XP service (nhiều endpoint Gameplay/LearningPath/XP) |
+| 8 | Không tìm thấy người dùng có Id: {input.UserId}. | N/A | Shared XP service (nhiều endpoint Gameplay/LearningPath/XP) |
+| 9 | Mật khẩu không hợp lệ | N/A | Shared auth service (nhiều endpoint Auth) |
+| 10 | Người dùng không hoạt động | N/A | Shared auth service (nhiều endpoint Auth) |
+| 11 | Nguồn XP bị vô hiệu hóa. | N/A | Shared XP service (nhiều endpoint Gameplay/LearningPath/XP) |
+| 12 | Phần thưởng XP đã được xử lý. | N/A | Shared XP service (nhiều endpoint Gameplay/LearningPath/XP) |
+| 13 | Xác thực người dùng thành công. | N/A | Shared auth service (nhiều endpoint Auth) |
+| 14 | XP được cấp thành công. | N/A | Shared XP service (nhiều endpoint Gameplay/LearningPath/XP) |
+
+
+
+
+
+
+
+
+
+

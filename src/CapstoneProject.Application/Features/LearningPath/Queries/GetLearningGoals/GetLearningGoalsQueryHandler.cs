@@ -1,4 +1,4 @@
-using MediatR;
+﻿using MediatR;
 using Microsoft.EntityFrameworkCore;
 using CapstoneProject.Application.Common.Enums;
 using CapstoneProject.Application.Common.Interfaces;
@@ -28,6 +28,7 @@ public class GetLearningGoalsQueryHandler : IRequestHandler<GetLearningGoalsQuer
                 IconUrl = g.IconUrl
             })
             .ToListAsync(cancellationToken);
-        return Result<List<LearningGoalDto>>.Success(list);
+        return Result<List<LearningGoalDto>>.Success(list, "Đã lấy danh sách mục tiêu học tập.");
     }
 }
+

@@ -47,7 +47,7 @@ public class IdentityService : IIdentityService
             // if (!user.EmailConfirmed)
             //     return Result<AppUser>.Failure("Email chưa được xác nhận", ErrorCodeEnum.InvalidCredentials);
 
-            return Result<AppUser>.Success(user);
+            return Result<AppUser>.Success(user, "Xác thực người dùng thành công.");
         }
         catch
         {
@@ -98,7 +98,7 @@ public class IdentityService : IIdentityService
             var result = await _userManager.GetRolesAsync(user);
             if (!result.Any())
                 return Result<IList<string>>.Failure("User has no roles", ErrorCodeEnum.InvalidCredentials);
-            return Result<IList<string>>.Success(result);
+            return Result<IList<string>>.Success(result, "Đã lấy danh sách vai trò của người dùng.");
         }
         catch
         {
@@ -138,8 +138,8 @@ public class IdentityService : IIdentityService
         {
             var isExists = await _userManager.Users.AnyAsync(x => x.Email == email && x.Id != user.Id);
             if (isExists)
-                return Result<bool>.Success(true);
-            return Result<bool>.Success(false);
+                return Result<bool>.Success(true, "Đã kiểm tra trùng email.");
+            return Result<bool>.Success(false, "Đã kiểm tra trùng email.");
         }
         catch
         {
@@ -153,8 +153,8 @@ public class IdentityService : IIdentityService
         {
             var isExists = await _userManager.Users.AnyAsync(x => x.PhoneNumber == phoneNumber && x.Id != user.Id);
             if (isExists)
-                return Result<bool>.Success(true);
-            return Result<bool>.Success(false);
+                return Result<bool>.Success(true, "Đã kiểm tra trùng số điện thoại.");
+            return Result<bool>.Success(false, "Đã kiểm tra trùng số điện thoại.");
         }
         catch
         {

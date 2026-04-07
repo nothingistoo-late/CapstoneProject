@@ -19,7 +19,7 @@ public class Result<T>
     [JsonPropertyName("errorCode")]
     public string? ErrorCode { get; set; } = null;
 
-    public static Result<T> Success(T data, string message = "Success")
+    public static Result<T> Success(T data, string message)
     {
         return new Result<T> { IsSuccess = true, Message = message, Data = data };
     }
@@ -54,7 +54,7 @@ public class Result
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public string? ErrorCode { get; set; } = null;
 
-    public static Result Success(string message = "Success")
+    public static Result Success(string message)
     {
         return new Result { IsSuccess = true, Message = message };
     }

@@ -147,7 +147,7 @@ public class GetMessagesQueryHandler : IRequestHandler<GetMessagesQuery, Result<
                 request.PageSize,
                 totalCount);
 
-            return Result<PaginationResult<MessageResponse>>.Success(result);
+            return Result<PaginationResult<MessageResponse>>.Success(result, "Đã lấy danh sách tin nhắn.");
         }
         catch (Exception ex)
         {
@@ -156,6 +156,7 @@ public class GetMessagesQueryHandler : IRequestHandler<GetMessagesQuery, Result<
         }
     }
 }
+
 
 
 

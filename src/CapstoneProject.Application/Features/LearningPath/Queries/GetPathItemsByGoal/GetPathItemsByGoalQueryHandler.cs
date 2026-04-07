@@ -42,6 +42,7 @@ public class GetPathItemsByGoalQueryHandler : IRequestHandler<GetPathItemsByGoal
             .AsNoTracking()
             .ToListAsync(cancellationToken);
 
-        return Result<List<PathItemPreviewDto>>.Success(items);
+        return Result<List<PathItemPreviewDto>>.Success(items, "Đã lấy danh sách mục trong lộ trình học tập.");
     }
 }
+

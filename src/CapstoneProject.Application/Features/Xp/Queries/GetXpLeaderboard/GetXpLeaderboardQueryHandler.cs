@@ -46,7 +46,8 @@ public class GetXpLeaderboardQueryHandler : IRequestHandler<GetXpLeaderboardQuer
         }).ToList();
 
         var result = PaginationResult<XpLeaderboardItemDto>.Success(items, pageNumber, pageSize, total);
-        return Result<PaginationResult<XpLeaderboardItemDto>>.Success(result);
+        return Result<PaginationResult<XpLeaderboardItemDto>>.Success(result, "Đã lấy bảng xếp hạng XP.");
     }
 }
+
 

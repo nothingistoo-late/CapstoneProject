@@ -1,4 +1,4 @@
-using MediatR;
+﻿using MediatR;
 using Microsoft.EntityFrameworkCore;
 using CapstoneProject.Application.Common.Enums;
 using CapstoneProject.Application.Common.Interfaces;
@@ -73,6 +73,7 @@ public class GetReportsQueryHandler : IRequestHandler<GetReportsQuery, Result<Pa
             .ToListAsync(cancellationToken);
 
         var paginated = PaginationResult<ReportListItemDto>.Success(list, pageNumber, pageSize, total);
-        return Result<PaginationResult<ReportListItemDto>>.Success(paginated);
+        return Result<PaginationResult<ReportListItemDto>>.Success(paginated, "Đã lấy danh sách báo cáo.");
     }
 }
+

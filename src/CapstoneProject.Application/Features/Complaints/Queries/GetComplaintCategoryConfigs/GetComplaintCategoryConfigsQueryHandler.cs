@@ -43,6 +43,7 @@ public class GetComplaintCategoryConfigsQueryHandler : IRequestHandler<GetCompla
             })
             .ToListAsync(cancellationToken);
 
-        return Result<List<ComplaintCategoryConfigDto>>.Success(list);
+        return Result<List<ComplaintCategoryConfigDto>>.Success(list, "Đã lấy cấu hình danh mục khiếu nại.");
     }
 }
+

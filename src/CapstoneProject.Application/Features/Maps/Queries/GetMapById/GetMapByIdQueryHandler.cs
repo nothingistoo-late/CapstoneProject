@@ -128,7 +128,7 @@ public class GetMapByIdQueryHandler : IRequestHandler<GetMapByIdQuery, Result<Ma
                 SortOrder = x.SortOrder
             }).ToList()
         };
-        return Result<MapDetailDto>.Success(dto);
+        return Result<MapDetailDto>.Success(dto, "Đã lấy chi tiết bản đồ.");
     }
 
     private async Task<bool> MeetsEditorialStarsAsync(Guid userId, Map map, CancellationToken cancellationToken)

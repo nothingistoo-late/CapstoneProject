@@ -34,7 +34,7 @@ public class GetMyLearningPathQueryHandler : IRequestHandler<GetMyLearningPathQu
         var dto = new MyLearningPathDto();
         if (userGoal?.LearningGoal == null)
         {
-            return Result<MyLearningPathDto>.Success(dto);
+            return Result<MyLearningPathDto>.Success(dto, "Đã lấy lộ trình học tập của bạn.");
         }
 
         var goal = userGoal.LearningGoal;
@@ -117,6 +117,6 @@ public class GetMyLearningPathQueryHandler : IRequestHandler<GetMyLearningPathQu
             });
         }
 
-        return Result<MyLearningPathDto>.Success(dto);
+        return Result<MyLearningPathDto>.Success(dto, "Đã lấy lộ trình học tập của bạn.");
     }
 }

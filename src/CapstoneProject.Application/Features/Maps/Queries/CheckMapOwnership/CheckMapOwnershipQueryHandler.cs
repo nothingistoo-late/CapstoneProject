@@ -32,7 +32,7 @@ public class CheckMapOwnershipQueryHandler : IRequestHandler<CheckMapOwnershipQu
 
         var dto = new CheckMapOwnershipDto { MapExists = map != null };
         if (map == null)
-            return Result<CheckMapOwnershipDto>.Success(dto);
+            return Result<CheckMapOwnershipDto>.Success(dto, "Đã kiểm tra quyền sở hữu bản đồ.");
 
         var isAuthor = map.CreatedBy.HasValue && map.CreatedBy.Value == userId.Value;
         var purchased = false;
@@ -52,6 +52,6 @@ public class CheckMapOwnershipQueryHandler : IRequestHandler<CheckMapOwnershipQu
 
         dto.IsOwned = isAuthor || purchased || inMyMap;
         dto.IsAuthor = isAuthor;
-        return Result<CheckMapOwnershipDto>.Success(dto);
+        return Result<CheckMapOwnershipDto>.Success(dto, "Đã kiểm tra quyền sở hữu bản đồ.");
     }
 }

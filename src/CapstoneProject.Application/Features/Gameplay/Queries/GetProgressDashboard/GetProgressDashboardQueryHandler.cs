@@ -89,6 +89,6 @@ public class GetProgressDashboardQueryHandler : IRequestHandler<GetProgressDashb
             ConceptsPracticed = conceptsPracticed,
             RecentActivities = recent
         };
-        return Result<ProgressDashboardDto>.Success(dto);
+        return Result<ProgressDashboardDto>.Success(dto, "Đã lấy bảng điều khiển tiến trình.");
     }
 }

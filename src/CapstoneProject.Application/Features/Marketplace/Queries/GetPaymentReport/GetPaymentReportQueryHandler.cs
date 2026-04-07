@@ -46,9 +46,10 @@ public class GetPaymentReportQueryHandler : IRequestHandler<GetPaymentReportQuer
             _ => await query.GroupBy(pr => pr.PaidAt!.Value.Date).Select(g => new PaymentReportItemDto { Period = g.Key.ToString("yyyy-MM-dd"), Amount = g.Sum(pr => pr.Amount), AmountVnd = g.Sum(pr => pr.AmountVnd ?? 0), Count = g.Count() }).OrderBy(x => x.Period).ToListAsync(cancellationToken)
         };
 
-        return Result<PaymentReportDto>.Success(new PaymentReportDto { TotalAmount = totalAmount, TotalAmountVnd = totalAmountVnd, TotalCount = totalCount, Items = items });
+        return Result<PaymentReportDto>.Success(new PaymentReportDto { TotalAmount = totalAmount, TotalAmountVnd = totalAmountVnd, TotalCount = totalCount, Items = items }, "Đã lấy báo cáo thanh toán.");
     }
 }
+
 
 
 

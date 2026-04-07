@@ -1,4 +1,4 @@
-using MediatR;
+﻿using MediatR;
 using Microsoft.EntityFrameworkCore;
 using CapstoneProject.Application.Common.Enums;
 using CapstoneProject.Application.Common.Interfaces;
@@ -29,6 +29,7 @@ public class GetTagsQueryHandler : IRequestHandler<GetTagsQuery, Result<List<Tag
             .OrderBy(t => t.Name)
             .Select(t => new TagDto { Id = t.Id, Name = t.Name })
             .ToListAsync(cancellationToken);
-        return Result<List<TagDto>>.Success(list);
+        return Result<List<TagDto>>.Success(list, "Đã lấy danh sách thẻ.");
     }
 }
+

@@ -86,6 +86,7 @@ public class GetAllMapsForAdminQueryHandler : IRequestHandler<GetAllMapsForAdmin
         }).ToList();
 
         var result = PaginationResult<MapListItemDto>.Success(list, pageNumber, pageSize, total, "Đã truy xuất thành công");
-        return Result<PaginationResult<MapListItemDto>>.Success(result);
+        return Result<PaginationResult<MapListItemDto>>.Success(result, "Đã lấy danh sách bản đồ cho quản trị.");
     }
 }
+

@@ -55,7 +55,7 @@ public class GetMyMapsQueryHandler : IRequestHandler<GetMyMapsQuery, Result<Pagi
         if (ownedMapIds.Count == 0)
         {
             var empty = PaginationResult<MapListItemDto>.Success(new List<MapListItemDto>(), 1, request.PageSize, 0, "Đã truy xuất thành công");
-            return Result<PaginationResult<MapListItemDto>>.Success(empty);
+            return Result<PaginationResult<MapListItemDto>>.Success(empty, "Đã lấy danh sách bản đồ của bạn.");
         }
 
         var query = mapRepo.GetQueryable()
@@ -127,6 +127,7 @@ public class GetMyMapsQueryHandler : IRequestHandler<GetMyMapsQuery, Result<Pagi
         }).ToList();
 
         var result = PaginationResult<MapListItemDto>.Success(list, pageNumber, pageSize, total, "Đã truy xuất thành công");
-        return Result<PaginationResult<MapListItemDto>>.Success(result);
+        return Result<PaginationResult<MapListItemDto>>.Success(result, "Đã lấy danh sách bản đồ của bạn.");
     }
 }
+

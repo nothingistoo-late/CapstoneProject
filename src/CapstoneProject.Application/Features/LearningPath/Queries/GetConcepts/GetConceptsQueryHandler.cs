@@ -1,4 +1,4 @@
-using MediatR;
+﻿using MediatR;
 using Microsoft.EntityFrameworkCore;
 using CapstoneProject.Application.Common.Interfaces;
 using CapstoneProject.Application.Common.Models;
@@ -35,6 +35,7 @@ public class GetConceptsQueryHandler : IRequestHandler<GetConceptsQuery, Result<
             })
             .ToListAsync(cancellationToken);
 
-        return Result<List<ConceptDto>>.Success(list);
+        return Result<List<ConceptDto>>.Success(list, "Đã lấy danh sách khái niệm.");
     }
 }
+

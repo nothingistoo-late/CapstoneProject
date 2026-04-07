@@ -33,7 +33,7 @@ public class GetMyLearningPathProgressQueryHandler : IRequestHandler<GetMyLearni
             .FirstOrDefaultAsync(cancellationToken);
 
         if (userGoal?.LearningGoal == null)
-            return Result<LearningPathProgressDto>.Success(dto);
+            return Result<LearningPathProgressDto>.Success(dto, "Đã lấy tiến độ lộ trình học tập của bạn.");
 
         var goal = userGoal.LearningGoal;
         dto.LearningGoalId = goal.Id;
@@ -45,7 +45,7 @@ public class GetMyLearningPathProgressQueryHandler : IRequestHandler<GetMyLearni
 
         dto.TotalItems = pathItems.Count;
         if (dto.TotalItems == 0)
-            return Result<LearningPathProgressDto>.Success(dto);
+            return Result<LearningPathProgressDto>.Success(dto, "Đã lấy tiến độ lộ trình học tập của bạn.");
 
         var conceptIds = pathItems.Where(i => i.ConceptId.HasValue).Select(i => i.ConceptId!.Value).ToList();
         var mapIds = pathItems.Where(i => i.MapId.HasValue).Select(i => i.MapId!.Value).ToList();
@@ -71,6 +71,6 @@ public class GetMyLearningPathProgressQueryHandler : IRequestHandler<GetMyLearni
                 dto.SuggestedReviewMapIds.Add(mapId);
         }
 
-        return Result<LearningPathProgressDto>.Success(dto);
+        return Result<LearningPathProgressDto>.Success(dto, "Đã lấy tiến độ lộ trình học tập của bạn.");
     }
 }

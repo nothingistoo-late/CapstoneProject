@@ -261,7 +261,7 @@ public class ValidateSolutionCommandHandler : IRequestHandler<ValidateSolutionCo
             Stars = stars,
             Message = accepted ? "Accepted" : "Wrong answer or constraint violation"
         };
-        return Result<ValidateSolutionResultDto>.Success(dto);
+        return Result<ValidateSolutionResultDto>.Success(dto, "Đã chấm lời giải thành công.");
     }
 
     private async Task<bool> IsMapOwnedByUserAsync(Map map, Guid userId, CancellationToken cancellationToken)

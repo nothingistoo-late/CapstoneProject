@@ -42,7 +42,8 @@ public class GetXpPolicyConfigsQueryHandler : IRequestHandler<GetXpPolicyConfigs
             })
             .ToListAsync(cancellationToken);
 
-        return Result<List<XpPolicyConfigDto>>.Success(list);
+        return Result<List<XpPolicyConfigDto>>.Success(list, "Đã lấy cấu hình chính sách XP.");
     }
 }
+
 

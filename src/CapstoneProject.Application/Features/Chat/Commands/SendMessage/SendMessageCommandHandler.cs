@@ -168,7 +168,7 @@ public class SendMessageCommandHandler : IRequestHandler<SendMessageCommand, Res
                 // Don't fail the operation if broadcast fails - message is already saved
             }
 
-            return Result<MessageResponse>.Success(response);
+            return Result<MessageResponse>.Success(response, "Đã gửi tin nhắn.");
         }
         catch (DbUpdateException ex)
         {

@@ -60,7 +60,7 @@ public class CreateTemporaryGroupConversationCommandHandler : IRequestHandler<Cr
             var conversation = await _conversationService.CreateTemporaryGroupConversationAsync(command.Name, currentUserId, cancellationToken);
             var response = await MapToResponseAsync(conversation, currentUserId, cancellationToken);
             
-            return Result<ChatRoomResponse>.Success(response);
+            return Result<ChatRoomResponse>.Success(response, "Đã tạo cuộc trò chuyện nhóm tạm thời.");
         }
         catch (ArgumentException ex)
         {

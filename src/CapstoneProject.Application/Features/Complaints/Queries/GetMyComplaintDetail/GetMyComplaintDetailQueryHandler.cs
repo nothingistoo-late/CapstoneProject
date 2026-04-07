@@ -107,7 +107,7 @@ public class GetMyComplaintDetailQueryHandler : IRequestHandler<GetMyComplaintDe
                 .ToList()
         };
 
-        return Result<MyComplaintDetailDto>.Success(dto);
+        return Result<MyComplaintDetailDto>.Success(dto, "Đã lấy chi tiết khiếu nại của bạn.");
     }
 }
 

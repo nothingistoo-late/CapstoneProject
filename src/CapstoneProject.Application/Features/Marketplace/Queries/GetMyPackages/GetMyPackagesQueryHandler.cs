@@ -1,4 +1,4 @@
-using CapstoneProject.Application.Common.Enums;
+﻿using CapstoneProject.Application.Common.Enums;
 using CapstoneProject.Application.Common.Interfaces;
 using CapstoneProject.Application.Common.Models;
 using CapstoneProject.Application.Commons.DTOs.Marketplace;
@@ -66,6 +66,7 @@ public class GetMyPackagesQueryHandler : IRequestHandler<GetMyPackagesQuery, Res
             .ToListAsync(cancellationToken);
 
         var paginated = PaginationResult<MyPackageDto>.Success(list, pageNumber, pageSize, total);
-        return Result<PaginationResult<MyPackageDto>>.Success(paginated);
+        return Result<PaginationResult<MyPackageDto>>.Success(paginated, "Đã lấy danh sách gói của bạn.");
     }
 }
+

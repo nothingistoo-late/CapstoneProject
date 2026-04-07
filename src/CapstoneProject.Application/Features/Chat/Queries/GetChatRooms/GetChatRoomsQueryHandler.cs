@@ -147,7 +147,7 @@ public class GetChatRoomsQueryHandler : IRequestHandler<GetChatRoomsQuery, Resul
                 query.PageSize,
                 totalCount);
 
-            return Result<PaginationResult<ChatRoomResponse>>.Success(result);
+            return Result<PaginationResult<ChatRoomResponse>>.Success(result, "Đã lấy danh sách cuộc trò chuyện.");
         }
         catch (Exception ex)
         {
@@ -156,6 +156,7 @@ public class GetChatRoomsQueryHandler : IRequestHandler<GetChatRoomsQuery, Resul
         }
     }
 }
+
 
 
 

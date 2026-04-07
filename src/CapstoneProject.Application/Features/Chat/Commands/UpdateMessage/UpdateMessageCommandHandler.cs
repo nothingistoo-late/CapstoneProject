@@ -120,7 +120,7 @@ public class UpdateMessageCommandHandler : IRequestHandler<UpdateMessageCommand,
                 CreatedAt = message.CreatedAt ?? CapstoneProject.Domain.Common.VietnamDateTime.DbNow
             };
 
-            return Result<MessageResponse>.Success(response);
+            return Result<MessageResponse>.Success(response, "Đã cập nhật tin nhắn.");
         }
         catch (DbUpdateException ex)
         {

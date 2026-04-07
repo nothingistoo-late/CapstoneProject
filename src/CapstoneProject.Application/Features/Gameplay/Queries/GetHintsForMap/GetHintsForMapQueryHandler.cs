@@ -1,4 +1,4 @@
-using MediatR;
+﻿using MediatR;
 using Microsoft.EntityFrameworkCore;
 using CapstoneProject.Application.Common.Interfaces;
 using CapstoneProject.Application.Common.Models;
@@ -32,6 +32,7 @@ public class GetHintsForMapQueryHandler : IRequestHandler<GetHintsForMapQuery, R
             })
             .ToListAsync(cancellationToken);
 
-        return Result<List<HintLevelDto>>.Success(hints);
+        return Result<List<HintLevelDto>>.Success(hints, "Đã lấy gợi ý cho bản đồ.");
     }
 }
+

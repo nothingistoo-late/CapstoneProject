@@ -73,6 +73,6 @@ public class GetMyMapPlayHistoryQueryHandler : IRequestHandler<GetMyMapPlayHisto
         }).ToList();
 
         var page = PaginationResult<MapPlayHistoryItemDto>.Success(list, pageNumber, pageSize, total, "Đã truy xuất thành công");
-        return Result<PaginationResult<MapPlayHistoryItemDto>>.Success(page);
+        return Result<PaginationResult<MapPlayHistoryItemDto>>.Success(page, "Đã truy xuất thành công.");
     }
 }

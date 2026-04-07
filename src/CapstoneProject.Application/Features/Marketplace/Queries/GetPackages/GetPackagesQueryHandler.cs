@@ -54,6 +54,7 @@ public class GetPackagesQueryHandler : IRequestHandler<GetPackagesQuery, Result<
             .ToListAsync(cancellationToken);
 
         var result = PaginationResult<PackageDto>.Success(list, pageNumber, pageSize, total, "Đã truy xuất thành công");
-        return Result<PaginationResult<PackageDto>>.Success(result);
+        return Result<PaginationResult<PackageDto>>.Success(result, "Đã lấy danh sách gói.");
     }
 }
+

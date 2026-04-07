@@ -85,6 +85,6 @@ public class GetMapInfoQueryHandler : IRequestHandler<GetMapInfoQuery, Result<Ma
             WinCondition = win,
             AvatarUrl = map.AvatarUrl
         };
-        return Result<MapInfoDto>.Success(dto);
+        return Result<MapInfoDto>.Success(dto, "Đã lấy thông tin bản đồ.");
     }
 }

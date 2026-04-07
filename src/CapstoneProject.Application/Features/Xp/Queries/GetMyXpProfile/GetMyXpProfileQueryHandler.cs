@@ -49,7 +49,8 @@ public class GetMyXpProfileQueryHandler : IRequestHandler<GetMyXpProfileQuery, R
             NextLevel = nextThreshold?.Level ?? user.CurrentLevel,
             XpToNextLevel = Math.Max(0, nextXp - user.CurrentXp),
             ProgressPercent = Math.Clamp(progress, 0, 100)
-        });
+        }, "Đã lấy hồ sơ XP của bạn.");
     }
 }
+
 

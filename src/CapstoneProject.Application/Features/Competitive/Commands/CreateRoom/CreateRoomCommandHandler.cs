@@ -57,7 +57,7 @@ public class CreateRoomCommandHandler : IRequestHandler<CreateRoomCommand, Resul
 
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-        return Result<CreateRoomResultDto>.Success(new CreateRoomResultDto { RoomId = room.Id, RoomCode = code });
+        return Result<CreateRoomResultDto>.Success(new CreateRoomResultDto { RoomId = room.Id, RoomCode = code }, "Đã tạo phòng thành công.");
     }
 }
 

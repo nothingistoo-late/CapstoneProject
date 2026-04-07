@@ -51,7 +51,8 @@ public class GetMapRatingsQueryHandler : IRequestHandler<GetMapRatingsQuery, Res
             })
             .ToListAsync(cancellationToken);
 
-        return Result<List<MapRatingDto>>.Success(list);
+        return Result<List<MapRatingDto>>.Success(list, "Đã lấy danh sách đánh giá bản đồ.");
     }
 }
+
 

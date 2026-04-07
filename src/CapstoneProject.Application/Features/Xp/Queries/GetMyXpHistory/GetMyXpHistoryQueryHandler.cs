@@ -56,7 +56,8 @@ public class GetMyXpHistoryQueryHandler : IRequestHandler<GetMyXpHistoryQuery, R
             .ToListAsync(cancellationToken);
 
         var page = PaginationResult<XpHistoryItemDto>.Success(items, pageNumber, pageSize, total);
-        return Result<PaginationResult<XpHistoryItemDto>>.Success(page);
+        return Result<PaginationResult<XpHistoryItemDto>>.Success(page, "Đã lấy lịch sử XP của bạn.");
     }
 }
+
 

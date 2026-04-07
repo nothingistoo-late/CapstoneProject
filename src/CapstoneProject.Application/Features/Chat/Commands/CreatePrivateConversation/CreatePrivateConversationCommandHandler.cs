@@ -60,7 +60,7 @@ public class CreatePrivateConversationCommandHandler : IRequestHandler<CreatePri
             var conversation = await _conversationService.GetOrCreatePrivateConversationAsync(currentUserId, command.OtherUserId, cancellationToken);
             var response = await MapToResponseAsync(conversation, currentUserId, cancellationToken);
             
-            return Result<ChatRoomResponse>.Success(response);
+            return Result<ChatRoomResponse>.Success(response, "Đã tạo hoặc lấy cuộc trò chuyện riêng tư.");
         }
         catch (ArgumentException ex)
         {

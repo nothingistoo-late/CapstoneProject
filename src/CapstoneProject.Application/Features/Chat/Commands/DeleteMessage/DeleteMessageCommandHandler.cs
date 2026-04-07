@@ -73,7 +73,7 @@ public class DeleteMessageCommandHandler : IRequestHandler<DeleteMessageCommand,
 
             _logger.LogInformation("User {UserId} deleted message {MessageId}", currentUserId, command.MessageId);
 
-            return Result<bool>.Success(true);
+            return Result<bool>.Success(true, "Đã xóa tin nhắn.");
         }
         catch (DbUpdateException ex)
         {

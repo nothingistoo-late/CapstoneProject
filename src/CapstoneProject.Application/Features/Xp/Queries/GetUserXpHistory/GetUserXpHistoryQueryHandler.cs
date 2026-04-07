@@ -61,7 +61,8 @@ public class GetUserXpHistoryQueryHandler : IRequestHandler<GetUserXpHistoryQuer
             .ToListAsync(cancellationToken);
 
         var page = PaginationResult<XpHistoryItemDto>.Success(items, pageNumber, pageSize, total);
-        return Result<PaginationResult<XpHistoryItemDto>>.Success(page);
+        return Result<PaginationResult<XpHistoryItemDto>>.Success(page, "Đã lấy lịch sử XP của người dùng.");
     }
 }
+
 

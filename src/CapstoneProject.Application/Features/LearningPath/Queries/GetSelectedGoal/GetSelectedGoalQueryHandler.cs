@@ -36,6 +36,6 @@ public class GetSelectedGoalQueryHandler : IRequestHandler<GetSelectedGoalQuery,
             .AsNoTracking()
             .FirstOrDefaultAsync(cancellationToken);
 
-        return Result<SelectedGoalDto?>.Success(userGoal);
+        return Result<SelectedGoalDto?>.Success(userGoal, "Đã lấy mục tiêu học tập đã chọn.");
     }
 }

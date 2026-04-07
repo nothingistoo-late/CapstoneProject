@@ -1,4 +1,4 @@
-using CapstoneProject.Application.Common.Enums;
+﻿using CapstoneProject.Application.Common.Enums;
 using CapstoneProject.Application.Common.Interfaces;
 using CapstoneProject.Application.Common.Models;
 using CapstoneProject.Application.Commons.Interfaces;
@@ -82,7 +82,8 @@ public class GetMyComplaintsQueryHandler : IRequestHandler<GetMyComplaintsQuery,
         }
 
         var paginated = PaginationResult<MyComplaintListItemDto>.Success(list, pageNumber, pageSize, total);
-        return Result<PaginationResult<MyComplaintListItemDto>>.Success(paginated);
+        return Result<PaginationResult<MyComplaintListItemDto>>.Success(paginated, "Đã lấy danh sách khiếu nại của bạn.");
     }
 }
+
 

@@ -31,6 +31,6 @@ public class GetLobbyRoomQueryHandler : IRequestHandler<GetLobbyRoomQuery, Resul
             SelectedMapId = room.SelectedMapId,
             Players = room.Players.Values.Select(p => new LobbyPlayerDto { PlayerId = p.PlayerId, IsReady = p.IsReady, IsHost = p.IsHost }).ToList()
         };
-        return Task.FromResult(Result<LobbyRoomDetailResponse>.Success(response));
+        return Task.FromResult(Result<LobbyRoomDetailResponse>.Success(response, "Đã lấy thông tin phòng."));
     }
 }
