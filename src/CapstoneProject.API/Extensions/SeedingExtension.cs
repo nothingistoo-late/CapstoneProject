@@ -185,6 +185,58 @@ public static class SeedingExtension
             }
         }
 
+        // Seed 2 moderator accounts for moderation workflows
+        var moderatorRoleName = RoleEnum.Moderator.ToString();
+        var moderatorSeeds = new[]
+        {
+            new { Email = "moderator1@capstoneproject.com", Password = "Moderator@123", FirstName = "Content", LastName = "Moderator1" },
+            new { Email = "moderator2@capstoneproject.com", Password = "Moderator@123", FirstName = "Content", LastName = "Moderator2" }
+        };
+
+        foreach (var seed in moderatorSeeds)
+        {
+            var existingModerator = await userManager.FindByEmailAsync(seed.Email);
+            if (existingModerator == null)
+            {
+                var moderatorUser = new AppUser
+                {
+                    UserName = seed.Email,
+                    Email = seed.Email,
+                    EmailConfirmed = true,
+                    FirstName = seed.FirstName,
+                    LastName = seed.LastName,
+                    JoiningAt = CapstoneProject.Domain.Common.VietnamDateTime.DbNow,
+                    CreatedAt = CapstoneProject.Domain.Common.VietnamDateTime.DbNow,
+                    Status = EntityStatusEnum.Active
+                };
+
+                var createModeratorResult = await userManager.CreateAsync(moderatorUser, seed.Password);
+                if (!createModeratorResult.Succeeded)
+                {
+                    var errors = string.Join(", ", createModeratorResult.Errors.Select(e => e.Description));
+                    logger.LogWarning("Failed to create moderator user {Email}: {Errors}", seed.Email, errors);
+                    continue;
+                }
+
+                existingModerator = moderatorUser;
+                logger.LogInformation("Created moderator user {Email}", seed.Email);
+            }
+
+            if (!await userManager.IsInRoleAsync(existingModerator, moderatorRoleName))
+            {
+                var addModeratorRoleResult = await userManager.AddToRoleAsync(existingModerator, moderatorRoleName);
+                if (!addModeratorRoleResult.Succeeded)
+                {
+                    var errors = string.Join(", ", addModeratorRoleResult.Errors.Select(e => e.Description));
+                    logger.LogWarning("Failed to add moderator user {Email} to role {Role}: {Errors}", seed.Email, moderatorRoleName, errors);
+                }
+                else
+                {
+                    logger.LogInformation("Added moderator user {Email} to role {Role}", seed.Email, moderatorRoleName);
+                }
+            }
+        }
+
         // Seed map tags (idempotent)
         var defaultTagNames = new[]
         {
