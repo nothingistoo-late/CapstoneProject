@@ -19,6 +19,7 @@ using CapstoneProject.Application.Features.Maps.Commands.AddMapGalleryMedia;
 using CapstoneProject.Application.Features.Maps.Commands.DeleteMapGalleryMedia;
 using CapstoneProject.Application.Features.Maps.Queries.GetMapById;
 using CapstoneProject.Application.Features.Maps.Queries.GetAllMapsForAdmin;
+using CapstoneProject.Application.Features.Maps.Queries.GetDeletedMaps;
 using CapstoneProject.Application.Features.Maps.Queries.GetMaps;
 using CapstoneProject.Application.Features.Maps.Queries.GetTags;
 using CapstoneProject.Application.Common.Enums;
@@ -67,6 +68,40 @@ public class CmsMapController : ControllerBase
     [ProducesResponseType(typeof(Result), StatusCodes.Status403Forbidden)]
     [SwaggerOperation(Summary = "Get maps (moderation)", Description = "Returns paginated maps. Filter by user (createdByUserId), price (minPrice, maxPrice), mapStatus, difficulty, tagId, search; sort by CreatedAt, Title, Difficulty, TimeLimitMs, Price. Admin/Moderator only.", OperationId = "Cms_GetMaps", Tags = new[] { "CMS - Maps" })]
     public async Task<IActionResult> GetMaps([FromQuery] GetMapsQuery query)
+    {
+        var result = await _mediator.Send(query);
+        return StatusCode(result.GetHttpStatusCode(), result);
+    }
+
+    /// <summary>Get soft-deleted maps for moderation (paginated, filter).</summary>
+    /// <remarks>
+    /// Returns paginated soft-deleted maps. Admin/Moderator only.
+    ///
+    /// **Query:**
+    /// - pageNumber (int, optional): Default 1.
+    /// - pageSize (int, optional): Default 20.
+    /// - mapStatus (int?, optional): 0=Draft, 1=PendingReview, 2=Approved, 3=Rejected, 4=Published.
+    /// - createdByUserId (Guid?, optional): Filter by creator.
+    /// - difficulty (int?, optional): Difficulty level (1-5).
+    /// - type (int?, optional): 0=Topdown, 1=Platform, 2=Snake.
+    /// - tagId (Guid?, optional): Filter by tag.
+    /// - search (string, optional): Search in title, description.
+    /// - minPrice (decimal?, optional): Price &gt;= minPrice.
+    /// - maxPrice (decimal?, optional): Price &lt;= maxPrice.
+    /// - deletedFrom (datetime?, optional): DeletedAt &gt;= deletedFrom.
+    /// - deletedTo (datetime?, optional): DeletedAt &lt;= deletedTo.
+    /// - sortBy (string, optional): DeletedAt | CreatedAt | Title | Difficulty | TimeLimitMs | Price | MapStatus. Default DeletedAt.
+    /// - sortAscending (bool, optional): Default false.
+    ///
+    /// **METHOD and path:** GET /api/cms/maps/deleted
+    /// </remarks>
+    [HttpGet("deleted")]
+    [AuthorizeRoles(nameof(RoleEnum.Admin), nameof(RoleEnum.Moderator))]
+    [ProducesResponseType(typeof(Result<PaginationResult<MapListItemDto>>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(Result), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(Result), StatusCodes.Status403Forbidden)]
+    [SwaggerOperation(Summary = "Get soft-deleted maps", Description = "Returns paginated soft-deleted maps with filters (status, user, type, difficulty, tag, price, deleted date range). Admin/Moderator only.", OperationId = "Cms_GetDeletedMaps", Tags = new[] { "CMS - Maps" })]
+    public async Task<IActionResult> GetDeletedMaps([FromQuery] GetDeletedMapsQuery query)
     {
         var result = await _mediator.Send(query);
         return StatusCode(result.GetHttpStatusCode(), result);
