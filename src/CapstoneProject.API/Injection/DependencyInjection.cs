@@ -30,6 +30,7 @@ public static class DependencyInjection
         
         // Register chat broadcast service for SignalR
         services.AddScoped<IChatBroadcastService, ChatBroadcastService>();
+        services.AddScoped<INotificationBroadcastService, NotificationBroadcastService>();
 
 
         return services;

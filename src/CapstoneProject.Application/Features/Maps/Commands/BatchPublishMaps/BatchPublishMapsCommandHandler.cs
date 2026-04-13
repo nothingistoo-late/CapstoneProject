@@ -75,7 +75,7 @@ public class BatchPublishMapsCommandHandler : IRequestHandler<BatchPublishMapsCo
                 old.IsActiveVersion = false;
                 old.IsPublished = false;
                 old.IsDeleted = true;
-                old.DeletedAt = DateTime.UtcNow;
+                old.DeletedAt = CapstoneProject.Domain.Common.VietnamDateTime.DbNow;
                 old.DeletedBy = userIdNullable.Value;
                 old.UpdateEntity(userIdNullable.Value);
                 repo.Update(old);

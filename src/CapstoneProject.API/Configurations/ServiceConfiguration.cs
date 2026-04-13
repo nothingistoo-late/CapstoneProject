@@ -106,6 +106,7 @@ public static class ServiceConfiguration
         // Map SignalR Hubs
         app.MapHub<ChatHub>("/hubs/chat");
         app.MapHub<GameLobbyHub>("/hubs/gamelobby");
+        app.MapHub<NotificationHub>("/hubs/notifications");
 
         return app;
     }

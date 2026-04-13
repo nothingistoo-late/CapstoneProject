@@ -58,6 +58,10 @@ public class CapstoneProjectDbContext : IdentityDbContext<AppUser, AppRole, Guid
     public DbSet<ComplaintMessageAttachment> ComplaintMessageAttachments { get; set; }
     public DbSet<ComplaintStatusHistory> ComplaintStatusHistories { get; set; }
 
+    // Notifications
+    public DbSet<Notification> Notifications { get; set; }
+    public DbSet<UserNotification> UserNotifications { get; set; }
+
     // OrbitCoin: virtual currency
     public DbSet<UserWallet> UserWallets { get; set; }
     public DbSet<OrbitCoinTransaction> OrbitCoinTransactions { get; set; }

@@ -71,7 +71,8 @@ public class CreateMapVersionFromApprovedCommandHandler : IRequestHandler<Create
             UnlockEditorialAfterStars = source.UnlockEditorialAfterStars,
             LearnedTags = new List<Guid>(source.LearnedTags),
             AvatarUrl = source.AvatarUrl,
-            ContentVersion = Math.Max(1, source.ContentVersion) + 1,
+            // Keep same content version on clone; first actual edit/save will increment by +1.
+            ContentVersion = Math.Max(1, source.ContentVersion),
             RootMapId = rootMapId,
             IsActiveVersion = false
         };

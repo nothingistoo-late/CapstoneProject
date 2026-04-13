@@ -7,6 +7,7 @@ using CapstoneProject.Application.Commons.Interfaces;
 using CapstoneProject.Domain.Common;
 using CapstoneProject.Domain.Entities;
 using CapstoneProject.Domain.Enums;
+using System.Text.Json;
 
 namespace CapstoneProject.Application.Features.Maps.Commands.PublishMap;
 
@@ -14,11 +15,16 @@ public class PublishMapCommandHandler : IRequestHandler<PublishMapCommand, Resul
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly ICurrentUserService _currentUserService;
+    private readonly INotificationPersistenceService _notificationPersistenceService;
 
-    public PublishMapCommandHandler(IUnitOfWork unitOfWork, ICurrentUserService currentUserService)
+    public PublishMapCommandHandler(
+        IUnitOfWork unitOfWork,
+        ICurrentUserService currentUserService,
+        INotificationPersistenceService notificationPersistenceService)
     {
         _unitOfWork = unitOfWork;
         _currentUserService = currentUserService;
+        _notificationPersistenceService = notificationPersistenceService;
     }
 
     public async Task<Result> Handle(PublishMapCommand command, CancellationToken cancellationToken)
@@ -85,13 +91,77 @@ public class PublishMapCommandHandler : IRequestHandler<PublishMapCommand, Resul
             old.IsActiveVersion = false;
             old.IsPublished = false;
             old.IsDeleted = true;
-            old.DeletedAt = DateTime.UtcNow;
+            old.DeletedAt = CapstoneProject.Domain.Common.VietnamDateTime.DbNow;
             old.DeletedBy = userIdNullable.Value;
             old.UpdateEntity(userIdNullable.Value);
             mapRepo.Update(old);
         }
 
         await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+        if (map.CreatedBy.HasValue)
+        {
+            try
+            {
+                var payloadJson = JsonSerializer.Serialize(new
+                {
+                    mapId = map.Id,
+                    mapTitle = map.Title,
+                    contentVersion = map.ContentVersion
+                });
+
+                await _notificationPersistenceService.CreateNotificationAsync(
+                    NotificationTypeEnum.MapVersionPublished,
+                    "Map đã được xuất bản",
+                    $"Map \"{map.Title}\" đã được xuất bản thành công.",
+                    new List<Guid> { map.CreatedBy.Value },
+                    userIdNullable.Value,
+                    payloadJson,
+                    $"/learner/maps/{map.Id}",
+                    cancellationToken);
+            }
+            catch
+            {
+                // Notification failure must not break publish flow.
+            }
+
+            // Notify buyers/founders of this map about the update
+            try
+            {
+                var buyers = await _unitOfWork.Repository<MyMap>()
+                    .GetQueryable()
+                    .Where(mm => mm.MapId == map.Id && !mm.IsDeleted && !mm.IsAuthor)
+                    .Select(mm => mm.UserId)
+                    .Distinct()
+                    .ToListAsync(cancellationToken);
+
+                if (buyers.Count > 0)
+                {
+                    var buyerPayloadJson = JsonSerializer.Serialize(new
+                    {
+                        mapId = map.Id,
+                        mapTitle = map.Title,
+                        contentVersion = map.ContentVersion,
+                        creatorId = map.CreatedBy.Value
+                    });
+
+                    await _notificationPersistenceService.CreateNotificationAsync(
+                        NotificationTypeEnum.MapUpdateForBuyers,
+                        "Map bạn mua đã được cập nhật",
+                        $"Map \"{map.Title}\" vừa được cập nhật lên phiên bản mới.",
+                        buyers,
+                        map.CreatedBy.Value,
+                        buyerPayloadJson,
+                        $"/learner/maps/{map.Id}",
+                        cancellationToken);
+                }
+            }
+            catch
+            {
+                // Notification failure must not break publish flow.
+            }
+        }
+
         return Result.Success("Bản đồ được xuất bản thành công.");
     }
 }

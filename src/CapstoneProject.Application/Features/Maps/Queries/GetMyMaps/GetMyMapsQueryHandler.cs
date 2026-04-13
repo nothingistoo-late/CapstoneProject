@@ -73,7 +73,19 @@ public class GetMyMapsQueryHandler : IRequestHandler<GetMyMapsQuery, Result<Pagi
             .AsNoTracking();
 
         if (request.IsAuthorOnly)
-            query = query.Where(m => m.CreatedBy == userId.Value);
+        {
+            var latestAuthorMapIds = await mapRepo.GetQueryable()
+                .Where(m => m.Status == EntityStatusEnum.Active && !m.IsDeleted && m.CreatedBy == userId.Value)
+                .GroupBy(m => m.RootMapId ?? m.Id)
+                .Select(g => g
+                    .OrderByDescending(m => m.ContentVersion)
+                    .ThenByDescending(m => m.CreatedAt)
+                    .Select(m => m.Id)
+                    .First())
+                .ToListAsync(cancellationToken);
+
+            query = query.Where(m => latestAuthorMapIds.Contains(m.Id));
+        }
         else
             query = query.Where(m => m.IsActiveVersion && ownedRootMapIds.Contains(m.RootMapId ?? m.Id));
 

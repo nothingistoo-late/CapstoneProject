@@ -7,6 +7,7 @@ using CapstoneProject.Application.Commons.Interfaces;
 using CapstoneProject.Domain.Common;
 using CapstoneProject.Domain.Entities;
 using CapstoneProject.Domain.Enums;
+using System.Text.Json;
 
 namespace CapstoneProject.Application.Features.Community.Commands.RateMap;
 
@@ -14,11 +15,16 @@ public class RateMapCommandHandler : IRequestHandler<RateMapCommand, Result>
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly ICurrentUserService _currentUserService;
+    private readonly INotificationPersistenceService _notificationPersistenceService;
 
-    public RateMapCommandHandler(IUnitOfWork unitOfWork, ICurrentUserService currentUserService)
+    public RateMapCommandHandler(
+        IUnitOfWork unitOfWork,
+        ICurrentUserService currentUserService,
+        INotificationPersistenceService notificationPersistenceService)
     {
         _unitOfWork = unitOfWork;
         _currentUserService = currentUserService;
+        _notificationPersistenceService = notificationPersistenceService;
     }
 
     public async Task<Result> Handle(RateMapCommand command, CancellationToken cancellationToken)
@@ -71,6 +77,35 @@ public class RateMapCommandHandler : IRequestHandler<RateMapCommand, Result>
             await repo.AddAsync(rating);
         }
         await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+        if (map.CreatedBy.HasValue && map.CreatedBy.Value != userId)
+        {
+            try
+            {
+                var payloadJson = JsonSerializer.Serialize(new
+                {
+                    mapId = map.Id,
+                    mapTitle = map.Title,
+                    rating = command.Rating,
+                    hasComment = !string.IsNullOrWhiteSpace(command.Comment)
+                });
+
+                await _notificationPersistenceService.CreateNotificationAsync(
+                    NotificationTypeEnum.MapRatingReceived,
+                    "Map nhận được đánh giá mới",
+                    $"Map \"{map.Title}\" vừa nhận {command.Rating} sao.",
+                    new List<Guid> { map.CreatedBy.Value },
+                    userId,
+                    payloadJson,
+                    $"/learner/maps/{map.Id}",
+                    cancellationToken);
+            }
+            catch
+            {
+                // Notification failure must not block rating flow.
+            }
+        }
+
         return Result.Success("Đã lưu xếp hạng.");
     }
 }

@@ -41,6 +41,8 @@ public static class QuackOrbitEntityConfiguration
         builder.Entity<ComplaintMessage>(ConfigureComplaintMessage);
         builder.Entity<ComplaintMessageAttachment>(ConfigureComplaintMessageAttachment);
         builder.Entity<ComplaintStatusHistory>(ConfigureComplaintStatusHistory);
+        builder.Entity<Notification>(ConfigureNotification);
+        builder.Entity<UserNotification>(ConfigureUserNotification);
         builder.Entity<MyMap>(ConfigureMyMap);
         builder.Entity<LearningGoal>(ConfigureLearningGoal);
         builder.Entity<Concept>(ConfigureConcept);
@@ -364,4 +366,23 @@ public static class QuackOrbitEntityConfiguration
             .HasForeignKey(x => x.ChangedBy)
             .OnDelete(DeleteBehavior.Restrict);
     }
+
+    static void ConfigureNotification(EntityTypeBuilder<Notification> e)
+    {
+        e.Property(x => x.NotificationType).HasConversion<int>();
+        e.HasIndex(x => x.CreatedAt).IsUnique(false);
+        e.HasIndex(x => x.ActorUserId);
+        e.HasOne(x => x.ActorUser).WithMany().HasForeignKey(x => x.ActorUserId).OnDelete(DeleteBehavior.SetNull);
+        e.HasMany(x => x.UserNotifications).WithOne(x => x.Notification).HasForeignKey(x => x.NotificationId).OnDelete(DeleteBehavior.Cascade);
+    }
+
+    static void ConfigureUserNotification(EntityTypeBuilder<UserNotification> e)
+    {
+        e.HasIndex(x => x.UserId);
+        e.HasIndex(x => new { x.UserId, x.IsRead });
+        e.HasIndex(x => new { x.UserId, x.CreatedAt }).IsUnique(false);
+        e.HasOne(x => x.User).WithMany().HasForeignKey(x => x.UserId).OnDelete(DeleteBehavior.Cascade);
+        e.HasOne(x => x.Notification).WithMany(x => x.UserNotifications).HasForeignKey(x => x.NotificationId).OnDelete(DeleteBehavior.Cascade);
+    }
 }
+

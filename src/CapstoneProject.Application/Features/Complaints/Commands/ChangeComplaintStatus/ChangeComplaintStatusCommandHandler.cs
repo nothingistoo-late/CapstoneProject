@@ -8,6 +8,7 @@ using CapstoneProject.Domain.Enums;
 using CapstoneProject.Application.Commons.Models.Complaints;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using System.Text.Json;
 
 namespace CapstoneProject.Application.Features.Complaints.Commands.ChangeComplaintStatus;
 
@@ -18,19 +19,22 @@ public class ChangeComplaintStatusCommandHandler : IRequestHandler<ChangeComplai
     private readonly IComplaintContextResolver _complaintContextResolver;
     private readonly IComplaintPolicyService _complaintPolicyService;
     private readonly IOrbitCoinService _orbitCoinService;
+    private readonly INotificationPersistenceService _notificationPersistenceService;
 
     public ChangeComplaintStatusCommandHandler(
         IUnitOfWork unitOfWork,
         ICurrentUserService currentUserService,
         IComplaintContextResolver complaintContextResolver,
         IComplaintPolicyService complaintPolicyService,
-        IOrbitCoinService orbitCoinService)
+        IOrbitCoinService orbitCoinService,
+        INotificationPersistenceService notificationPersistenceService)
     {
         _unitOfWork = unitOfWork;
         _currentUserService = currentUserService;
         _complaintContextResolver = complaintContextResolver;
         _complaintPolicyService = complaintPolicyService;
         _orbitCoinService = orbitCoinService;
+        _notificationPersistenceService = notificationPersistenceService;
     }
 
     public async Task<Result<ComplaintStatusUpdateDto>> Handle(ChangeComplaintStatusCommand command, CancellationToken cancellationToken)
@@ -152,8 +156,74 @@ public class ChangeComplaintStatusCommandHandler : IRequestHandler<ChangeComplai
 
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
+        await CreateComplaintStatusNotificationsAsync(
+            complaint,
+            fromStatus,
+            toStatus,
+            refundProcessed,
+            refundAmount,
+            userId,
+            cancellationToken);
+
         var response = await BuildStatusDtoAsync(complaint, fromStatus, toStatus, history.Note, refundProcessed, refundedPaymentRecordId, refundAmount, cancellationToken);
         return Result<ComplaintStatusUpdateDto>.Success(response, "Đã cập nhật trạng thái khiếu nại.");
+    }
+
+    private async Task CreateComplaintStatusNotificationsAsync(
+        Complaint complaint,
+        ComplaintStatusEnum fromStatus,
+        ComplaintStatusEnum toStatus,
+        bool refundProcessed,
+        decimal? refundAmount,
+        Guid actorUserId,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            var statusPayload = JsonSerializer.Serialize(new
+            {
+                complaintId = complaint.Id,
+                fromStatus = fromStatus.ToString(),
+                toStatus = toStatus.ToString(),
+                refundProcessed,
+                refundAmount
+            });
+
+            await _notificationPersistenceService.CreateNotificationAsync(
+                NotificationTypeEnum.ComplaintStatusChanged,
+                "Cập nhật trạng thái khiếu nại",
+                $"Khiếu nại \"{complaint.Subject}\" đã chuyển từ {fromStatus} sang {toStatus}.",
+                new List<Guid> { complaint.UserId },
+                actorUserId,
+                statusPayload,
+                $"/learner/complaints/{complaint.Id}",
+                cancellationToken);
+
+            if (!refundProcessed)
+                return;
+
+            var refundPayload = JsonSerializer.Serialize(new
+            {
+                complaintId = complaint.Id,
+                refundAmount
+            });
+
+            await _notificationPersistenceService.CreateNotificationAsync(
+                NotificationTypeEnum.ComplaintRefunded,
+                "Khiếu nại đã được hoàn tiền",
+                refundAmount.HasValue
+                    ? $"Bạn đã được hoàn {refundAmount.Value:0.##} OrbitCoin cho khiếu nại \"{complaint.Subject}\"."
+                    : $"Khiếu nại \"{complaint.Subject}\" đã được hoàn tiền.",
+                new List<Guid> { complaint.UserId },
+                actorUserId,
+                refundPayload,
+                $"/learner/complaints/{complaint.Id}",
+                cancellationToken);
+        }
+        catch
+        {
+            // Notification failure must not break complaint workflow.
+        }
     }
 
     private async Task<ComplaintStatusUpdateDto> BuildStatusDtoAsync(

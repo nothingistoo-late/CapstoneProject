@@ -26,6 +26,9 @@ public class MyComplaintDetailDto
 
     public List<MyComplaintMessageDto> Messages { get; set; } = new();
     public List<MyComplaintStatusHistoryDto> StatusHistories { get; set; } = new();
+    
+    /// <summary>Indicates if this is a limited view (seller/context owner can see selected fields only)</summary>
+    public bool IsLimitedView { get; set; } = false;
 }
 
 public class MyComplaintMessageDto

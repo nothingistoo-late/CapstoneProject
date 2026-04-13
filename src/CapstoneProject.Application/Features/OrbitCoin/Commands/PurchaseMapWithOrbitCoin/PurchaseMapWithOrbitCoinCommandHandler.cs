@@ -7,6 +7,7 @@ using CapstoneProject.Application.Commons.Interfaces;
 using CapstoneProject.Domain.Common;
 using CapstoneProject.Domain.Entities;
 using CapstoneProject.Domain.Enums;
+using System.Text.Json;
 
 namespace CapstoneProject.Application.Features.OrbitCoin.Commands.PurchaseMapWithOrbitCoin;
 
@@ -15,17 +16,20 @@ public class PurchaseMapWithOrbitCoinCommandHandler : IRequestHandler<PurchaseMa
     private readonly IUnitOfWork _unitOfWork;
     private readonly IOrbitCoinService _orbitCoinService;
     private readonly ICurrentUserService _currentUserService;
+    private readonly INotificationPersistenceService _notificationPersistenceService;
 
     private const decimal PlatformFeePercent = 5m; // 5% platform fee
 
     public PurchaseMapWithOrbitCoinCommandHandler(
         IUnitOfWork unitOfWork,
         IOrbitCoinService orbitCoinService,
-        ICurrentUserService currentUserService)
+        ICurrentUserService currentUserService,
+        INotificationPersistenceService notificationPersistenceService)
     {
         _unitOfWork = unitOfWork;
         _orbitCoinService = orbitCoinService;
         _currentUserService = currentUserService;
+        _notificationPersistenceService = notificationPersistenceService;
     }
 
     public async Task<Result> Handle(PurchaseMapWithOrbitCoinCommand request, CancellationToken cancellationToken)
@@ -80,6 +84,16 @@ public class PurchaseMapWithOrbitCoinCommandHandler : IRequestHandler<PurchaseMa
             await _unitOfWork.Repository<PaymentRecord>().AddAsync(failedRecord);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
+            await TryNotifyPaymentAsync(
+                NotificationTypeEnum.PaymentFailed,
+                buyerUserId,
+                null,
+                map,
+                amount,
+                "Thanh toán mua map thất bại",
+                error ?? "Giao dịch mua map không thành công.",
+                cancellationToken);
+
             return Result.Failure(error ?? "Chuyển không thành công.", ErrorCodeEnum.InvalidOperation);
         }
 
@@ -105,9 +119,85 @@ public class PurchaseMapWithOrbitCoinCommandHandler : IRequestHandler<PurchaseMa
             myMap.InitializeEntity(buyerUserId);
             await _unitOfWork.Repository<MyMap>().AddAsync(myMap);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+            await TryNotifyPaymentAsync(
+                NotificationTypeEnum.PaymentSucceeded,
+                buyerUserId,
+                null,
+                map,
+                amount,
+                "Mua map thành công",
+                $"Bạn đã mua thành công map \"{map.Title}\" với giá {amount:0.##} OrbitCoin.",
+                cancellationToken);
+
+            // Notify map creator about the purchase
+            if (sellerUserId != Guid.Empty && sellerUserId != buyerUserId)
+            {
+                try
+                {
+                    var sellerPayloadJson = JsonSerializer.Serialize(new
+                    {
+                        mapId = map.Id,
+                        mapTitle = map.Title,
+                        buyerId = buyerUserId,
+                        buyerAmount = amount,
+                        sellerEarns = amount - feeAmount,
+                        platformFee = feeAmount
+                    });
+
+                    await _notificationPersistenceService.CreateNotificationAsync(
+                        NotificationTypeEnum.MapPurchased,
+                        "Có người mua map của bạn",
+                        $"Map \"{map.Title}\" vừa được mua với giá {amount:0.##} OrbitCoin. Bạn nhận được {amount - feeAmount:0.##} OrbitCoin (sau phí).",
+                        new List<Guid> { sellerUserId },
+                        buyerUserId,
+                        sellerPayloadJson,
+                        $"/learner/maps/{map.Id}",
+                        cancellationToken);
+                }
+                catch
+                {
+                    // Notification failure must not break purchase flow.
+                }
+            }
         }
 
         return Result.Success("Bản đồ được mua bằng OrbitCoin. Phí nền tảng được khấu trừ từ người bán.");
+    }
+
+    private async Task TryNotifyPaymentAsync(
+        NotificationTypeEnum type,
+        Guid recipientUserId,
+        Guid? actorUserId,
+        Map map,
+        decimal amount,
+        string title,
+        string body,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            var payloadJson = JsonSerializer.Serialize(new
+            {
+                mapId = map.Id,
+                mapTitle = map.Title,
+                amount
+            });
+
+            await _notificationPersistenceService.CreateNotificationAsync(
+                type,
+                title,
+                body,
+                new List<Guid> { recipientUserId },
+                actorUserId,
+                payloadJson,
+                $"/learner/maps/{map.Id}",
+                cancellationToken);
+        }
+        catch
+        {
+            // Notification failure must not break purchase flow.
+        }
     }
 }
 

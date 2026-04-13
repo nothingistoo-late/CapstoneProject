@@ -43,7 +43,24 @@ public class GetMyComplaintDetailQueryHandler : IRequestHandler<GetMyComplaintDe
 
         if (complaint == null)
             return Result<MyComplaintDetailDto>.Failure($"Không tìm thấy khiếu nại với Id: {request.ComplaintId}.", ErrorCodeEnum.NotFound);
-        if (complaint.UserId != userId)
+
+        // Full view: complaint creator can see all details
+        bool isFullView = complaint.UserId == userId;
+        
+        // Limited view: map creator (if complaint is about their map) can see selected fields
+        bool isLimitedView = false;
+        if (!isFullView && complaint.ContextType == "Map" && complaint.ContextId.HasValue)
+        {
+            var map = await _unitOfWork.Repository<Map>()
+                .GetQueryable()
+                .AsNoTracking()
+                .FirstOrDefaultAsync(m => m.Id == complaint.ContextId && !m.IsDeleted, cancellationToken);
+            
+            if (map?.CreatedBy == userId)
+                isLimitedView = true;
+        }
+
+        if (!isFullView && !isLimitedView)
             return Result<MyComplaintDetailDto>.Failure("Bạn không có quyền xem khiếu nại này.", ErrorCodeEnum.Forbidden);
 
         var dto = new MyComplaintDetailDto
@@ -56,8 +73,8 @@ public class GetMyComplaintDetailQueryHandler : IRequestHandler<GetMyComplaintDe
             ComplaintStatus = complaint.ComplaintStatus.ToString(),
             ContextType = complaint.ContextType,
             ContextId = complaint.ContextId,
-            ContextKey = complaint.ContextKey,
-            ContextDataJson = complaint.ContextDataJson,
+            ContextKey = isFullView ? complaint.ContextKey : null,
+            ContextDataJson = isFullView ? complaint.ContextDataJson : null,
             OccurredAt = complaint.OccurredAt,
             ContextResolved = await _complaintContextResolver.ResolveAsync(
                 complaint.ContextType,
@@ -66,7 +83,7 @@ public class GetMyComplaintDetailQueryHandler : IRequestHandler<GetMyComplaintDe
                 complaint.UserId,
                 cancellationToken),
             CreatedAt = complaint.CreatedAt,
-            ResolvedAt = complaint.ResolvedAt,
+            ResolvedAt = isFullView ? complaint.ResolvedAt : null,
             Messages = complaint.Messages
                 .Where(m => !m.IsDeleted && !m.IsInternal)
                 .OrderBy(m => m.CreatedAt)
@@ -74,7 +91,7 @@ public class GetMyComplaintDetailQueryHandler : IRequestHandler<GetMyComplaintDe
                 {
                     Id = m.Id,
                     SenderId = m.SenderId,
-                    Content = m.Content,
+                    Content = isFullView ? m.Content : string.Empty,
                     IsInternal = m.IsInternal,
                     CreatedAt = m.CreatedAt,
                     Attachments = m.Attachments
@@ -84,7 +101,7 @@ public class GetMyComplaintDetailQueryHandler : IRequestHandler<GetMyComplaintDe
                         {
                             Id = a.Id,
                             FileName = a.FileName,
-                            Url = a.Url,
+                            Url = isFullView ? a.Url : string.Empty,
                             MimeType = a.MimeType,
                             SizeBytes = a.SizeBytes,
                             SortOrder = a.SortOrder
@@ -92,7 +109,7 @@ public class GetMyComplaintDetailQueryHandler : IRequestHandler<GetMyComplaintDe
                         .ToList()
                 })
                 .ToList(),
-            StatusHistories = complaint.StatusHistories
+            StatusHistories = isFullView ? complaint.StatusHistories
                 .Where(h => !h.IsDeleted)
                 .OrderBy(h => h.ChangedAt)
                 .Select(h => new MyComplaintStatusHistoryDto
@@ -104,7 +121,8 @@ public class GetMyComplaintDetailQueryHandler : IRequestHandler<GetMyComplaintDe
                     ChangedAt = h.ChangedAt,
                     Note = h.Note
                 })
-                .ToList()
+                .ToList() : new List<MyComplaintStatusHistoryDto>(),
+            IsLimitedView = isLimitedView
         };
 
         return Result<MyComplaintDetailDto>.Success(dto, "Đã lấy chi tiết khiếu nại của bạn.");

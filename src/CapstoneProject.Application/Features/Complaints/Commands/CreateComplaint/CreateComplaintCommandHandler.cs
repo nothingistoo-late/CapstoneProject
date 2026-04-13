@@ -8,6 +8,8 @@ using CapstoneProject.Domain.Entities;
 using CapstoneProject.Domain.Enums;
 using MediatR;
 using Microsoft.AspNetCore.Http;
+using Microsoft.EntityFrameworkCore;
+using System.Text.Json;
 
 namespace CapstoneProject.Application.Features.Complaints.Commands.CreateComplaint;
 
@@ -25,19 +27,22 @@ public class CreateComplaintCommandHandler : IRequestHandler<CreateComplaintComm
     private readonly IComplaintPolicyService _complaintPolicyService;
     private readonly IComplaintContextResolver _complaintContextResolver;
     private readonly ICloudinaryService _cloudinaryService;
+    private readonly INotificationPersistenceService _notificationPersistenceService;
 
     public CreateComplaintCommandHandler(
         IUnitOfWork unitOfWork,
         ICurrentUserService currentUserService,
         IComplaintPolicyService complaintPolicyService,
         IComplaintContextResolver complaintContextResolver,
-        ICloudinaryService cloudinaryService)
+        ICloudinaryService cloudinaryService,
+        INotificationPersistenceService notificationPersistenceService)
     {
         _unitOfWork = unitOfWork;
         _currentUserService = currentUserService;
         _complaintPolicyService = complaintPolicyService;
         _complaintContextResolver = complaintContextResolver;
         _cloudinaryService = cloudinaryService;
+        _notificationPersistenceService = notificationPersistenceService;
     }
 
     public async Task<Result<CreateComplaintResponseDto>> Handle(CreateComplaintCommand command, CancellationToken cancellationToken)
@@ -136,6 +141,70 @@ public class CreateComplaintCommandHandler : IRequestHandler<CreateComplaintComm
         }
 
         await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+        // Persist a user-visible notification so complaint creator can track submission.
+        try
+        {
+            var payloadJson = JsonSerializer.Serialize(new
+            {
+                complaintId = complaint.Id,
+                subject = complaint.Subject,
+                category = complaint.Category,
+                status = complaint.ComplaintStatus.ToString()
+            });
+
+            await _notificationPersistenceService.CreateNotificationAsync(
+                NotificationTypeEnum.ComplaintCreated,
+                "Đã gửi khiếu nại",
+                $"Khiếu nại \"{complaint.Subject}\" đã được tạo thành công.",
+                new List<Guid> { complaint.UserId },
+                userId,
+                payloadJson,
+                $"/learner/complaints/{complaint.Id}",
+                cancellationToken);
+        }
+        catch
+        {
+            // Log error but don't fail the complaint creation if notification fails
+        }
+
+        // Notify context owner (e.g., map creator if complaint is about a map)
+        if (complaint.ContextType == "Map" && complaint.ContextId.HasValue)
+        {
+            try
+            {
+                var map = await _unitOfWork.Repository<Map>()
+                    .GetQueryable()
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(m => m.Id == complaint.ContextId && !m.IsDeleted, cancellationToken);
+
+                if (map?.CreatedBy.HasValue == true && map.CreatedBy != userId)
+                {
+                    var contextPayloadJson = JsonSerializer.Serialize(new
+                    {
+                        complaintId = complaint.Id,
+                        mapId = map.Id,
+                        mapTitle = map.Title,
+                        subject = complaint.Subject,
+                        complainer = complaint.UserId
+                    });
+
+                    await _notificationPersistenceService.CreateNotificationAsync(
+                        NotificationTypeEnum.MapComplainedAbout,
+                        "Map của bạn bị khiếu nại",
+                        $"Map \"{map.Title}\" đã nhận một khiếu nại: \"{complaint.Subject}\"",
+                        new List<Guid> { map.CreatedBy.Value },
+                        userId,
+                        contextPayloadJson,
+                        $"/learner/complaints/{complaint.Id}",
+                        cancellationToken);
+                }
+            }
+            catch
+            {
+                // Notification failure must not break complaint creation
+            }
+        }
 
         var response = new CreateComplaintResponseDto
         {

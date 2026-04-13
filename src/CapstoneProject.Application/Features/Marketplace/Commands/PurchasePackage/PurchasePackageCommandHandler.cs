@@ -7,6 +7,7 @@ using CapstoneProject.Application.Commons.Interfaces;
 using CapstoneProject.Domain.Common;
 using CapstoneProject.Domain.Entities;
 using CapstoneProject.Domain.Enums;
+using System.Text.Json;
 
 namespace CapstoneProject.Application.Features.Marketplace.Commands.PurchasePackage;
 
@@ -15,15 +16,18 @@ public class PurchasePackageCommandHandler : IRequestHandler<PurchasePackageComm
     private readonly IUnitOfWork _unitOfWork;
     private readonly IOrbitCoinService _orbitCoinService;
     private readonly ICurrentUserService _currentUserService;
+    private readonly INotificationPersistenceService _notificationPersistenceService;
 
     public PurchasePackageCommandHandler(
         IUnitOfWork unitOfWork,
         IOrbitCoinService orbitCoinService,
-        ICurrentUserService currentUserService)
+        ICurrentUserService currentUserService,
+        INotificationPersistenceService notificationPersistenceService)
     {
         _unitOfWork = unitOfWork;
         _orbitCoinService = orbitCoinService;
         _currentUserService = currentUserService;
+        _notificationPersistenceService = notificationPersistenceService;
     }
 
     public async Task<Result<Guid>> Handle(PurchasePackageCommand command, CancellationToken cancellationToken)
@@ -66,6 +70,15 @@ public class PurchasePackageCommandHandler : IRequestHandler<PurchasePackageComm
             await _unitOfWork.Repository<PaymentRecord>().AddAsync(failedRecord);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
+            await TryNotifyPaymentAsync(
+                NotificationTypeEnum.PaymentFailed,
+                userId,
+                pkg,
+                pkg.Price,
+                "Thanh toán mua gói thất bại",
+                error ?? "Giao dịch mua gói không thành công.",
+                cancellationToken);
+
             return Result<Guid>.Failure(error ?? "OrbitCoin không đủ. Vui lòng nạp tiền trước.", ErrorCodeEnum.InvalidOperation);
         }
 
@@ -98,7 +111,51 @@ public class PurchasePackageCommandHandler : IRequestHandler<PurchasePackageComm
         await _unitOfWork.Repository<UserPackage>().AddAsync(userPkg);
 
         await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+        await TryNotifyPaymentAsync(
+            NotificationTypeEnum.PaymentSucceeded,
+            userId,
+            pkg,
+            pkg.Price,
+            "Mua gói thành công",
+            $"Bạn đã mua thành công gói \"{pkg.Name}\" với giá {pkg.Price:0.##} OrbitCoin.",
+            cancellationToken);
+
         return Result<Guid>.Success(record.Id, "Gói mua bằng OrbitCoin.");
+    }
+
+    private async Task TryNotifyPaymentAsync(
+        NotificationTypeEnum type,
+        Guid recipientUserId,
+        Package pkg,
+        decimal amount,
+        string title,
+        string body,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            var payloadJson = JsonSerializer.Serialize(new
+            {
+                packageId = pkg.Id,
+                packageName = pkg.Name,
+                amount
+            });
+
+            await _notificationPersistenceService.CreateNotificationAsync(
+                type,
+                title,
+                body,
+                new List<Guid> { recipientUserId },
+                null,
+                payloadJson,
+                "/learner/wallet",
+                cancellationToken);
+        }
+        catch
+        {
+            // Notification failure must not break package purchase flow.
+        }
     }
 }
 

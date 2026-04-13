@@ -6,6 +6,7 @@ using CapstoneProject.Application.Common.Models;
 using CapstoneProject.Application.Commons.Interfaces;
 using CapstoneProject.Domain.Entities;
 using CapstoneProject.Domain.Enums;
+using System.Text.Json;
 
 namespace CapstoneProject.Application.Features.OrbitCoin.Commands.ConfirmDeposit;
 
@@ -15,17 +16,20 @@ public class ConfirmDepositCommandHandler : IRequestHandler<ConfirmDepositComman
     private readonly IPayOSService _payOSService;
     private readonly IOrbitCoinService _orbitCoinService;
     private readonly ICurrentUserService _currentUserService;
+    private readonly INotificationPersistenceService _notificationPersistenceService;
 
     public ConfirmDepositCommandHandler(
         IUnitOfWork unitOfWork,
         IPayOSService payOSService,
         IOrbitCoinService orbitCoinService,
-        ICurrentUserService currentUserService)
+        ICurrentUserService currentUserService,
+        INotificationPersistenceService notificationPersistenceService)
     {
         _unitOfWork = unitOfWork;
         _payOSService = payOSService;
         _orbitCoinService = orbitCoinService;
         _currentUserService = currentUserService;
+        _notificationPersistenceService = notificationPersistenceService;
     }
 
     public async Task<Result> Handle(ConfirmDepositCommand request, CancellationToken cancellationToken)
@@ -68,6 +72,25 @@ public class ConfirmDepositCommandHandler : IRequestHandler<ConfirmDepositComman
         record.PaidAt = CapstoneProject.Domain.Common.VietnamDateTime.DbNow;
         _unitOfWork.Repository<PaymentRecord>().Update(record);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+        try
+        {
+            var payloadJson = JsonSerializer.Serialize(new { orderId = record.Id, amount = record.Amount });
+            await _notificationPersistenceService.CreateNotificationAsync(
+                NotificationTypeEnum.PaymentSucceeded,
+                "Nạp OrbitCoin thành công",
+                $"Bạn đã nạp thành công {record.Amount:0.##} OrbitCoin.",
+                new List<Guid> { record.UserId },
+                null,
+                payloadJson,
+                "/learner/wallet",
+                cancellationToken);
+        }
+        catch
+        {
+            // Notification failure must not break confirm flow.
+        }
+
         return Result.Success("Đã xác nhận tiền gửi. OrbitCoin đã được ghi có.");
     }
 }
