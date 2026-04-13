@@ -27,5 +27,9 @@ public class MyComplaintListItemDto
     public ComplaintContextResolvedDto? ContextResolved { get; set; }
     public DateTime? CreatedAt { get; set; }
     public DateTime? ResolvedAt { get; set; }
+    public bool RefundProcessed { get; set; }
+    public Guid? RefundedPaymentRecordId { get; set; }
+    public decimal? RefundAmount { get; set; }
+    public DateTime? RefundedAt { get; set; }
 }
 

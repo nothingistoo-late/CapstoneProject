@@ -1,9 +1,11 @@
 ﻿using CapstoneProject.Application.Common.Enums;
 using CapstoneProject.Application.Common.Interfaces;
 using CapstoneProject.Application.Common.Models;
+using CapstoneProject.Application.Commons.Interfaces;
 using CapstoneProject.Domain.Common;
 using CapstoneProject.Domain.Entities;
 using CapstoneProject.Domain.Enums;
+using CapstoneProject.Application.Commons.Models.Complaints;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 
@@ -14,15 +16,21 @@ public class ChangeComplaintStatusCommandHandler : IRequestHandler<ChangeComplai
     private readonly IUnitOfWork _unitOfWork;
     private readonly ICurrentUserService _currentUserService;
     private readonly IComplaintContextResolver _complaintContextResolver;
+    private readonly IComplaintPolicyService _complaintPolicyService;
+    private readonly IOrbitCoinService _orbitCoinService;
 
     public ChangeComplaintStatusCommandHandler(
         IUnitOfWork unitOfWork,
         ICurrentUserService currentUserService,
-        IComplaintContextResolver complaintContextResolver)
+        IComplaintContextResolver complaintContextResolver,
+        IComplaintPolicyService complaintPolicyService,
+        IOrbitCoinService orbitCoinService)
     {
         _unitOfWork = unitOfWork;
         _currentUserService = currentUserService;
         _complaintContextResolver = complaintContextResolver;
+        _complaintPolicyService = complaintPolicyService;
+        _orbitCoinService = orbitCoinService;
     }
 
     public async Task<Result<ComplaintStatusUpdateDto>> Handle(ChangeComplaintStatusCommand command, CancellationToken cancellationToken)
@@ -50,7 +58,7 @@ public class ChangeComplaintStatusCommandHandler : IRequestHandler<ChangeComplai
 
         if (fromStatus == toStatus)
         {
-            var noChange = await BuildStatusDtoAsync(complaint, fromStatus, toStatus, command.Note, cancellationToken);
+            var noChange = await BuildStatusDtoAsync(complaint, fromStatus, toStatus, command.Note, false, null, null, cancellationToken);
             return Result<ComplaintStatusUpdateDto>.Success(noChange, "Không có thay đổi trạng thái.");
         }
 
@@ -65,8 +73,67 @@ public class ChangeComplaintStatusCommandHandler : IRequestHandler<ChangeComplai
             return Result<ComplaintStatusUpdateDto>.Failure($"Chuyển đổi trạng thái không hợp lệ: {fromStatus} -> {toStatus}.", ErrorCodeEnum.ValidationFailed);
 
         complaint.ComplaintStatus = toStatus;
+        var refundProcessed = false;
+        Guid? refundedPaymentRecordId = null;
+        decimal? refundAmount = null;
+
         if (toStatus == ComplaintStatusEnum.Resolved)
+        {
             complaint.ResolvedAt = VietnamDateTime.DbNow;
+            if (command.IssueRefund)
+            {
+                var refundPolicy = await _complaintPolicyService.ValidateRefundAsync(new ComplaintRefundPolicyInput
+                {
+                    ComplaintId = complaint.Id,
+                    UserId = complaint.UserId,
+                    CategoryKey = complaint.CategoryKey,
+                    ContextType = complaint.ContextType,
+                    ContextId = complaint.ContextId,
+                    OccurredAt = complaint.OccurredAt,
+                    Note = command.Note
+                }, cancellationToken);
+
+                if (!refundPolicy.IsSuccess)
+                    return Result<ComplaintStatusUpdateDto>.Failure(refundPolicy.ErrorMessage ?? "Không đủ điều kiện hoàn tiền.", ErrorCodeEnum.ValidationFailed);
+
+                var refundResult = await _orbitCoinService.CreditAsync(
+                    complaint.UserId,
+                    refundPolicy.RefundAmount,
+                    CoinTransactionTypeEnum.Refund,
+                    "PaymentRecord",
+                    refundPolicy.PaymentRecordId,
+                    0,
+                    refundPolicy.RefundReason,
+                    userId,
+                    cancellationToken);
+                if (!refundResult.Success)
+                    return Result<ComplaintStatusUpdateDto>.Failure(refundResult.Error ?? "Không thể thực hiện hoàn tiền.", ErrorCodeEnum.InvalidOperation);
+
+                var payment = await _unitOfWork.Repository<PaymentRecord>().GetQueryable()
+                    .FirstAsync(x => x.Id == refundPolicy.PaymentRecordId && !x.IsDeleted, cancellationToken);
+                payment.PaymentStatus = PaymentStatusEnum.Refunded;
+                payment.UpdateEntity(userId);
+                _unitOfWork.Repository<PaymentRecord>().Update(payment);
+
+                refundProcessed = true;
+                refundedPaymentRecordId = payment.Id;
+                refundAmount = refundPolicy.RefundAmount;
+
+                complaint.RefundProcessed = true;
+                complaint.RefundedPaymentRecordId = payment.Id;
+                complaint.RefundAmount = refundPolicy.RefundAmount;
+                complaint.RefundedAt = VietnamDateTime.DbNow;
+                complaint.RefundReason = refundPolicy.RefundReason;
+            }
+        }
+        else
+        {
+            complaint.RefundProcessed = false;
+            complaint.RefundedPaymentRecordId = null;
+            complaint.RefundAmount = null;
+            complaint.RefundedAt = null;
+            complaint.RefundReason = null;
+        }
 
         complaint.UpdateEntity(userId);
         complaintRepo.Update(complaint);
@@ -85,7 +152,7 @@ public class ChangeComplaintStatusCommandHandler : IRequestHandler<ChangeComplai
 
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-        var response = await BuildStatusDtoAsync(complaint, fromStatus, toStatus, history.Note, cancellationToken);
+        var response = await BuildStatusDtoAsync(complaint, fromStatus, toStatus, history.Note, refundProcessed, refundedPaymentRecordId, refundAmount, cancellationToken);
         return Result<ComplaintStatusUpdateDto>.Success(response, "Đã cập nhật trạng thái khiếu nại.");
     }
 
@@ -94,6 +161,9 @@ public class ChangeComplaintStatusCommandHandler : IRequestHandler<ChangeComplai
         ComplaintStatusEnum fromStatus,
         ComplaintStatusEnum toStatus,
         string? note,
+        bool refundProcessed,
+        Guid? refundedPaymentRecordId,
+        decimal? refundAmount,
         CancellationToken cancellationToken)
     {
         return new ComplaintStatusUpdateDto
@@ -107,6 +177,10 @@ public class ChangeComplaintStatusCommandHandler : IRequestHandler<ChangeComplai
             CurrentStatus = complaint.ComplaintStatus.ToString(),
             ChangedAt = VietnamDateTime.DbNow,
             Note = note,
+            IssueRefund = refundProcessed,
+            RefundProcessed = refundProcessed,
+            RefundedPaymentRecordId = refundedPaymentRecordId,
+            RefundAmount = refundAmount,
             ResolvedAt = complaint.ResolvedAt,
             ContextType = complaint.ContextType,
             ContextId = complaint.ContextId,

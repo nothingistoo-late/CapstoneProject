@@ -49,6 +49,8 @@ public class CreateMapCommandHandler : IRequestHandler<CreateMapCommand, Result<
             ContentVersion = 1
         };
         map.InitializeEntity(userId);
+        map.RootMapId = map.Id;
+        map.IsActiveVersion = true;
 
         var mapRepo = _unitOfWork.Repository<Map>();
         await mapRepo.AddAsync(map);

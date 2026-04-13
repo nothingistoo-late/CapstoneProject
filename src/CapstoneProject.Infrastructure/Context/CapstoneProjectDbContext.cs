@@ -41,12 +41,6 @@ public class CapstoneProjectDbContext : IdentityDbContext<AppUser, AppRole, Guid
     public DbSet<XpSourceConfig> XpSourceConfigs { get; set; }
     public DbSet<MapSolveScoreConfig> MapSolveScoreConfigs { get; set; }
 
-    // QuackOrbit: Competitive
-    public DbSet<Match> Matches { get; set; }
-    public DbSet<Room> Rooms { get; set; }
-    public DbSet<RoomParticipant> RoomParticipants { get; set; }
-    public DbSet<UserMatchResult> UserMatchResults { get; set; }
-
     // QuackOrbit: Marketplace
     public DbSet<Package> Packages { get; set; }
     public DbSet<UserPackage> UserPackages { get; set; }

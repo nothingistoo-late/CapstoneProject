@@ -409,6 +409,8 @@ public static class SeedingExtension
             logger.LogInformation("Map seeding from SQL script is disabled (DataSeeding:SeedMapsFromSqlScript=false).");
         }
 
+        await BackfillMapVersionLineDataAsync(dbContext, existingAdmin?.Id, logger);
+
         // Seed Learning Goals (idempotent by Name).
         var learningGoalSeeds = new[]
         {
@@ -635,6 +637,73 @@ public static class SeedingExtension
         await SeedComplaintConfigurationDataAsync(dbContext, existingAdmin?.Id, logger);
 
         logger.LogInformation("Data seeding completed.");
+    }
+
+    private static async Task BackfillMapVersionLineDataAsync(CapstoneProjectDbContext dbContext, Guid? userId, ILogger logger)
+    {
+        var actorId = userId ?? Guid.Empty;
+
+        // Legacy maps created before version-line feature: map is root of its own line.
+        var mapsMissingRoot = await dbContext.Maps
+            .Where(m => !m.IsDeleted && m.RootMapId == null)
+            .ToListAsync();
+
+        if (mapsMissingRoot.Count > 0)
+        {
+            foreach (var map in mapsMissingRoot)
+            {
+                map.RootMapId = map.Id;
+                map.IsActiveVersion = true;
+                map.UpdateEntity(actorId);
+            }
+
+            await dbContext.SaveChangesAsync();
+            logger.LogInformation("Backfilled RootMapId for {Count} legacy maps.", mapsMissingRoot.Count);
+        }
+
+        // Normalize: keep only one active version per line.
+        var rootMapIds = await dbContext.Maps
+            .Where(m => !m.IsDeleted)
+            .Select(m => m.RootMapId ?? m.Id)
+            .Distinct()
+            .ToListAsync();
+
+        var normalizedLines = 0;
+        foreach (var rootMapId in rootMapIds)
+        {
+            var lineMaps = await dbContext.Maps
+                .Where(m => !m.IsDeleted && (m.RootMapId ?? m.Id) == rootMapId)
+                .OrderByDescending(m => m.IsPublished)
+                .ThenByDescending(m => m.ContentVersion)
+                .ThenByDescending(m => m.CreatedAt)
+                .ToListAsync();
+
+            if (lineMaps.Count == 0)
+                continue;
+
+            var shouldBeActive = lineMaps.First();
+            var changed = false;
+
+            foreach (var map in lineMaps)
+            {
+                var expectedActive = map.Id == shouldBeActive.Id;
+                if (map.IsActiveVersion != expectedActive)
+                {
+                    map.IsActiveVersion = expectedActive;
+                    map.UpdateEntity(actorId);
+                    changed = true;
+                }
+            }
+
+            if (changed)
+                normalizedLines++;
+        }
+
+        if (normalizedLines > 0)
+        {
+            await dbContext.SaveChangesAsync();
+            logger.LogInformation("Normalized active-version flag for {Count} map lines.", normalizedLines);
+        }
     }
 
     private static async Task SeedXpConfigurationDataAsync(CapstoneProjectDbContext dbContext, Guid? userId, ILogger logger)

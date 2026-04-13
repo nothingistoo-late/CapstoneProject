@@ -69,6 +69,11 @@ public class GetComplaintDetailQueryHandler : IRequestHandler<GetComplaintDetail
                 cancellationToken),
             CreatedAt = complaint.CreatedAt,
             ResolvedAt = complaint.ResolvedAt,
+            RefundProcessed = complaint.RefundProcessed,
+            RefundedPaymentRecordId = complaint.RefundedPaymentRecordId,
+            RefundAmount = complaint.RefundAmount,
+            RefundedAt = complaint.RefundedAt,
+            RefundReason = complaint.RefundReason,
             Messages = complaint.Messages
                 .Where(m => !m.IsDeleted)
                 .OrderBy(m => m.CreatedAt)

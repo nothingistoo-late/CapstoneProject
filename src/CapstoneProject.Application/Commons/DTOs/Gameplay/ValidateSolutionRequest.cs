@@ -17,7 +17,7 @@ public class ValidateSolutionRequest
     /// <summary>Lobby room id (in-memory) nếu gọi từ lobby.</summary>
     public Guid? RoomId { get; set; }
 
-    /// <summary>Match id (nếu competitive có server-side submit).</summary>
+    /// <summary>Match id (nếu có) để lưu trace phiên chơi.</summary>
     public Guid? MatchId { get; set; }
 
     /// <summary>Kết quả chạy engine (client): thắng/thua — dùng để chấm điểm lobby thay vì đo độ dài AST.</summary>

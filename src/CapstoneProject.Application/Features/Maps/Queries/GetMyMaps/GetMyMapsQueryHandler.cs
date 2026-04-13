@@ -43,28 +43,39 @@ public class GetMyMapsQueryHandler : IRequestHandler<GetMyMapsQuery, Result<Pagi
             .Select(m => m.Id)
             .ToListAsync(cancellationToken);
         var purchasedMapIds = await paymentRepo.GetQueryable()
-            .Where(p => !p.IsDeleted && p.UserId == userId.Value && p.MapId != null)
+            .Where(p => !p.IsDeleted
+                        && p.UserId == userId.Value
+                        && p.MapId != null
+                        && p.PaymentStatus == PaymentStatusEnum.Completed)
             .Select(p => p.MapId!.Value)
             .Distinct()
             .ToListAsync(cancellationToken);
 
         var allOwnedIds = myMapIds.Union(createdMapIds).Union(purchasedMapIds).Distinct().ToList();
-        var ownedMapIds = request.IsAuthorOnly
-            ? allOwnedIds.Where(id => createdMapIds.Contains(id)).ToList()
-            : allOwnedIds;
-        if (ownedMapIds.Count == 0)
+        if (allOwnedIds.Count == 0)
         {
             var empty = PaginationResult<MapListItemDto>.Success(new List<MapListItemDto>(), 1, request.PageSize, 0, "Đã truy xuất thành công");
             return Result<PaginationResult<MapListItemDto>>.Success(empty, "Đã lấy danh sách bản đồ của bạn.");
         }
 
+        var ownedRootMapIds = await mapRepo.GetQueryable()
+            .Where(m => m.Status == EntityStatusEnum.Active && allOwnedIds.Contains(m.Id))
+            .Select(m => m.RootMapId ?? m.Id)
+            .Distinct()
+            .ToListAsync(cancellationToken);
+
         var query = mapRepo.GetQueryable()
-            .Where(m => m.Status == EntityStatusEnum.Active && ownedMapIds.Contains(m.Id))
+            .Where(m => m.Status == EntityStatusEnum.Active && !m.IsDeleted)
             .Include(m => m.MapDetails)
             .Include(m => m.MapTags).ThenInclude(mt => mt.Tag)
             .Include(m => m.MapMedias)
             .Include(m => m.Creator)
             .AsNoTracking();
+
+        if (request.IsAuthorOnly)
+            query = query.Where(m => m.CreatedBy == userId.Value);
+        else
+            query = query.Where(m => m.IsActiveVersion && ownedRootMapIds.Contains(m.RootMapId ?? m.Id));
 
         var total = await query.CountAsync(cancellationToken);
         var pageNumber = Math.Max(1, request.PageNumber);

@@ -26,6 +26,16 @@ public class Map : BaseEntity
     /// <summary>Tăng khi nội dung map thay đổi có ý nghĩa (update level/JSON). Bản mới = 1.</summary>
     public int ContentVersion { get; set; } = 1;
 
+    /// <summary>
+    /// Nhóm phiên bản của cùng một game line. Bản đầu tiên tự tham chiếu chính nó.
+    /// </summary>
+    public Guid? RootMapId { get; set; }
+
+    /// <summary>
+    /// Chỉ một phiên bản active trong mỗi game line tại một thời điểm.
+    /// </summary>
+    public bool IsActiveVersion { get; set; } = true;
+
     public virtual AppUser? Creator { get; set; }
     public virtual ICollection<MapTag> MapTags { get; set; } = new List<MapTag>();
     /// <summary>Các level (JSON layout) của map, sắp xếp theo <see cref="MapDetail.LevelOrder"/>.</summary>

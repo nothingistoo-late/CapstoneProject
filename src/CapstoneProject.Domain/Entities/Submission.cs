@@ -4,7 +4,7 @@ using CapstoneProject.Domain.Enums;
 namespace CapstoneProject.Domain.Entities;
 
 /// <summary>
-/// Bài nộp (block strategy) của người chơi cho một map - chơi đơn hoặc trong match.
+/// Bài nộp (block strategy) của người chơi cho một map.
 /// Bảng Submissions: PK Id (SubmissionId), FK UserId, FK MapId, AstSpec, BytecodeSpec, Status (ResultStatus), Score, StepsUsed, BlocksUsed, CreatedAt (BaseEntity); thêm Language, MatchId.
 /// </summary>
 public class Submission : BaseEntity

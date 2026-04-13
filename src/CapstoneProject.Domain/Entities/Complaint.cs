@@ -20,6 +20,11 @@ public class Complaint : BaseEntity
     public ComplaintStatusEnum ComplaintStatus { get; set; } = ComplaintStatusEnum.Open;
 
     public DateTime? ResolvedAt { get; set; }
+    public bool RefundProcessed { get; set; }
+    public Guid? RefundedPaymentRecordId { get; set; }
+    public decimal? RefundAmount { get; set; }
+    public DateTime? RefundedAt { get; set; }
+    public string? RefundReason { get; set; }
 
     public virtual AppUser User { get; set; } = null!;
     public virtual ICollection<ComplaintMessage> Messages { get; set; } = new List<ComplaintMessage>();

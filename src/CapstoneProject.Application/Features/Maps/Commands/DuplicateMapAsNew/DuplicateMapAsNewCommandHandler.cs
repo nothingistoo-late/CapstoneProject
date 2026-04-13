@@ -72,9 +72,11 @@ public class DuplicateMapAsNewCommandHandler : IRequestHandler<DuplicateMapAsNew
             AvatarUrl = source.AvatarUrl,
             EditorialContent = req.EditorialContent ?? source.EditorialContent,
             UnlockEditorialAfterStars = req.UnlockEditorialAfterStars ?? source.UnlockEditorialAfterStars,
-            ContentVersion = 1
+            ContentVersion = 1,
+            IsActiveVersion = true
         };
         newMap.InitializeEntity(userId);
+        newMap.RootMapId = newMap.Id;
         await mapRepo.AddAsync(newMap);
 
         if (req.TagIds != null)

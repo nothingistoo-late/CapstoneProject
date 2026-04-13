@@ -29,7 +29,7 @@ public class GetMapsQueryHandler : IRequestHandler<GetMapsQuery, Result<Paginati
         if (request.MapStatus.HasValue)
             query = query.Where(m => m.MapStatus == request.MapStatus.Value);
         else if (request.PublishedOnly == true)
-            query = query.Where(m => m.IsPublished && m.MapStatus == MapStatusEnum.Published);
+            query = query.Where(m => m.IsPublished && m.IsActiveVersion && m.MapStatus == MapStatusEnum.Published);
         if (request.Difficulty.HasValue)
         {
             var d = request.Difficulty.Value;

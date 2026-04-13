@@ -1,7 +1,7 @@
 namespace CapstoneProject.Domain.Enums;
 
 /// <summary>
-/// Trạng thái phòng thi đấu (competitive).
+/// Trạng thái phòng lobby.
 /// </summary>
 public enum RoomStatusEnum
 {

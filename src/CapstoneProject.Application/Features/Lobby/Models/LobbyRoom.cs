@@ -5,13 +5,12 @@ namespace CapstoneProject.Application.Features.Lobby.Models;
 
 /// <summary>
 /// In-memory game lobby room (Gunny/GunBound style).
-/// Aligned with Domain Room: Id (RoomId), Code (RoomCode), RoomStatusEnum (Status), MaxPlayers.
-/// HostId/IsHost align with Domain RoomParticipant.IsOwner.
+/// Contains runtime room state for matching players before a game starts.
 /// </summary>
 public class LobbyRoom
 {
     public Guid RoomId { get; set; }
-    /// <summary>Same as Domain Room.Code; human-readable join code.</summary>
+    /// <summary>Human-readable join code for players entering the room.</summary>
     public string RoomCode { get; set; } = string.Empty;
     public Guid HostId { get; set; }
     public ConcurrentDictionary<Guid, LobbyPlayer> Players { get; } = new();

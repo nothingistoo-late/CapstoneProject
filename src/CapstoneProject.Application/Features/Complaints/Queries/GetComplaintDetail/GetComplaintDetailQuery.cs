@@ -24,6 +24,11 @@ public class ComplaintDetailDto
     public ComplaintContextResolvedDto? ContextResolved { get; set; }
     public DateTime? CreatedAt { get; set; }
     public DateTime? ResolvedAt { get; set; }
+    public bool RefundProcessed { get; set; }
+    public Guid? RefundedPaymentRecordId { get; set; }
+    public decimal? RefundAmount { get; set; }
+    public DateTime? RefundedAt { get; set; }
+    public string? RefundReason { get; set; }
 
     public List<ComplaintMessageDto> Messages { get; set; } = new();
     public List<ComplaintStatusHistoryDto> StatusHistories { get; set; } = new();

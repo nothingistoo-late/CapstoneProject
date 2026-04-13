@@ -21,6 +21,7 @@ using CapstoneProject.Application.Features.Maps.Queries.CheckMapOwnership;
 using CapstoneProject.Application.Features.Maps.Commands.UpdateMapFromJsonFile;
 using CapstoneProject.Application.Features.Maps.Commands.PublishMap;
 using CapstoneProject.Application.Features.Maps.Commands.AddMapToMyMaps;
+using CapstoneProject.Application.Features.Maps.Commands.CreateMapVersionFromApproved;
 using CapstoneProject.Application.Common.Enums;
 
 namespace CapstoneProject.API.Controllers.Learner;
@@ -423,6 +424,25 @@ public class LearnerMapController : ControllerBase
         [FromBody(EmptyBodyBehavior = EmptyBodyBehavior.Allow)] DuplicateMapAsNewRequest? request = null)
     {
         var result = await _mediator.Send(new DuplicateMapAsNewCommand(id, request));
+        if (result.IsSuccess && result.Data != default)
+            return CreatedAtAction(nameof(GetMapById), new { id = result.Data }, result);
+        return StatusCode(result.GetHttpStatusCode(), result);
+    }
+
+    /// <summary>
+    /// Tạo version mới (Draft) từ map đã duyệt/xuất bản trong cùng game line.
+    /// </summary>
+    [HttpPost("{id:guid}/create-version")]
+    [AuthorizeRoles(nameof(RoleEnum.Learner), nameof(RoleEnum.Admin), nameof(RoleEnum.Moderator))]
+    [ProducesResponseType(typeof(Result<Guid>), StatusCodes.Status201Created)]
+    [ProducesResponseType(typeof(Result<Guid>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(Result<Guid>), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(Result<Guid>), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(Result<Guid>), StatusCodes.Status404NotFound)]
+    [SwaggerOperation(Summary = "Tạo version mới từ map đã duyệt", Description = "Creates a new draft version in the same game line for approved/published map.", OperationId = "Learner_CreateMapVersionFromApproved", Tags = new[] { "Learner - Maps" })]
+    public async Task<IActionResult> CreateMapVersion(Guid id)
+    {
+        var result = await _mediator.Send(new CreateMapVersionFromApprovedCommand(id));
         if (result.IsSuccess && result.Data != default)
             return CreatedAtAction(nameof(GetMapById), new { id = result.Data }, result);
         return StatusCode(result.GetHttpStatusCode(), result);

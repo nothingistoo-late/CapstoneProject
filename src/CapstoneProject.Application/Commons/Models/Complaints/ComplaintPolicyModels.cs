@@ -33,3 +33,24 @@ public class ComplaintCreatePolicyResult
     public DateTime? OccurredAt { get; set; }
     public string? NormalizedContextJson { get; set; }
 }
+
+public class ComplaintRefundPolicyInput
+{
+    public Guid ComplaintId { get; set; }
+    public Guid UserId { get; set; }
+    public string CategoryKey { get; set; } = string.Empty;
+    public string? ContextType { get; set; }
+    public Guid? ContextId { get; set; }
+    public Guid? PaymentRecordId { get; set; }
+    public DateTime? OccurredAt { get; set; }
+    public string? Note { get; set; }
+}
+
+public class ComplaintRefundPolicyResult
+{
+    public bool IsSuccess { get; set; }
+    public string? ErrorMessage { get; set; }
+    public Guid PaymentRecordId { get; set; }
+    public decimal RefundAmount { get; set; }
+    public string RefundReason { get; set; } = string.Empty;
+}

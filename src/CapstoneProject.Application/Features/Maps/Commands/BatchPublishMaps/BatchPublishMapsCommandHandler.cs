@@ -42,10 +42,44 @@ public class BatchPublishMapsCommandHandler : IRequestHandler<BatchPublishMapsCo
 
         foreach (var map in toPublish)
         {
+            var rootMapId = map.RootMapId ?? map.Id;
+            if (!map.RootMapId.HasValue)
+                map.RootMapId = rootMapId;
+
+            var lineMaps = await repo.GetQueryable()
+                .Where(m => !m.IsDeleted && (m.RootMapId ?? m.Id) == rootMapId)
+                .ToListAsync(cancellationToken);
+
+            foreach (var sibling in lineMaps.Where(m => m.Id != map.Id && m.IsActiveVersion))
+            {
+                sibling.IsActiveVersion = false;
+                sibling.IsPublished = false;
+                sibling.UpdateEntity(userIdNullable.Value);
+                repo.Update(sibling);
+            }
+
             map.MapStatus = MapStatusEnum.Published;
             map.IsPublished = true;
+            map.IsActiveVersion = true;
             map.UpdateEntity(userIdNullable!.Value);
             repo.Update(map);
+
+            var publishedInactive = lineMaps
+                .Where(m => m.Id != map.Id && !m.IsDeleted && m.MapStatus == MapStatusEnum.Published)
+                .OrderByDescending(m => m.ContentVersion)
+                .ThenByDescending(m => m.CreatedAt)
+                .ToList();
+            var keepSet = publishedInactive.Take(2).Select(m => m.Id).ToHashSet();
+            foreach (var old in publishedInactive.Where(m => !keepSet.Contains(m.Id)))
+            {
+                old.IsActiveVersion = false;
+                old.IsPublished = false;
+                old.IsDeleted = true;
+                old.DeletedAt = DateTime.UtcNow;
+                old.DeletedBy = userIdNullable.Value;
+                old.UpdateEntity(userIdNullable.Value);
+                repo.Update(old);
+            }
         }
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 

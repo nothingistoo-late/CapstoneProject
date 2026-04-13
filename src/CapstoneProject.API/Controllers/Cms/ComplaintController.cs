@@ -97,7 +97,7 @@ public class CmsComplaintController : ControllerBase
     [SwaggerOperation(Summary = "Change complaint status", OperationId = "Cms_ChangeComplaintStatus", Tags = new[] { "CMS - Complaints" })]
     public async Task<IActionResult> ChangeStatus(Guid complaintId, [FromBody] ChangeComplaintStatusRequest request)
     {
-        var result = await _mediator.Send(new ChangeComplaintStatusCommand(complaintId, request.ToStatus, request.Note));
+        var result = await _mediator.Send(new ChangeComplaintStatusCommand(complaintId, request.ToStatus, request.Note, request.IssueRefund));
         return StatusCode(result.GetHttpStatusCode(), result);
     }
 

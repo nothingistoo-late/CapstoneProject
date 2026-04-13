@@ -37,6 +37,20 @@ public class SubmitMapForReviewCommandHandler : IRequestHandler<SubmitMapForRevi
         if (map.MapStatus != MapStatusEnum.Draft)
             return Result.Failure($"Bản đồ không thể được gửi để xem xét. Trạng thái dự kiến: Bản nháp. Trạng thái hiện tại: {map.MapStatus}. Chỉ có thể gửi bản đồ dự thảo.", ErrorCodeEnum.InvalidOperation);
 
+        var rootMapId = map.RootMapId ?? map.Id;
+        if (!map.RootMapId.HasValue)
+            map.RootMapId = rootMapId;
+        var hasPendingSameLine = await mapRepo.GetQueryable().AnyAsync(
+            m => !m.IsDeleted
+                 && m.Id != map.Id
+                 && (m.RootMapId ?? m.Id) == rootMapId
+                 && m.MapStatus == MapStatusEnum.PendingReview,
+            cancellationToken);
+        if (hasPendingSameLine)
+            return Result.Failure(
+                "Đã có một version khác đang chờ duyệt trong game line này. Vui lòng xử lý version đó trước.",
+                ErrorCodeEnum.InvalidOperation);
+
         map.MapStatus = MapStatusEnum.PendingReview;
         map.UpdateEntity(userId);
         mapRepo.Update(map);

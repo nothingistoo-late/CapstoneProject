@@ -42,6 +42,11 @@ public class UpdateMapCommandHandler : IRequestHandler<UpdateMapCommand, Result>
         if (map.CreatedBy != userId && !isAdminOrMod)
             return Result.Failure("Bạn không có quyền cập nhật bản đồ này.", ErrorCodeEnum.Forbidden);
 
+        if (map.MapStatus == MapStatusEnum.Approved || map.MapStatus == MapStatusEnum.Published)
+            return Result.Failure(
+                "Map đã được duyệt/xuất bản không thể sửa trực tiếp. Vui lòng tạo version mới từ bản hiện tại rồi gửi duyệt lại.",
+                ErrorCodeEnum.InvalidOperation);
+
         var req = command.Request;
         map.Title = req.Title;
         map.Description = req.Description;

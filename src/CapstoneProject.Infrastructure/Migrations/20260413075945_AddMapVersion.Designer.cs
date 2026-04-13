@@ -3,6 +3,7 @@ using System;
 using CapstoneProject.Infrastructure.Context;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace CapstoneProject.Infrastructure.Migrations
 {
     [DbContext(typeof(CapstoneProjectDbContext))]
-    partial class CapstoneProjectDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260413075945_AddMapVersion")]
+    partial class AddMapVersion
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -441,21 +444,6 @@ namespace CapstoneProject.Infrastructure.Migrations
 
                     b.Property<DateTime?>("OccurredAt")
                         .HasColumnType("timestamp without time zone");
-
-                    b.Property<decimal?>("RefundAmount")
-                        .HasColumnType("numeric");
-
-                    b.Property<bool>("RefundProcessed")
-                        .HasColumnType("boolean");
-
-                    b.Property<string>("RefundReason")
-                        .HasColumnType("text");
-
-                    b.Property<DateTime?>("RefundedAt")
-                        .HasColumnType("timestamp without time zone");
-
-                    b.Property<Guid?>("RefundedPaymentRecordId")
-                        .HasColumnType("uuid");
 
                     b.Property<DateTime?>("ResolvedAt")
                         .HasColumnType("timestamp without time zone");

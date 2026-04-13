@@ -7,7 +7,7 @@ using CapstoneProject.Domain.Enums;
 namespace CapstoneProject.Infrastructure.Context.Configurations;
 
 /// <summary>
-/// Cấu hình Fluent API cho các entity QuackOrbit (Map, Challenge, Match, Package, ...).
+/// Cấu hình Fluent API cho các entity QuackOrbit (Map, Challenge, Package, ...).
 /// </summary>
 public static class QuackOrbitEntityConfiguration
 {
@@ -33,10 +33,6 @@ public static class QuackOrbitEntityConfiguration
         builder.Entity<UserPackage>(ConfigureUserPackage);
         builder.Entity<Payment>(ConfigurePayment);
         builder.Entity<PaymentRecord>(ConfigurePaymentRecord);
-        builder.Entity<Match>(ConfigureMatch);
-        builder.Entity<Room>(ConfigureRoom);
-        builder.Entity<RoomParticipant>(ConfigureRoomParticipant);
-        builder.Entity<UserMatchResult>(ConfigureUserMatchResult);
         builder.Entity<MapRating>(ConfigureMapRating);
         builder.Entity<MapReport>(ConfigureMapReport);
         builder.Entity<Complaint>(ConfigureComplaint);
@@ -115,6 +111,9 @@ public static class QuackOrbitEntityConfiguration
         e.HasIndex(x => x.MapStatus);
         e.HasIndex(x => x.IsPublished);
         e.Property(x => x.ContentVersion).HasDefaultValue(1);
+        e.Property(x => x.IsActiveVersion).HasDefaultValue(true);
+        e.HasIndex(x => x.RootMapId);
+        e.HasIndex(x => new { x.RootMapId, x.IsActiveVersion });
         e.HasMany(x => x.MapTags).WithOne(x => x.Map).HasForeignKey(x => x.MapId).OnDelete(DeleteBehavior.Cascade);
         e.HasMany(x => x.MapDetails).WithOne(x => x.Map).HasForeignKey(x => x.MapId).OnDelete(DeleteBehavior.Cascade);
         e.HasMany(x => x.MapMedias).WithOne(x => x.Map).HasForeignKey(x => x.MapId).OnDelete(DeleteBehavior.Cascade);
@@ -260,31 +259,6 @@ public static class QuackOrbitEntityConfiguration
         e.Property(x => x.PaymentStatus).HasConversion<int>();
         e.HasIndex(x => x.UserId);
         e.HasIndex(x => x.PaidAt);
-    }
-
-    static void ConfigureMatch(EntityTypeBuilder<Match> e)
-    {
-        e.HasIndex(x => x.MapId);
-        e.HasMany(x => x.Rooms).WithOne(x => x.Match).HasForeignKey(x => x.MatchId).OnDelete(DeleteBehavior.Cascade);
-        e.HasMany(x => x.UserMatchResults).WithOne(x => x.Match).HasForeignKey(x => x.MatchId).OnDelete(DeleteBehavior.Cascade);
-    }
-
-    static void ConfigureRoom(EntityTypeBuilder<Room> e)
-    {
-        e.Property(x => x.RoomStatus).HasConversion<int>();
-        e.HasIndex(x => x.MatchId);
-        e.HasIndex(x => x.Code).IsUnique().HasFilter("\"Code\" IS NOT NULL");
-        e.HasMany(x => x.RoomParticipants).WithOne(x => x.Room).HasForeignKey(x => x.RoomId).OnDelete(DeleteBehavior.Cascade);
-    }
-
-    static void ConfigureRoomParticipant(EntityTypeBuilder<RoomParticipant> e)
-    {
-        e.HasIndex(x => new { x.RoomId, x.UserId }).IsUnique();
-    }
-
-    static void ConfigureUserMatchResult(EntityTypeBuilder<UserMatchResult> e)
-    {
-        e.HasIndex(x => new { x.MatchId, x.UserId }).IsUnique();
     }
 
     static void ConfigureMapRating(EntityTypeBuilder<MapRating> e)

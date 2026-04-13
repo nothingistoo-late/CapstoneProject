@@ -34,24 +34,44 @@ public class CheckMapOwnershipQueryHandler : IRequestHandler<CheckMapOwnershipQu
         if (map == null)
             return Result<CheckMapOwnershipDto>.Success(dto, "Đã kiểm tra quyền sở hữu bản đồ.");
 
+        var rootMapId = map.RootMapId ?? map.Id;
+        var lineMapIds = await mapRepo.GetQueryable()
+            .Where(m => m.Status == EntityStatusEnum.Active && (m.RootMapId ?? m.Id) == rootMapId)
+            .Select(m => m.Id)
+            .ToListAsync(cancellationToken);
+
         var isAuthor = map.CreatedBy.HasValue && map.CreatedBy.Value == userId.Value;
         var purchased = false;
+        DateTime? purchasedAt = null;
         var inMyMap = false;
         if (!isAuthor)
         {
             var paymentRepo = _unitOfWork.Repository<PaymentRecord>();
-            purchased = await paymentRepo.GetQueryable()
-                .AnyAsync(p => !p.IsDeleted && p.UserId == userId.Value && p.MapId == request.MapId && p.PaymentStatus == PaymentStatusEnum.Completed, cancellationToken);
+            purchasedAt = await paymentRepo.GetQueryable()
+                .Where(p => !p.IsDeleted
+                            && p.UserId == userId.Value
+                            && p.MapId.HasValue
+                            && lineMapIds.Contains(p.MapId.Value)
+                            && p.PaymentStatus == PaymentStatusEnum.Completed)
+                .OrderByDescending(p => p.CreatedAt)
+                .Select(p => (DateTime?)p.CreatedAt)
+                .FirstOrDefaultAsync(cancellationToken);
+            purchased = purchasedAt.HasValue;
             if (!purchased)
             {
                 var myMapRepo = _unitOfWork.Repository<MyMap>();
                 inMyMap = await myMapRepo.GetQueryable()
-                    .AnyAsync(mm => !mm.IsDeleted && mm.UserId == userId.Value && mm.MapId == request.MapId, cancellationToken);
+                    .AnyAsync(mm => !mm.IsDeleted
+                                    && mm.UserId == userId.Value
+                                    && lineMapIds.Contains(mm.MapId),
+                        cancellationToken);
             }
         }
 
         dto.IsOwned = isAuthor || purchased || inMyMap;
         dto.IsAuthor = isAuthor;
+        dto.IsPurchased = purchased;
+        dto.PurchasedAt = purchasedAt;
         return Result<CheckMapOwnershipDto>.Success(dto, "Đã kiểm tra quyền sở hữu bản đồ.");
     }
 }

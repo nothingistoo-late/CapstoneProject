@@ -10,5 +10,7 @@ public class ChangeComplaintStatusRequest
 
     [MaxLength(2000)]
     public string? Note { get; set; }
+
+    public bool IssueRefund { get; set; }
 }
 

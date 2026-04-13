@@ -23,8 +23,32 @@ public class GetMapByIdQueryHandler : IRequestHandler<GetMapByIdQuery, Result<Ma
 
     public async Task<Result<MapDetailDto>> Handle(GetMapByIdQuery request, CancellationToken cancellationToken)
     {
-        var map = await _unitOfWork.Repository<Map>().GetQueryable()
+        var mapRepo = _unitOfWork.Repository<Map>();
+        var requestedMap = await mapRepo.GetQueryable()
             .Where(m => m.Id == request.MapId && m.Status == EntityStatusEnum.Active)
+            .AsNoTracking()
+            .FirstOrDefaultAsync(cancellationToken);
+        if (requestedMap == null)
+            return Result<MapDetailDto>.Failure($"Không tìm thấy bản đồ có Id: {request.MapId}.", ErrorCodeEnum.NotFound);
+
+        var rootMapId = requestedMap.RootMapId ?? requestedMap.Id;
+        var resolvedMapId = requestedMap.Id;
+        if (requestedMap.IsDeleted || !requestedMap.IsActiveVersion)
+        {
+            var activeMapId = await mapRepo.GetQueryable()
+                .Where(m => !m.IsDeleted
+                            && m.Status == EntityStatusEnum.Active
+                            && (m.RootMapId ?? m.Id) == rootMapId
+                            && m.IsActiveVersion)
+                .OrderByDescending(m => m.ContentVersion)
+                .Select(m => (Guid?)m.Id)
+                .FirstOrDefaultAsync(cancellationToken);
+            if (activeMapId.HasValue)
+                resolvedMapId = activeMapId.Value;
+        }
+
+        var map = await mapRepo.GetQueryable()
+            .Where(m => m.Id == resolvedMapId && m.Status == EntityStatusEnum.Active)
             .Include(m => m.MapDetails).ThenInclude(d => d.Hints)
             .Include(m => m.MapMedias)
             .Include(m => m.MapTags).ThenInclude(mt => mt.Tag)

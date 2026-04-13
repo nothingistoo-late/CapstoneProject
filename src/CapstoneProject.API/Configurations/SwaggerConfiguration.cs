@@ -66,10 +66,6 @@ public static class SwaggerConfiguration
                 {
                     mainTag = "Gameplay";
                 }
-                else if (relativePath?.Contains("/competitive/") == true)
-                {
-                    mainTag = "Competitive";
-                }
                 else if (relativePath?.Contains("/marketplace/") == true)
                 {
                     mainTag = "Marketplace";

@@ -8,7 +8,8 @@ namespace CapstoneProject.Application.Features.Complaints.Commands.ChangeComplai
 public record ChangeComplaintStatusCommand(
     Guid ComplaintId,
     ComplaintStatusEnum ToStatus,
-    string? Note = null) : IRequest<Result<ComplaintStatusUpdateDto>>;
+    string? Note = null,
+    bool IssueRefund = false) : IRequest<Result<ComplaintStatusUpdateDto>>;
 
 public class ComplaintStatusUpdateDto
 {
@@ -21,6 +22,10 @@ public class ComplaintStatusUpdateDto
     public string CurrentStatus { get; set; } = string.Empty;
     public DateTime ChangedAt { get; set; }
     public string? Note { get; set; }
+    public bool IssueRefund { get; set; }
+    public bool RefundProcessed { get; set; }
+    public Guid? RefundedPaymentRecordId { get; set; }
+    public decimal? RefundAmount { get; set; }
     public DateTime? ResolvedAt { get; set; }
     public string? ContextType { get; set; }
     public Guid? ContextId { get; set; }

@@ -14,7 +14,7 @@ public class UserMapPlayHistory : BaseEntity
     /// <summary>Level đang chơi (MapDetails.Id), optional.</summary>
     public Guid? MapDetailId { get; set; }
 
-    /// <summary>Chế độ chơi: Single/Lobby/Competitive.</summary>
+    /// <summary>Chế độ chơi: Single/Lobby.</summary>
     public PlayModeEnum PlayMode { get; set; }
 
     /// <summary>Thời gian bắt đầu validate / chạy mô phỏng.</summary>
@@ -41,8 +41,8 @@ public class UserMapPlayHistory : BaseEntity
     public Guid? ExecutionsResultId { get; set; }
 
     /// <summary>
-    /// MatchId/RoomId (tùy mode) để trace nguồn game.
-    /// Lobby dùng RoomId (in-memory) truyền xuống; competitive dùng MatchId (nếu triển khai submit server-side).
+    /// RoomId/MatchId (tùy mode) để trace nguồn game.
+    /// Lobby dùng RoomId (in-memory).
     /// </summary>
     public Guid? RoomId { get; set; }
     public Guid? MatchId { get; set; }

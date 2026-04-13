@@ -12,6 +12,13 @@ namespace CapstoneProject.Infrastructure.Services;
 public class ComplaintPolicyService : IComplaintPolicyService
 {
     private const string OtherCategoryKey = "Other";
+    private static readonly HashSet<string> RefundableCategories = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "PaymentIssue",
+        "AccessIssue",
+        "GameplayScoringIssue",
+        "TrialIssue"
+    };
 
     private readonly IUnitOfWork _unitOfWork;
     private readonly CapstoneProjectDbContext _dbContext;
@@ -111,6 +118,68 @@ public class ComplaintPolicyService : IComplaintPolicyService
         };
     }
 
+    public async Task<ComplaintRefundPolicyResult> ValidateRefundAsync(ComplaintRefundPolicyInput input, CancellationToken cancellationToken)
+    {
+        if (input.ComplaintId == Guid.Empty)
+            return RefundFail("ComplaintId là bắt buộc.");
+
+        if (!RefundableCategories.Contains(input.CategoryKey))
+            return RefundFail("Danh mục khiếu nại này không hỗ trợ hoàn tiền.");
+
+        var complaint = await _unitOfWork.Repository<Complaint>().GetQueryable()
+            .AsNoTracking()
+            .FirstOrDefaultAsync(x => !x.IsDeleted && x.Id == input.ComplaintId && x.UserId == input.UserId, cancellationToken);
+        if (complaint == null)
+            return RefundFail("Không tìm thấy khiếu nại hợp lệ của người dùng.");
+
+        if (complaint.ComplaintStatus != ComplaintStatusEnum.Resolved)
+            return RefundFail("Chỉ khiếu nại đã được giải quyết mới có thể hoàn tiền.");
+
+        if (!complaint.CreatedAt.HasValue)
+            return RefundFail("Không xác định được thời điểm tạo khiếu nại.");
+
+        var anchorTime = complaint.OccurredAt ?? complaint.CreatedAt;
+        if (!anchorTime.HasValue)
+            return RefundFail("Không xác định được thời điểm sự cố.");
+
+        var refundableWindowHours = ReadIntConfig("{\"hours\":168}", "hours", 168);
+        var refundBefore = VietnamDateTime.DbNow.AddHours(-refundableWindowHours);
+        if (VietnamDateTime.ToDbDateTime(anchorTime.Value) < refundBefore)
+            return RefundFail("Khiếu nại đã quá thời hạn hoàn tiền.");
+
+        var paymentRecordId = input.PaymentRecordId;
+        if (!paymentRecordId.HasValue && input.ContextType != null && input.ContextId.HasValue)
+        {
+            paymentRecordId = await ResolvePaymentRecordIdAsync(input.UserId, input.ContextType, input.ContextId.Value, cancellationToken);
+        }
+
+        if (!paymentRecordId.HasValue)
+            return RefundFail("Không tìm thấy giao dịch thanh toán phù hợp để hoàn tiền.");
+
+        var payment = await _unitOfWork.Repository<PaymentRecord>().GetQueryable()
+            .FirstOrDefaultAsync(x => !x.IsDeleted && x.Id == paymentRecordId.Value && x.UserId == input.UserId, cancellationToken);
+        if (payment == null)
+            return RefundFail("Giao dịch thanh toán không hợp lệ.");
+
+        if (payment.PaymentStatus == PaymentStatusEnum.Refunded)
+            return RefundFail("Giao dịch này đã được hoàn tiền trước đó.");
+
+        if (payment.PaymentStatus != PaymentStatusEnum.Completed)
+            return RefundFail("Chỉ giao dịch đã hoàn tất mới được hoàn tiền.");
+
+        var refundAmount = payment.Amount;
+        if (refundAmount <= 0)
+            return RefundFail("Số tiền hoàn không hợp lệ.");
+
+        return new ComplaintRefundPolicyResult
+        {
+            IsSuccess = true,
+            PaymentRecordId = payment.Id,
+            RefundAmount = refundAmount,
+            RefundReason = string.IsNullOrWhiteSpace(input.Note) ? $"Refund for complaint {input.ComplaintId}" : input.Note.Trim()
+        };
+    }
+
     private static ComplaintCreatePolicyResult Fail(string message) => new()
     {
         IsSuccess = false,
@@ -181,19 +250,20 @@ public class ComplaintPolicyService : IComplaintPolicyService
         if (ctx.MapId.HasValue)
         {
             var mapId = ctx.MapId.Value;
-            var isCreator = await _unitOfWork.Repository<Map>().GetQueryable()
-                .AnyAsync(x => !x.IsDeleted && x.Id == mapId && x.CreatedBy == userId, cancellationToken);
-            if (!isCreator)
-            {
-                var purchased = await _unitOfWork.Repository<PaymentRecord>().GetQueryable()
-                    .AnyAsync(x => !x.IsDeleted && x.UserId == userId && x.MapId == mapId && x.PaymentStatus == PaymentStatusEnum.Completed, cancellationToken);
-                var inMyMap = await _unitOfWork.Repository<MyMap>().GetQueryable()
-                    .AnyAsync(x => !x.IsDeleted && x.UserId == userId && x.MapId == mapId, cancellationToken);
-                var hasPurchaseAttempt = await _unitOfWork.Repository<PaymentRecord>().GetQueryable()
-                    .AnyAsync(x => !x.IsDeleted && x.UserId == userId && x.MapId == mapId && x.PaymentStatus != PaymentStatusEnum.Completed, cancellationToken);
-                if (!purchased && !inMyMap && !hasPurchaseAttempt)
-                    return false;
-            }
+            var map = await _unitOfWork.Repository<Map>().GetQueryable()
+                .AsNoTracking()
+                .FirstOrDefaultAsync(x => !x.IsDeleted && x.Id == mapId, cancellationToken);
+            if (map == null)
+                return false;
+
+            var purchased = await _unitOfWork.Repository<PaymentRecord>().GetQueryable()
+                .AnyAsync(x => !x.IsDeleted && x.UserId == userId && x.MapId == mapId && x.PaymentStatus == PaymentStatusEnum.Completed, cancellationToken);
+            if (map.Price.HasValue && map.Price.Value > 0)
+                return purchased;
+
+            var inMyMap = await _unitOfWork.Repository<MyMap>().GetQueryable()
+                .AnyAsync(x => !x.IsDeleted && x.UserId == userId && x.MapId == mapId, cancellationToken);
+            return inMyMap || purchased;
         }
 
         if (ctx.PackageId.HasValue)
@@ -201,10 +271,7 @@ public class ComplaintPolicyService : IComplaintPolicyService
             var packageId = ctx.PackageId.Value;
             var hasUserPackage = await _unitOfWork.Repository<UserPackage>().GetQueryable()
                 .AnyAsync(x => !x.IsDeleted && x.UserId == userId && x.PackageId == packageId, cancellationToken);
-            var hasPurchaseAttempt = await _unitOfWork.Repository<PaymentRecord>().GetQueryable()
-                .AnyAsync(x => !x.IsDeleted && x.UserId == userId && x.PackageId == packageId && x.PaymentStatus != PaymentStatusEnum.Completed, cancellationToken);
-
-            if (!hasUserPackage && !hasPurchaseAttempt)
+            if (!hasUserPackage)
                 return false;
         }
 
@@ -324,6 +391,45 @@ public class ComplaintPolicyService : IComplaintPolicyService
 
         return paymentAt.HasValue ? VietnamDateTime.ToDbDateTime(paymentAt.Value) : null;
     }
+
+    private async Task<Guid?> ResolvePaymentRecordIdAsync(Guid userId, string contextType, Guid contextId, CancellationToken cancellationToken)
+    {
+        if (string.Equals(contextType, "PaymentRecord", StringComparison.OrdinalIgnoreCase))
+        {
+            var direct = await _unitOfWork.Repository<PaymentRecord>().GetQueryable()
+                .Where(x => !x.IsDeleted && x.Id == contextId && x.UserId == userId)
+                .Select(x => (Guid?)x.Id)
+                .FirstOrDefaultAsync(cancellationToken);
+            if (direct.HasValue)
+                return direct;
+        }
+
+        if (string.Equals(contextType, "Map", StringComparison.OrdinalIgnoreCase))
+        {
+            return await _unitOfWork.Repository<PaymentRecord>().GetQueryable()
+                .Where(x => !x.IsDeleted && x.UserId == userId && x.MapId == contextId && x.PaymentStatus == PaymentStatusEnum.Completed)
+                .OrderByDescending(x => x.PaidAt ?? x.CreatedAt)
+                .Select(x => (Guid?)x.Id)
+                .FirstOrDefaultAsync(cancellationToken);
+        }
+
+        if (string.Equals(contextType, "Package", StringComparison.OrdinalIgnoreCase))
+        {
+            return await _unitOfWork.Repository<PaymentRecord>().GetQueryable()
+                .Where(x => !x.IsDeleted && x.UserId == userId && x.PackageId == contextId && x.PaymentStatus == PaymentStatusEnum.Completed)
+                .OrderByDescending(x => x.PaidAt ?? x.CreatedAt)
+                .Select(x => (Guid?)x.Id)
+                .FirstOrDefaultAsync(cancellationToken);
+        }
+
+        return null;
+    }
+
+    private static ComplaintRefundPolicyResult RefundFail(string message) => new()
+    {
+        IsSuccess = false,
+        ErrorMessage = message
+    };
 
     private static (string? ContextType, Guid? ContextId) ResolveContextTypeAndId(ComplaintCreateContextInput ctx)
     {

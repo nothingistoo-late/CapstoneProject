@@ -28,9 +28,9 @@ public class LearnerGameplayController : ControllerBase
     /// - language (string, optional): Solution language. Default "Blockly".
     /// - astSpec (string, optional): AST specification (JSON). Use either astSpec or bytecodeSpec.
     /// - bytecodeSpec (string, optional): Bytecode specification. Use either astSpec or bytecodeSpec.
-    /// - playMode (string, optional): Single | Lobby | Competitive — dùng để ghi lịch sử chơi. Mặc định Single.
+    /// - playMode (string, optional): Single | Lobby — dùng để ghi lịch sử chơi. Mặc định Single.
     /// - roomId (Guid, optional): Room lobby (khi playMode = Lobby).
-    /// - matchId (Guid, optional): Match competitive (khi có submit server-side); lưu cả trên Submission.
+    /// - matchId (Guid, optional): Mã phiên chơi (nếu có); lưu trace trên Submission.
     ///
     /// **METHOD and path:** POST /api/learner/gameplay/validate
     ///
@@ -58,7 +58,7 @@ public class LearnerGameplayController : ControllerBase
     /// <summary>Lịch sử chơi map của tôi (phân trang).</summary>
     /// <remarks>
     /// Trả về các lần validate/submit đã ghi (UserMapPlayHistories), sort theo StartTime mới nhất trước.
-    /// Query: pageNumber (default 1), pageSize (default 20, max 100), mapId (optional), playMode (optional: Single|Lobby|Competitive).
+    /// Query: pageNumber (default 1), pageSize (default 20, max 100), mapId (optional), playMode (optional: Single|Lobby).
     ///
     /// **METHOD and path:** GET /api/learner/gameplay/my-play-history
     /// </remarks>

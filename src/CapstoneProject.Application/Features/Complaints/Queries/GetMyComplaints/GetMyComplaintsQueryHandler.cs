@@ -77,7 +77,11 @@ public class GetMyComplaintsQueryHandler : IRequestHandler<GetMyComplaintsQuery,
                     complaint.UserId,
                     cancellationToken),
                 CreatedAt = complaint.CreatedAt,
-                ResolvedAt = complaint.ResolvedAt
+                ResolvedAt = complaint.ResolvedAt,
+                RefundProcessed = complaint.RefundProcessed,
+                RefundedPaymentRecordId = complaint.RefundedPaymentRecordId,
+                RefundAmount = complaint.RefundAmount,
+                RefundedAt = complaint.RefundedAt
             });
         }
 
