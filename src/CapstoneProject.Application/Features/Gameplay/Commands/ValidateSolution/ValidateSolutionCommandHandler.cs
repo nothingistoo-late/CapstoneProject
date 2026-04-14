@@ -309,7 +309,7 @@ public class ValidateSolutionCommandHandler : IRequestHandler<ValidateSolutionCo
         var limits = ParseMissionLimits(mapJsonContent);
         var elapsed = req.ClientElapsedSeconds ?? 0;
         var starCount = ComputeStarCount(elapsed, stepsUsed, blocksUsed, limits);
-        var s = ScoreWinFromEngineCriteria(starCount, limits, elapsed, stepsUsed, blocksUsed, weights);
+        var s = ScoreSolvedRunFromMetrics(limits, elapsed, stepsUsed, blocksUsed, weights);
         return (s, starCount, SubmissionStatusEnum.Accepted, true, stepsUsed, blocksUsed);
     }
 
@@ -353,17 +353,27 @@ public class ValidateSolutionCommandHandler : IRequestHandler<ValidateSolutionCo
                 return new MissionLimits(inf, inf, inf);
 
             var mapConfig = root.TryGetProperty("mapConfig", out var mc) ? mc : root;
+            var metadata = root.TryGetProperty("metadata", out var md) ? md : default;
             double time = inf, steps = inf, blocks = inf;
 
             if (mapConfig.TryGetProperty("timeLimitSeconds", out var t) && t.ValueKind == JsonValueKind.Number)
                 time = t.GetDouble();
             if (mapConfig.TryGetProperty("estimatedSteps", out var es) && es.ValueKind == JsonValueKind.Number)
                 steps = es.GetDouble();
+            else if (metadata.ValueKind == JsonValueKind.Object &&
+                     metadata.TryGetProperty("estimatedSteps", out var mes) &&
+                     mes.ValueKind == JsonValueKind.Number)
+                steps = mes.GetDouble();
 
             if (root.TryGetProperty("blockConstraints", out var bc) &&
                 bc.TryGetProperty("blockLimit", out var bl) &&
                 bl.ValueKind == JsonValueKind.Number)
                 blocks = bl.GetDouble();
+            else if (mapConfig.ValueKind == JsonValueKind.Object &&
+                     mapConfig.TryGetProperty("blockConstraints", out var mbc) &&
+                     mbc.TryGetProperty("blockLimit", out var mbl) &&
+                     mbl.ValueKind == JsonValueKind.Number)
+                blocks = mbl.GetDouble();
 
             return new MissionLimits(time, steps, blocks);
         }
@@ -388,6 +398,53 @@ public class ValidateSolutionCommandHandler : IRequestHandler<ValidateSolutionCo
         if (steps <= lim.EstimatedSteps) s++;
         if (blocks <= lim.BlockLimit) s++;
         return s;
+    }
+
+    private static int ScoreSolvedRunFromMetrics(
+        MissionLimits lim,
+        double elapsedSeconds,
+        int steps,
+        int blocks,
+        MapSolveScoreWeights w)
+    {
+        var timeRatio = GetEfficiencyRatio(elapsedSeconds, lim.TimeLimitSeconds, 300d);
+        var stepsRatio = GetEfficiencyRatio(steps, lim.EstimatedSteps, 100d);
+        var blocksRatio = GetEfficiencyRatio(blocks, lim.BlockLimit, 100d);
+
+        var score = w.BaseScore
+                    + (int)Math.Round(w.TimeScore * timeRatio)
+                    + (int)Math.Round(w.StepsScore * stepsRatio)
+                    + (int)Math.Round(w.BlocksScore * blocksRatio);
+        return Math.Clamp(score, 0, 100);
+    }
+
+    private static double GetEfficiencyRatio(double actualValue, double limitValue, double fallbackScale)
+    {
+        var scale = limitValue > 0 && !double.IsInfinity(limitValue) ? limitValue : fallbackScale;
+        if (scale <= 0 || double.IsInfinity(scale))
+            return 0;
+
+        // Two-slope linear model (stricter):
+        // - Best zone: full score from 0..50% of limit
+        // - Competitive zone: still under limit, but linearly reduced to 70% at exactly limit
+        // - Over-limit zone: linearly drops to 0 at 200% of limit
+        const double fullScoreAtLimitRatio = 0.50;
+        const double scoreRatioAtLimit = 0.70;
+
+        var fullScoreAt = scale * fullScoreAtLimitRatio;
+        var zeroScoreAt = scale * 2.0;
+
+        if (actualValue <= fullScoreAt)
+            return 1.0;
+
+        if (actualValue <= scale)
+        {
+            var t = (actualValue - fullScoreAt) / (scale - fullScoreAt);
+            return Math.Clamp(1.0 - t * (1.0 - scoreRatioAtLimit), 0.0, 1.0);
+        }
+
+        var overT = (actualValue - scale) / (zeroScoreAt - scale);
+        return Math.Clamp(scoreRatioAtLimit * (1.0 - overT), 0.0, 1.0);
     }
 
     /// <summary>Äiá»ƒm khi tháº¯ng cÃ³ metrics: base + pháº§n time/steps/blocks khi Ä‘áº¡t; cáº£ 3 limit vÃ´ cá»±c thÃ¬ chia Ä‘á»u pool 3 tiÃªu chÃ­ theo sá»‘ sao.</summary>
