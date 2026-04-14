@@ -1,5 +1,8 @@
 using CapstoneProject.Application.Common.Extensions;
+using CapstoneProject.Application.Common.Enums;
 using CapstoneProject.Application.Common.Models;
+using CapstoneProject.Application.Features.Leaderboards.Queries.GetTopLevelLeaderboard;
+using CapstoneProject.Application.Features.Leaderboards.Queries.GetXpGainLeaderboard;
 using CapstoneProject.Application.Features.Xp.Queries.GetMyXpHistory;
 using CapstoneProject.Application.Features.Xp.Queries.GetMyXpProfile;
 using CapstoneProject.Application.Features.Xp.Queries.GetXpLeaderboard;
@@ -75,6 +78,47 @@ public class LearnerXpController : ControllerBase
     public async Task<IActionResult> GetXpLeaderboard([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 20)
     {
         var result = await _mediator.Send(new GetXpLeaderboardQuery(pageNumber, pageSize));
+        return StatusCode(result.GetHttpStatusCode(), result);
+    }
+
+    /// <summary>Get Top Level leaderboard (paginated).</summary>
+    /// <remarks>
+    /// Returns ranked users by highest current level. Tie-breakers: currentXp desc, joiningAt asc.
+    ///
+    /// **METHOD and path:** GET /api/learner/xp/leaderboard/top-level
+    /// </remarks>
+    [HttpGet("leaderboard/top-level")]
+    [AuthorizeRoles(nameof(RoleEnum.Learner), nameof(RoleEnum.Admin), nameof(RoleEnum.Moderator))]
+    [ProducesResponseType(typeof(Result<PaginationResult<TopLevelLeaderboardItemDto>>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(Result), StatusCodes.Status401Unauthorized)]
+    [SwaggerOperation(Summary = "Top Level leaderboard", Description = "Get paginated leaderboard ranked by current level.", OperationId = "Learner_GetTopLevelLeaderboard", Tags = new[] { "Learner - XP" })]
+    public async Task<IActionResult> GetTopLevelLeaderboard([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 20)
+    {
+        var result = await _mediator.Send(new GetTopLevelLeaderboardQuery(pageNumber, pageSize));
+        return StatusCode(result.GetHttpStatusCode(), result);
+    }
+
+    /// <summary>Get XP gain leaderboard by period (week/month).</summary>
+    /// <remarks>
+    /// Returns ranked users by XP gained during selected period.
+    ///
+    /// **METHOD and path:** GET /api/learner/xp/leaderboard/xp-gain
+    ///
+    /// **Query:**
+    /// - periodType (LeaderboardPeriodTypeEnum, optional): Week | Month. Default Week.
+    /// - pageNumber, pageSize.
+    /// </remarks>
+    [HttpGet("leaderboard/xp-gain")]
+    [AuthorizeRoles(nameof(RoleEnum.Learner), nameof(RoleEnum.Admin), nameof(RoleEnum.Moderator))]
+    [ProducesResponseType(typeof(Result<PaginationResult<XpGainLeaderboardItemDto>>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(Result), StatusCodes.Status401Unauthorized)]
+    [SwaggerOperation(Summary = "XP gain leaderboard", Description = "Get leaderboard by XP gained in Week/Month period.", OperationId = "Learner_GetXpGainLeaderboard", Tags = new[] { "Learner - XP" })]
+    public async Task<IActionResult> GetXpGainLeaderboard(
+        [FromQuery] LeaderboardPeriodTypeEnum periodType = LeaderboardPeriodTypeEnum.Week,
+        [FromQuery] int pageNumber = 1,
+        [FromQuery] int pageSize = 20)
+    {
+        var result = await _mediator.Send(new GetXpGainLeaderboardQuery(periodType, pageNumber, pageSize));
         return StatusCode(result.GetHttpStatusCode(), result);
     }
 }

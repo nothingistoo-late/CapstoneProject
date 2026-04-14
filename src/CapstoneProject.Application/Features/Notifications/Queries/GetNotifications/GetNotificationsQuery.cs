@@ -18,6 +18,7 @@ public class NotificationItemDto
     public DateTime? ReadAt { get; set; }
     public DateTime CreatedAt { get; set; }
     public string? ActionUrl { get; set; }
+    public string? PayloadJson { get; set; }
     public SimpleActorDto? Actor { get; set; }
 }
 

@@ -131,60 +131,6 @@ public static class SeedingExtension
         var roles = await userManager.GetRolesAsync(existingAdmin);
         logger.LogInformation("Admin user {Email} roles: {Roles}", existingAdmin.Email, string.Join(", ", roles));
 
-        // Seed demo user for quick login
-        var demoUserEmail = configuration.GetSection("QuickLogin").GetValue<string>("DemoUserEmail");
-        var demoUserPassword = configuration.GetSection("QuickLogin").GetValue<string>("DemoUserPassword") ?? "Demo@123";
-        
-        if (!string.IsNullOrWhiteSpace(demoUserEmail))
-        {
-            var existingDemoUser = await userManager.FindByEmailAsync(demoUserEmail);
-            if (existingDemoUser == null)
-            {
-                var demoUser = new AppUser
-                {
-                    UserName = demoUserEmail,
-                    Email = demoUserEmail,
-                    EmailConfirmed = true,
-                    FirstName = "Demo",
-                    LastName = "User",
-                    JoiningAt = CapstoneProject.Domain.Common.VietnamDateTime.DbNow,
-                    CreatedAt = CapstoneProject.Domain.Common.VietnamDateTime.DbNow,
-                    Status = EntityStatusEnum.Active
-                };
-
-                var createDemoResult = await userManager.CreateAsync(demoUser, demoUserPassword);
-                if (!createDemoResult.Succeeded)
-                {
-                    var errors = string.Join(", ", createDemoResult.Errors.Select(e => e.Description));
-                    logger.LogWarning("Failed to create demo user: {Errors}", errors);
-                }
-                else
-                {
-                    existingDemoUser = demoUser;
-                    logger.LogInformation("Created demo user {Email}", demoUserEmail);
-                }
-            }
-
-            // Ensure demo user is in Learner role
-            if (existingDemoUser != null)
-            {
-                var learnerRoleName = RoleEnum.Learner.ToString();
-                if (!await userManager.IsInRoleAsync(existingDemoUser, learnerRoleName))
-                {
-                    var addRoleResult = await userManager.AddToRoleAsync(existingDemoUser, learnerRoleName);
-                    if (!addRoleResult.Succeeded)
-                    {
-                        var errors = string.Join(", ", addRoleResult.Errors.Select(e => e.Description));
-                        logger.LogWarning("Failed to add demo user to role {Role}: {Errors}", learnerRoleName, errors);
-                    }
-                    else
-                    {
-                        logger.LogInformation("Added demo user to role {Role}", learnerRoleName);
-                    }
-                }
-            }
-        }
-
         // Seed 2 moderator accounts for moderation workflows
         var moderatorRoleName = RoleEnum.Moderator.ToString();
         var moderatorSeeds = new[]

@@ -52,6 +52,7 @@ public class GetNotificationsQueryHandler : IRequestHandler<GetNotificationsQuer
             ReadAt = x.ReadAt,
             CreatedAt = x.CreatedAt ?? VietnamDateTime.DbNow,
             ActionUrl = x.Notification.ActionUrl,
+            PayloadJson = x.Notification.PayloadJson,
             Actor = x.Notification.ActorUser != null
                 ? new SimpleActorDto
                 {

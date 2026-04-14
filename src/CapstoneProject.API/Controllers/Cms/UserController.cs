@@ -9,7 +9,6 @@ using CapstoneProject.Application.Features.User.Queries.GetPagedUsers;
 using CapstoneProject.Application.Features.User.Queries.GetUserById;
 using CapstoneProject.Application.Commons.DTOs.User;
 using BatchUpdateUserStatusResultDto = CapstoneProject.Application.Features.User.Commands.BatchUpdateUserStatus.BatchUpdateUserStatusResultDto;
-using CapstoneProject.Application.Commons.Interfaces;
 
 namespace CapstoneProject.API.Controllers.Cms;
 
@@ -24,14 +23,10 @@ namespace CapstoneProject.API.Controllers.Cms;
 public class UserController : ControllerBase
 {
     private readonly IMediator _mediator;
-    private readonly IQuickLoginCleanupService _cleanupService;
-    private readonly ILogger<UserController>? _logger;
 
-    public UserController(IMediator mediator, IQuickLoginCleanupService cleanupService, ILogger<UserController>? logger = null)
+    public UserController(IMediator mediator)
     {
         _mediator = mediator;
-        _cleanupService = cleanupService;
-        _logger = logger;
     }
 
     /// <summary>
@@ -210,47 +205,4 @@ public class UserController : ControllerBase
         return StatusCode(result.GetHttpStatusCode(), result);
     }
 
-    /// <summary>
-    /// Cleanup inactive QuickLogin users (manual trigger)
-    /// </summary>
-    /// <remarks>
-    /// Deactivates QuickLogin users that have not logged in for the specified number of days. Also runs automatically daily via Hangfire. Admin only.
-    ///
-    /// **Query:** daysInactive (int, optional): Days of inactivity before deactivation. Default 7.
-    ///
-    /// **Body:** None.
-    ///
-    /// **METHOD and path:** POST /api/cms/users/quicklogin/cleanup
-    ///
-    /// **Example request:** POST /api/cms/users/quicklogin/cleanup?daysInactive=7
-    /// </remarks>
-    /// <response code="200">Returns message and data (deletedCount).</response>
-    /// <response code="401">Not authorized</response>
-    /// <response code="403">Admin only</response>
-    /// <response code="500">Internal server error (cleanup failed)</response>
-    /// <param name="daysInactive">Number of days of inactivity before deletion (default: 7)</param>
-    [HttpPost("quicklogin/cleanup")]
-    [AuthorizeRoles(nameof(RoleEnum.Admin))]
-    [ProducesResponseType(typeof(Result<int>), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(Result), StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(typeof(Result), StatusCodes.Status403Forbidden)]
-    [SwaggerOperation(
-        Summary = "Cleanup inactive QuickLogin users",
-        Description = "Deactivates QuickLogin users that haven't logged in for the specified number of days. This job also runs automatically daily via Hangfire.",
-        OperationId = "CleanupQuickLoginUsers",
-        Tags = new[] { "CMS" }
-    )]
-    public async Task<IActionResult> CleanupQuickLoginUsers([FromQuery] int daysInactive = 7)
-    {
-        try
-        {
-            var deletedCount = await _cleanupService.CleanupInactiveUsersAsync(daysInactive);
-            return Ok(Result<int>.Success(deletedCount, $"Đã hủy kích hoạt thành công {deletedCount} người dùng QuickLogin không hoạt động"));
-        }
-        catch (Exception ex)
-        {
-            _logger?.LogError(ex, "Error during QuickLogin cleanup");
-            return StatusCode(500, Result<int>.Failure("Đã xảy ra lỗi trong quá trình dọn dẹp", ErrorCodeEnum.InternalError));
-        }
-    }
 }

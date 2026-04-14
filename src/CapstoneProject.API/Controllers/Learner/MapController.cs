@@ -22,6 +22,7 @@ using CapstoneProject.Application.Features.Maps.Commands.UpdateMapFromJsonFile;
 using CapstoneProject.Application.Features.Maps.Commands.PublishMap;
 using CapstoneProject.Application.Features.Maps.Commands.AddMapToMyMaps;
 using CapstoneProject.Application.Features.Maps.Commands.CreateMapVersionFromApproved;
+using CapstoneProject.Application.Features.Leaderboards.Queries.GetMostPlayedCreatedMapsLeaderboard;
 using CapstoneProject.Application.Common.Enums;
 
 namespace CapstoneProject.API.Controllers.Learner;
@@ -71,6 +72,34 @@ public class LearnerMapController : ControllerBase
     public async Task<IActionResult> GetMaps([FromQuery] GetMapsQuery query)
     {
         var result = await _mediator.Send(query);
+        return StatusCode(result.GetHttpStatusCode(), result);
+    }
+
+    /// <summary>
+    /// Get leaderboard of user-created maps by play count (week/month)
+    /// </summary>
+    /// <remarks>
+    /// Returns ranked maps created by users, ordered by play count in selected period.
+    ///
+    /// **METHOD and path:** GET /api/learner/maps/leaderboard/most-played-created
+    ///
+    /// **Query:**
+    /// - periodType (LeaderboardPeriodTypeEnum, optional): Week | Month. Default Week.
+    /// - pageNumber, pageSize.
+    /// </remarks>
+    /// <response code="200">Returns message and data (paginated map leaderboard).</response>
+    /// <response code="401">Unauthorized</response>
+    [HttpGet("leaderboard/most-played-created")]
+    [AuthorizeRoles(nameof(RoleEnum.Learner), nameof(RoleEnum.Admin), nameof(RoleEnum.Moderator))]
+    [ProducesResponseType(typeof(Result<PaginationResult<MostPlayedCreatedMapLeaderboardItemDto>>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(Result), StatusCodes.Status401Unauthorized)]
+    [SwaggerOperation(Summary = "Leaderboard map được chơi nhiều nhất", Description = "Get leaderboard for user-created maps by play count in Week/Month period.", OperationId = "Learner_GetMostPlayedCreatedMapsLeaderboard", Tags = new[] { "Learner - Maps" })]
+    public async Task<IActionResult> GetMostPlayedCreatedMapsLeaderboard(
+        [FromQuery] LeaderboardPeriodTypeEnum periodType = LeaderboardPeriodTypeEnum.Week,
+        [FromQuery] int pageNumber = 1,
+        [FromQuery] int pageSize = 20)
+    {
+        var result = await _mediator.Send(new GetMostPlayedCreatedMapsLeaderboardQuery(periodType, pageNumber, pageSize));
         return StatusCode(result.GetHttpStatusCode(), result);
     }
 

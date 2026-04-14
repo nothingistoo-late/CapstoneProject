@@ -1,6 +1,8 @@
 using CapstoneProject.API.Hubs;
 using CapstoneProject.API.Injection;
 using CapstoneProject.Application;
+using CapstoneProject.Application.Commons.Helpers;
+using CapstoneProject.Application.Commons.Models.Leaderboards;
 using CapstoneProject.Infrastructure;
 using CapstoneProject.Infrastructure.Configurations;
 using CapstoneProject.Infrastructure.Filters;
@@ -41,6 +43,18 @@ public static class ServiceConfiguration
         builder.Services.AddJwtConfiguration(builder.Configuration);
         builder.Services.AddCorsConfiguration(builder.Configuration);
         builder.Services.AddHttpClient();
+
+        // Leaderboard cycle and reward settings (used by leaderboard reward settlement jobs)
+        builder.Services.Configure<LeaderboardRewardsOptions>(
+            builder.Configuration.GetSection(LeaderboardRewardsOptions.SectionName));
+
+        var configuredWeekStart = builder.Configuration
+            .GetValue<string>($"{LeaderboardRewardsOptions.SectionName}:Cycle:WeekStartsOn");
+        if (!string.IsNullOrWhiteSpace(configuredWeekStart)
+            && Enum.TryParse<DayOfWeek>(configuredWeekStart, true, out var weekStart))
+        {
+            LeaderboardPeriodHelper.WeekStartsOn = weekStart;
+        }
 
         // Application & Infrastructure layers
         builder.Services.AddApplication();

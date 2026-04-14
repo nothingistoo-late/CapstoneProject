@@ -6,6 +6,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Npgsql;
 using CapstoneProject.Application.Commons.Interfaces;
+using CapstoneProject.Application.Commons.Models.Leaderboards;
 using CapstoneProject.Infrastructure.Services;
 
 namespace CapstoneProject.Infrastructure.Configurations;
@@ -34,19 +35,23 @@ public static class HangfireConfiguration
             throw new InvalidOperationException("DefaultConnection string is required for Hangfire");
         }
 
-        var prepareSchemaIfNecessary = configuration.GetValue("Hangfire:PrepareSchemaIfNecessary", true);
-        try
+        var prepareSchemaConfigured = configuration.GetValue<bool?>("Hangfire:PrepareSchemaIfNecessary");
+        var prepareSchemaIfNecessary = prepareSchemaConfigured ?? true;
+        if (!prepareSchemaConfigured.HasValue)
         {
-            var b = new NpgsqlConnectionStringBuilder(connectionString);
-            if (b.Port == 6543 || (b.Host ?? string.Empty).Contains("pooler", StringComparison.OrdinalIgnoreCase))
+            try
             {
-                // PgBouncer/poolers often don't work well with schema prep / DDL at startup.
-                prepareSchemaIfNecessary = false;
+                var b = new NpgsqlConnectionStringBuilder(connectionString);
+                if (b.Port == 6543 || (b.Host ?? string.Empty).Contains("pooler", StringComparison.OrdinalIgnoreCase))
+                {
+                    // Default behavior only: on poolers, avoid DDL unless explicitly enabled via config.
+                    prepareSchemaIfNecessary = false;
+                }
             }
-        }
-        catch
-        {
-            // ignore parsing errors; fallback to config value
+            catch
+            {
+                // ignore parsing errors; fallback to default value
+            }
         }
 
         // Get Hangfire settings from configuration
@@ -186,6 +191,66 @@ public static class HangfireConfiguration
         return builder.Database ?? throw new InvalidOperationException("Database name missing in connection string.");
     }
 
+    private static void CleanupObsoleteQuickLoginRecurringRecords(IConfiguration configuration, ILogger logger)
+    {
+        try
+        {
+            var connectionString = configuration.GetConnectionString("DefaultConnection");
+            if (string.IsNullOrWhiteSpace(connectionString))
+            {
+                return;
+            }
+
+            using var connection = new NpgsqlConnection(connectionString);
+            connection.Open();
+
+            using var command = connection.CreateCommand();
+            command.CommandText = @"
+DELETE FROM hangfire.hash WHERE ""key"" = 'recurring-job:quicklogin-cleanup-inactive';
+DELETE FROM hangfire.set WHERE ""key"" = 'recurring-jobs' AND value = 'quicklogin-cleanup-inactive';";
+
+            command.ExecuteNonQuery();
+            logger.LogInformation("Removed obsolete Hangfire recurring records for quicklogin-cleanup-inactive");
+        }
+        catch (Exception ex)
+        {
+            logger.LogWarning(ex, "Could not purge obsolete quicklogin recurring records from Hangfire tables");
+        }
+    }
+
+    private static void TryScheduleRecurringJob(Action scheduleAction, ILogger logger, string jobId)
+    {
+        try
+        {
+            scheduleAction();
+        }
+        catch (PostgreSqlDistributedLockException ex)
+        {
+            logger.LogWarning(ex, "Skipped registering recurring job {JobId} due to distributed lock timeout. App will continue to run.", jobId);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Failed to register recurring job {JobId}", jobId);
+        }
+    }
+
+    private static void TryRemoveRecurringJob(IRecurringJobManager recurringJobManager, ILogger logger, string jobId)
+    {
+        try
+        {
+            recurringJobManager.RemoveIfExists(jobId);
+            logger.LogInformation("Recurring job removed: {JobId}", jobId);
+        }
+        catch (PostgreSqlDistributedLockException ex)
+        {
+            logger.LogWarning(ex, "Skipped removing recurring job {JobId} due to distributed lock timeout.", jobId);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Failed to remove recurring job {JobId}", jobId);
+        }
+    }
+
     /// <summary>
     /// Configure Hangfire dashboard and initialize recurring jobs
     /// Token management jobs are disabled since we're using Service Account authentication
@@ -210,24 +275,80 @@ public static class HangfireConfiguration
 
         // All OAuth token management jobs are disabled
         // Using Service Account authentication instead
+        CleanupObsoleteQuickLoginRecurringRecords(configuration, logger);
         
-        // Setup QuickLogin cleanup job
-        var cleanupDaysInactive = configuration.GetValue("QuickLogin:Cleanup:DaysInactive", 7);
-        var cleanupCronExpression = configuration.GetValue("QuickLogin:Cleanup:CronExpression", "0 2 * * *"); // Daily at 2 AM
-        
-        // Hangfire will automatically resolve QuickLoginCleanupJob instance from DI container
-        // and inject its dependencies (IQuickLoginCleanupService, ILogger)
-        recurringJobManager.AddOrUpdate(
-            "quicklogin-cleanup-inactive",
-            (QuickLoginCleanupJob job) => job.Execute(cleanupDaysInactive),
-            cleanupCronExpression,
-            new RecurringJobOptions
+        // Setup leaderboard reward settlement jobs (weekly + monthly + optional minute test)
+        var lbOptions = configuration.GetSection(LeaderboardRewardsOptions.SectionName).Get<LeaderboardRewardsOptions>()
+                        ?? new LeaderboardRewardsOptions();
+        var cycle = lbOptions.Cycle ?? new LeaderboardCycleOptions();
+
+        TimeZoneInfo settlementTimeZone;
+        try
+        {
+            settlementTimeZone = TimeZoneInfo.FindSystemTimeZoneById(cycle.TimeZoneId);
+        }
+        catch
+        {
+            settlementTimeZone = TimeZoneInfo.Utc;
+        }
+
+        if (cycle.EnableWeeklySettlement)
+        {
+            TryScheduleRecurringJob(() =>
+                recurringJobManager.AddOrUpdate(
+                    "leaderboard-reward-settlement-weekly",
+                    (LeaderboardRewardSettlementJob job) => job.ExecuteWeeklyAsync(),
+                    cycle.WeeklyCron,
+                    new RecurringJobOptions { TimeZone = settlementTimeZone }),
+                logger,
+                "leaderboard-reward-settlement-weekly");
+
+            logger.LogInformation("✅ Leaderboard weekly settlement job scheduled with cron: {Cron}", cycle.WeeklyCron);
+        }
+        else
+        {
+            TryRemoveRecurringJob(recurringJobManager, logger, "leaderboard-reward-settlement-weekly");
+        }
+
+        if (cycle.EnableMonthlySettlement)
+        {
+            TryScheduleRecurringJob(() =>
+                recurringJobManager.AddOrUpdate(
+                    "leaderboard-reward-settlement-monthly",
+                    (LeaderboardRewardSettlementJob job) => job.ExecuteMonthlyAsync(),
+                    cycle.MonthlyCron,
+                    new RecurringJobOptions { TimeZone = settlementTimeZone }),
+                logger,
+                "leaderboard-reward-settlement-monthly");
+
+            logger.LogInformation("✅ Leaderboard monthly settlement job scheduled with cron: {Cron}", cycle.MonthlyCron);
+        }
+        else
+        {
+            TryRemoveRecurringJob(recurringJobManager, logger, "leaderboard-reward-settlement-monthly");
+        }
+
+        if (cycle.EnableMinuteTestMode)
+        {
+            var minuteWindow = Math.Max(1, cycle.MinuteTestWindowMinutes);
+            TryScheduleRecurringJob(() =>
+                recurringJobManager.AddOrUpdate(
+                    "leaderboard-reward-settlement-minute-test",
+                    (LeaderboardRewardSettlementJob job) => job.ExecuteMinuteTestAsync(minuteWindow),
+                    cycle.MinuteTestCron,
+                    new RecurringJobOptions { TimeZone = settlementTimeZone }),
+                logger,
+                "leaderboard-reward-settlement-minute-test");
+
+            logger.LogInformation(
+                "✅ Leaderboard minute-test settlement job scheduled with cron: {Cron}; window={Window} minutes",
+                cycle.MinuteTestCron,
+                minuteWindow);
+        }
+            else
             {
-                TimeZone = TimeZoneInfo.Utc
+                TryRemoveRecurringJob(recurringJobManager, logger, "leaderboard-reward-settlement-minute-test");
             }
-        );
-        
-        logger.LogInformation("✅ QuickLogin cleanup job scheduled: Daily at 2 AM UTC (inactive for {Days} days)", cleanupDaysInactive);
         
         logger.LogInformation("Hangfire configured successfully (Service Account mode - no token jobs needed)");
     }

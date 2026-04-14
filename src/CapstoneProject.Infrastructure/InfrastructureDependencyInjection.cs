@@ -134,8 +134,7 @@ public static class InfrastructureDependencyInjection
         services.AddScoped<IIdentityService, IdentityService>();
         services.AddScoped<ICurrentUserService, CurrentUserService>();
         services.AddScoped<IOtpCacheService, OtpCacheService>();
-        services.AddScoped<Application.Commons.Interfaces.IQuickLoginCleanupService, QuickLoginCleanupService>();
-        services.AddScoped<QuickLoginCleanupJob>(); // Register job class for Hangfire DI
+        services.AddScoped<LeaderboardRewardSettlementJob>();
         services.AddScoped<IEmailService, EmailService>();
         services.AddScoped<INotificationFactory, NotificationFactory>();
         services.AddScoped<Application.Commons.Interfaces.IConversationService, Application.Features.Chat.Services.ConversationService>();
