@@ -17,6 +17,8 @@ public class Map : BaseEntity
     /// <summary>Số lượt chơi thử miễn phí cho mỗi người chơi. 0 = không có trial.</summary>
     public int FreeTrialAttemptLimit { get; set; }
     public string? EditorialContent { get; set; }
+    /// <summary>Ghi chú kiểm duyệt gần nhất khi Admin/Moderator duyệt hoặc từ chối map.</summary>
+    public string? ReviewNote { get; set; }
     public int UnlockEditorialAfterStars { get; set; } = 3;
     /// <summary>Danh sách tag kiến thức user học được sau khi chơi map (UID của Tag).</summary>
     public List<Guid> LearnedTags { get; set; } = new();

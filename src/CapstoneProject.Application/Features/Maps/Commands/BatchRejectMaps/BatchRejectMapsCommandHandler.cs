@@ -8,6 +8,7 @@ using CapstoneProject.Application.Features.Maps.Commands.BatchApproveMaps;
 using CapstoneProject.Domain.Common;
 using CapstoneProject.Domain.Entities;
 using CapstoneProject.Domain.Enums;
+using System.Text.Json;
 
 namespace CapstoneProject.Application.Features.Maps.Commands.BatchRejectMaps;
 
@@ -15,11 +16,16 @@ public class BatchRejectMapsCommandHandler : IRequestHandler<BatchRejectMapsComm
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly ICurrentUserService _currentUserService;
+    private readonly INotificationPersistenceService _notificationPersistenceService;
 
-    public BatchRejectMapsCommandHandler(IUnitOfWork unitOfWork, ICurrentUserService currentUserService)
+    public BatchRejectMapsCommandHandler(
+        IUnitOfWork unitOfWork,
+        ICurrentUserService currentUserService,
+        INotificationPersistenceService notificationPersistenceService)
     {
         _unitOfWork = unitOfWork;
         _currentUserService = currentUserService;
+        _notificationPersistenceService = notificationPersistenceService;
     }
 
     public async Task<Result<BatchMapResultDto>> Handle(BatchRejectMapsCommand command, CancellationToken cancellationToken)
@@ -39,14 +45,48 @@ public class BatchRejectMapsCommandHandler : IRequestHandler<BatchRejectMapsComm
         var notFoundIds = command.MapIds.Where(id => !foundIds.Contains(id)).ToList();
         var toReject = maps.Where(m => m.MapStatus == MapStatusEnum.PendingReview).ToList();
         var invalidStatusIds = maps.Where(m => m.MapStatus != MapStatusEnum.PendingReview).Select(m => m.Id).ToList();
+        var normalizedRejectReason = NormalizeNote(command.RejectReason);
 
         foreach (var map in toReject)
         {
             map.MapStatus = MapStatusEnum.Rejected;
+            map.ReviewNote = normalizedRejectReason;
             map.UpdateEntity(userIdNullable!.Value);
             repo.Update(map);
         }
         await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+        foreach (var map in toReject.Where(m => m.CreatedBy.HasValue))
+        {
+            try
+            {
+                var payloadJson = JsonSerializer.Serialize(new
+                {
+                    mapId = map.Id,
+                    mapTitle = map.Title,
+                    status = map.MapStatus.ToString(),
+                    rejectReason = normalizedRejectReason
+                });
+
+                var body = string.IsNullOrWhiteSpace(normalizedRejectReason)
+                    ? $"Map \"{map.Title}\" đã bị từ chối."
+                    : $"Map \"{map.Title}\" đã bị từ chối. Lý do: {normalizedRejectReason}";
+
+                await _notificationPersistenceService.CreateNotificationAsync(
+                    NotificationTypeEnum.SystemAnnouncement,
+                    "Map của bạn đã bị từ chối",
+                    body,
+                    new List<Guid> { map.CreatedBy!.Value },
+                    userIdNullable.Value,
+                    payloadJson,
+                    "/app/my-maps",
+                    cancellationToken);
+            }
+            catch
+            {
+                // Notification failure must not break batch reject flow.
+            }
+        }
 
         var dto = new BatchMapResultDto
         {
@@ -56,5 +96,12 @@ public class BatchRejectMapsCommandHandler : IRequestHandler<BatchRejectMapsComm
             InvalidStatusIds = invalidStatusIds
         };
         return Result<BatchMapResultDto>.Success(dto, $"Đã từ chối (các) bản đồ {dto.SuccessCount}.");
+    }
+
+    private static string? NormalizeNote(string? note)
+    {
+        if (string.IsNullOrWhiteSpace(note))
+            return null;
+        return note.Trim();
     }
 }

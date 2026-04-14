@@ -7,6 +7,7 @@ using CapstoneProject.Application.Commons.Interfaces;
 using CapstoneProject.Domain.Common;
 using CapstoneProject.Domain.Entities;
 using CapstoneProject.Domain.Enums;
+using System.Text.Json;
 
 namespace CapstoneProject.Application.Features.Maps.Commands.ApproveMap;
 
@@ -14,11 +15,16 @@ public class ApproveMapCommandHandler : IRequestHandler<ApproveMapCommand, Resul
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly ICurrentUserService _currentUserService;
+    private readonly INotificationPersistenceService _notificationPersistenceService;
 
-    public ApproveMapCommandHandler(IUnitOfWork unitOfWork, ICurrentUserService currentUserService)
+    public ApproveMapCommandHandler(
+        IUnitOfWork unitOfWork,
+        ICurrentUserService currentUserService,
+        INotificationPersistenceService notificationPersistenceService)
     {
         _unitOfWork = unitOfWork;
         _currentUserService = currentUserService;
+        _notificationPersistenceService = notificationPersistenceService;
     }
 
     public async Task<Result> Handle(ApproveMapCommand command, CancellationToken cancellationToken)
@@ -38,10 +44,52 @@ public class ApproveMapCommandHandler : IRequestHandler<ApproveMapCommand, Resul
         if (map.MapStatus != MapStatusEnum.PendingReview)
             return Result.Failure($"Bản đồ không thể được phê duyệt. Trạng thái dự kiến: Đang chờ xem xét. Trạng thái hiện tại: {map.MapStatus}. Chỉ những bản đồ đang chờ xem xét mới có thể được phê duyệt.", ErrorCodeEnum.InvalidOperation);
 
+        var normalizedReviewNote = NormalizeNote(command.ReviewNote);
         map.MapStatus = MapStatusEnum.Approved;
+        map.ReviewNote = normalizedReviewNote;
         map.UpdateEntity(userIdNullable!.Value);
         mapRepo.Update(map);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+        if (map.CreatedBy.HasValue)
+        {
+            try
+            {
+                var payloadJson = JsonSerializer.Serialize(new
+                {
+                    mapId = map.Id,
+                    mapTitle = map.Title,
+                    status = map.MapStatus.ToString(),
+                    reviewNote = normalizedReviewNote
+                });
+
+                var body = string.IsNullOrWhiteSpace(normalizedReviewNote)
+                    ? $"Map \"{map.Title}\" đã được duyệt."
+                    : $"Map \"{map.Title}\" đã được duyệt. Ghi chú: {normalizedReviewNote}";
+
+                await _notificationPersistenceService.CreateNotificationAsync(
+                    NotificationTypeEnum.SystemAnnouncement,
+                    "Map của bạn đã được duyệt",
+                    body,
+                    new List<Guid> { map.CreatedBy.Value },
+                    userIdNullable.Value,
+                    payloadJson,
+                    "/app/my-maps",
+                    cancellationToken);
+            }
+            catch
+            {
+                // Notification failure must not break approval flow.
+            }
+        }
+
         return Result.Success("Bản đồ đã được phê duyệt thành công.");
+    }
+
+    private static string? NormalizeNote(string? note)
+    {
+        if (string.IsNullOrWhiteSpace(note))
+            return null;
+        return note.Trim();
     }
 }

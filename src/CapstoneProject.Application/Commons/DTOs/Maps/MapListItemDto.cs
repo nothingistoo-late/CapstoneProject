@@ -16,6 +16,8 @@ public class MapListItemDto
     public decimal? Price { get; set; }
     /// <summary>Số lượt chơi thử miễn phí cho mỗi người chơi. 0 = không có trial.</summary>
     public int FreeTrialAttemptLimit { get; set; }
+    /// <summary>Ghi chú kiểm duyệt gần nhất từ Admin/Moderator (nếu có).</summary>
+    public string? ReviewNote { get; set; }
     public Guid CreatedByUserId { get; set; }
     /// <summary>Tên người tạo map (FirstName + LastName).</summary>
     public string? CreatedByUserName { get; set; }

@@ -123,6 +123,7 @@ public class GetMyMapsQueryHandler : IRequestHandler<GetMyMapsQuery, Result<Pagi
             IsPublished = m.IsPublished,
             MapStatus = m.MapStatus.ToString(),
             Price = m.Price,
+            ReviewNote = m.ReviewNote,
             CreatedByUserId = m.CreatedBy ?? Guid.Empty,
             CreatedByUserName = m.Creator != null ? $"{m.Creator.FirstName} {m.Creator.LastName}".Trim() : null,
             // IsAuthor = user Ä‘ang gá»­i request cÃ³ pháº£i lÃ  ngÆ°á»i táº¡o map (CreatedBy), khÃ´ng pháº£i kiá»ƒm tra sá»Ÿ há»¯u
