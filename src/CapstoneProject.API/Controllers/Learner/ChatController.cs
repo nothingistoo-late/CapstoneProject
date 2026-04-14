@@ -164,27 +164,27 @@ public class LearnerChatController : ControllerBase
     ///
     /// **Route:** conversationId (Guid, required): Conversation ID (also set in body.request.chatRoomId).
     ///
-    /// **Body (JSON):** Request object with:
-    /// - request.chatRoomId (Guid, required): Same as route conversationId.
-    /// - request.content (string, required): Message text. Max 5000 chars.
-    /// - request.messageType (int, optional): MessageTypeEnum: 0=Text, 1=Image, 2=File, 3=Video. Default 0.
-    /// - request.replyToMessageId (Guid?, optional): Reply to message ID.
-    /// - request.fileName (string, optional): Max 255 chars.
-    /// - request.fileSize (long?, optional): 0–10485760 (10MB).
+    /// **Body (multipart/form-data):** Fields with the following names:
+    /// - ChatRoomId (Guid, required): Same as route conversationId.
+    /// - Content (string, optional for image messages): Message text. Max 5000 chars.
+    /// - MessageType (int, optional): MessageTypeEnum: 0=Text, 1=Image, 2=File, 3=Video. Default 0.
+    /// - ReplyToMessageId (Guid?, optional): Reply to message ID.
+    /// - ImageFile (IFormFile?, optional): Image attachment.
     ///
     /// **METHOD and path:** POST /api/learner/chat/conversations/{conversationId}/messages
     ///
-    /// **Example request body:** { "request": { "chatRoomId": "3fa85f64-5717-4562-b3fc-2c963f66afa6", "content": "Hello!", "messageType": 0 } }
+    /// **Example request body:** multipart/form-data with ChatRoomId=3fa85f64-5717-4562-b3fc-2c963f66afa6, Content=Hello!, MessageType=0
     /// </remarks>
     [HttpPost("conversations/{conversationId}/messages")]
+    [Consumes("multipart/form-data")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [SwaggerOperation(Summary = "Send message", Description = "Sends a message to the conversation. Body contains content. conversationId in route. Requires Bearer token. Use SignalR for real-time delivery.", OperationId = "Learner_SendMessage", Tags = new[] { "Learner - Chat" })]
-    public async Task<IActionResult> SendMessage([FromRoute] Guid conversationId, [FromBody] SendMessageCommand command)
+    public async Task<IActionResult> SendMessage([FromRoute] Guid conversationId, [FromForm] SendMessageCommand command)
     {
-        command.Request.ChatRoomId = conversationId;
+        command.ChatRoomId = conversationId;
         var result = await _mediator.Send(command);
         return result.IsSuccess ? Ok(result) : BadRequest(result);
     }

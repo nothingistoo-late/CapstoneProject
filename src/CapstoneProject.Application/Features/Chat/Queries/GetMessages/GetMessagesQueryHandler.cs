@@ -110,6 +110,50 @@ public class GetMessagesQueryHandler : IRequestHandler<GetMessagesQuery, Result<
             .Take(request.PageSize)
             .ToListAsync(cancellationToken);
 
+        if (request.PageNumber == 1 && !request.BeforeMessageId.HasValue && messages.Count > 0)
+        {
+            var memberRepoForRead = _unitOfWork.Repository<ChatRoomMember>();
+            var member = await memberRepoForRead.GetQueryable()
+                .FirstOrDefaultAsync(
+                    m => m.ChatRoomId == request.ChatRoomId && m.UserId == currentUserId && m.LeftAt == null && m.Status == EntityStatusEnum.Active,
+                    cancellationToken);
+
+            if (member != null)
+            {
+                var newestReadAt = messages.Max(m => m.CreatedAt ?? CapstoneProject.Domain.Common.VietnamDateTime.DbNow);
+                var shouldUpdateLastRead = !member.LastReadAt.HasValue || member.LastReadAt.Value < newestReadAt;
+
+                if (shouldUpdateLastRead)
+                {
+                    member.LastReadAt = newestReadAt;
+                    member.UpdatedBy = currentUserId;
+                    member.UpdatedAt = CapstoneProject.Domain.Common.VietnamDateTime.DbNow;
+                    memberRepoForRead.Update(member);
+                }
+
+                var messageReadRepo = _unitOfWork.Repository<MessageRead>();
+                var unreadMessages = messages
+                    .Where(m => m.SenderId != currentUserId && !m.MessageReads.Any(mr => mr.UserId == currentUserId))
+                    .Select(m => m.Id)
+                    .ToList();
+
+                foreach (var messageId in unreadMessages)
+                {
+                    await messageReadRepo.AddAsync(new MessageRead
+                    {
+                        MessageId = messageId,
+                        UserId = currentUserId,
+                        ReadAt = newestReadAt
+                    });
+                }
+
+                if (shouldUpdateLastRead || unreadMessages.Count > 0)
+                {
+                    await _unitOfWork.SaveChangesAsync(cancellationToken);
+                }
+            }
+        }
+
         var messageResponses = messages.Select(m => new MessageResponse
         {
             Id = m.Id,

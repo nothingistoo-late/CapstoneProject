@@ -1,4 +1,4 @@
-﻿using FluentValidation;
+using FluentValidation;
 using CapstoneProject.Application.Common.Interfaces;
 using CapstoneProject.Domain.Enums;
 
@@ -6,6 +6,11 @@ namespace CapstoneProject.Application.Features.Chat.Commands.SendMessage;
 
 public class SendMessageCommandValidator : AbstractValidator<SendMessageCommand>
 {
+    private static readonly HashSet<string> AllowedImageExtensions = new(StringComparer.OrdinalIgnoreCase)
+    {
+        ".png", ".jpg", ".jpeg", ".gif", ".webp"
+    };
+
     private readonly IUnitOfWork _unitOfWork;
 
     public SendMessageCommandValidator(IUnitOfWork unitOfWork)
@@ -16,7 +21,7 @@ public class SendMessageCommandValidator : AbstractValidator<SendMessageCommand>
 
     private void SetupValidationRules()
     {
-        RuleFor(x => x.Request.ChatRoomId)
+        RuleFor(x => x.ChatRoomId)
             .NotEmpty().WithMessage("Cần có ID phòng trò chuyện")
             .MustAsync(async (chatRoomId, cancellation) =>
             {
@@ -30,15 +35,15 @@ public class SendMessageCommandValidator : AbstractValidator<SendMessageCommand>
                 return conversation != null;
             }).WithMessage("Không tìm thấy cuộc trò chuyện");
 
-        RuleFor(x => x.Request)
+        RuleFor(x => x.ChatRoomId)
             .MustAsync(async (request, cancellation) =>
             {
-                if (request.ChatRoomId == Guid.Empty)
+                if (request == Guid.Empty)
                     return false;
 
                 var conversationRepo = _unitOfWork.Repository<Domain.Entities.ChatRoom>();
                 var conversation = await conversationRepo.GetFirstOrDefaultAsync(
-                    c => c.Id == request.ChatRoomId && !c.IsDeleted);
+                    c => c.Id == request && !c.IsDeleted);
 
                 if (conversation == null)
                     return false;
@@ -47,37 +52,32 @@ public class SendMessageCommandValidator : AbstractValidator<SendMessageCommand>
                 return !conversation.IsClosed;
             }).WithMessage("Không thể gửi tin nhắn đến cuộc trò chuyện đã đóng");
 
-        RuleFor(x => x.Request.Content)
-            .NotEmpty().WithMessage("Message content is required")
-            .When(x => x.Request.MessageType == MessageTypeEnum.Text)
-            .MaximumLength(5000).WithMessage("Nội dung tin nhắn không được vượt quá 5000 ký tự");
+        // Content is required ONLY when sending a plain text message (no image attached)
+        RuleFor(x => x.Content)
+            .NotEmpty().WithMessage("Nội dung tin nhắn không được để trống")
+            .When(x => x.ImageFile == null);
 
-        RuleFor(x => x.Request.MessageType)
-            .IsInEnum().WithMessage("Invalid message type");
+        // Max length always applies (when content is provided)
+        RuleFor(x => x.Content)
+            .MaximumLength(5000).WithMessage("Nội dung tin nhắn không được vượt quá 5000 ký tự")
+            .When(x => !string.IsNullOrEmpty(x.Content));
 
-        // File validation rules
-        When(x => x.Request.MessageType == MessageTypeEnum.File || 
-                  x.Request.MessageType == MessageTypeEnum.Image ||
-                  x.Request.MessageType == MessageTypeEnum.Video ||
-                  x.Request.MessageType == MessageTypeEnum.Audio, () =>
+        When(x => x.ImageFile != null, () =>
         {
-            RuleFor(x => x.FilePath)
-                .NotEmpty().WithMessage("File path is required for file attachments");
-
-            RuleFor(x => x.Request.FileName)
-                .NotEmpty().WithMessage("File name is required for file attachments")
-                .MaximumLength(255).WithMessage("File name must not exceed 255 characters");
-
-            RuleFor(x => x.Request.FileSize)
-                .GreaterThan(0).WithMessage("File size must be greater than 0")
-                .LessThanOrEqualTo(10 * 1024 * 1024) // 10MB max
-                .WithMessage("File size must not exceed 10MB");
+            RuleFor(x => x.ImageFile!)
+                .Must(file => file.Length > 0).WithMessage("File ảnh không hợp lệ")
+                .Must(file => file.Length <= 10 * 1024 * 1024).WithMessage("Ảnh tải lên không được vượt quá 10MB")
+                .Must(file =>
+                {
+                    var extension = Path.GetExtension(file.FileName);
+                    return !string.IsNullOrWhiteSpace(extension) && AllowedImageExtensions.Contains(extension);
+                }).WithMessage("Chỉ hỗ trợ ảnh PNG, JPG, JPEG, GIF và WEBP");
         });
 
         // Reply validation
-        When(x => x.Request.ReplyToMessageId.HasValue, () =>
+        When(x => x.ReplyToMessageId.HasValue, () =>
         {
-            RuleFor(x => x.Request.ReplyToMessageId)
+            RuleFor(x => x.ReplyToMessageId)
                 .MustAsync(async (messageId, cancellation) =>
                 {
                     if (!messageId.HasValue || messageId.Value == Guid.Empty)

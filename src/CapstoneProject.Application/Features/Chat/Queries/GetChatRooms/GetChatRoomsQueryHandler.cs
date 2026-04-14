@@ -90,13 +90,13 @@ public class GetChatRoomsQueryHandler : IRequestHandler<GetChatRoomsQuery, Resul
                 if (member != null && member.LastReadAt.HasValue)
                 {
                     unreadCount = await messageRepo.GetQueryable()
-                        .Where(m => m.ChatRoomId == room.Id && !m.IsDeleted && (m.CreatedAt ?? DateTime.MinValue) > member.LastReadAt.Value)
+                        .Where(m => m.ChatRoomId == room.Id && !m.IsDeleted && m.SenderId != currentUserId && (m.CreatedAt ?? DateTime.MinValue) > member.LastReadAt.Value)
                         .CountAsync(cancellationToken);
                 }
                 else if (member != null)
                 {
                     unreadCount = await messageRepo.GetQueryable()
-                        .Where(m => m.ChatRoomId == room.Id && !m.IsDeleted)
+                        .Where(m => m.ChatRoomId == room.Id && !m.IsDeleted && m.SenderId != currentUserId)
                         .CountAsync(cancellationToken);
                 }
 
