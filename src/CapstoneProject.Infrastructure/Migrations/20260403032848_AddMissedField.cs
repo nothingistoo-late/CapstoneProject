@@ -14,22 +14,22 @@ namespace CapstoneProject.Infrastructure.Migrations
             // Idempotent for DBs that were partially fixed by hand or already had Add1NMapDetail applied.
             migrationBuilder.Sql(
                 """
-                ALTER TABLE "Hints" DROP CONSTRAINT IF EXISTS "FK_Hints_Maps_MapId";
+                ALTER TABLE "Hints" DROP CONSTRAINT IF EXISTS "FK_Hints_Maps_GameId";
 
-                DROP INDEX IF EXISTS "IX_UserMapResults_UserId_MapId";
-                DROP INDEX IF EXISTS "IX_MapDetails_MapId";
+                DROP INDEX IF EXISTS "IX_UserMapResults_UserId_GameId";
+                DROP INDEX IF EXISTS "IX_MapDetails_GameId";
 
-                ALTER TABLE "Maps" DROP COLUMN IF EXISTS "TimeLimitMs";
-                ALTER TABLE "Maps" DROP COLUMN IF EXISTS "Type";
-                ALTER TABLE "Maps" DROP COLUMN IF EXISTS "WinCondition";
+                ALTER TABLE "Games" DROP COLUMN IF EXISTS "TimeLimitMs";
+                ALTER TABLE "Games" DROP COLUMN IF EXISTS "Type";
+                ALTER TABLE "Games" DROP COLUMN IF EXISTS "WinCondition";
 
                 DO $EF$
                 BEGIN
                   IF EXISTS (
                     SELECT 1 FROM information_schema.columns
-                    WHERE table_schema = 'public' AND table_name = 'Hints' AND column_name = 'MapId'
+                    WHERE table_schema = 'public' AND table_name = 'Hints' AND column_name = 'GameId'
                   ) THEN
-                    ALTER TABLE "Hints" RENAME COLUMN "MapId" TO "MapDetailId";
+                    ALTER TABLE "Hints" RENAME COLUMN "GameId" TO "MapDetailId";
                   END IF;
                 END $EF$;
 
@@ -38,21 +38,21 @@ namespace CapstoneProject.Infrastructure.Migrations
                   IF EXISTS (
                     SELECT 1 FROM pg_class c
                     JOIN pg_namespace n ON n.oid = c.relnamespace
-                    WHERE n.nspname = 'public' AND c.relname = 'IX_Hints_MapId_OrderNo'
+                    WHERE n.nspname = 'public' AND c.relname = 'IX_Hints_GameId_OrderNo'
                   ) THEN
-                    ALTER INDEX "IX_Hints_MapId_OrderNo" RENAME TO "IX_Hints_MapDetailId_OrderNo";
+                    ALTER INDEX "IX_Hints_GameId_OrderNo" RENAME TO "IX_Hints_MapDetailId_OrderNo";
                   END IF;
                 END $EF$;
 
-                -- After rename, column may still hold Maps.Id; map to MapDetails.Id (skip rows already valid).
+                -- After rename, column may still hold Games.Id; game to MapDetails.Id (skip rows already valid).
                 UPDATE "Hints" h
                 SET "MapDetailId" = sub."Id"
                 FROM (
-                  SELECT DISTINCT ON (md."MapId") md."Id", md."MapId"
+                  SELECT DISTINCT ON (md."GameId") md."Id", md."GameId"
                   FROM "MapDetails" md
-                  ORDER BY md."MapId", md."Id"
+                  ORDER BY md."GameId", md."Id"
                 ) sub
-                WHERE sub."MapId" = h."MapDetailId"
+                WHERE sub."GameId" = h."MapDetailId"
                   AND NOT EXISTS (SELECT 1 FROM "MapDetails" d WHERE d."Id" = h."MapDetailId");
 
                 ALTER TABLE "UserMapResults" ADD COLUMN IF NOT EXISTS "MapDetailId" uuid NULL;
@@ -70,7 +70,7 @@ namespace CapstoneProject.Infrastructure.Migrations
                 """
                 CREATE TABLE IF NOT EXISTS "MapMedias" (
                     "Id" uuid NOT NULL,
-                    "MapId" uuid NOT NULL,
+                    "GameId" uuid NOT NULL,
                     "Url" text NOT NULL,
                     "Kind" integer NOT NULL,
                     "SortOrder" integer NOT NULL,
@@ -87,8 +87,8 @@ namespace CapstoneProject.Infrastructure.Migrations
 
                 DO $EF$
                 BEGIN
-                  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'FK_MapMedias_Maps_MapId') THEN
-                    ALTER TABLE "MapMedias" ADD CONSTRAINT "FK_MapMedias_Maps_MapId" FOREIGN KEY ("MapId") REFERENCES "Maps" ("Id") ON DELETE CASCADE;
+                  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'FK_MapMedias_Maps_GameId') THEN
+                    ALTER TABLE "MapMedias" ADD CONSTRAINT "FK_MapMedias_Maps_GameId" FOREIGN KEY ("GameId") REFERENCES "Games" ("Id") ON DELETE CASCADE;
                   END IF;
                 END $EF$;
                 """);
@@ -96,12 +96,12 @@ namespace CapstoneProject.Infrastructure.Migrations
             migrationBuilder.Sql(
                 """
                 CREATE INDEX IF NOT EXISTS "IX_UserMapResults_MapDetailId" ON "UserMapResults" ("MapDetailId");
-                CREATE INDEX IF NOT EXISTS "IX_UserMapResults_MapId" ON "UserMapResults" ("MapId");
+                CREATE INDEX IF NOT EXISTS "IX_UserMapResults_GameId" ON "UserMapResults" ("GameId");
                 CREATE INDEX IF NOT EXISTS "IX_UserMapResults_UserId_MapDetailId" ON "UserMapResults" ("UserId", "MapDetailId");
                 CREATE INDEX IF NOT EXISTS "IX_UserMapPlayHistories_MapDetailId" ON "UserMapPlayHistories" ("MapDetailId");
                 CREATE INDEX IF NOT EXISTS "IX_Submissions_MapDetailId" ON "Submissions" ("MapDetailId");
-                CREATE UNIQUE INDEX IF NOT EXISTS "IX_MapDetails_MapId_LevelOrder" ON "MapDetails" ("MapId", "LevelOrder");
-                CREATE INDEX IF NOT EXISTS "IX_MapMedias_MapId_SortOrder" ON "MapMedias" ("MapId", "SortOrder");
+                CREATE UNIQUE INDEX IF NOT EXISTS "IX_MapDetails_GameId_LevelOrder" ON "MapDetails" ("GameId", "LevelOrder");
+                CREATE INDEX IF NOT EXISTS "IX_MapMedias_GameId_SortOrder" ON "MapMedias" ("GameId", "SortOrder");
                 """);
 
             migrationBuilder.Sql(
@@ -152,7 +152,7 @@ namespace CapstoneProject.Infrastructure.Migrations
                 table: "UserMapResults");
 
             migrationBuilder.DropIndex(
-                name: "IX_UserMapResults_MapId",
+                name: "IX_UserMapResults_GameId",
                 table: "UserMapResults");
 
             migrationBuilder.DropIndex(
@@ -168,7 +168,7 @@ namespace CapstoneProject.Infrastructure.Migrations
                 table: "Submissions");
 
             migrationBuilder.DropIndex(
-                name: "IX_MapDetails_MapId_LevelOrder",
+                name: "IX_MapDetails_GameId_LevelOrder",
                 table: "MapDetails");
 
             migrationBuilder.DropColumn(
@@ -206,51 +206,51 @@ namespace CapstoneProject.Infrastructure.Migrations
             migrationBuilder.RenameColumn(
                 name: "MapDetailId",
                 table: "Hints",
-                newName: "MapId");
+                newName: "GameId");
 
             migrationBuilder.RenameIndex(
                 name: "IX_Hints_MapDetailId_OrderNo",
                 table: "Hints",
-                newName: "IX_Hints_MapId_OrderNo");
+                newName: "IX_Hints_GameId_OrderNo");
 
             migrationBuilder.AddColumn<int>(
                 name: "TimeLimitMs",
-                table: "Maps",
+                table: "Games",
                 type: "integer",
                 nullable: false,
                 defaultValue: 0);
 
             migrationBuilder.AddColumn<int>(
                 name: "Type",
-                table: "Maps",
+                table: "Games",
                 type: "integer",
                 nullable: false,
                 defaultValue: 0);
 
             migrationBuilder.AddColumn<int>(
                 name: "WinCondition",
-                table: "Maps",
+                table: "Games",
                 type: "integer",
                 nullable: false,
                 defaultValue: 0);
 
             migrationBuilder.CreateIndex(
-                name: "IX_UserMapResults_UserId_MapId",
+                name: "IX_UserMapResults_UserId_GameId",
                 table: "UserMapResults",
-                columns: new[] { "UserId", "MapId" },
+                columns: new[] { "UserId", "GameId" },
                 unique: true);
 
             migrationBuilder.CreateIndex(
-                name: "IX_MapDetails_MapId",
+                name: "IX_MapDetails_GameId",
                 table: "MapDetails",
-                column: "MapId",
+                column: "GameId",
                 unique: true);
 
             migrationBuilder.AddForeignKey(
-                name: "FK_Hints_Maps_MapId",
+                name: "FK_Hints_Maps_GameId",
                 table: "Hints",
-                column: "MapId",
-                principalTable: "Maps",
+                column: "GameId",
+                principalTable: "Games",
                 principalColumn: "Id",
                 onDelete: ReferentialAction.Cascade);
         }

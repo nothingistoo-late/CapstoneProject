@@ -1,6 +1,6 @@
 namespace CapstoneProject.Application.Commons.DTOs.Gameplay;
 
-public class UpdateMapSolveScoreConfigRequest
+public class UpdateGameSolveScoreConfigRequest
 {
     public int BaseScore { get; set; }
     public int TimeScore { get; set; }

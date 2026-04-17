@@ -47,16 +47,16 @@ public class GetMyComplaintDetailQueryHandler : IRequestHandler<GetMyComplaintDe
         // Full view: complaint creator can see all details
         bool isFullView = complaint.UserId == userId;
         
-        // Limited view: map creator (if complaint is about their map) can see selected fields
+        // Limited view: game creator (if complaint is about their game) can see selected fields
         bool isLimitedView = false;
-        if (!isFullView && complaint.ContextType == "Map" && complaint.ContextId.HasValue)
+        if (!isFullView && complaint.ContextType == "Game" && complaint.ContextId.HasValue)
         {
-            var map = await _unitOfWork.Repository<Map>()
+            var game = await _unitOfWork.Repository<Game>()
                 .GetQueryable()
                 .AsNoTracking()
                 .FirstOrDefaultAsync(m => m.Id == complaint.ContextId && !m.IsDeleted, cancellationToken);
             
-            if (map?.CreatedBy == userId)
+            if (game?.CreatedBy == userId)
                 isLimitedView = true;
         }
 

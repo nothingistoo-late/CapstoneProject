@@ -1,7 +1,7 @@
 namespace CapstoneProject.Application.Commons.DTOs.Gameplay;
 
 /// <summary>
-/// DTO submit bài — client gửi: AstSpec, BytecodeSpec, Score, StepsUsed, BlocksUsed, Time. UserId/MapId do server điền từ auth và room.
+/// DTO submit bài — client gửi: AstSpec, BytecodeSpec, Score, StepsUsed, BlocksUsed, Time. UserId/GameId do server điền từ auth và room.
 /// </summary>
 public class SubmissionSubmitRequest
 {
@@ -19,6 +19,6 @@ public class SubmissionSubmitRequest
     /// <summary>Thời gian (giây) hoặc milliseconds tùy client — thời gian chơi / thời gian nộp.</summary>
     public double? Time { get; set; }
 
-    /// <summary>Level đang nộp (MapDetails.Id). Null = map một level.</summary>
-    public Guid? MapDetailId { get; set; }
+    /// <summary>Level đang nộp (GameDetails.Id). Null = game một level.</summary>
+    public Guid? GameDetailId { get; set; }
 }

@@ -1,7 +1,7 @@
 using CapstoneProject.Application.Commons.DTOs.Gameplay;
 using CapstoneProject.Application.Features.Gameplay.Commands.ValidateSolution;
 using CapstoneProject.Application.Features.Gameplay.Queries.GetHintsForMap;
-using CapstoneProject.Application.Features.Gameplay.Queries.GetMyMapPlayHistory;
+using CapstoneProject.Application.Features.Gameplay.Queries.GetMyGamePlayHistory;
 using CapstoneProject.Application.Features.Gameplay.Queries.GetProgressDashboard;
 
 namespace CapstoneProject.API.Controllers.Learner;
@@ -21,10 +21,10 @@ public class LearnerGameplayController : ControllerBase
     /// Validate solution
     /// </summary>
     /// <remarks>
-    /// Submits solution (mapId, astSpec or bytecodeSpec, language). Returns Accepted/Rejected, stars, XP. Trial attempts still record progress, but do not grant XP. Creates Submission and updates UserMapResult. Requires Bearer token.
+    /// Submits solution (gameId, astSpec or bytecodeSpec, language). Returns Accepted/Rejected, stars, XP. Trial attempts still record progress, but do not grant XP. Creates Submission and updates UserGameResult. Requires Bearer token.
     ///
     /// **Body (JSON):**
-    /// - mapId (Guid, required): Challenge map ID.
+    /// - gameId (Guid, required): Challenge game ID.
     /// - language (string, optional): Solution language. Default "Blockly".
     /// - astSpec (string, optional): AST specification (JSON). Use either astSpec or bytecodeSpec.
     /// - bytecodeSpec (string, optional): Bytecode specification. Use either astSpec or bytecodeSpec.
@@ -34,12 +34,12 @@ public class LearnerGameplayController : ControllerBase
     ///
     /// **METHOD and path:** POST /api/learner/gameplay/validate
     ///
-    /// **Example request body:** { "mapId": "3fa85f64-5717-4562-b3fc-2c963f66afa6", "language": "Blockly", "astSpec": "{}" }
+    /// **Example request body:** { "gameId": "3fa85f64-5717-4562-b3fc-2c963f66afa6", "language": "Blockly", "astSpec": "{}" }
     /// </remarks>
     /// <response code="200">Returns message and data (result, stars, XP).</response>
     /// <response code="400">Validation error</response>
     /// <response code="401">Not authorized</response>
-    /// <response code="404">Map not found</response>
+    /// <response code="404">Game not found</response>
     /// <response code="500">Internal server error</response>
     [HttpPost("validate")]
     [AuthorizeRoles(nameof(RoleEnum.Learner), nameof(RoleEnum.Admin), nameof(RoleEnum.Moderator))]
@@ -48,17 +48,17 @@ public class LearnerGameplayController : ControllerBase
     [ProducesResponseType(typeof(Result<ValidateSolutionResultDto>), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(Result<ValidateSolutionResultDto>), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(Result<ValidateSolutionResultDto>), StatusCodes.Status500InternalServerError)]
-    [SwaggerOperation(Summary = "Validate solution", Description = "Submits solution. Returns Accepted/Rejected, stars, XP. Trial attempts still record progress, but do not grant XP. Creates Submission and updates UserMapResult. Requires Bearer token.", OperationId = "Learner_ValidateSolution", Tags = new[] { "Learner - Gameplay" })]
+    [SwaggerOperation(Summary = "Validate solution", Description = "Submits solution. Returns Accepted/Rejected, stars, XP. Trial attempts still record progress, but do not grant XP. Creates Submission and updates UserGameResult. Requires Bearer token.", OperationId = "Learner_ValidateSolution", Tags = new[] { "Learner - Gameplay" })]
     public async Task<IActionResult> ValidateSolution([FromBody] ValidateSolutionRequest request)
     {
         var result = await _mediator.Send(new ValidateSolutionCommand(request));
         return StatusCode(result.GetHttpStatusCode(), result);
     }
 
-    /// <summary>Lịch sử chơi map của tôi (phân trang).</summary>
+    /// <summary>Lịch sử chơi game của tôi (phân trang).</summary>
     /// <remarks>
     /// Trả về các lần validate/submit đã ghi (UserMapPlayHistories), sort theo StartTime mới nhất trước.
-    /// Query: pageNumber (default 1), pageSize (default 20, max 100), mapId (optional), playMode (optional: Single|Lobby).
+    /// Query: pageNumber (default 1), pageSize (default 20, max 100), gameId (optional), playMode (optional: Single|Lobby).
     ///
     /// **METHOD and path:** GET /api/learner/gameplay/my-play-history
     /// </remarks>
@@ -66,33 +66,33 @@ public class LearnerGameplayController : ControllerBase
     [AuthorizeRoles(nameof(RoleEnum.Learner), nameof(RoleEnum.Admin), nameof(RoleEnum.Moderator))]
     [ProducesResponseType(typeof(Result<PaginationResult<MapPlayHistoryItemDto>>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(Result<PaginationResult<MapPlayHistoryItemDto>>), StatusCodes.Status401Unauthorized)]
-    [SwaggerOperation(Summary = "My map play history", Description = "Paginated play history for the current user.", OperationId = "Learner_GetMyMapPlayHistory", Tags = new[] { "Learner - Gameplay" })]
-    public async Task<IActionResult> GetMyMapPlayHistory([FromQuery] GetMyMapPlayHistoryQuery query)
+    [SwaggerOperation(Summary = "My game play history", Description = "Paginated play history for the current user.", OperationId = "Learner_GetMyGamePlayHistory", Tags = new[] { "Learner - Gameplay" })]
+    public async Task<IActionResult> GetMyGamePlayHistory([FromQuery] GetMyGamePlayHistoryQuery query)
     {
         var result = await _mediator.Send(query);
         return StatusCode(result.GetHttpStatusCode(), result);
     }
 
-    /// <summary>Get hints for map (by level).</summary>
+    /// <summary>Get hints for game (by level).</summary>
     /// <remarks>
-    /// Returns ordered hints (orderNo, content) for the given map. Use after loading map detail.
+    /// Returns ordered hints (orderNo, content) for the given game. Use after loading game detail.
     ///
-    /// **Route:** mapId (Guid, required): Map ID.
+    /// **Route:** gameId (Guid, required): Game ID.
     /// **Query (optional):** mapDetailId — chỉ lấy hint của một level.
     ///
     /// **Body:** None.
     ///
-    /// **METHOD and path:** GET /api/learner/gameplay/maps/{mapId}/hints
+    /// **METHOD and path:** GET /api/learner/gameplay/games/{gameId}/hints
     ///
-    /// **Example request:** GET /api/learner/gameplay/maps/3fa85f64-5717-4562-b3fc-2c963f66afa6/hints
+    /// **Example request:** GET /api/learner/gameplay/games/3fa85f64-5717-4562-b3fc-2c963f66afa6/hints
     /// </remarks>
-    [HttpGet("maps/{mapId:guid}/hints")]
+    [HttpGet("games/{gameId:guid}/hints")]
     [ProducesResponseType(typeof(Result<List<HintLevelDto>>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(Result), StatusCodes.Status404NotFound)]
-    [SwaggerOperation(Summary = "Get hints for map", Description = "Returns hints per level (levelOrder, mapDetailId, orderNo, content). Optional mapDetailId filters to one level.", OperationId = "Learner_GetHintsForMap", Tags = new[] { "Learner - Gameplay" })]
-    public async Task<IActionResult> GetHintsForMap(Guid mapId, [FromQuery] Guid? mapDetailId = null)
+    [SwaggerOperation(Summary = "Get hints for game", Description = "Returns hints per level (levelOrder, mapDetailId, orderNo, content). Optional mapDetailId filters to one level.", OperationId = "Learner_GetHintsForMap", Tags = new[] { "Learner - Gameplay" })]
+    public async Task<IActionResult> GetHintsForMap(Guid gameId, [FromQuery] Guid? mapDetailId = null)
     {
-        var result = await _mediator.Send(new GetHintsForMapQuery(mapId, mapDetailId));
+        var result = await _mediator.Send(new GetHintsForMapQuery(gameId, mapDetailId));
         return StatusCode(result.GetHttpStatusCode(), result);
     }
 

@@ -78,7 +78,7 @@ public class UpdateUserCommandHandler : IRequestHandler<UpdateUserCommand, Resul
 
             var oldAvatarPath = user.AvatarPath;
 
-            // Map request to user
+            // Game request to user
             _mapper.Map(request, user);
 
             // Get current roles once (reuse for both validation and role update)

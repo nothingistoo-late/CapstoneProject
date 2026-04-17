@@ -12,7 +12,7 @@ namespace CapstoneProject.Infrastructure.Migrations
         {
             migrationBuilder.AddColumn<int>(
                 name: "FreeTrialAttemptLimit",
-                table: "Maps",
+                table: "Games",
                 type: "integer",
                 nullable: false,
                 defaultValue: 0);
@@ -23,7 +23,7 @@ namespace CapstoneProject.Infrastructure.Migrations
         {
             migrationBuilder.DropColumn(
                 name: "FreeTrialAttemptLimit",
-                table: "Maps");
+                table: "Games");
         }
     }
 }

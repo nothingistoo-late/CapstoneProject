@@ -41,7 +41,7 @@ public class ToggleLobbyReadyCommandHandler : IRequestHandler<ToggleLobbyReadyCo
             MaxPlayers = room.MaxPlayers,
             Status = room.Status,
             IsLocked = room.IsLocked,
-            SelectedMapId = room.SelectedMapId,
+            SelectedGameId = room.SelectedGameId,
             Players = room.Players.Values.Select(p => new LobbyPlayerDto { PlayerId = p.PlayerId, IsReady = p.IsReady, IsHost = p.IsHost }).ToList()
         };
         return Result<LobbyRoomDetailResponse>.Success(response, "Đã cập nhật trạng thái sẵn sàng.");

@@ -8,19 +8,19 @@ namespace CapstoneProject.API.Controllers;
 [Route("api/recommendations")]
 [ApiExplorerSettings(GroupName = "v1")]
 [Configurations.Tags("Learner - Recommendations")]
-[SwaggerTag("Recommendation system: review maps + suggested practice")]
+[SwaggerTag("Recommendation system: review games + suggested practice")]
 public class RecommendationsController : ControllerBase
 {
     private readonly IMediator _mediator;
 
     public RecommendationsController(IMediator mediator) => _mediator = mediator;
 
-    /// <summary>Get map recommendations for current user.</summary>
+    /// <summary>Get game recommendations for current user.</summary>
     /// <remarks>
     /// Returns:
-    /// - recommendedMaps: top scored maps (rule-based MVP + optional scoring)
-    /// - reviewMaps: maps with failures >= 3
-    /// - suggestedPracticeMaps: maps matching user's weakest concept
+    /// - recommendedMaps: top scored games (rule-based MVP + optional scoring)
+    /// - reviewMaps: games with failures >= 3
+    /// - suggestedPracticeMaps: games matching user's weakest concept
     /// - nextConcept: the concept after the last completed one in current learning path
     /// </remarks>
     [HttpGet]
@@ -30,7 +30,7 @@ public class RecommendationsController : ControllerBase
     [ProducesResponseType(typeof(Result<RecommendationResultDto>), StatusCodes.Status500InternalServerError)]
     [SwaggerOperation(
         Summary = "Get recommendations",
-        Description = "Returns recommended maps + review/suggested practice lists.",
+        Description = "Returns recommended games + review/suggested practice lists.",
         OperationId = "Learner_GetRecommendations",
         Tags = new[] { "Learner - Recommendations" })]
     public async Task<IActionResult> GetRecommendations(CancellationToken cancellationToken)

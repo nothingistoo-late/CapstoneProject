@@ -4,13 +4,13 @@ using CapstoneProject.Domain.Enums;
 namespace CapstoneProject.Application.Commons.DTOs.Gameplay;
 
 /// <summary>
-/// Một dòng lịch sử chơi map (từ UserMapPlayHistories).
+/// Một dòng lịch sử chơi game (từ UserMapPlayHistories).
 /// </summary>
 public class MapPlayHistoryItemDto
 {
     public Guid Id { get; set; }
-    public Guid MapId { get; set; }
-    /// <summary>Tiêu đề map tại thời điểm truy vấn (null nếu map đã xóa).</summary>
+    public Guid GameId { get; set; }
+    /// <summary>Tiêu đề game tại thời điểm truy vấn (null nếu game đã xóa).</summary>
     public string? MapTitle { get; set; }
 
     [JsonConverter(typeof(JsonStringEnumConverter))]

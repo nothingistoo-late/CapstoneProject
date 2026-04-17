@@ -1031,7 +1031,7 @@ namespace CapstoneProject.Infrastructure.Migrations
                         .HasColumnType("boolean")
                         .HasDefaultValue(false);
 
-                    b.Property<Guid>("MapDetailId")
+                    b.Property<Guid>("GameDetailId")
                         .HasColumnType("uuid");
 
                     b.Property<int>("OrderNo")
@@ -1048,7 +1048,7 @@ namespace CapstoneProject.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("MapDetailId", "OrderNo");
+                    b.HasIndex("GameDetailId", "OrderNo");
 
                     b.ToTable("Hints");
                 });
@@ -1141,7 +1141,7 @@ namespace CapstoneProject.Infrastructure.Migrations
                     b.Property<Guid>("LearningGoalId")
                         .HasColumnType("uuid");
 
-                    b.Property<Guid?>("MapId")
+                    b.Property<Guid?>("GameId")
                         .HasColumnType("uuid");
 
                     b.Property<int>("SortOrder")
@@ -1160,7 +1160,7 @@ namespace CapstoneProject.Infrastructure.Migrations
 
                     b.HasIndex("ConceptId");
 
-                    b.HasIndex("MapId");
+                    b.HasIndex("GameId");
 
                     b.HasIndex("LearningGoalId", "SortOrder");
 
@@ -1220,7 +1220,7 @@ namespace CapstoneProject.Infrastructure.Migrations
                     b.ToTable("LevelThresholds");
                 });
 
-            modelBuilder.Entity("CapstoneProject.Domain.Entities.Map", b =>
+            modelBuilder.Entity("CapstoneProject.Domain.Entities.Game", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -1280,7 +1280,7 @@ namespace CapstoneProject.Infrastructure.Migrations
                         .HasColumnType("jsonb")
                         .HasDefaultValueSql("'[]'::jsonb");
 
-                    b.Property<int>("MapStatus")
+                    b.Property<int>("GameStatus")
                         .HasColumnType("integer");
 
                     b.Property<decimal?>("Price")
@@ -1289,7 +1289,7 @@ namespace CapstoneProject.Infrastructure.Migrations
                     b.Property<string>("ReviewNote")
                         .HasColumnType("text");
 
-                    b.Property<Guid?>("RootMapId")
+                    b.Property<Guid?>("RootGameId")
                         .HasColumnType("uuid");
 
                     b.Property<int>("Status")
@@ -1314,16 +1314,16 @@ namespace CapstoneProject.Infrastructure.Migrations
 
                     b.HasIndex("IsPublished");
 
-                    b.HasIndex("MapStatus");
+                    b.HasIndex("GameStatus");
 
-                    b.HasIndex("RootMapId");
+                    b.HasIndex("RootGameId");
 
-                    b.HasIndex("RootMapId", "IsActiveVersion");
+                    b.HasIndex("RootGameId", "IsActiveVersion");
 
-                    b.ToTable("Maps");
+                    b.ToTable("Games");
                 });
 
-            modelBuilder.Entity("CapstoneProject.Domain.Entities.MapDetail", b =>
+            modelBuilder.Entity("CapstoneProject.Domain.Entities.GameDetail", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -1355,7 +1355,7 @@ namespace CapstoneProject.Infrastructure.Migrations
                     b.Property<int>("LevelOrder")
                         .HasColumnType("integer");
 
-                    b.Property<Guid>("MapId")
+                    b.Property<Guid>("GameId")
                         .HasColumnType("uuid");
 
                     b.Property<int>("Status")
@@ -1381,13 +1381,13 @@ namespace CapstoneProject.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("MapId", "LevelOrder")
+                    b.HasIndex("GameId", "LevelOrder")
                         .IsUnique();
 
-                    b.ToTable("MapDetails");
+                    b.ToTable("GameDetails");
                 });
 
-            modelBuilder.Entity("CapstoneProject.Domain.Entities.MapMedia", b =>
+            modelBuilder.Entity("CapstoneProject.Domain.Entities.GameMedia", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -1415,7 +1415,7 @@ namespace CapstoneProject.Infrastructure.Migrations
                     b.Property<int>("Kind")
                         .HasColumnType("integer");
 
-                    b.Property<Guid>("MapId")
+                    b.Property<Guid>("GameId")
                         .HasColumnType("uuid");
 
                     b.Property<int>("SortOrder")
@@ -1436,12 +1436,12 @@ namespace CapstoneProject.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("MapId", "SortOrder");
+                    b.HasIndex("GameId", "SortOrder");
 
-                    b.ToTable("MapMedias");
+                    b.ToTable("GameMedias");
                 });
 
-            modelBuilder.Entity("CapstoneProject.Domain.Entities.MapRating", b =>
+            modelBuilder.Entity("CapstoneProject.Domain.Entities.GameRating", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -1469,7 +1469,7 @@ namespace CapstoneProject.Infrastructure.Migrations
                         .HasColumnType("boolean")
                         .HasDefaultValue(false);
 
-                    b.Property<Guid>("MapId")
+                    b.Property<Guid>("GameId")
                         .HasColumnType("uuid");
 
                     b.Property<int>("Rating")
@@ -1489,13 +1489,13 @@ namespace CapstoneProject.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("UserId", "MapId")
+                    b.HasIndex("UserId", "GameId")
                         .IsUnique();
 
-                    b.ToTable("MapRatings");
+                    b.ToTable("GameRatings");
                 });
 
-            modelBuilder.Entity("CapstoneProject.Domain.Entities.MapReport", b =>
+            modelBuilder.Entity("CapstoneProject.Domain.Entities.GameReport", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -1523,7 +1523,7 @@ namespace CapstoneProject.Infrastructure.Migrations
                         .HasColumnType("boolean")
                         .HasDefaultValue(false);
 
-                    b.Property<Guid>("MapId")
+                    b.Property<Guid>("GameId")
                         .HasColumnType("uuid");
 
                     b.Property<string>("Reason")
@@ -1556,14 +1556,14 @@ namespace CapstoneProject.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("MapId");
+                    b.HasIndex("GameId");
 
                     b.HasIndex("ReportStatus");
 
-                    b.ToTable("MapReports");
+                    b.ToTable("GameReports");
                 });
 
-            modelBuilder.Entity("CapstoneProject.Domain.Entities.MapSolveScoreConfig", b =>
+            modelBuilder.Entity("CapstoneProject.Domain.Entities.GameSolveScoreConfig", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -1619,10 +1619,10 @@ namespace CapstoneProject.Infrastructure.Migrations
                     b.HasIndex("ConfigKey")
                         .IsUnique();
 
-                    b.ToTable("MapSolveScoreConfigs");
+                    b.ToTable("GameSolveScoreConfigs");
                 });
 
-            modelBuilder.Entity("CapstoneProject.Domain.Entities.MapTag", b =>
+            modelBuilder.Entity("CapstoneProject.Domain.Entities.GameTag", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -1647,7 +1647,7 @@ namespace CapstoneProject.Infrastructure.Migrations
                         .HasColumnType("boolean")
                         .HasDefaultValue(false);
 
-                    b.Property<Guid>("MapId")
+                    b.Property<Guid>("GameId")
                         .HasColumnType("uuid");
 
                     b.Property<int>("Status")
@@ -1666,10 +1666,10 @@ namespace CapstoneProject.Infrastructure.Migrations
 
                     b.HasIndex("TagId");
 
-                    b.HasIndex("MapId", "TagId")
+                    b.HasIndex("GameId", "TagId")
                         .IsUnique();
 
-                    b.ToTable("MapTags");
+                    b.ToTable("GameTags");
                 });
 
             modelBuilder.Entity("CapstoneProject.Domain.Entities.Message", b =>
@@ -1801,7 +1801,7 @@ namespace CapstoneProject.Infrastructure.Migrations
                     b.ToTable("MessageReads");
                 });
 
-            modelBuilder.Entity("CapstoneProject.Domain.Entities.MyMap", b =>
+            modelBuilder.Entity("CapstoneProject.Domain.Entities.MyGame", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -1829,7 +1829,7 @@ namespace CapstoneProject.Infrastructure.Migrations
                         .HasColumnType("boolean")
                         .HasDefaultValue(false);
 
-                    b.Property<Guid>("MapId")
+                    b.Property<Guid>("GameId")
                         .HasColumnType("uuid");
 
                     b.Property<int>("Status")
@@ -1846,12 +1846,12 @@ namespace CapstoneProject.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("MapId");
+                    b.HasIndex("GameId");
 
-                    b.HasIndex("UserId", "MapId")
+                    b.HasIndex("UserId", "GameId")
                         .IsUnique();
 
-                    b.ToTable("MyMaps");
+                    b.ToTable("MyGames");
                 });
 
             modelBuilder.Entity("CapstoneProject.Domain.Entities.Notification", b =>
@@ -2109,7 +2109,7 @@ namespace CapstoneProject.Infrastructure.Migrations
                         .HasColumnType("boolean")
                         .HasDefaultValue(false);
 
-                    b.Property<Guid?>("MapId")
+                    b.Property<Guid?>("GameId")
                         .HasColumnType("uuid");
 
                     b.Property<Guid?>("PackageId")
@@ -2187,10 +2187,10 @@ namespace CapstoneProject.Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<Guid?>("MapDetailId")
+                    b.Property<Guid?>("GameDetailId")
                         .HasColumnType("uuid");
 
-                    b.Property<Guid>("MapId")
+                    b.Property<Guid>("GameId")
                         .HasColumnType("uuid");
 
                     b.Property<Guid?>("MatchId")
@@ -2219,9 +2219,9 @@ namespace CapstoneProject.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("MapDetailId");
+                    b.HasIndex("GameDetailId");
 
-                    b.HasIndex("MapId");
+                    b.HasIndex("GameId");
 
                     b.HasIndex("MatchId");
 
@@ -2438,7 +2438,7 @@ namespace CapstoneProject.Infrastructure.Migrations
                     b.ToTable("UserLearningGoals");
                 });
 
-            modelBuilder.Entity("CapstoneProject.Domain.Entities.UserMapPlayHistory", b =>
+            modelBuilder.Entity("CapstoneProject.Domain.Entities.UserGamePlayHistory", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -2475,10 +2475,10 @@ namespace CapstoneProject.Infrastructure.Migrations
                     b.Property<string>("Language")
                         .HasColumnType("text");
 
-                    b.Property<Guid?>("MapDetailId")
+                    b.Property<Guid?>("GameDetailId")
                         .HasColumnType("uuid");
 
-                    b.Property<Guid>("MapId")
+                    b.Property<Guid>("GameId")
                         .HasColumnType("uuid");
 
                     b.Property<Guid?>("MatchId")
@@ -2518,20 +2518,20 @@ namespace CapstoneProject.Infrastructure.Migrations
 
                     b.HasIndex("ExecutionsResultId");
 
-                    b.HasIndex("MapDetailId");
+                    b.HasIndex("GameDetailId");
 
-                    b.HasIndex("MapId");
+                    b.HasIndex("GameId");
 
                     b.HasIndex("SubmissionId");
 
                     b.HasIndex("UserId");
 
-                    b.HasIndex("UserId", "MapId", "StartTime");
+                    b.HasIndex("UserId", "GameId", "StartTime");
 
                     b.ToTable("UserMapPlayHistories");
                 });
 
-            modelBuilder.Entity("CapstoneProject.Domain.Entities.UserMapResult", b =>
+            modelBuilder.Entity("CapstoneProject.Domain.Entities.UserGameResult", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -2568,10 +2568,10 @@ namespace CapstoneProject.Infrastructure.Migrations
                     b.Property<DateTime?>("LastPlayedAt")
                         .HasColumnType("timestamp without time zone");
 
-                    b.Property<Guid?>("MapDetailId")
+                    b.Property<Guid?>("GameDetailId")
                         .HasColumnType("uuid");
 
-                    b.Property<Guid>("MapId")
+                    b.Property<Guid>("GameId")
                         .HasColumnType("uuid");
 
                     b.Property<string>("MasteryDeltaSpec")
@@ -2591,13 +2591,13 @@ namespace CapstoneProject.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("MapDetailId");
+                    b.HasIndex("GameDetailId");
 
-                    b.HasIndex("MapId");
+                    b.HasIndex("GameId");
 
-                    b.HasIndex("UserId", "MapDetailId");
+                    b.HasIndex("UserId", "GameDetailId");
 
-                    b.ToTable("UserMapResults");
+                    b.ToTable("UserGameResults");
                 });
 
             modelBuilder.Entity("CapstoneProject.Domain.Entities.UserNotification", b =>
@@ -2927,7 +2927,7 @@ namespace CapstoneProject.Infrastructure.Migrations
                         .HasColumnType("boolean")
                         .HasDefaultValue(false);
 
-                    b.Property<Guid?>("MapId")
+                    b.Property<Guid?>("GameId")
                         .HasColumnType("uuid");
 
                     b.Property<string>("Metadata")
@@ -2959,7 +2959,7 @@ namespace CapstoneProject.Infrastructure.Migrations
                     b.HasIndex("IdempotencyKey")
                         .IsUnique();
 
-                    b.HasIndex("MapId");
+                    b.HasIndex("GameId");
 
                     b.HasIndex("SourceType");
 
@@ -3174,13 +3174,13 @@ namespace CapstoneProject.Infrastructure.Migrations
 
             modelBuilder.Entity("CapstoneProject.Domain.Entities.Hint", b =>
                 {
-                    b.HasOne("CapstoneProject.Domain.Entities.MapDetail", "MapDetail")
+                    b.HasOne("CapstoneProject.Domain.Entities.GameDetail", "GameDetail")
                         .WithMany("Hints")
-                        .HasForeignKey("MapDetailId")
+                        .HasForeignKey("GameDetailId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("MapDetail");
+                    b.Navigation("GameDetail");
                 });
 
             modelBuilder.Entity("CapstoneProject.Domain.Entities.LearningPathItem", b =>
@@ -3196,19 +3196,19 @@ namespace CapstoneProject.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("CapstoneProject.Domain.Entities.Map", "Map")
+                    b.HasOne("CapstoneProject.Domain.Entities.Game", "Game")
                         .WithMany()
-                        .HasForeignKey("MapId")
+                        .HasForeignKey("GameId")
                         .OnDelete(DeleteBehavior.SetNull);
 
                     b.Navigation("Concept");
 
                     b.Navigation("LearningGoal");
 
-                    b.Navigation("Map");
+                    b.Navigation("Game");
                 });
 
-            modelBuilder.Entity("CapstoneProject.Domain.Entities.Map", b =>
+            modelBuilder.Entity("CapstoneProject.Domain.Entities.Game", b =>
                 {
                     b.HasOne("CapstoneProject.Domain.Entities.AppUser", "Creator")
                         .WithMany()
@@ -3217,54 +3217,54 @@ namespace CapstoneProject.Infrastructure.Migrations
                     b.Navigation("Creator");
                 });
 
-            modelBuilder.Entity("CapstoneProject.Domain.Entities.MapDetail", b =>
+            modelBuilder.Entity("CapstoneProject.Domain.Entities.GameDetail", b =>
                 {
-                    b.HasOne("CapstoneProject.Domain.Entities.Map", "Map")
-                        .WithMany("MapDetails")
-                        .HasForeignKey("MapId")
+                    b.HasOne("CapstoneProject.Domain.Entities.Game", "Game")
+                        .WithMany("GameDetails")
+                        .HasForeignKey("GameId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("Map");
+                    b.Navigation("Game");
                 });
 
-            modelBuilder.Entity("CapstoneProject.Domain.Entities.MapMedia", b =>
+            modelBuilder.Entity("CapstoneProject.Domain.Entities.GameMedia", b =>
                 {
-                    b.HasOne("CapstoneProject.Domain.Entities.Map", "Map")
-                        .WithMany("MapMedias")
-                        .HasForeignKey("MapId")
+                    b.HasOne("CapstoneProject.Domain.Entities.Game", "Game")
+                        .WithMany("GameMedias")
+                        .HasForeignKey("GameId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("Map");
+                    b.Navigation("Game");
                 });
 
-            modelBuilder.Entity("CapstoneProject.Domain.Entities.MapReport", b =>
+            modelBuilder.Entity("CapstoneProject.Domain.Entities.GameReport", b =>
                 {
-                    b.HasOne("CapstoneProject.Domain.Entities.Map", "Map")
+                    b.HasOne("CapstoneProject.Domain.Entities.Game", "Game")
                         .WithMany()
-                        .HasForeignKey("MapId")
+                        .HasForeignKey("GameId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.Navigation("Map");
+                    b.Navigation("Game");
                 });
 
-            modelBuilder.Entity("CapstoneProject.Domain.Entities.MapTag", b =>
+            modelBuilder.Entity("CapstoneProject.Domain.Entities.GameTag", b =>
                 {
-                    b.HasOne("CapstoneProject.Domain.Entities.Map", "Map")
-                        .WithMany("MapTags")
-                        .HasForeignKey("MapId")
+                    b.HasOne("CapstoneProject.Domain.Entities.Game", "Game")
+                        .WithMany("GameTags")
+                        .HasForeignKey("GameId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("CapstoneProject.Domain.Entities.Tag", "Tag")
-                        .WithMany("MapTags")
+                        .WithMany("GameTags")
                         .HasForeignKey("TagId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("Map");
+                    b.Navigation("Game");
 
                     b.Navigation("Tag");
                 });
@@ -3314,11 +3314,11 @@ namespace CapstoneProject.Infrastructure.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("CapstoneProject.Domain.Entities.MyMap", b =>
+            modelBuilder.Entity("CapstoneProject.Domain.Entities.MyGame", b =>
                 {
-                    b.HasOne("CapstoneProject.Domain.Entities.Map", "Map")
+                    b.HasOne("CapstoneProject.Domain.Entities.Game", "Game")
                         .WithMany()
-                        .HasForeignKey("MapId")
+                        .HasForeignKey("GameId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
@@ -3328,7 +3328,7 @@ namespace CapstoneProject.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("Map");
+                    b.Navigation("Game");
 
                     b.Navigation("User");
                 });
@@ -3362,12 +3362,12 @@ namespace CapstoneProject.Infrastructure.Migrations
 
             modelBuilder.Entity("CapstoneProject.Domain.Entities.Submission", b =>
                 {
-                    b.HasOne("CapstoneProject.Domain.Entities.MapDetail", "MapDetail")
+                    b.HasOne("CapstoneProject.Domain.Entities.GameDetail", "GameDetail")
                         .WithMany()
-                        .HasForeignKey("MapDetailId")
+                        .HasForeignKey("GameDetailId")
                         .OnDelete(DeleteBehavior.Restrict);
 
-                    b.Navigation("MapDetail");
+                    b.Navigation("GameDetail");
                 });
 
             modelBuilder.Entity("CapstoneProject.Domain.Entities.UserAchievement", b =>
@@ -3419,14 +3419,14 @@ namespace CapstoneProject.Infrastructure.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("CapstoneProject.Domain.Entities.UserMapResult", b =>
+            modelBuilder.Entity("CapstoneProject.Domain.Entities.UserGameResult", b =>
                 {
-                    b.HasOne("CapstoneProject.Domain.Entities.MapDetail", "MapDetail")
+                    b.HasOne("CapstoneProject.Domain.Entities.GameDetail", "GameDetail")
                         .WithMany()
-                        .HasForeignKey("MapDetailId")
+                        .HasForeignKey("GameDetailId")
                         .OnDelete(DeleteBehavior.Cascade);
 
-                    b.Navigation("MapDetail");
+                    b.Navigation("GameDetail");
                 });
 
             modelBuilder.Entity("CapstoneProject.Domain.Entities.UserNotification", b =>
@@ -3548,16 +3548,16 @@ namespace CapstoneProject.Infrastructure.Migrations
                     b.Navigation("UserLearningGoals");
                 });
 
-            modelBuilder.Entity("CapstoneProject.Domain.Entities.Map", b =>
+            modelBuilder.Entity("CapstoneProject.Domain.Entities.Game", b =>
                 {
-                    b.Navigation("MapDetails");
+                    b.Navigation("GameDetails");
 
-                    b.Navigation("MapMedias");
+                    b.Navigation("GameMedias");
 
-                    b.Navigation("MapTags");
+                    b.Navigation("GameTags");
                 });
 
-            modelBuilder.Entity("CapstoneProject.Domain.Entities.MapDetail", b =>
+            modelBuilder.Entity("CapstoneProject.Domain.Entities.GameDetail", b =>
                 {
                     b.Navigation("Hints");
                 });
@@ -3593,7 +3593,7 @@ namespace CapstoneProject.Infrastructure.Migrations
 
             modelBuilder.Entity("CapstoneProject.Domain.Entities.Tag", b =>
                 {
-                    b.Navigation("MapTags");
+                    b.Navigation("GameTags");
                 });
 #pragma warning restore 612, 618
         }

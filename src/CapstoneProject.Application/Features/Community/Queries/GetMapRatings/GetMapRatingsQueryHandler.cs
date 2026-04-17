@@ -5,45 +5,45 @@ using CapstoneProject.Application.Common.Interfaces;
 using CapstoneProject.Application.Common.Models;
 using CapstoneProject.Domain.Entities;
 
-namespace CapstoneProject.Application.Features.Community.Queries.GetMapRatings;
+namespace CapstoneProject.Application.Features.Community.Queries.GetGameRatings;
 
-public class GetMapRatingsQueryHandler : IRequestHandler<GetMapRatingsQuery, Result<List<MapRatingDto>>>
+public class GetGameRatingsQueryHandler : IRequestHandler<GetGameRatingsQuery, Result<List<GameRatingDto>>>
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly ICurrentUserService _currentUserService;
 
-    public GetMapRatingsQueryHandler(IUnitOfWork unitOfWork, ICurrentUserService currentUserService)
+    public GetGameRatingsQueryHandler(IUnitOfWork unitOfWork, ICurrentUserService currentUserService)
     {
         _unitOfWork = unitOfWork;
         _currentUserService = currentUserService;
     }
 
-    public async Task<Result<List<MapRatingDto>>> Handle(GetMapRatingsQuery request, CancellationToken cancellationToken)
+    public async Task<Result<List<GameRatingDto>>> Handle(GetGameRatingsQuery request, CancellationToken cancellationToken)
     {
         var (isValid, userIdNullable) = await _currentUserService.IsUserValidAsync();
         if (!isValid || !userIdNullable.HasValue)
-            return Result<List<MapRatingDto>>.Failure("Authentication required. Please log in to view map ratings.", ErrorCodeEnum.Unauthorized);
+            return Result<List<GameRatingDto>>.Failure("Authentication required. Please log in to view game ratings.", ErrorCodeEnum.Unauthorized);
         var currentUserId = userIdNullable.Value;
 
-        var mapExists = await _unitOfWork.Repository<Map>().GetQueryable()
-            .AnyAsync(m => m.Id == request.MapId && !m.IsDeleted, cancellationToken);
+        var mapExists = await _unitOfWork.Repository<Game>().GetQueryable()
+            .AnyAsync(m => m.Id == request.GameId && !m.IsDeleted, cancellationToken);
         if (!mapExists)
-            return Result<List<MapRatingDto>>.Failure($"Không tìm thấy bản đồ có Id: {request.MapId}.", ErrorCodeEnum.NotFound);
+            return Result<List<GameRatingDto>>.Failure($"Không tìm thấy bản đồ có Id: {request.GameId}.", ErrorCodeEnum.NotFound);
 
-        var ratingRepo = _unitOfWork.Repository<MapRating>();
+        var ratingRepo = _unitOfWork.Repository<GameRating>();
         var ratingsQuery = ratingRepo.GetQueryable()
-            .Where(r => !r.IsDeleted && r.MapId == request.MapId);
+            .Where(r => !r.IsDeleted && r.GameId == request.GameId);
 
         if (request.IsAuthorOnly)
             ratingsQuery = ratingsQuery.Where(r => r.UserId == currentUserId);
 
         var list = await ratingsQuery
             .OrderByDescending(r => r.CreatedAt)
-            .Select(r => new MapRatingDto
+            .Select(r => new GameRatingDto
             {
                 Id = r.Id,
                 UserId = r.UserId,
-                MapId = r.MapId,
+                GameId = r.GameId,
                 Rating = r.Rating,
                 Comment = r.Comment,
                 CreatedAt = r.CreatedAt,
@@ -51,7 +51,7 @@ public class GetMapRatingsQueryHandler : IRequestHandler<GetMapRatingsQuery, Res
             })
             .ToListAsync(cancellationToken);
 
-        return Result<List<MapRatingDto>>.Success(list, "Đã lấy danh sách đánh giá bản đồ.");
+        return Result<List<GameRatingDto>>.Success(list, "Đã lấy danh sách đánh giá bản đồ.");
     }
 }
 

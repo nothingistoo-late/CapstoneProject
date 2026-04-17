@@ -7,20 +7,20 @@ using CapstoneProject.Domain.Enums;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 
-namespace CapstoneProject.Application.Features.Gameplay.Commands.UpdateMapSolveScoreConfig;
+namespace CapstoneProject.Application.Features.Gameplay.Commands.UpdateGameSolveScoreConfig;
 
-public class UpdateMapSolveScoreConfigCommandHandler : IRequestHandler<UpdateMapSolveScoreConfigCommand, Result>
+public class UpdateGameSolveScoreConfigCommandHandler : IRequestHandler<UpdateGameSolveScoreConfigCommand, Result>
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly ICurrentUserService _currentUserService;
 
-    public UpdateMapSolveScoreConfigCommandHandler(IUnitOfWork unitOfWork, ICurrentUserService currentUserService)
+    public UpdateGameSolveScoreConfigCommandHandler(IUnitOfWork unitOfWork, ICurrentUserService currentUserService)
     {
         _unitOfWork = unitOfWork;
         _currentUserService = currentUserService;
     }
 
-    public async Task<Result> Handle(UpdateMapSolveScoreConfigCommand request, CancellationToken cancellationToken)
+    public async Task<Result> Handle(UpdateGameSolveScoreConfigCommand request, CancellationToken cancellationToken)
     {
         var (isValid, userIdNullable) = await _currentUserService.IsUserValidAsync();
         if (!isValid || !userIdNullable.HasValue)
@@ -31,9 +31,9 @@ public class UpdateMapSolveScoreConfigCommandHandler : IRequestHandler<UpdateMap
         if (!roles.Contains(RoleEnum.Admin) && !roles.Contains(RoleEnum.Moderator))
             return Result.Failure("Chỉ Quản trị viên/Người điều hành mới có thể cập nhật cấu hình điểm giải quyết bản đồ.", ErrorCodeEnum.Forbidden);
 
-        var repo = _unitOfWork.Repository<MapSolveScoreConfig>();
+        var repo = _unitOfWork.Repository<GameSolveScoreConfig>();
         var row = await repo.GetQueryable()
-            .FirstOrDefaultAsync(x => x.ConfigKey == MapSolveScoreConfig.DefaultConfigKey, cancellationToken);
+            .FirstOrDefaultAsync(x => x.ConfigKey == GameSolveScoreConfig.DefaultConfigKey, cancellationToken);
         if (row == null)
             return Result.Failure("Không tìm thấy cấu hình điểm giải quyết bản đồ.", ErrorCodeEnum.NotFound);
 

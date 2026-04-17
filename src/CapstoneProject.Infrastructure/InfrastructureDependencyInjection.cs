@@ -52,7 +52,7 @@ public static class InfrastructureDependencyInjection
         // Outer Database Context removed - using main database only
         // Register contexts as interfaces
         services.AddScoped<ICapstoneProjectDbContext>(provider => provider.GetRequiredService<CapstoneProjectDbContext>());
-        // Map DbContext for services that depend on base DbContext (e.g., UnitOfWork)
+        // Game DbContext for services that depend on base DbContext (e.g., UnitOfWork)
         services.AddScoped<DbContext>(provider => provider.GetRequiredService<CapstoneProjectDbContext>());
 
         // Configure Identity
@@ -116,7 +116,7 @@ public static class InfrastructureDependencyInjection
         // Configure File Storage settings
         services.Configure<FileStorageSettings>(configuration.GetSection("FileStorage"));
 
-        // Configure Cloudinary (avatars, map images)
+        // Configure Cloudinary (avatars, game images)
         services.Configure<CloudinarySettings>(configuration.GetSection(CloudinarySettings.SectionName));
         services.AddScoped<Application.Commons.Interfaces.ICloudinaryService, CloudinaryService>();
         services.AddScoped<Application.Commons.Interfaces.IAvatarUrlResolverService, AvatarUrlResolverService>();

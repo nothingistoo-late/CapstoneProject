@@ -115,7 +115,7 @@ public class XpEngineService : IXpEngineService
         var tx = new XpTransaction
         {
             UserId = input.UserId,
-            MapId = input.SourceType == Domain.Enums.XpSourceTypeEnum.MapSolve ? input.SourceId : null,
+            GameId = input.SourceType == Domain.Enums.XpSourceTypeEnum.MapSolve ? input.SourceId : null,
             SourceId = input.SourceId,
             SourceType = input.SourceType,
             IdempotencyKey = input.IdempotencyKey.Trim(),

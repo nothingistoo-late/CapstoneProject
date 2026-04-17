@@ -35,7 +35,7 @@ public class CmsComplaintController : ControllerBase
     /// **Example request:** GET /api/cms/complaints?status=Open&amp;keyword=payment&amp;pageNumber=1&amp;pageSize=20
     ///
     /// **Example item data:**
-    /// { "id": "...", "subject": "Paid but map locked", "categoryKey": "AccessIssue", "contextType": "PaymentRecord", "contextResolved": { "displayTitle": "Payment record", "displaySubtitle": "50000 VND" } }
+    /// { "id": "...", "subject": "Paid but game locked", "categoryKey": "AccessIssue", "contextType": "PaymentRecord", "contextResolved": { "displayTitle": "Payment record", "displaySubtitle": "50000 VND" } }
     /// </remarks>
     [HttpGet]
     [AuthorizeRoles(nameof(RoleEnum.Admin), nameof(RoleEnum.Moderator))]

@@ -4,7 +4,7 @@ using CapstoneProject.Domain.Enums;
 namespace CapstoneProject.Application.Commons.Interfaces;
 
 /// <summary>
-/// Service for uploading images/videos to Cloudinary (avatars, map gallery).
+/// Service for uploading images/videos to Cloudinary (avatars, game gallery).
 /// </summary>
 public interface ICloudinaryService
 {
@@ -12,13 +12,13 @@ public interface ICloudinaryService
     /// Upload image from IFormFile to Cloudinary.
     /// </summary>
     /// <param name="file">Image file (e.g. avatar).</param>
-    /// <param name="folder">Folder in Cloudinary (e.g. "avatars", "maps").</param>
+    /// <param name="folder">Folder in Cloudinary (e.g. "avatars", "games").</param>
     /// <param name="publicIdPrefix">Optional prefix for public_id (e.g. "user_guid", "map_guid").</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>Secure URL of the uploaded image, or null on failure.</returns>
     Task<string?> UploadImageAsync(IFormFile file, string folder, string? publicIdPrefix = null, CancellationToken cancellationToken = default);
 
-    /// <summary>Upload video to Cloudinary (map gallery, etc.).</summary>
+    /// <summary>Upload video to Cloudinary (game gallery, etc.).</summary>
     Task<string?> UploadVideoAsync(IFormFile file, string folder, string? publicIdPrefix = null, CancellationToken cancellationToken = default);
 
     /// <summary>
@@ -30,7 +30,7 @@ public interface ICloudinaryService
     Task<bool> DeleteAsync(string publicId, CancellationToken cancellationToken = default);
 
     /// <summary>Delete asset by public_id; use <paramref name="kind"/> to pick image vs video resource type.</summary>
-    Task<bool> DeleteAsync(string publicId, MapMediaKind kind, CancellationToken cancellationToken = default);
+    Task<bool> DeleteAsync(string publicId, GameMediaKind kind, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Extract public_id from Cloudinary URL (for delete). Returns null if not a Cloudinary URL.

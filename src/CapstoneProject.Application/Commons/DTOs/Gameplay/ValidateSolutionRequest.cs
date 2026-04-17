@@ -4,9 +4,9 @@ namespace CapstoneProject.Application.Commons.DTOs.Gameplay;
 
 public class ValidateSolutionRequest
 {
-    public Guid MapId { get; set; }
-    /// <summary>Level đang nộp (MapDetails.Id). Null = map chỉ có 1 level (tự resolve).</summary>
-    public Guid? MapDetailId { get; set; }
+    public Guid GameId { get; set; }
+    /// <summary>Level đang nộp (GameDetails.Id). Null = game chỉ có 1 level (tự resolve).</summary>
+    public Guid? GameDetailId { get; set; }
     public string Language { get; set; } = "Blockly";
     public string? AstSpec { get; set; }
     public string? BytecodeSpec { get; set; }

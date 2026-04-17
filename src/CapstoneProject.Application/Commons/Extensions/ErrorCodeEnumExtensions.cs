@@ -9,7 +9,7 @@ namespace CapstoneProject.Application.Common.Extensions;
 public static class ErrorCodeEnumExtensions
 {
     /// <summary>
-    /// Maps ErrorCodeEnum to HTTP status code
+    /// Games ErrorCodeEnum to HTTP status code
     /// </summary>
     public static int ToHttpStatusCode(this ErrorCodeEnum ErrorCodeEnum)
     {

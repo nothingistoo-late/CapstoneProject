@@ -1,7 +1,7 @@
 namespace CapstoneProject.API.Models;
 
 /// <summary>
-/// Shared request for creating a map from an uploaded JSON file. Used by both Learner and CMS map endpoints.
+/// Shared request for creating a game from an uploaded JSON file. Used by both Learner and CMS game endpoints.
 /// </summary>
 public class CreateMapFromJsonFileRequest
 {
@@ -9,7 +9,7 @@ public class CreateMapFromJsonFileRequest
     public string Description { get; set; } = string.Empty;
     public int Difficulty { get; set; }
     public decimal? Price { get; set; }
-    /// <summary>Loại map mặc định cho level nếu JSON không tự khai báo. Hỗ trợ Topdown | Platform | Snake.</summary>
+    /// <summary>Loại game mặc định cho level nếu JSON không tự khai báo. Hỗ trợ Topdown | Platform | Snake.</summary>
     public string? Type { get; set; }
     /// <summary>Số lượt chơi thử miễn phí cho mỗi người chơi. Null/0 = không có trial.</summary>
     public int? FreeTrialAttemptLimit { get; set; }
@@ -19,9 +19,9 @@ public class CreateMapFromJsonFileRequest
     /// Một hoặc nhiều file JSON. Mỗi file = một level (order 0,1,2…).
     /// Một file duy nhất có thể chứa object một level, mảng các level, hoặc <c>{ "levels": [...] }</c>.
     /// </summary>
-    public List<IFormFile>? MapDetailFiles { get; set; }
-    /// <summary>Avatar map (ảnh, optional). Upload lên Cloudinary khi tạo map.</summary>
+    public List<IFormFile>? GameDetailFiles { get; set; }
+    /// <summary>Avatar game (ảnh, optional). Upload lên Cloudinary khi tạo game.</summary>
     public IFormFile? AvatarFile { get; set; }
-    /// <summary>Ảnh/video mô tả map (gallery, optional). Cùng lần tạo map (không cần API gallery riêng).</summary>
+    /// <summary>Ảnh/video mô tả game (gallery, optional). Cùng lần tạo game (không cần API gallery riêng).</summary>
     public List<IFormFile>? GalleryFiles { get; set; }
 }

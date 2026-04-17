@@ -31,7 +31,7 @@ public class RoomManager : IRoomManager
                 MaxPlayers = r.MaxPlayers,
                 Status = r.Status,
                 IsLocked = r.IsLocked,
-                SelectedMapId = r.SelectedMapId
+                SelectedGameId = r.SelectedGameId
             })
             .ToList();
     }
@@ -55,7 +55,7 @@ public class RoomManager : IRoomManager
         return _rooms.Values.FirstOrDefault(r => r.Players.ContainsKey(playerId));
     }
 
-    public LobbyRoom? CreateRoom(Guid hostPlayerId, string hostConnectionId, int maxPlayers = 8, Guid? selectedMapId = null)
+    public LobbyRoom? CreateRoom(Guid hostPlayerId, string hostConnectionId, int maxPlayers = 8, Guid? selectedGameId = null)
     {
         if (hostPlayerId == Guid.Empty) return null;
         maxPlayers = Math.Clamp(maxPlayers, 2, 16);
@@ -74,7 +74,7 @@ public class RoomManager : IRoomManager
             MaxPlayers = maxPlayers,
             Status = RoomStatusEnum.Waiting,
             IsLocked = false,
-            SelectedMapId = selectedMapId
+            SelectedGameId = selectedGameId
         };
 
         var host = new LobbyPlayer
@@ -206,7 +206,7 @@ public class RoomManager : IRoomManager
         {
             RoomId = room.RoomId,
             RoomCode = room.RoomCode,
-            MapId = room.SelectedMapId,
+            GameId = room.SelectedGameId,
             Players = playersList,
             TurnOrder = turnOrder,
             GameState = new LobbyGameState
@@ -253,17 +253,17 @@ public class RoomManager : IRoomManager
         return (true, null, room);
     }
 
-    public (bool Success, string? ErrorMessage, LobbyRoom? Room) SetRoomMap(Guid roomId, Guid hostPlayerId, Guid? mapId)
+    public (bool Success, string? ErrorMessage, LobbyRoom? Room) SetRoomMap(Guid roomId, Guid hostPlayerId, Guid? gameId)
     {
         var room = GetRoomById(roomId);
         if (room == null)
             return (false, "Không tìm thấy phòng.", null);
         if (room.HostId != hostPlayerId)
-            return (false, "Only the host can set the map.", null);
+            return (false, "Only the host can set the game.", null);
         if (room.Status != RoomStatusEnum.Waiting)
-            return (false, "Cannot change map after game has started.", null);
+            return (false, "Cannot change game after game has started.", null);
 
-        room.SelectedMapId = mapId;
+        room.SelectedGameId = gameId;
         return (true, null, room);
     }
 

@@ -53,11 +53,11 @@ public class LearnerComplaintController : ControllerBase
     /// - attachments (files, optional): PNG/JPG/GIF/WEBP, max 5 files, max 5MB/file
     ///
     /// **Example form fields:**
-    /// - subject=Paid but map locked
+    /// - subject=Paid but game locked
     /// - categoryKey=AccessIssue
-    /// - description=I completed payment but still cannot open the map.
+    /// - description=I completed payment but still cannot open the game.
     /// - context.paymentRecordId=3fa85f64-5717-4562-b3fc-2c963f66afa6
-    /// - context.mapId=7c9e6679-7425-40de-944b-e07fc1f90ae7
+    /// - context.gameId=7c9e6679-7425-40de-944b-e07fc1f90ae7
     /// - context.occurredAt=2026-04-06T09:30:00
     /// - attachments=(binary file, optional)
     ///
@@ -77,7 +77,7 @@ public class LearnerComplaintController : ControllerBase
         var context = new CapstoneProject.Application.Commons.Models.Complaints.ComplaintCreateContextInput
         {
             PaymentRecordId = request.Context.PaymentRecordId,
-            MapId = request.Context.MapId,
+            GameId = request.Context.GameId,
             PackageId = request.Context.PackageId,
             SubmissionId = request.Context.SubmissionId,
             PlayHistoryId = request.Context.PlayHistoryId,
@@ -107,7 +107,7 @@ public class LearnerComplaintController : ControllerBase
     /// **Example request:** GET /api/learner/complaints?status=Open&amp;pageNumber=1&amp;pageSize=20
     ///
     /// **Example item data:**
-    /// { "id": "...", "subject": "Paid but map locked", "category": "Access Issue", "categoryKey": "AccessIssue", "complaintStatus": "Open", "contextType": "PaymentRecord", "contextResolved": { "displayTitle": "Payment record", "displaySubtitle": "50000 VND" } }
+    /// { "id": "...", "subject": "Paid but game locked", "category": "Access Issue", "categoryKey": "AccessIssue", "complaintStatus": "Open", "contextType": "PaymentRecord", "contextResolved": { "displayTitle": "Payment record", "displaySubtitle": "50000 VND" } }
     /// </remarks>
     [HttpGet]
     [AuthorizeRoles(nameof(RoleEnum.Learner), nameof(RoleEnum.Admin), nameof(RoleEnum.Moderator))]

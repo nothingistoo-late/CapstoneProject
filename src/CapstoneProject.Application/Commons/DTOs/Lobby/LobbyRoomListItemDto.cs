@@ -11,5 +11,5 @@ public class LobbyRoomListItemDto
     public int MaxPlayers { get; set; }
     public RoomStatusEnum Status { get; set; }
     public bool IsLocked { get; set; }
-    public Guid? SelectedMapId { get; set; }
+    public Guid? SelectedGameId { get; set; }
 }

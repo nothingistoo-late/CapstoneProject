@@ -1,5 +1,5 @@
 using System.Text.Json;
-using CapstoneProject.Application.Commons.DTOs.Maps;
+using CapstoneProject.Application.Commons.DTOs.Games;
 
 namespace CapstoneProject.Application.Commons.Helpers;
 
@@ -36,7 +36,7 @@ public static class MapHintsExtractor
     }
 
     /// <summary>
-    /// Parse field <c>hints</c> trong JSON map detail:
+    /// Parse field <c>hints</c> trong JSON game detail:
     /// - { "hints": [ "a", "b" ] }
     /// - { "hints": [ { "orderNo": 0, "content": "a" }, ... ] }
     /// - { "hints": { "orderNo": 0, "content": "a" } }

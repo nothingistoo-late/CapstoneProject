@@ -835,7 +835,7 @@ namespace CapstoneProject.Infrastructure.Migrations
                     b.Property<Guid>("LearningGoalId")
                         .HasColumnType("uuid");
 
-                    b.Property<Guid?>("MapId")
+                    b.Property<Guid?>("GameId")
                         .HasColumnType("uuid");
 
                     b.Property<int>("SortOrder")
@@ -854,7 +854,7 @@ namespace CapstoneProject.Infrastructure.Migrations
 
                     b.HasIndex("ConceptId");
 
-                    b.HasIndex("MapId");
+                    b.HasIndex("GameId");
 
                     b.HasIndex("LearningGoalId", "SortOrder");
 
@@ -914,7 +914,7 @@ namespace CapstoneProject.Infrastructure.Migrations
                     b.ToTable("LevelThresholds");
                 });
 
-            modelBuilder.Entity("CapstoneProject.Domain.Entities.Map", b =>
+            modelBuilder.Entity("CapstoneProject.Domain.Entities.Game", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -999,7 +999,7 @@ namespace CapstoneProject.Infrastructure.Migrations
 
                     b.HasIndex("MapStatus");
 
-                    b.ToTable("Maps");
+                    b.ToTable("Games");
                 });
 
             modelBuilder.Entity("CapstoneProject.Domain.Entities.MapDetail", b =>
@@ -1034,7 +1034,7 @@ namespace CapstoneProject.Infrastructure.Migrations
                     b.Property<int>("LevelOrder")
                         .HasColumnType("integer");
 
-                    b.Property<Guid>("MapId")
+                    b.Property<Guid>("GameId")
                         .HasColumnType("uuid");
 
                     b.Property<int>("Status")
@@ -1060,7 +1060,7 @@ namespace CapstoneProject.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("MapId", "LevelOrder")
+                    b.HasIndex("GameId", "LevelOrder")
                         .IsUnique();
 
                     b.ToTable("MapDetails");
@@ -1094,7 +1094,7 @@ namespace CapstoneProject.Infrastructure.Migrations
                     b.Property<int>("Kind")
                         .HasColumnType("integer");
 
-                    b.Property<Guid>("MapId")
+                    b.Property<Guid>("GameId")
                         .HasColumnType("uuid");
 
                     b.Property<int>("SortOrder")
@@ -1115,7 +1115,7 @@ namespace CapstoneProject.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("MapId", "SortOrder");
+                    b.HasIndex("GameId", "SortOrder");
 
                     b.ToTable("MapMedias");
                 });
@@ -1148,7 +1148,7 @@ namespace CapstoneProject.Infrastructure.Migrations
                         .HasColumnType("boolean")
                         .HasDefaultValue(false);
 
-                    b.Property<Guid>("MapId")
+                    b.Property<Guid>("GameId")
                         .HasColumnType("uuid");
 
                     b.Property<int>("Rating")
@@ -1168,7 +1168,7 @@ namespace CapstoneProject.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("UserId", "MapId")
+                    b.HasIndex("UserId", "GameId")
                         .IsUnique();
 
                     b.ToTable("MapRatings");
@@ -1202,7 +1202,7 @@ namespace CapstoneProject.Infrastructure.Migrations
                         .HasColumnType("boolean")
                         .HasDefaultValue(false);
 
-                    b.Property<Guid>("MapId")
+                    b.Property<Guid>("GameId")
                         .HasColumnType("uuid");
 
                     b.Property<string>("Reason")
@@ -1235,7 +1235,7 @@ namespace CapstoneProject.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("MapId");
+                    b.HasIndex("GameId");
 
                     b.HasIndex("ReportStatus");
 
@@ -1326,7 +1326,7 @@ namespace CapstoneProject.Infrastructure.Migrations
                         .HasColumnType("boolean")
                         .HasDefaultValue(false);
 
-                    b.Property<Guid>("MapId")
+                    b.Property<Guid>("GameId")
                         .HasColumnType("uuid");
 
                     b.Property<int>("Status")
@@ -1345,7 +1345,7 @@ namespace CapstoneProject.Infrastructure.Migrations
 
                     b.HasIndex("TagId");
 
-                    b.HasIndex("MapId", "TagId")
+                    b.HasIndex("GameId", "TagId")
                         .IsUnique();
 
                     b.ToTable("MapTags");
@@ -1379,7 +1379,7 @@ namespace CapstoneProject.Infrastructure.Migrations
                         .HasColumnType("boolean")
                         .HasDefaultValue(false);
 
-                    b.Property<Guid>("MapId")
+                    b.Property<Guid>("GameId")
                         .HasColumnType("uuid");
 
                     b.Property<string>("RulesSpec")
@@ -1399,7 +1399,7 @@ namespace CapstoneProject.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("MapId");
+                    b.HasIndex("GameId");
 
                     b.ToTable("Matches");
                 });
@@ -1561,7 +1561,7 @@ namespace CapstoneProject.Infrastructure.Migrations
                         .HasColumnType("boolean")
                         .HasDefaultValue(false);
 
-                    b.Property<Guid>("MapId")
+                    b.Property<Guid>("GameId")
                         .HasColumnType("uuid");
 
                     b.Property<int>("Status")
@@ -1578,9 +1578,9 @@ namespace CapstoneProject.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("MapId");
+                    b.HasIndex("GameId");
 
-                    b.HasIndex("UserId", "MapId")
+                    b.HasIndex("UserId", "GameId")
                         .IsUnique();
 
                     b.ToTable("MyMaps");
@@ -1778,7 +1778,7 @@ namespace CapstoneProject.Infrastructure.Migrations
                         .HasColumnType("boolean")
                         .HasDefaultValue(false);
 
-                    b.Property<Guid?>("MapId")
+                    b.Property<Guid?>("GameId")
                         .HasColumnType("uuid");
 
                     b.Property<Guid?>("PackageId")
@@ -1990,7 +1990,7 @@ namespace CapstoneProject.Infrastructure.Migrations
                     b.Property<Guid?>("MapDetailId")
                         .HasColumnType("uuid");
 
-                    b.Property<Guid>("MapId")
+                    b.Property<Guid>("GameId")
                         .HasColumnType("uuid");
 
                     b.Property<Guid?>("MatchId")
@@ -2021,7 +2021,7 @@ namespace CapstoneProject.Infrastructure.Migrations
 
                     b.HasIndex("MapDetailId");
 
-                    b.HasIndex("MapId");
+                    b.HasIndex("GameId");
 
                     b.HasIndex("MatchId");
 
@@ -2278,7 +2278,7 @@ namespace CapstoneProject.Infrastructure.Migrations
                     b.Property<Guid?>("MapDetailId")
                         .HasColumnType("uuid");
 
-                    b.Property<Guid>("MapId")
+                    b.Property<Guid>("GameId")
                         .HasColumnType("uuid");
 
                     b.Property<Guid?>("MatchId")
@@ -2320,13 +2320,13 @@ namespace CapstoneProject.Infrastructure.Migrations
 
                     b.HasIndex("MapDetailId");
 
-                    b.HasIndex("MapId");
+                    b.HasIndex("GameId");
 
                     b.HasIndex("SubmissionId");
 
                     b.HasIndex("UserId");
 
-                    b.HasIndex("UserId", "MapId", "StartTime");
+                    b.HasIndex("UserId", "GameId", "StartTime");
 
                     b.ToTable("UserMapPlayHistories");
                 });
@@ -2371,7 +2371,7 @@ namespace CapstoneProject.Infrastructure.Migrations
                     b.Property<Guid?>("MapDetailId")
                         .HasColumnType("uuid");
 
-                    b.Property<Guid>("MapId")
+                    b.Property<Guid>("GameId")
                         .HasColumnType("uuid");
 
                     b.Property<string>("MasteryDeltaSpec")
@@ -2393,7 +2393,7 @@ namespace CapstoneProject.Infrastructure.Migrations
 
                     b.HasIndex("MapDetailId");
 
-                    b.HasIndex("MapId");
+                    b.HasIndex("GameId");
 
                     b.HasIndex("UserId", "MapDetailId");
 
@@ -2730,7 +2730,7 @@ namespace CapstoneProject.Infrastructure.Migrations
                         .HasColumnType("boolean")
                         .HasDefaultValue(false);
 
-                    b.Property<Guid?>("MapId")
+                    b.Property<Guid?>("GameId")
                         .HasColumnType("uuid");
 
                     b.Property<string>("Metadata")
@@ -2762,7 +2762,7 @@ namespace CapstoneProject.Infrastructure.Migrations
                     b.HasIndex("IdempotencyKey")
                         .IsUnique();
 
-                    b.HasIndex("MapId");
+                    b.HasIndex("GameId");
 
                     b.HasIndex("SourceType");
 
@@ -2988,19 +2988,19 @@ namespace CapstoneProject.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("CapstoneProject.Domain.Entities.Map", "Map")
+                    b.HasOne("CapstoneProject.Domain.Entities.Game", "Game")
                         .WithMany()
-                        .HasForeignKey("MapId")
+                        .HasForeignKey("GameId")
                         .OnDelete(DeleteBehavior.SetNull);
 
                     b.Navigation("Concept");
 
                     b.Navigation("LearningGoal");
 
-                    b.Navigation("Map");
+                    b.Navigation("Game");
                 });
 
-            modelBuilder.Entity("CapstoneProject.Domain.Entities.Map", b =>
+            modelBuilder.Entity("CapstoneProject.Domain.Entities.Game", b =>
                 {
                     b.HasOne("CapstoneProject.Domain.Entities.AppUser", "Creator")
                         .WithMany()
@@ -3011,42 +3011,42 @@ namespace CapstoneProject.Infrastructure.Migrations
 
             modelBuilder.Entity("CapstoneProject.Domain.Entities.MapDetail", b =>
                 {
-                    b.HasOne("CapstoneProject.Domain.Entities.Map", "Map")
+                    b.HasOne("CapstoneProject.Domain.Entities.Game", "Game")
                         .WithMany("MapDetails")
-                        .HasForeignKey("MapId")
+                        .HasForeignKey("GameId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("Map");
+                    b.Navigation("Game");
                 });
 
             modelBuilder.Entity("CapstoneProject.Domain.Entities.MapMedia", b =>
                 {
-                    b.HasOne("CapstoneProject.Domain.Entities.Map", "Map")
+                    b.HasOne("CapstoneProject.Domain.Entities.Game", "Game")
                         .WithMany("MapMedias")
-                        .HasForeignKey("MapId")
+                        .HasForeignKey("GameId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("Map");
+                    b.Navigation("Game");
                 });
 
             modelBuilder.Entity("CapstoneProject.Domain.Entities.MapReport", b =>
                 {
-                    b.HasOne("CapstoneProject.Domain.Entities.Map", "Map")
+                    b.HasOne("CapstoneProject.Domain.Entities.Game", "Game")
                         .WithMany()
-                        .HasForeignKey("MapId")
+                        .HasForeignKey("GameId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.Navigation("Map");
+                    b.Navigation("Game");
                 });
 
             modelBuilder.Entity("CapstoneProject.Domain.Entities.MapTag", b =>
                 {
-                    b.HasOne("CapstoneProject.Domain.Entities.Map", "Map")
+                    b.HasOne("CapstoneProject.Domain.Entities.Game", "Game")
                         .WithMany("MapTags")
-                        .HasForeignKey("MapId")
+                        .HasForeignKey("GameId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
@@ -3056,7 +3056,7 @@ namespace CapstoneProject.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("Map");
+                    b.Navigation("Game");
 
                     b.Navigation("Tag");
                 });
@@ -3108,9 +3108,9 @@ namespace CapstoneProject.Infrastructure.Migrations
 
             modelBuilder.Entity("CapstoneProject.Domain.Entities.MyMap", b =>
                 {
-                    b.HasOne("CapstoneProject.Domain.Entities.Map", "Map")
+                    b.HasOne("CapstoneProject.Domain.Entities.Game", "Game")
                         .WithMany()
-                        .HasForeignKey("MapId")
+                        .HasForeignKey("GameId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
@@ -3120,7 +3120,7 @@ namespace CapstoneProject.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("Map");
+                    b.Navigation("Game");
 
                     b.Navigation("User");
                 });
@@ -3351,7 +3351,7 @@ namespace CapstoneProject.Infrastructure.Migrations
                     b.Navigation("UserLearningGoals");
                 });
 
-            modelBuilder.Entity("CapstoneProject.Domain.Entities.Map", b =>
+            modelBuilder.Entity("CapstoneProject.Domain.Entities.Game", b =>
                 {
                     b.Navigation("MapDetails");
 

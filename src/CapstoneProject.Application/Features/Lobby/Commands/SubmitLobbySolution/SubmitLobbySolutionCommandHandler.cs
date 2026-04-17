@@ -38,15 +38,15 @@ public class SubmitLobbySolutionCommandHandler : IRequestHandler<SubmitLobbySolu
             return Result<SubmitGameResponse>.Failure("Không tìm thấy phòng.", ErrorCodeEnum.NotFound);
         if (room.Status != RoomStatusEnum.Playing)
             return Result<SubmitGameResponse>.Failure("Trò chơi không được tiến hành.", ErrorCodeEnum.ValidationFailed);
-        if (!room.SelectedMapId.HasValue)
+        if (!room.SelectedGameId.HasValue)
             return Result<SubmitGameResponse>.Failure("Phòng chưa có bản đồ nào được chọn.", ErrorCodeEnum.ValidationFailed);
         if (!room.Players.ContainsKey(userId))
             return Result<SubmitGameResponse>.Failure("Bạn không ở trong phòng này.", ErrorCodeEnum.ValidationFailed);
 
         var validateRequest = new ValidateSolutionRequest
         {
-            MapId = room.SelectedMapId.Value,
-            MapDetailId = command.Request.MapDetailId,
+            GameId = room.SelectedGameId.Value,
+            GameDetailId = command.Request.GameDetailId,
             Language = "Blockly",
             AstSpec = command.Request.AstSpec,
             BytecodeSpec = command.Request.BytecodeSpec,

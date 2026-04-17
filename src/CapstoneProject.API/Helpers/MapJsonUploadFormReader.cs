@@ -1,5 +1,5 @@
 using CapstoneProject.API.Models;
-using CapstoneProject.Application.Commons.DTOs.Maps;
+using CapstoneProject.Application.Commons.DTOs.Games;
 using Microsoft.AspNetCore.Http;
 
 namespace CapstoneProject.API.Helpers;
@@ -14,7 +14,7 @@ public static class MapJsonUploadFormReader
         CreateMapFromJsonFileRequest request,
         HttpRequest? httpRequest = null)
     {
-        var files = CollectMapDetailFiles(request, httpRequest);
+        var files = CollectGameDetailFiles(request, httpRequest);
         if (files.Count == 0)
             return (null, "Provide mapDetailFiles: at least one JSON file (one file = one or more levels in that file; multiple files = one level per file).");
 
@@ -54,17 +54,17 @@ public static class MapJsonUploadFormReader
             FreeTrialAttemptLimit = request.FreeTrialAttemptLimit,
             TagIdsCsv = request.TagIdsCsv ?? string.Empty,
             LearnedTagsCsv = request.LearnedTagsCsv ?? string.Empty,
-            MapDetailJsonContent = mapDetailJsonContent,
-            MapDetailJsonContents = mapDetailJsonContents
+            GameDetailJsonContent = mapDetailJsonContent,
+            GameDetailJsonContents = mapDetailJsonContents
         };
         return (input, null);
     }
 
     /// <summary>
     /// Ưu tiên quét toàn bộ <see cref="IFormFileCollection"/> (case-insensitive, không dùng <c>GetFiles</c> vì có thể lệch key).
-    /// Fallback: model <see cref="CreateMapFromJsonFileRequest.MapDetailFiles"/>.
+    /// Fallback: model <see cref="CreateMapFromJsonFileRequest.GameDetailFiles"/>.
     /// </summary>
-    private static List<IFormFile> CollectMapDetailFiles(CreateMapFromJsonFileRequest request, HttpRequest? httpRequest)
+    private static List<IFormFile> CollectGameDetailFiles(CreateMapFromJsonFileRequest request, HttpRequest? httpRequest)
     {
         var list = new List<IFormFile>();
 
@@ -72,7 +72,7 @@ public static class MapJsonUploadFormReader
         {
             if (f == null || f.Length == 0) return;
             if (IsAvatarField(f.Name)) return;
-            if (!IsMapDetailOrJsonPart(f)) return;
+            if (!IsGameDetailOrJsonPart(f)) return;
             // Chỉ bỏ trùng cùng instance (model binding + Form.Files); nhiều part giống nội dung vẫn là nhiều IFormFile.
             foreach (var x in list)
             {
@@ -89,9 +89,9 @@ public static class MapJsonUploadFormReader
         }
 
         // 2) Model binding (khi có)
-        if (request.MapDetailFiles is { Count: > 0 })
+        if (request.GameDetailFiles is { Count: > 0 })
         {
-            foreach (var f in request.MapDetailFiles)
+            foreach (var f in request.GameDetailFiles)
                 TryAdd(f);
         }
 
@@ -99,7 +99,7 @@ public static class MapJsonUploadFormReader
         if (list.Count == 0 && httpRequest != null)
         {
             TryAdd(httpRequest.Form.Files.GetFile("mapDetailFile"));
-            TryAdd(httpRequest.Form.Files.GetFile("MapDetailFile"));
+            TryAdd(httpRequest.Form.Files.GetFile("GameDetailFile"));
         }
 
         return list;
@@ -112,11 +112,11 @@ public static class MapJsonUploadFormReader
                || name.Equals("avatarFile", StringComparison.OrdinalIgnoreCase);
     }
 
-    /// <summary>Field map JSON hoặc part có Content-Type / tên file giống JSON (Swagger đôi khi đặt tên lạ).</summary>
-    private static bool IsMapDetailOrJsonPart(IFormFile f)
+    /// <summary>Field game JSON hoặc part có Content-Type / tên file giống JSON (Swagger đôi khi đặt tên lạ).</summary>
+    private static bool IsGameDetailOrJsonPart(IFormFile f)
     {
         var name = f.Name ?? "";
-        if (IsMapDetailFilesFormField(name)) return true;
+        if (IsGameDetailFilesFormField(name)) return true;
         if (name.Equals("mapDetailFile", StringComparison.OrdinalIgnoreCase)) return true;
 
         var ct = f.ContentType ?? "";
@@ -130,12 +130,12 @@ public static class MapJsonUploadFormReader
         return false;
     }
 
-    private static bool IsMapDetailFilesFormField(string name)
+    private static bool IsGameDetailFilesFormField(string name)
     {
         if (string.IsNullOrEmpty(name)) return false;
-        if (name.Equals("MapDetailFiles", StringComparison.OrdinalIgnoreCase)) return true;
+        if (name.Equals("GameDetailFiles", StringComparison.OrdinalIgnoreCase)) return true;
         if (name.Equals("mapDetailFiles", StringComparison.OrdinalIgnoreCase)) return true;
-        if (name.StartsWith("MapDetailFiles[", StringComparison.OrdinalIgnoreCase)) return true;
+        if (name.StartsWith("GameDetailFiles[", StringComparison.OrdinalIgnoreCase)) return true;
         if (name.StartsWith("mapDetailFiles[", StringComparison.OrdinalIgnoreCase)) return true;
         return false;
     }

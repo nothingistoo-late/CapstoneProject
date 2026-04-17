@@ -41,7 +41,7 @@ public class EndLobbyGameCommandHandler : IRequestHandler<EndLobbyGameCommand, R
             MaxPlayers = room.MaxPlayers,
             Status = room.Status,
             IsLocked = room.IsLocked,
-            SelectedMapId = room.SelectedMapId,
+            SelectedGameId = room.SelectedGameId,
             Players = room.Players.Values.Select(p => new LobbyPlayerDto { PlayerId = p.PlayerId, IsReady = p.IsReady, IsHost = p.IsHost }).ToList()
         };
         return Result<LobbyRoomDetailResponse>.Success(response, "Trò chơi kết thúc. Phòng đang chờ lần khởi động tiếp theo.");

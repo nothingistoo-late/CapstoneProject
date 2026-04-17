@@ -36,33 +36,33 @@ public class RateMapCommandHandler : IRequestHandler<RateMapCommand, Result>
         if (command.Rating < 1 || command.Rating > 5)
             return Result.Failure("Đánh giá phải từ 1 đến 5 sao. Vui lòng cung cấp đánh giá hợp lệ.", ErrorCodeEnum.ValidationFailed);
 
-        var mapRepo = _unitOfWork.Repository<Map>();
-        var map = await mapRepo.GetQueryable()
-            .FirstOrDefaultAsync(g => g.Id == command.MapId && !g.IsDeleted && g.Status == EntityStatusEnum.Active, cancellationToken);
-        if (map == null)
-            return Result.Failure($"Không tìm thấy bản đồ có Id: {command.MapId}. Bản đồ có thể đã bị xóa hoặc không tồn tại.", ErrorCodeEnum.NotFound);
-        if (map.CreatedBy.HasValue && map.CreatedBy.Value == userId)
+        var mapRepo = _unitOfWork.Repository<Game>();
+        var game = await mapRepo.GetQueryable()
+            .FirstOrDefaultAsync(g => g.Id == command.GameId && !g.IsDeleted && g.Status == EntityStatusEnum.Active, cancellationToken);
+        if (game == null)
+            return Result.Failure($"Không tìm thấy bản đồ có Id: {command.GameId}. Bản đồ có thể đã bị xóa hoặc không tồn tại.", ErrorCodeEnum.NotFound);
+        if (game.CreatedBy.HasValue && game.CreatedBy.Value == userId)
             return Result.Failure("Bạn không thể xếp hạng bản đồ của riêng bạn.", ErrorCodeEnum.Forbidden);
 
-        // Only allow rating maps the user can actually play:
-        // - Free maps (Price null or <= 0)
-        // - OR paid maps that the user has already purchased (PaymentRecord Completed for this map)
-        var isFreeMap = !map.Price.HasValue || map.Price <= 0;
+        // Only allow rating games the user can actually play:
+        // - Free games (Price null or <= 0)
+        // - OR paid games that the user has already purchased (PaymentRecord Completed for this game)
+        var isFreeMap = !game.Price.HasValue || game.Price <= 0;
         if (!isFreeMap)
         {
             var paymentRepo = _unitOfWork.Repository<PaymentRecord>();
             var hasPurchased = await paymentRepo.GetQueryable()
                 .AnyAsync(p => !p.IsDeleted
                                && p.UserId == userId
-                               && p.MapId == map.Id
+                               && p.GameId == game.Id
                                && p.PaymentStatus == PaymentStatusEnum.Completed,
                     cancellationToken);
             if (!hasPurchased)
                 return Result.Failure("Bạn chỉ có thể xếp hạng bản đồ mà bạn có quyền truy cập (bản đồ miễn phí hoặc bản đồ bạn đã mua).", ErrorCodeEnum.Forbidden);
         }
 
-        var repo = _unitOfWork.Repository<MapRating>();
-        var existing = await repo.GetQueryable().FirstOrDefaultAsync(r => r.UserId == userId && r.MapId == command.MapId && !r.IsDeleted, cancellationToken);
+        var repo = _unitOfWork.Repository<GameRating>();
+        var existing = await repo.GetQueryable().FirstOrDefaultAsync(r => r.UserId == userId && r.GameId == command.GameId && !r.IsDeleted, cancellationToken);
         if (existing != null)
         {
             existing.Rating = command.Rating;
@@ -72,32 +72,32 @@ public class RateMapCommandHandler : IRequestHandler<RateMapCommand, Result>
         }
         else
         {
-            var rating = new MapRating { UserId = userId, MapId = command.MapId, Rating = command.Rating, Comment = command.Comment };
+            var rating = new GameRating { UserId = userId, GameId = command.GameId, Rating = command.Rating, Comment = command.Comment };
             rating.InitializeEntity(userId);
             await repo.AddAsync(rating);
         }
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-        if (map.CreatedBy.HasValue && map.CreatedBy.Value != userId)
+        if (game.CreatedBy.HasValue && game.CreatedBy.Value != userId)
         {
             try
             {
                 var payloadJson = JsonSerializer.Serialize(new
                 {
-                    mapId = map.Id,
-                    mapTitle = map.Title,
+                    gameId = game.Id,
+                    mapTitle = game.Title,
                     rating = command.Rating,
                     hasComment = !string.IsNullOrWhiteSpace(command.Comment)
                 });
 
                 await _notificationPersistenceService.CreateNotificationAsync(
-                    NotificationTypeEnum.MapRatingReceived,
-                    "Map nhận được đánh giá mới",
-                    $"Map \"{map.Title}\" vừa nhận {command.Rating} sao.",
-                    new List<Guid> { map.CreatedBy.Value },
+                    NotificationTypeEnum.GameRatingReceived,
+                    "Game nhận được đánh giá mới",
+                    $"Game \"{game.Title}\" vừa nhận {command.Rating} sao.",
+                    new List<Guid> { game.CreatedBy.Value },
                     userId,
                     payloadJson,
-                    $"/learner/maps/{map.Id}",
+                    $"/learner/games/{game.Id}",
                     cancellationToken);
             }
             catch

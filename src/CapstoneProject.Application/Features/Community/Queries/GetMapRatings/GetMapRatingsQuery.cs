@@ -1,15 +1,15 @@
 using CapstoneProject.Application.Common.Models;
 using MediatR;
 
-namespace CapstoneProject.Application.Features.Community.Queries.GetMapRatings;
+namespace CapstoneProject.Application.Features.Community.Queries.GetGameRatings;
 
-public record GetMapRatingsQuery(Guid MapId, bool IsAuthorOnly = false) : IRequest<Result<List<MapRatingDto>>>;
+public record GetGameRatingsQuery(Guid GameId, bool IsAuthorOnly = false) : IRequest<Result<List<GameRatingDto>>>;
 
-public class MapRatingDto
+public class GameRatingDto
 {
     public Guid Id { get; set; }
     public Guid UserId { get; set; }
-    public Guid MapId { get; set; }
+    public Guid GameId { get; set; }
     public int Rating { get; set; }
     public string? Comment { get; set; }
     public DateTime? CreatedAt { get; set; }

@@ -1,4 +1,4 @@
-using CapstoneProject.Application.Commons.DTOs.Maps;
+using CapstoneProject.Application.Commons.DTOs.Games;
 
 namespace CapstoneProject.Application.Commons.Helpers;
 

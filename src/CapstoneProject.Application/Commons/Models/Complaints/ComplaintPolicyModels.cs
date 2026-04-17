@@ -3,7 +3,7 @@ namespace CapstoneProject.Application.Commons.Models.Complaints;
 public class ComplaintCreateContextInput
 {
     public Guid? PaymentRecordId { get; set; }
-    public Guid? MapId { get; set; }
+    public Guid? GameId { get; set; }
     public Guid? PackageId { get; set; }
     public Guid? SubmissionId { get; set; }
     public Guid? PlayHistoryId { get; set; }
