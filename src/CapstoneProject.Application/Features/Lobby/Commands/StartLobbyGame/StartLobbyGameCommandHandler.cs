@@ -5,7 +5,7 @@ using CapstoneProject.Application.Common.Models;
 using CapstoneProject.Application.Commons.DTOs.Lobby;
 using CapstoneProject.Application.Commons.Interfaces;
 using CapstoneProject.Application.Features.Lobby.Models;
-using CapstoneProject.Application.Features.Maps.Queries.MapExists;
+using CapstoneProject.Application.Features.Games.Queries.MapExists;
 
 namespace CapstoneProject.Application.Features.Lobby.Commands.StartLobbyGame;
 
@@ -29,9 +29,9 @@ public class StartLobbyGameCommandHandler : IRequestHandler<StartLobbyGameComman
             return Result<StartGameResponse>.Failure("Yêu cầu xác thực.", ErrorCodeEnum.Unauthorized);
 
         var room = _roomManager.GetRoomById(command.RoomId);
-        if (room?.SelectedMapId is { } selectedMapId && selectedMapId != Guid.Empty)
+        if (room?.SelectedGameId is { } selectedGameId && selectedGameId != Guid.Empty)
         {
-            var mapExists = await _mediator.Send(new MapExistsQuery(selectedMapId), cancellationToken);
+            var mapExists = await _mediator.Send(new MapExistsQuery(selectedGameId), cancellationToken);
             if (!mapExists.IsSuccess || mapExists.Data != true)
                 return Result<StartGameResponse>.Failure(mapExists.Message ?? "Bản đồ không được tìm thấy hoặc đã bị xóa. Chọn bản đồ khác.", ErrorCodeEnum.NotFound);
         }
@@ -48,7 +48,7 @@ public class StartLobbyGameCommandHandler : IRequestHandler<StartLobbyGameComman
         {
             RoomId = gameInstance.RoomId,
             RoomCode = gameInstance.RoomCode,
-            MapId = gameInstance.MapId,
+            GameId = gameInstance.GameId,
             TurnOrder = gameInstance.TurnOrder.ToList(),
             StartedAt = gameInstance.StartedAt,
             CurrentTurnIndex = state?.CurrentTurnIndex ?? 0,

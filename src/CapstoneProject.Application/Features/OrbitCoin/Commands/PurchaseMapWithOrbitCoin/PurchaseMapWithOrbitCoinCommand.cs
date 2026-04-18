@@ -3,4 +3,4 @@ using MediatR;
 
 namespace CapstoneProject.Application.Features.OrbitCoin.Commands.PurchaseMapWithOrbitCoin;
 
-public record PurchaseMapWithOrbitCoinCommand(Guid MapId) : IRequest<Result>;
+public record PurchaseMapWithOrbitCoinCommand(Guid GameId) : IRequest<Result>;

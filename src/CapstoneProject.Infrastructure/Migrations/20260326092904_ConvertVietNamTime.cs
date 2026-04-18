@@ -840,7 +840,7 @@ namespace CapstoneProject.Infrastructure.Migrations
 
             migrationBuilder.AlterColumn<DateTime>(
                 name: "UpdatedAt",
-                table: "Maps",
+                table: "Games",
                 type: "timestamp without time zone",
                 nullable: true,
                 oldClrType: typeof(DateTime),
@@ -849,7 +849,7 @@ namespace CapstoneProject.Infrastructure.Migrations
 
             migrationBuilder.AlterColumn<DateTime>(
                 name: "DeletedAt",
-                table: "Maps",
+                table: "Games",
                 type: "timestamp without time zone",
                 nullable: true,
                 oldClrType: typeof(DateTime),
@@ -858,7 +858,7 @@ namespace CapstoneProject.Infrastructure.Migrations
 
             migrationBuilder.AlterColumn<DateTime>(
                 name: "CreatedAt",
-                table: "Maps",
+                table: "Games",
                 type: "timestamp without time zone",
                 nullable: true,
                 defaultValueSql: "(now() AT TIME ZONE 'Asia/Ho_Chi_Minh')",
@@ -2090,7 +2090,7 @@ namespace CapstoneProject.Infrastructure.Migrations
 
             migrationBuilder.AlterColumn<DateTime>(
                 name: "UpdatedAt",
-                table: "Maps",
+                table: "Games",
                 type: "timestamp with time zone",
                 nullable: true,
                 oldClrType: typeof(DateTime),
@@ -2099,7 +2099,7 @@ namespace CapstoneProject.Infrastructure.Migrations
 
             migrationBuilder.AlterColumn<DateTime>(
                 name: "DeletedAt",
-                table: "Maps",
+                table: "Games",
                 type: "timestamp with time zone",
                 nullable: true,
                 oldClrType: typeof(DateTime),
@@ -2108,7 +2108,7 @@ namespace CapstoneProject.Infrastructure.Migrations
 
             migrationBuilder.AlterColumn<DateTime>(
                 name: "CreatedAt",
-                table: "Maps",
+                table: "Games",
                 type: "timestamp with time zone",
                 nullable: true,
                 defaultValueSql: "CURRENT_TIMESTAMP",

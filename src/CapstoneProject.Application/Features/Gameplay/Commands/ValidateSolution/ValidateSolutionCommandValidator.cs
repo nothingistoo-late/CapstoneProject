@@ -10,7 +10,7 @@ public class ValidateSolutionCommandValidator : AbstractValidator<ValidateSoluti
             .NotNull().WithMessage("Request is required.");
         When(x => x.Request != null, () =>
         {
-            RuleFor(x => x.Request!.MapId)
+            RuleFor(x => x.Request!.GameId)
                 .NotEmpty().WithMessage("Id bản đồ là bắt buộc.");
             RuleFor(x => x.Request!.Language)
                 .NotEmpty().WithMessage("Language is required.")

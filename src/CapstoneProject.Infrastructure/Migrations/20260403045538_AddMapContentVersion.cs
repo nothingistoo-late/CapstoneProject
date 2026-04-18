@@ -12,7 +12,7 @@ namespace CapstoneProject.Infrastructure.Migrations
         {
             migrationBuilder.AddColumn<int>(
                 name: "ContentVersion",
-                table: "Maps",
+                table: "Games",
                 type: "integer",
                 nullable: false,
                 defaultValue: 1);
@@ -23,7 +23,7 @@ namespace CapstoneProject.Infrastructure.Migrations
         {
             migrationBuilder.DropColumn(
                 name: "ContentVersion",
-                table: "Maps");
+                table: "Games");
         }
     }
 }

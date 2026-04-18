@@ -117,7 +117,7 @@ public static class ServiceConfiguration
 
         app.MapControllers();
         
-        // Map SignalR Hubs
+        // Game SignalR Hubs
         app.MapHub<ChatHub>("/hubs/chat");
         app.MapHub<GameLobbyHub>("/hubs/gamelobby");
         app.MapHub<NotificationHub>("/hubs/notifications");

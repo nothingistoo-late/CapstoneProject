@@ -16,7 +16,7 @@ namespace CapstoneProject.Application.Features.Gameplay.Commands.ValidateSolutio
 
 /// <summary>
 /// Nháº­n block strategy, táº¡o Submission, mÃ´ phá»ng Ä‘Æ¡n giáº£n (hoáº·c gá»i engine tháº­t),
-/// lÆ°u ExecutionsResult, cáº­p nháº­t UserMapResult (score, stars, attempts) vÃ  cá»™ng XP náº¿u Accepted.
+/// lÆ°u ExecutionsResult, cáº­p nháº­t UserGameResult (score, stars, attempts) vÃ  cá»™ng XP náº¿u Accepted.
 /// </summary>
 public class ValidateSolutionCommandHandler : IRequestHandler<ValidateSolutionCommand, Result<ValidateSolutionResultDto>>
 {
@@ -38,49 +38,49 @@ public class ValidateSolutionCommandHandler : IRequestHandler<ValidateSolutionCo
             return Result<ValidateSolutionResultDto>.Failure("Yêu cầu xác thực. Vui lòng đăng nhập để xác nhận giải pháp.", ErrorCodeEnum.Unauthorized);
         var userId = userIdNullable.Value;
 
-        var mapRepo = _unitOfWork.Repository<Map>();
-        var map = await mapRepo.GetQueryable()
-            .Include(m => m.MapDetails)
-            .FirstOrDefaultAsync(m => m.Id == command.Request.MapId, cancellationToken);
-        if (map == null)
+        var mapRepo = _unitOfWork.Repository<Game>();
+        var game = await mapRepo.GetQueryable()
+            .Include(m => m.GameDetails)
+            .FirstOrDefaultAsync(m => m.Id == command.Request.GameId, cancellationToken);
+        if (game == null)
             return Result<ValidateSolutionResultDto>.Failure("Không tìm thấy bản đồ", ErrorCodeEnum.NotFound);
 
         var isOwned = false;
-        if (map.IsDeleted || map.FreeTrialAttemptLimit > 0)
-            isOwned = await IsMapOwnedByUserAsync(map, userId, cancellationToken);
+        if (game.IsDeleted || game.FreeTrialAttemptLimit > 0)
+            isOwned = await IsMapOwnedByUserAsync(game, userId, cancellationToken);
 
-        if (map.IsDeleted)
+        if (game.IsDeleted)
         {
             if (!isOwned)
                 return Result<ValidateSolutionResultDto>.Failure("Không tìm thấy bản đồ", ErrorCodeEnum.NotFound);
         }
 
-        var levelsOrdered = map.MapDetails.OrderBy(d => d.LevelOrder).ToList();
+        var levelsOrdered = game.GameDetails.OrderBy(d => d.LevelOrder).ToList();
         if (levelsOrdered.Count == 0)
             return Result<ValidateSolutionResultDto>.Failure("Không tìm thấy dữ liệu bản đồ", ErrorCodeEnum.ValidationFailed);
 
-        var mapDetail = ResolveMapDetail(command.Request.MapDetailId, levelsOrdered);
+        var mapDetail = ResolveGameDetail(command.Request.GameDetailId, levelsOrdered);
         if (mapDetail == null)
             return Result<ValidateSolutionResultDto>.Failure(
-                "MapDetailId là bắt buộc khi bản đồ có nhiều cấp độ hoặc không hợp lệ đối với bản đồ này.",
+                "GameDetailId là bắt buộc khi bản đồ có nhiều cấp độ hoặc không hợp lệ đối với bản đồ này.",
                 ErrorCodeEnum.ValidationFailed);
 
-        var umrRepo = _unitOfWork.Repository<UserMapResult>();
+        var umrRepo = _unitOfWork.Repository<UserGameResult>();
         var umr = await umrRepo.GetQueryable().FirstOrDefaultAsync(
-            u => u.UserId == userId && u.MapDetailId == mapDetail.Id,
+            u => u.UserId == userId && u.GameDetailId == mapDetail.Id,
             cancellationToken);
         var currentMapAttempts = await umrRepo.GetQueryable()
-            .Where(u => u.UserId == userId && u.MapId == map.Id && !u.IsDeleted)
+            .Where(u => u.UserId == userId && u.GameId == game.Id && !u.IsDeleted)
             .Select(u => (int?)u.Attempts)
             .SumAsync(cancellationToken) ?? 0;
-        var isTrialPlay = map.FreeTrialAttemptLimit > 0 && !isOwned;
-        if (isTrialPlay && currentMapAttempts >= map.FreeTrialAttemptLimit)
+        var isTrialPlay = game.FreeTrialAttemptLimit > 0 && !isOwned;
+        if (isTrialPlay && currentMapAttempts >= game.FreeTrialAttemptLimit)
             return Result<ValidateSolutionResultDto>.Failure("Không còn lượt dùng thử miễn phí nào cho bản đồ này.", ErrorCodeEnum.ValidationFailed);
 
-        var mapSolveCfg = await _unitOfWork.Repository<MapSolveScoreConfig>().GetQueryable()
+        var mapSolveCfg = await _unitOfWork.Repository<GameSolveScoreConfig>().GetQueryable()
             .AsNoTracking()
             .FirstOrDefaultAsync(
-                x => x.ConfigKey == MapSolveScoreConfig.DefaultConfigKey && !x.IsDeleted,
+                x => x.ConfigKey == GameSolveScoreConfig.DefaultConfigKey && !x.IsDeleted,
                 cancellationToken);
         var scoreWeights = MapSolveScoreWeights.FromDbOrLegacy(mapSolveCfg);
 
@@ -108,8 +108,8 @@ public class ValidateSolutionCommandHandler : IRequestHandler<ValidateSolutionCo
         var submission = new Submission
         {
             UserId = userId,
-            MapId = map.Id,
-            MapDetailId = mapDetail.Id,
+            GameId = game.Id,
+            GameDetailId = mapDetail.Id,
             Language = command.Request.Language,
             AstSpec = command.Request.AstSpec,
             BytecodeSpec = command.Request.BytecodeSpec,
@@ -135,11 +135,11 @@ public class ValidateSolutionCommandHandler : IRequestHandler<ValidateSolutionCo
 
         if (umr == null)
         {
-            umr = new UserMapResult
+            umr = new UserGameResult
             {
                 UserId = userId,
-                MapId = map.Id,
-                MapDetailId = mapDetail.Id,
+                GameId = game.Id,
+                GameDetailId = mapDetail.Id,
                 BestScore = score,
                 BestStars = stars,
                 Attempts = 1,
@@ -158,11 +158,11 @@ public class ValidateSolutionCommandHandler : IRequestHandler<ValidateSolutionCo
             umrRepo.Update(umr);
         }
 
-        var history = new UserMapPlayHistory
+        var history = new UserGamePlayHistory
         {
             UserId = userId,
-            MapId = map.Id,
-            MapDetailId = mapDetail.Id,
+            GameId = game.Id,
+            GameDetailId = mapDetail.Id,
             PlayMode = command.Request.PlayMode,
             RoomId = command.Request.RoomId,
             MatchId = command.Request.MatchId,
@@ -176,7 +176,7 @@ public class ValidateSolutionCommandHandler : IRequestHandler<ValidateSolutionCo
             Language = command.Request.Language
         };
         history.InitializeEntity(userId);
-        await _unitOfWork.Repository<UserMapPlayHistory>().AddAsync(history);
+        await _unitOfWork.Repository<UserGamePlayHistory>().AddAsync(history);
 
         if (accepted && !isTrialPlay)
         {
@@ -186,9 +186,9 @@ public class ValidateSolutionCommandHandler : IRequestHandler<ValidateSolutionCo
                 UserId = userId,
                 RequestedXp = xpDelta,
                 SourceType = XpSourceTypeEnum.MapSolve,
-                SourceId = map.Id,
-                IdempotencyKey = $"xp:mapsolve:{userId}:{map.Id}:{mapDetail.Id}:{submission.Id}",
-                Reason = "Map completed",
+                SourceId = game.Id,
+                IdempotencyKey = $"xp:mapsolve:{userId}:{game.Id}:{mapDetail.Id}:{submission.Id}",
+                Reason = "Game completed",
                 Metadata = $"{{\"stars\":{stars},\"score\":{score}}}"
             }, cancellationToken);
             if (!xpResult.IsSuccess)
@@ -204,13 +204,13 @@ public class ValidateSolutionCommandHandler : IRequestHandler<ValidateSolutionCo
             {
                 var goalItems = await _unitOfWork.Repository<LearningPathItem>().GetQueryable()
                     .Where(i => i.LearningGoalId == selectedGoal && !i.IsDeleted)
-                    .Select(i => new { i.ItemType, i.ConceptId, i.MapId })
+                    .Select(i => new { i.ItemType, i.ConceptId, i.GameId })
                     .ToListAsync(cancellationToken);
 
-                if (goalItems.Any(i => i.MapId == map.Id))
+                if (goalItems.Any(i => i.GameId == game.Id))
                 {
                     var conceptIdsInGoal = goalItems.Where(i => i.ConceptId.HasValue).Select(i => i.ConceptId!.Value).ToHashSet();
-                    var mapIdsInGoal = goalItems.Where(i => i.MapId.HasValue).Select(i => i.MapId!.Value).ToHashSet();
+                    var gameIdsInGoal = goalItems.Where(i => i.GameId.HasValue).Select(i => i.GameId!.Value).ToHashSet();
 
                     var completedConceptIds = await _unitOfWork.Repository<UserConceptProgress>().GetQueryable()
                         .Where(p => p.UserId == userId && !p.IsDeleted && p.IsCompleted && conceptIdsInGoal.Contains(p.ConceptId))
@@ -219,7 +219,7 @@ public class ValidateSolutionCommandHandler : IRequestHandler<ValidateSolutionCo
                     var completedConceptSet = completedConceptIds.ToHashSet();
 
                     var completedMapSet = new HashSet<Guid>();
-                    foreach (var mid in mapIdsInGoal)
+                    foreach (var mid in gameIdsInGoal)
                     {
                         if (await MapProgressHelper.MapHasAllLevelsCompletedAsync(_unitOfWork, userId, mid, minStars: 1, cancellationToken))
                             completedMapSet.Add(mid);
@@ -228,7 +228,7 @@ public class ValidateSolutionCommandHandler : IRequestHandler<ValidateSolutionCo
                     var isLearningPathCompleted = goalItems.All(i =>
                         i.ItemType == LearningPathItemTypeEnum.Concept
                             ? i.ConceptId.HasValue && completedConceptSet.Contains(i.ConceptId.Value)
-                            : i.MapId.HasValue && completedMapSet.Contains(i.MapId.Value));
+                            : i.GameId.HasValue && completedMapSet.Contains(i.GameId.Value));
 
                     if (isLearningPathCompleted)
                     {
@@ -264,22 +264,22 @@ public class ValidateSolutionCommandHandler : IRequestHandler<ValidateSolutionCo
         return Result<ValidateSolutionResultDto>.Success(dto, "Đã chấm lời giải thành công.");
     }
 
-    private async Task<bool> IsMapOwnedByUserAsync(Map map, Guid userId, CancellationToken cancellationToken)
+    private async Task<bool> IsMapOwnedByUserAsync(Game game, Guid userId, CancellationToken cancellationToken)
     {
-        if (map.CreatedBy.HasValue && map.CreatedBy.Value == userId)
+        if (game.CreatedBy.HasValue && game.CreatedBy.Value == userId)
             return true;
 
         var purchased = await _unitOfWork.Repository<PaymentRecord>().GetQueryable()
-            .AnyAsync(p => !p.IsDeleted && p.UserId == userId && p.MapId == map.Id && p.PaymentStatus == PaymentStatusEnum.Completed, cancellationToken);
+            .AnyAsync(p => !p.IsDeleted && p.UserId == userId && p.GameId == game.Id && p.PaymentStatus == PaymentStatusEnum.Completed, cancellationToken);
         if (purchased)
             return true;
 
-        return await _unitOfWork.Repository<MyMap>().GetQueryable()
-            .AnyAsync(mm => !mm.IsDeleted && mm.UserId == userId && mm.MapId == map.Id, cancellationToken);
+        return await _unitOfWork.Repository<MyGame>().GetQueryable()
+            .AnyAsync(mm => !mm.IsDeleted && mm.UserId == userId && mm.GameId == game.Id, cancellationToken);
     }
 
-    /// <summary>Null náº¿u map nhiá»u level mÃ  khÃ´ng gá»­i MapDetailId há»£p lá»‡.</summary>
-    private static MapDetail? ResolveMapDetail(Guid? requestedId, List<MapDetail> levelsOrdered)
+    /// <summary>Null náº¿u game nhiá»u level mÃ  khÃ´ng gá»­i GameDetailId há»£p lá»‡.</summary>
+    private static GameDetail? ResolveGameDetail(Guid? requestedId, List<GameDetail> levelsOrdered)
     {
         if (levelsOrdered.Count == 1)
             return levelsOrdered[0];
@@ -383,7 +383,7 @@ public class ValidateSolutionCommandHandler : IRequestHandler<ValidateSolutionCo
         }
     }
 
-    /// <summary>Giá»‘ng GameResultsModal: 0â€“3 sao theo time / steps / block so vá»›i limit map.</summary>
+    /// <summary>Giá»‘ng GameResultsModal: 0â€“3 sao theo time / steps / block so vá»›i limit game.</summary>
     private static int ComputeStarCount(double elapsedSeconds, int steps, int blocks, MissionLimits lim)
     {
         if (lim.TimeLimitSeconds >= double.PositiveInfinity &&
@@ -477,7 +477,7 @@ public class ValidateSolutionCommandHandler : IRequestHandler<ValidateSolutionCo
     {
         public static MapSolveScoreWeights Legacy => new(10, 30, 30, 30);
 
-        public static MapSolveScoreWeights FromDbOrLegacy(MapSolveScoreConfig? cfg)
+        public static MapSolveScoreWeights FromDbOrLegacy(GameSolveScoreConfig? cfg)
         {
             if (cfg == null) return Legacy;
             if (cfg.BaseScore + cfg.TimeScore + cfg.StepsScore + cfg.BlocksScore != 100) return Legacy;

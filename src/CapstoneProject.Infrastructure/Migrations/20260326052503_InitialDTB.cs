@@ -90,7 +90,7 @@ namespace CapstoneProject.Infrastructure.Migrations
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
                     UserId = table.Column<Guid>(type: "uuid", nullable: false),
-                    MapId = table.Column<Guid>(type: "uuid", nullable: false),
+                    GameId = table.Column<Guid>(type: "uuid", nullable: false),
                     Rating = table.Column<int>(type: "integer", nullable: false),
                     Comment = table.Column<string>(type: "text", nullable: true),
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true, defaultValueSql: "CURRENT_TIMESTAMP"),
@@ -112,7 +112,7 @@ namespace CapstoneProject.Infrastructure.Migrations
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
-                    MapId = table.Column<Guid>(type: "uuid", nullable: false),
+                    GameId = table.Column<Guid>(type: "uuid", nullable: false),
                     StartedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
                     EndedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
                     RulesSpec = table.Column<string>(type: "text", nullable: true),
@@ -223,7 +223,7 @@ namespace CapstoneProject.Infrastructure.Migrations
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
                     UserId = table.Column<Guid>(type: "uuid", nullable: false),
-                    MapId = table.Column<Guid>(type: "uuid", nullable: false),
+                    GameId = table.Column<Guid>(type: "uuid", nullable: false),
                     Language = table.Column<string>(type: "text", nullable: false),
                     AstSpec = table.Column<string>(type: "text", nullable: true),
                     BytecodeSpec = table.Column<string>(type: "text", nullable: true),
@@ -272,7 +272,7 @@ namespace CapstoneProject.Infrastructure.Migrations
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
                     UserId = table.Column<Guid>(type: "uuid", nullable: false),
-                    MapId = table.Column<Guid>(type: "uuid", nullable: false),
+                    GameId = table.Column<Guid>(type: "uuid", nullable: false),
                     PlayMode = table.Column<int>(type: "integer", nullable: false),
                     StartTime = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     EndTime = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
@@ -304,7 +304,7 @@ namespace CapstoneProject.Infrastructure.Migrations
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
                     UserId = table.Column<Guid>(type: "uuid", nullable: false),
-                    MapId = table.Column<Guid>(type: "uuid", nullable: false),
+                    GameId = table.Column<Guid>(type: "uuid", nullable: false),
                     BestScore = table.Column<int>(type: "integer", nullable: false),
                     BestStars = table.Column<int>(type: "integer", nullable: false),
                     Attempts = table.Column<int>(type: "integer", nullable: false),
@@ -392,7 +392,7 @@ namespace CapstoneProject.Infrastructure.Migrations
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
                     UserId = table.Column<Guid>(type: "uuid", nullable: false),
-                    MapId = table.Column<Guid>(type: "uuid", nullable: true),
+                    GameId = table.Column<Guid>(type: "uuid", nullable: true),
                     Delta = table.Column<int>(type: "integer", nullable: false),
                     Reason = table.Column<string>(type: "text", nullable: true),
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true, defaultValueSql: "CURRENT_TIMESTAMP"),
@@ -534,7 +534,7 @@ namespace CapstoneProject.Infrastructure.Migrations
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
                     UserId = table.Column<Guid>(type: "uuid", nullable: false),
                     PackageId = table.Column<Guid>(type: "uuid", nullable: true),
-                    MapId = table.Column<Guid>(type: "uuid", nullable: true),
+                    GameId = table.Column<Guid>(type: "uuid", nullable: true),
                     PaymentId = table.Column<Guid>(type: "uuid", nullable: true),
                     Amount = table.Column<decimal>(type: "numeric", nullable: false),
                     PaymentStatus = table.Column<int>(type: "integer", nullable: false),
@@ -691,7 +691,7 @@ namespace CapstoneProject.Infrastructure.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "Maps",
+                name: "Games",
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
@@ -970,7 +970,7 @@ namespace CapstoneProject.Infrastructure.Migrations
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
-                    MapId = table.Column<Guid>(type: "uuid", nullable: false),
+                    GameId = table.Column<Guid>(type: "uuid", nullable: false),
                     OrderNo = table.Column<int>(type: "integer", nullable: false),
                     Content = table.Column<string>(type: "text", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true, defaultValueSql: "CURRENT_TIMESTAMP"),
@@ -986,9 +986,9 @@ namespace CapstoneProject.Infrastructure.Migrations
                 {
                     table.PrimaryKey("PK_Hints", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_Hints_Maps_MapId",
-                        column: x => x.MapId,
-                        principalTable: "Maps",
+                        name: "FK_Hints_Maps_GameId",
+                        column: x => x.GameId,
+                        principalTable: "Games",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
@@ -1001,7 +1001,7 @@ namespace CapstoneProject.Infrastructure.Migrations
                     LearningGoalId = table.Column<Guid>(type: "uuid", nullable: false),
                     ItemType = table.Column<int>(type: "integer", nullable: false),
                     ConceptId = table.Column<Guid>(type: "uuid", nullable: true),
-                    MapId = table.Column<Guid>(type: "uuid", nullable: true),
+                    GameId = table.Column<Guid>(type: "uuid", nullable: true),
                     SortOrder = table.Column<int>(type: "integer", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true, defaultValueSql: "CURRENT_TIMESTAMP"),
                     CreatedBy = table.Column<Guid>(type: "uuid", nullable: true),
@@ -1028,9 +1028,9 @@ namespace CapstoneProject.Infrastructure.Migrations
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
-                        name: "FK_LearningPathItems_Maps_MapId",
-                        column: x => x.MapId,
-                        principalTable: "Maps",
+                        name: "FK_LearningPathItems_Maps_GameId",
+                        column: x => x.GameId,
+                        principalTable: "Games",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.SetNull);
                 });
@@ -1040,7 +1040,7 @@ namespace CapstoneProject.Infrastructure.Migrations
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
-                    MapId = table.Column<Guid>(type: "uuid", nullable: false),
+                    GameId = table.Column<Guid>(type: "uuid", nullable: false),
                     JsonContent = table.Column<string>(type: "text", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true, defaultValueSql: "CURRENT_TIMESTAMP"),
                     CreatedBy = table.Column<Guid>(type: "uuid", nullable: true),
@@ -1055,9 +1055,9 @@ namespace CapstoneProject.Infrastructure.Migrations
                 {
                     table.PrimaryKey("PK_MapDetails", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_MapDetails_Maps_MapId",
-                        column: x => x.MapId,
-                        principalTable: "Maps",
+                        name: "FK_MapDetails_Maps_GameId",
+                        column: x => x.GameId,
+                        principalTable: "Games",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
@@ -1068,7 +1068,7 @@ namespace CapstoneProject.Infrastructure.Migrations
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
                     UserId = table.Column<Guid>(type: "uuid", nullable: false),
-                    MapId = table.Column<Guid>(type: "uuid", nullable: false),
+                    GameId = table.Column<Guid>(type: "uuid", nullable: false),
                     Reason = table.Column<string>(type: "text", nullable: false),
                     Details = table.Column<string>(type: "text", nullable: true),
                     ReportStatus = table.Column<int>(type: "integer", nullable: false),
@@ -1088,9 +1088,9 @@ namespace CapstoneProject.Infrastructure.Migrations
                 {
                     table.PrimaryKey("PK_MapReports", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_MapReports_Maps_MapId",
-                        column: x => x.MapId,
-                        principalTable: "Maps",
+                        name: "FK_MapReports_Maps_GameId",
+                        column: x => x.GameId,
+                        principalTable: "Games",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
                 });
@@ -1100,7 +1100,7 @@ namespace CapstoneProject.Infrastructure.Migrations
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
-                    MapId = table.Column<Guid>(type: "uuid", nullable: false),
+                    GameId = table.Column<Guid>(type: "uuid", nullable: false),
                     TagId = table.Column<Guid>(type: "uuid", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true, defaultValueSql: "CURRENT_TIMESTAMP"),
                     CreatedBy = table.Column<Guid>(type: "uuid", nullable: true),
@@ -1115,9 +1115,9 @@ namespace CapstoneProject.Infrastructure.Migrations
                 {
                     table.PrimaryKey("PK_MapTags", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_MapTags_Maps_MapId",
-                        column: x => x.MapId,
-                        principalTable: "Maps",
+                        name: "FK_MapTags_Maps_GameId",
+                        column: x => x.GameId,
+                        principalTable: "Games",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
@@ -1133,7 +1133,7 @@ namespace CapstoneProject.Infrastructure.Migrations
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
-                    MapId = table.Column<Guid>(type: "uuid", nullable: false),
+                    GameId = table.Column<Guid>(type: "uuid", nullable: false),
                     UserId = table.Column<Guid>(type: "uuid", nullable: false),
                     IsAuthor = table.Column<bool>(type: "boolean", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true, defaultValueSql: "CURRENT_TIMESTAMP"),
@@ -1149,9 +1149,9 @@ namespace CapstoneProject.Infrastructure.Migrations
                 {
                     table.PrimaryKey("PK_MyMaps", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_MyMaps_Maps_MapId",
-                        column: x => x.MapId,
-                        principalTable: "Maps",
+                        name: "FK_MyMaps_Maps_GameId",
+                        column: x => x.GameId,
+                        principalTable: "Games",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
@@ -1233,9 +1233,9 @@ namespace CapstoneProject.Infrastructure.Migrations
                 column: "SubmissionId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Hints_MapId_OrderNo",
+                name: "IX_Hints_GameId_OrderNo",
                 table: "Hints",
-                columns: new[] { "MapId", "OrderNo" });
+                columns: new[] { "GameId", "OrderNo" });
 
             migrationBuilder.CreateIndex(
                 name: "IX_LearningGoals_SortOrder",
@@ -1253,26 +1253,26 @@ namespace CapstoneProject.Infrastructure.Migrations
                 columns: new[] { "LearningGoalId", "SortOrder" });
 
             migrationBuilder.CreateIndex(
-                name: "IX_LearningPathItems_MapId",
+                name: "IX_LearningPathItems_GameId",
                 table: "LearningPathItems",
-                column: "MapId");
+                column: "GameId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_MapDetails_MapId",
+                name: "IX_MapDetails_GameId",
                 table: "MapDetails",
-                column: "MapId",
+                column: "GameId",
                 unique: true);
 
             migrationBuilder.CreateIndex(
-                name: "IX_MapRatings_UserId_MapId",
+                name: "IX_MapRatings_UserId_GameId",
                 table: "MapRatings",
-                columns: new[] { "UserId", "MapId" },
+                columns: new[] { "UserId", "GameId" },
                 unique: true);
 
             migrationBuilder.CreateIndex(
-                name: "IX_MapReports_MapId",
+                name: "IX_MapReports_GameId",
                 table: "MapReports",
-                column: "MapId");
+                column: "GameId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_MapReports_ReportStatus",
@@ -1281,23 +1281,23 @@ namespace CapstoneProject.Infrastructure.Migrations
 
             migrationBuilder.CreateIndex(
                 name: "IX_Maps_CreatedBy",
-                table: "Maps",
+                table: "Games",
                 column: "CreatedBy");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Maps_IsPublished",
-                table: "Maps",
+                table: "Games",
                 column: "IsPublished");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Maps_MapStatus",
-                table: "Maps",
+                table: "Games",
                 column: "MapStatus");
 
             migrationBuilder.CreateIndex(
-                name: "IX_MapTags_MapId_TagId",
+                name: "IX_MapTags_GameId_TagId",
                 table: "MapTags",
-                columns: new[] { "MapId", "TagId" },
+                columns: new[] { "GameId", "TagId" },
                 unique: true);
 
             migrationBuilder.CreateIndex(
@@ -1306,9 +1306,9 @@ namespace CapstoneProject.Infrastructure.Migrations
                 column: "TagId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Matches_MapId",
+                name: "IX_Matches_GameId",
                 table: "Matches",
-                column: "MapId");
+                column: "GameId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_MessageReads_MessageId_UserId",
@@ -1337,14 +1337,14 @@ namespace CapstoneProject.Infrastructure.Migrations
                 column: "SenderId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_MyMaps_MapId",
+                name: "IX_MyMaps_GameId",
                 table: "MyMaps",
-                column: "MapId");
+                column: "GameId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_MyMaps_UserId_MapId",
+                name: "IX_MyMaps_UserId_GameId",
                 table: "MyMaps",
-                columns: new[] { "UserId", "MapId" },
+                columns: new[] { "UserId", "GameId" },
                 unique: true);
 
             migrationBuilder.CreateIndex(
@@ -1423,9 +1423,9 @@ namespace CapstoneProject.Infrastructure.Migrations
                 column: "MatchId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Submissions_MapId",
+                name: "IX_Submissions_GameId",
                 table: "Submissions",
-                column: "MapId");
+                column: "GameId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Submissions_MatchId",
@@ -1492,9 +1492,9 @@ namespace CapstoneProject.Infrastructure.Migrations
                 column: "ExecutionsResultId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_UserMapPlayHistories_MapId",
+                name: "IX_UserMapPlayHistories_GameId",
                 table: "UserMapPlayHistories",
-                column: "MapId");
+                column: "GameId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_UserMapPlayHistories_SubmissionId",
@@ -1507,14 +1507,14 @@ namespace CapstoneProject.Infrastructure.Migrations
                 column: "UserId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_UserMapPlayHistories_UserId_MapId_StartTime",
+                name: "IX_UserMapPlayHistories_UserId_GameId_StartTime",
                 table: "UserMapPlayHistories",
-                columns: new[] { "UserId", "MapId", "StartTime" });
+                columns: new[] { "UserId", "GameId", "StartTime" });
 
             migrationBuilder.CreateIndex(
-                name: "IX_UserMapResults_UserId_MapId",
+                name: "IX_UserMapResults_UserId_GameId",
                 table: "UserMapResults",
-                columns: new[] { "UserId", "MapId" },
+                columns: new[] { "UserId", "GameId" },
                 unique: true);
 
             migrationBuilder.CreateIndex(
@@ -1588,9 +1588,9 @@ namespace CapstoneProject.Infrastructure.Migrations
                 unique: true);
 
             migrationBuilder.CreateIndex(
-                name: "IX_XpTransactions_MapId",
+                name: "IX_XpTransactions_GameId",
                 table: "XpTransactions",
-                column: "MapId");
+                column: "GameId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_XpTransactions_UserId",
@@ -1689,7 +1689,7 @@ namespace CapstoneProject.Infrastructure.Migrations
                 name: "Messages");
 
             migrationBuilder.DropTable(
-                name: "Maps");
+                name: "Games");
 
             migrationBuilder.DropTable(
                 name: "Payments");

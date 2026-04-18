@@ -42,7 +42,7 @@ public class ComplaintContextResolver : IComplaintContextResolver
         return normalizedType switch
         {
             "PaymentRecord" => await ResolvePaymentRecordAsync(id.Value, cancellationToken),
-            "Map" => await ResolveMapAsync(id.Value, complaintUserId, cancellationToken),
+            "Game" => await ResolveMapAsync(id.Value, complaintUserId, cancellationToken),
             "Package" => await ResolvePackageAsync(id.Value, complaintUserId, cancellationToken),
             "Submission" => await ResolveSubmissionAsync(id.Value, cancellationToken),
             "PlayHistory" => await ResolvePlayHistoryAsync(id.Value, cancellationToken),
@@ -70,7 +70,7 @@ public class ComplaintContextResolver : IComplaintContextResolver
                 x.ExternalId,
                 x.PaymentStatus,
                 x.PackageId,
-                x.MapId
+                x.GameId
             })
             .FirstOrDefaultAsync(cancellationToken);
 
@@ -78,10 +78,10 @@ public class ComplaintContextResolver : IComplaintContextResolver
             return null;
 
         string? targetName = null;
-        if (payment.MapId.HasValue)
+        if (payment.GameId.HasValue)
         {
-            targetName = await _unitOfWork.Repository<Map>().GetQueryable()
-                .Where(x => !x.IsDeleted && x.Id == payment.MapId.Value)
+            targetName = await _unitOfWork.Repository<Game>().GetQueryable()
+                .Where(x => !x.IsDeleted && x.Id == payment.GameId.Value)
                 .Select(x => x.Title)
                 .FirstOrDefaultAsync(cancellationToken);
         }
@@ -112,8 +112,8 @@ public class ComplaintContextResolver : IComplaintContextResolver
                 AmountOrbitCoin = payment.Amount,
                 AmountVnd = payment.AmountVnd,
                 PaidAt = payment.PaidAt,
-                PaymentTargetType = payment.MapId.HasValue ? "Map" : payment.PackageId.HasValue ? "Package" : "Deposit",
-                PaymentTargetId = payment.MapId ?? payment.PackageId,
+                PaymentTargetType = payment.GameId.HasValue ? "Game" : payment.PackageId.HasValue ? "Package" : "Deposit",
+                PaymentTargetId = payment.GameId ?? payment.PackageId,
                 PaymentTargetName = targetName
             }
         };
@@ -121,22 +121,22 @@ public class ComplaintContextResolver : IComplaintContextResolver
 
     private async Task<ComplaintContextResolvedDto?> ResolveMapAsync(Guid id, Guid? complaintUserId, CancellationToken cancellationToken)
     {
-        var map = await _unitOfWork.Repository<Map>().GetQueryable()
+        var game = await _unitOfWork.Repository<Game>().GetQueryable()
             .Where(x => !x.IsDeleted && x.Id == id)
             .Select(x => new { x.Id, x.Title, x.Difficulty, x.Price })
             .FirstOrDefaultAsync(cancellationToken);
 
-        if (map == null)
+        if (game == null)
             return null;
 
-        var linkedOrder = await FindLatestPaymentForMapAsync(map.Id, complaintUserId, cancellationToken);
+        var linkedOrder = await FindLatestPaymentForMapAsync(game.Id, complaintUserId, cancellationToken);
 
         return new ComplaintContextResolvedDto
         {
-            DisplayTitle = map.Title,
-            DisplaySubtitle = $"Difficulty {map.Difficulty}",
-            ReferenceCode = map.Id.ToString(),
-            AmountValue = map.Price,
+            DisplayTitle = game.Title,
+            DisplaySubtitle = $"Difficulty {game.Difficulty}",
+            ReferenceCode = game.Id.ToString(),
+            AmountValue = game.Price,
             LinkedOrder = linkedOrder
         };
     }
@@ -170,7 +170,7 @@ public class ComplaintContextResolver : IComplaintContextResolver
             .Select(x => new
             {
                 x.Id,
-                x.MapId,
+                x.GameId,
                 x.ResultStatus,
                 x.Score,
                 x.CreatedAt
@@ -180,8 +180,8 @@ public class ComplaintContextResolver : IComplaintContextResolver
         if (submission == null)
             return null;
 
-        var mapTitle = await _unitOfWork.Repository<Map>().GetQueryable()
-            .Where(x => !x.IsDeleted && x.Id == submission.MapId)
+        var mapTitle = await _unitOfWork.Repository<Game>().GetQueryable()
+            .Where(x => !x.IsDeleted && x.Id == submission.GameId)
             .Select(x => x.Title)
             .FirstOrDefaultAsync(cancellationToken);
 
@@ -197,12 +197,12 @@ public class ComplaintContextResolver : IComplaintContextResolver
 
     private async Task<ComplaintContextResolvedDto?> ResolvePlayHistoryAsync(Guid id, CancellationToken cancellationToken)
     {
-        var history = await _unitOfWork.Repository<UserMapPlayHistory>().GetQueryable()
+        var history = await _unitOfWork.Repository<UserGamePlayHistory>().GetQueryable()
             .Where(x => !x.IsDeleted && x.Id == id)
             .Select(x => new
             {
                 x.Id,
-                x.MapId,
+                x.GameId,
                 x.PlayMode,
                 x.StartTime,
                 x.EndTime,
@@ -213,8 +213,8 @@ public class ComplaintContextResolver : IComplaintContextResolver
         if (history == null)
             return null;
 
-        var mapTitle = await _unitOfWork.Repository<Map>().GetQueryable()
-            .Where(x => !x.IsDeleted && x.Id == history.MapId)
+        var mapTitle = await _unitOfWork.Repository<Game>().GetQueryable()
+            .Where(x => !x.IsDeleted && x.Id == history.GameId)
             .Select(x => x.Title)
             .FirstOrDefaultAsync(cancellationToken);
 
@@ -288,7 +288,7 @@ public class ComplaintContextResolver : IComplaintContextResolver
     }
 
     private async Task<ComplaintLinkedOrderDto?> FindLatestPaymentForMapAsync(
-        Guid mapId,
+        Guid gameId,
         Guid? complaintUserId,
         CancellationToken cancellationToken)
     {
@@ -296,7 +296,7 @@ public class ComplaintContextResolver : IComplaintContextResolver
             return null;
 
         var payment = await _unitOfWork.Repository<PaymentRecord>().GetQueryable()
-            .Where(x => !x.IsDeleted && x.UserId == complaintUserId.Value && x.MapId == mapId)
+            .Where(x => !x.IsDeleted && x.UserId == complaintUserId.Value && x.GameId == gameId)
             .OrderByDescending(x => x.PaidAt ?? x.CreatedAt)
             .Select(x => new
             {
@@ -306,15 +306,15 @@ public class ComplaintContextResolver : IComplaintContextResolver
                 x.Amount,
                 x.AmountVnd,
                 x.PaidAt,
-                x.MapId
+                x.GameId
             })
             .FirstOrDefaultAsync(cancellationToken);
 
         if (payment == null)
             return null;
 
-        var mapName = await _unitOfWork.Repository<Map>().GetQueryable()
-            .Where(x => !x.IsDeleted && x.Id == mapId)
+        var mapName = await _unitOfWork.Repository<Game>().GetQueryable()
+            .Where(x => !x.IsDeleted && x.Id == gameId)
             .Select(x => x.Title)
             .FirstOrDefaultAsync(cancellationToken);
 
@@ -326,8 +326,8 @@ public class ComplaintContextResolver : IComplaintContextResolver
             AmountOrbitCoin = payment.Amount,
             AmountVnd = payment.AmountVnd,
             PaidAt = payment.PaidAt,
-            PaymentTargetType = "Map",
-            PaymentTargetId = payment.MapId,
+            PaymentTargetType = "Game",
+            PaymentTargetId = payment.GameId,
             PaymentTargetName = mapName
         };
     }
@@ -391,7 +391,7 @@ public class ComplaintContextResolver : IComplaintContextResolver
                 x.Amount,
                 x.AmountVnd,
                 x.PaidAt,
-                x.MapId,
+                x.GameId,
                 x.PackageId
             })
             .FirstOrDefaultAsync(cancellationToken);
@@ -400,10 +400,10 @@ public class ComplaintContextResolver : IComplaintContextResolver
             return null;
 
         string? targetName = null;
-        if (payment.MapId.HasValue)
+        if (payment.GameId.HasValue)
         {
-            targetName = await _unitOfWork.Repository<Map>().GetQueryable()
-                .Where(x => !x.IsDeleted && x.Id == payment.MapId.Value)
+            targetName = await _unitOfWork.Repository<Game>().GetQueryable()
+                .Where(x => !x.IsDeleted && x.Id == payment.GameId.Value)
                 .Select(x => x.Title)
                 .FirstOrDefaultAsync(cancellationToken);
         }
@@ -423,8 +423,8 @@ public class ComplaintContextResolver : IComplaintContextResolver
             AmountOrbitCoin = payment.Amount,
             AmountVnd = payment.AmountVnd,
             PaidAt = payment.PaidAt,
-            PaymentTargetType = payment.MapId.HasValue ? "Map" : payment.PackageId.HasValue ? "Package" : "Deposit",
-            PaymentTargetId = payment.MapId ?? payment.PackageId,
+            PaymentTargetType = payment.GameId.HasValue ? "Game" : payment.PackageId.HasValue ? "Package" : "Deposit",
+            PaymentTargetId = payment.GameId ?? payment.PackageId,
             PaymentTargetName = targetName
         };
     }
@@ -437,7 +437,7 @@ public class ComplaintContextResolver : IComplaintContextResolver
         var propertyName = contextType switch
         {
             "PaymentRecord" => "paymentRecordId",
-            "Map" => "mapId",
+            "Game" => "gameId",
             "Package" => "packageId",
             "Submission" => "submissionId",
             "PlayHistory" => "playHistoryId",

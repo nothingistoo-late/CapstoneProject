@@ -15,18 +15,18 @@ public class GetHintsForMapQueryHandler : IRequestHandler<GetHintsForMapQuery, R
     {
         var q = _unitOfWork.Repository<Hint>().GetQueryable()
             .AsNoTracking()
-            .Where(h => !h.IsDeleted && h.MapDetail.MapId == request.MapId && !h.MapDetail.IsDeleted);
+            .Where(h => !h.IsDeleted && h.GameDetail.GameId == request.GameId && !h.GameDetail.IsDeleted);
 
-        if (request.MapDetailId.HasValue)
-            q = q.Where(h => h.MapDetailId == request.MapDetailId.Value);
+        if (request.GameDetailId.HasValue)
+            q = q.Where(h => h.GameDetailId == request.GameDetailId.Value);
 
         var hints = await q
-            .OrderBy(h => h.MapDetail.LevelOrder)
+            .OrderBy(h => h.GameDetail.LevelOrder)
             .ThenBy(h => h.OrderNo)
             .Select(h => new HintLevelDto
             {
-                LevelOrder = h.MapDetail.LevelOrder,
-                MapDetailId = h.MapDetailId,
+                LevelOrder = h.GameDetail.LevelOrder,
+                GameDetailId = h.GameDetailId,
                 OrderNo = h.OrderNo,
                 Content = h.Content
             })

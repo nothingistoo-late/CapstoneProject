@@ -1,6 +1,6 @@
 namespace CapstoneProject.API.Models;
 
-/// <summary>multipart/form-data: tạo map kèm avatar + gallery (field <c>data</c> = JSON <see cref="CapstoneProject.Application.Commons.DTOs.Maps.CreateMapRequest"/>).</summary>
+/// <summary>multipart/form-data: tạo game kèm avatar + gallery (field <c>data</c> = JSON <see cref="CapstoneProject.Application.Commons.DTOs.Games.CreateMapRequest"/>).</summary>
 public class CreateMapMultipartForm
 {
     /// <summary>Chuỗi JSON cùng cấu trúc CreateMapRequest (title, levels, …).</summary>

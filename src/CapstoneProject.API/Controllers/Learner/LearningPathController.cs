@@ -18,7 +18,7 @@ using CapstoneProject.Domain.Enums;
 namespace CapstoneProject.API.Controllers.Learner;
 
 /// <summary>
-/// API Lộ trình học (Learning Path): chọn mục tiêu, xem lộ trình concept + map, tiến độ, hoàn thành khái niệm.
+/// API Lộ trình học (Learning Path): chọn mục tiêu, xem lộ trình concept + game, tiến độ, hoàn thành khái niệm.
 /// </summary>
 [ApiController]
 [Route("api/learner/learning-path")]
@@ -77,7 +77,7 @@ public class LearningPathController : ControllerBase
         return StatusCode(result.GetHttpStatusCode(), result);
     }
 
-    /// <summary>Lấy lộ trình học của user: mục tiêu đã chọn + danh sách concept và map theo thứ tự, kèm trạng thái hoàn thành và mở khóa. Yêu cầu đăng nhập.</summary>
+    /// <summary>Lấy lộ trình học của user: mục tiêu đã chọn + danh sách concept và game theo thứ tự, kèm trạng thái hoàn thành và mở khóa. Yêu cầu đăng nhập.</summary>
     [HttpGet("my-path")]
     [AuthorizeRoles(nameof(RoleEnum.Learner), nameof(RoleEnum.Admin), nameof(RoleEnum.Moderator))]
     [ProducesResponseType(typeof(Result<MyLearningPathDto>), StatusCodes.Status200OK)]
@@ -101,7 +101,7 @@ public class LearningPathController : ControllerBase
         return StatusCode(result.GetHttpStatusCode(), result);
     }
 
-    /// <summary>Tiến độ lộ trình: tổng số item, đã hoàn thành, % hoàn thành, gợi ý ôn tập (map còn yếu). Yêu cầu đăng nhập.</summary>
+    /// <summary>Tiến độ lộ trình: tổng số item, đã hoàn thành, % hoàn thành, gợi ý ôn tập (game còn yếu). Yêu cầu đăng nhập.</summary>
     [HttpGet("my-path/progress")]
     [AuthorizeRoles(nameof(RoleEnum.Learner), nameof(RoleEnum.Admin), nameof(RoleEnum.Moderator))]
     [ProducesResponseType(typeof(Result<LearningPathProgressDto>), StatusCodes.Status200OK)]

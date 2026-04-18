@@ -168,32 +168,32 @@ public class CreateComplaintCommandHandler : IRequestHandler<CreateComplaintComm
             // Log error but don't fail the complaint creation if notification fails
         }
 
-        // Notify context owner (e.g., map creator if complaint is about a map)
-        if (complaint.ContextType == "Map" && complaint.ContextId.HasValue)
+        // Notify context owner (e.g., game creator if complaint is about a game)
+        if (complaint.ContextType == "Game" && complaint.ContextId.HasValue)
         {
             try
             {
-                var map = await _unitOfWork.Repository<Map>()
+                var game = await _unitOfWork.Repository<Game>()
                     .GetQueryable()
                     .AsNoTracking()
                     .FirstOrDefaultAsync(m => m.Id == complaint.ContextId && !m.IsDeleted, cancellationToken);
 
-                if (map?.CreatedBy.HasValue == true && map.CreatedBy != userId)
+                if (game?.CreatedBy.HasValue == true && game.CreatedBy != userId)
                 {
                     var contextPayloadJson = JsonSerializer.Serialize(new
                     {
                         complaintId = complaint.Id,
-                        mapId = map.Id,
-                        mapTitle = map.Title,
+                        gameId = game.Id,
+                        mapTitle = game.Title,
                         subject = complaint.Subject,
                         complainer = complaint.UserId
                     });
 
                     await _notificationPersistenceService.CreateNotificationAsync(
                         NotificationTypeEnum.MapComplainedAbout,
-                        "Map của bạn bị khiếu nại",
-                        $"Map \"{map.Title}\" đã nhận một khiếu nại: \"{complaint.Subject}\"",
-                        new List<Guid> { map.CreatedBy.Value },
+                        "Game của bạn bị khiếu nại",
+                        $"Game \"{game.Title}\" đã nhận một khiếu nại: \"{complaint.Subject}\"",
+                        new List<Guid> { game.CreatedBy.Value },
                         userId,
                         contextPayloadJson,
                         $"/learner/complaints/{complaint.Id}",

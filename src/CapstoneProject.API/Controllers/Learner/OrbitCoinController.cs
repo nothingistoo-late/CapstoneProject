@@ -11,7 +11,7 @@ namespace CapstoneProject.API.Controllers.Learner;
 [Route("api/learner/orbitcoin")]
 [ApiExplorerSettings(GroupName = "v1")]
 [Configurations.Tags("Learner - OrbitCoin")]
-[SwaggerTag("OrbitCoin: balance, transaction history. Use marketplace APIs to purchase map/package with OrbitCoin.")]
+[SwaggerTag("OrbitCoin: balance, transaction history. Use marketplace APIs to purchase game/package with OrbitCoin.")]
 public class LearnerOrbitCoinController : ControllerBase
 {
     private readonly IMediator _mediator;

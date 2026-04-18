@@ -4,12 +4,12 @@ using CapstoneProject.Domain.Enums;
 namespace CapstoneProject.Domain.Entities;
 
 /// <summary>
-/// Giao dịch XP (cộng/trừ) cho người dùng - gắn với map hoặc hành động.
+/// Giao dịch XP (cộng/trừ) cho người dùng - gắn với game hoặc hành động.
 /// </summary>
 public class XpTransaction : BaseEntity
 {
     public Guid UserId { get; set; }
-    public Guid? MapId { get; set; }
+    public Guid? GameId { get; set; }
     public Guid? SourceId { get; set; }
     public XpSourceTypeEnum SourceType { get; set; } = XpSourceTypeEnum.Unknown;
     public string IdempotencyKey { get; set; } = string.Empty;

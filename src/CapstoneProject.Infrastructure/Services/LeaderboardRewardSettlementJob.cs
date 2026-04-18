@@ -138,18 +138,18 @@ public class LeaderboardRewardSettlementJob
         var orderedTiers = NormalizeTiers(tiers);
         if (orderedTiers.Count == 0)
         {
-            _logger.LogInformation("Skip most-played-created-maps settlement because no valid tiers are configured.");
+            _logger.LogInformation("Skip most-played-created-games settlement because no valid tiers are configured.");
             return;
         }
 
         var maxTopN = orderedTiers.Max(t => t.TopN);
 
-        var mapPlayAggQuery = _unitOfWork.Repository<UserMapPlayHistory>().GetQueryable()
+        var mapPlayAggQuery = _unitOfWork.Repository<UserGamePlayHistory>().GetQueryable()
             .Where(p => !p.IsDeleted && p.StartTime >= dateFrom && p.StartTime <= dateTo)
-            .GroupBy(p => p.MapId)
+            .GroupBy(p => p.GameId)
             .Select(g => new
             {
-                MapId = g.Key,
+                GameId = g.Key,
                 PlayCount = g.Count(),
                 UniquePlayerCount = g.Select(x => x.UserId).Distinct().Count(),
                 LastPlayedAt = g.Max(x => x.StartTime)
@@ -157,10 +157,10 @@ public class LeaderboardRewardSettlementJob
 
         var winners = await (
             from agg in mapPlayAggQuery
-            join map in _unitOfWork.Repository<Map>().GetQueryable() on agg.MapId equals map.Id
-            join creator in _unitOfWork.Repository<AppUser>().GetQueryable() on map.CreatedBy equals creator.Id
-            where !map.IsDeleted && map.CreatedBy.HasValue
-            orderby agg.PlayCount descending, agg.UniquePlayerCount descending, agg.LastPlayedAt descending, map.CreatedAt ascending
+            join game in _unitOfWork.Repository<Game>().GetQueryable() on agg.GameId equals game.Id
+            join creator in _unitOfWork.Repository<AppUser>().GetQueryable() on game.CreatedBy equals creator.Id
+            where !game.IsDeleted && game.CreatedBy.HasValue
+            orderby agg.PlayCount descending, agg.UniquePlayerCount descending, agg.LastPlayedAt descending, game.CreatedAt ascending
             select new WinnerCandidate(creator.Id, $"{creator.FirstName} {creator.LastName}".Trim(), agg.PlayCount))
             .Take(maxTopN)
             .ToListAsync();
@@ -168,7 +168,7 @@ public class LeaderboardRewardSettlementJob
         if (winners.Count == 0)
         {
             _logger.LogInformation(
-                "No winners for most-played-created-maps. Period={PeriodKey}, From={From}, To={To}. Check UserMapPlayHistory data in this window and map creator status.",
+                "No winners for most-played-created-games. Period={PeriodKey}, From={From}, To={To}. Check UserGamePlayHistory data in this window and game creator status.",
                 periodKey,
                 dateFrom,
                 dateTo);
@@ -176,13 +176,13 @@ public class LeaderboardRewardSettlementJob
         }
 
         _logger.LogInformation(
-            "Most-played-created-maps winners resolved: Count={Count}, TopN={TopN}, FirstWinnerUserId={FirstWinnerUserId}, FirstWinnerMetric={FirstWinnerMetric}",
+            "Most-played-created-games winners resolved: Count={Count}, TopN={TopN}, FirstWinnerUserId={FirstWinnerUserId}, FirstWinnerMetric={FirstWinnerMetric}",
             winners.Count,
             maxTopN,
             winners[0].UserId,
             winners[0].MetricValue);
 
-        await GrantRewardsForWinnersAsync("most-played-created-maps", periodKey, dateFrom, dateTo, now, orderedTiers, winners, BuildLeaderboardActionUrl("most-played-created-maps", periodKey));
+        await GrantRewardsForWinnersAsync("most-played-created-games", periodKey, dateFrom, dateTo, now, orderedTiers, winners, BuildLeaderboardActionUrl("most-played-created-games", periodKey));
     }
 
     private async Task GrantRewardsForWinnersAsync(
@@ -311,7 +311,7 @@ public class LeaderboardRewardSettlementJob
         {
             "top-level" => "/learner/leaderboard?tab=top-level",
             "xp-gain" => $"/learner/leaderboard?tab=xp-gain&period={periodType}",
-            "most-played-created-maps" => $"/learner/leaderboard?tab=most-played&period={periodType}",
+            "most-played-created-games" => $"/learner/leaderboard?tab=most-played&period={periodType}",
             _ => "/learner/leaderboard"
         };
     }
@@ -322,7 +322,7 @@ public class LeaderboardRewardSettlementJob
         {
             "top-level" => "Cấp độ",
             "xp-gain" => "XP tăng trưởng",
-            "most-played-created-maps" => "Map được chơi nhiều",
+            "most-played-created-games" => "Game được chơi nhiều",
             _ => "Leaderboard"
         };
     }

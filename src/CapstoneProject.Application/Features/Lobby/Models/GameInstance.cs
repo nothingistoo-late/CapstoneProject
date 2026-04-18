@@ -11,7 +11,7 @@ public class GameInstance
 {
     public Guid RoomId { get; set; }
     public string RoomCode { get; set; } = string.Empty;
-    public Guid? MapId { get; set; }
+    public Guid? GameId { get; set; }
     /// <summary>Danh sách người chơi còn trong phòng (cập nhật khi có người thoát giữa game).</summary>
     public List<LobbyPlayer> Players { get; set; } = new();
 

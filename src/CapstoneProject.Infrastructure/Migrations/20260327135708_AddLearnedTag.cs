@@ -12,7 +12,7 @@ namespace CapstoneProject.Infrastructure.Migrations
         {
             migrationBuilder.AddColumn<string>(
                 name: "LearnedTags",
-                table: "Maps",
+                table: "Games",
                 type: "jsonb",
                 nullable: false,
                 defaultValueSql: "'[]'::jsonb");
@@ -23,7 +23,7 @@ namespace CapstoneProject.Infrastructure.Migrations
         {
             migrationBuilder.DropColumn(
                 name: "LearnedTags",
-                table: "Maps");
+                table: "Games");
         }
     }
 }

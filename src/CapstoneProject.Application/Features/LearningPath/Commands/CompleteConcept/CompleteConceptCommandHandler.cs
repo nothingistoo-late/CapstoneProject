@@ -85,13 +85,13 @@ public class CompleteConceptCommandHandler : IRequestHandler<CompleteConceptComm
 
             var pathItems = await _unitOfWork.Repository<LearningPathItem>().GetQueryable()
                 .Where(i => i.LearningGoalId == concept.LearningGoalId && !i.IsDeleted)
-                .Select(i => new { i.ItemType, i.ConceptId, i.MapId })
+                .Select(i => new { i.ItemType, i.ConceptId, i.GameId })
                 .ToListAsync(cancellationToken);
 
             if (pathItems.Count > 0)
             {
                 var conceptIdsInGoal = pathItems.Where(i => i.ConceptId.HasValue).Select(i => i.ConceptId!.Value).ToHashSet();
-                var mapIdsInGoal = pathItems.Where(i => i.MapId.HasValue).Select(i => i.MapId!.Value).ToHashSet();
+                var gameIdsInGoal = pathItems.Where(i => i.GameId.HasValue).Select(i => i.GameId!.Value).ToHashSet();
 
                 var completedConceptIds = await repo.GetQueryable()
                     .Where(p => p.UserId == userId.Value && !p.IsDeleted && p.IsCompleted && conceptIdsInGoal.Contains(p.ConceptId))
@@ -101,7 +101,7 @@ public class CompleteConceptCommandHandler : IRequestHandler<CompleteConceptComm
                 var completedConceptSet = completedConceptIds.ToHashSet();
 
                 var completedMapSet = new HashSet<Guid>();
-                foreach (var mid in mapIdsInGoal)
+                foreach (var mid in gameIdsInGoal)
                 {
                     if (await MapProgressHelper.MapHasAllLevelsCompletedAsync(_unitOfWork, userId.Value, mid, minStars: 1, cancellationToken))
                         completedMapSet.Add(mid);
@@ -110,7 +110,7 @@ public class CompleteConceptCommandHandler : IRequestHandler<CompleteConceptComm
                 var isLearningPathCompleted = pathItems.All(i =>
                     i.ItemType == LearningPathItemTypeEnum.Concept
                         ? i.ConceptId.HasValue && completedConceptSet.Contains(i.ConceptId.Value)
-                        : i.MapId.HasValue && completedMapSet.Contains(i.MapId.Value));
+                        : i.GameId.HasValue && completedMapSet.Contains(i.GameId.Value));
 
                 if (isLearningPathCompleted)
                 {

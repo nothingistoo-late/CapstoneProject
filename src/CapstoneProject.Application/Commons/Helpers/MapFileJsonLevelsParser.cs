@@ -1,12 +1,12 @@
 using System.Text.Json;
-using CapstoneProject.Application.Commons.DTOs.Maps;
+using CapstoneProject.Application.Commons.DTOs.Games;
 
 namespace CapstoneProject.Application.Commons.Helpers;
 
-/// <summary>Parse file JSON map: mảng root hoặc object <c>{ "levels": [...] }</c>.</summary>
+/// <summary>Parse file JSON game: mảng root hoặc object <c>{ "levels": [...] }</c>.</summary>
 public static class MapFileJsonLevelsParser
 {
-    /// <summary>Null = một level đơn (object map legacy), không dùng danh sách Levels.</summary>
+    /// <summary>Null = một level đơn (object game legacy), không dùng danh sách Levels.</summary>
     public static List<MapLevelInputDto>? TryParseLevels(string raw)
     {
         using var doc = JsonDocument.Parse(raw);
@@ -49,8 +49,8 @@ public static class MapFileJsonLevelsParser
     public static (List<MapLevelInputDto>? Levels, JsonElement? SingleLevelJson, string? Error) ParseFromCreateMapInput(
         CreateMapFromJsonFileInput input)
     {
-        var hasMulti = input.MapDetailJsonContents is { Count: > 0 };
-        var hasSingle = !string.IsNullOrWhiteSpace(input.MapDetailJsonContent);
+        var hasMulti = input.GameDetailJsonContents is { Count: > 0 };
+        var hasSingle = !string.IsNullOrWhiteSpace(input.GameDetailJsonContent);
         if (!hasMulti && !hasSingle)
             return (null, null, "mapDetailFiles content is required.");
 
@@ -60,7 +60,7 @@ public static class MapFileJsonLevelsParser
             {
                 var list = new List<MapLevelInputDto>();
                 var order = 0;
-                foreach (var raw in input.MapDetailJsonContents!)
+                foreach (var raw in input.GameDetailJsonContents!)
                 {
                     if (string.IsNullOrWhiteSpace(raw)) continue;
                     var el = JsonSerializer.Deserialize<JsonElement>(raw);
@@ -71,12 +71,12 @@ public static class MapFileJsonLevelsParser
                 return (list, null, null);
             }
 
-            var levels = TryParseLevels(input.MapDetailJsonContent);
+            var levels = TryParseLevels(input.GameDetailJsonContent);
             if (levels is { Count: > 0 })
                 return (levels, null, null);
             if (levels != null && levels.Count == 0)
-                return (null, null, "Map JSON must contain at least one level (root array or \"levels\" array is empty).");
-            var single = JsonSerializer.Deserialize<JsonElement>(input.MapDetailJsonContent);
+                return (null, null, "Game JSON must contain at least one level (root array or \"levels\" array is empty).");
+            var single = JsonSerializer.Deserialize<JsonElement>(input.GameDetailJsonContent);
             return (null, single, null);
         }
         catch (JsonException)

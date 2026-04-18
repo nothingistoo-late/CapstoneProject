@@ -4,7 +4,7 @@ namespace CapstoneProject.Domain.Entities;
 
 /// <summary>
 /// Mục tiêu học tập (vd: Logic cơ bản, Điều kiện, Vòng lặp, Giải quyết vấn đề).
-/// User chọn một goal khi bắt đầu → hệ thống tạo lộ trình concept + map theo thứ tự.
+/// User chọn một goal khi bắt đầu → hệ thống tạo lộ trình concept + game theo thứ tự.
 /// </summary>
 public class LearningGoal : BaseEntity
 {

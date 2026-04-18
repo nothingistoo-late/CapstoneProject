@@ -6,7 +6,7 @@ namespace CapstoneProject.Application.Features.LearningPath.Queries.GetMyLearnin
 public class LearningPathItemDto
 {
     public Guid ItemId { get; set; }
-    /// <summary>Concept hoặc Map.</summary>
+    /// <summary>Concept hoặc Game.</summary>
     public string ItemType { get; set; } = string.Empty;
     public int SortOrder { get; set; }
     public Guid? ConceptId { get; set; }
@@ -14,7 +14,7 @@ public class LearningPathItemDto
     public string? ConceptDescription { get; set; }
     /// <summary>Key để FE load nội dung từ file tĩnh/bundle (vd. "variables" → content/variables.md).</summary>
     public string? ConceptContentKey { get; set; }
-    public Guid? MapId { get; set; }
+    public Guid? GameId { get; set; }
     public string? MapTitle { get; set; }
     public string? MapDescription { get; set; }
     public int? MapDifficulty { get; set; }
@@ -33,5 +33,5 @@ public class MyLearningPathDto
     public List<LearningPathItemDto> Items { get; set; } = new();
 }
 
-/// <summary>Lấy lộ trình học của user hiện tại: mục tiêu đã chọn + danh sách concept/map theo thứ tự, trạng thái hoàn thành và mở khóa.</summary>
+/// <summary>Lấy lộ trình học của user hiện tại: mục tiêu đã chọn + danh sách concept/game theo thứ tự, trạng thái hoàn thành và mở khóa.</summary>
 public record GetMyLearningPathQuery : IRequest<Result<MyLearningPathDto>>;

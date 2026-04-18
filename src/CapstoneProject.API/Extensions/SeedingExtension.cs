@@ -183,7 +183,7 @@ public static class SeedingExtension
             }
         }
 
-        // Seed map tags (idempotent)
+        // Seed game tags (idempotent)
         var defaultTagNames = new[]
         {
             "Variables",
@@ -252,7 +252,7 @@ public static class SeedingExtension
                 DurationDays = 3650,
                 Limit = 20,
                 Price = 0,
-                FeaturesSpec = "Play basic maps; max 20 maps; no hints; cannot create/publish maps; no XP boost."
+                FeaturesSpec = "Play basic games; max 20 games; no hints; cannot create/publish games; no XP boost."
             },
             new Package
             {
@@ -260,7 +260,7 @@ public static class SeedingExtension
                 DurationDays = 30,
                 Limit = null,
                 Price = 149m,
-                FeaturesSpec = "Play basic and advanced maps; hints enabled; cannot create/publish maps; XP boost enabled."
+                FeaturesSpec = "Play basic and advanced games; hints enabled; cannot create/publish games; XP boost enabled."
             },
             new Package
             {
@@ -268,7 +268,7 @@ public static class SeedingExtension
                 DurationDays = 30,
                 Limit = null,
                 Price = 299m,
-                FeaturesSpec = "Play basic and advanced maps; hints enabled; can create and publish maps; map analytics; XP boost enabled."
+                FeaturesSpec = "Play basic and advanced games; hints enabled; can create and publish games; game analytics; XP boost enabled."
             }
         };
 
@@ -336,7 +336,7 @@ public static class SeedingExtension
             logger.LogInformation("Seeded payment method: PayOS.");
         }
 
-        // Seed maps from SQL file (INSERT Maps/MapDetails/Hints/MapTags), toggled by DataSeeding:SeedMapsFromSqlScript.
+        // Seed games from SQL file (INSERT Games/GameDetails/Hints/GameTags), toggled by DataSeeding:SeedMapsFromSqlScript.
         var env = scope.ServiceProvider.GetRequiredService<IWebHostEnvironment>();
         var seedMapsFromSqlScript = configuration.GetSection("DataSeeding").GetValue<bool>("SeedMapsFromSqlScript");
         if (seedMapsFromSqlScript)
@@ -352,7 +352,7 @@ public static class SeedingExtension
         }
         if (!seedMapsFromSqlScript)
         {
-            logger.LogInformation("Map seeding from SQL script is disabled (DataSeeding:SeedMapsFromSqlScript=false).");
+            logger.LogInformation("Game seeding from SQL script is disabled (DataSeeding:SeedMapsFromSqlScript=false).");
         }
 
         await BackfillMapVersionLineDataAsync(dbContext, existingAdmin?.Id, logger);
@@ -471,7 +471,7 @@ public static class SeedingExtension
             .GroupBy(x => x.LearningGoalId)
             .ToDictionary(g => g.Key, g => g.ToDictionary(x => x.Name, x => x.Id, StringComparer.OrdinalIgnoreCase));
 
-        // Title must match Maps.Title (for example from script_clean.sql / published maps). Map assignment follows concept flow.
+        // Title must match Games.Title (for example from script_clean.sql / published games). Game assignment follows concept flow.
         var mapTitles = new[]
         {
             "Introduce variable",
@@ -481,18 +481,18 @@ public static class SeedingExtension
             "More Box",
             "Introduce for loop",
             "Introduce while/do while loop",
-            "Basic top down map",
-            "Maze map",
-            // Legacy fallbacks (if old DB only has legacy map titles).
+            "Basic top down game",
+            "Maze game",
+            // Legacy fallbacks (if old DB only has legacy game titles).
             "level-platform-01",
             "level-topdown-1771989668367",
             "level-topdown-foreground-example"
         };
-        var mapsInList = await dbContext.Maps
+        var mapsInList = await dbContext.Games
             .Where(m => !m.IsDeleted && mapTitles.Contains(m.Title))
             .Select(m => new { m.Title, m.Id })
             .ToListAsync();
-        var mapIdsByTitle = mapsInList
+        var gameIdsByTitle = mapsInList
             .GroupBy(m => m.Title, StringComparer.OrdinalIgnoreCase)
             .ToDictionary(g => g.Key, g => g.First().Id, StringComparer.OrdinalIgnoreCase);
 
@@ -508,27 +508,27 @@ public static class SeedingExtension
             return null;
         }
 
-        // (GoalName, ItemType, ConceptName?, MapTitle?, SortOrder) with preferred new map title and legacy fallback.
+        // (GoalName, ItemType, ConceptName?, MapTitle?, SortOrder) with preferred new game title and legacy fallback.
         var pathItemSeeds = new[]
         {
             (GoalName: "Logic cơ bản", ItemType: LearningPathItemTypeEnum.Concept, ConceptName: "Biến là gì", MapTitle: (string?)null, SortOrder: 1),
-            (GoalName: "Logic cơ bản", ItemType: LearningPathItemTypeEnum.Map, ConceptName: (string?)null, MapTitle: PickMapTitle("Introduce variable", "level-platform-01", "level-topdown-1771989668367", mapIdsByTitle), SortOrder: 2),
+            (GoalName: "Logic cơ bản", ItemType: LearningPathItemTypeEnum.Game, ConceptName: (string?)null, MapTitle: PickMapTitle("Introduce variable", "level-platform-01", "level-topdown-1771989668367", gameIdsByTitle), SortOrder: 2),
             (GoalName: "Logic cơ bản", ItemType: LearningPathItemTypeEnum.Concept, ConceptName: "Phép toán", MapTitle: (string?)null, SortOrder: 3),
-            (GoalName: "Logic cơ bản", ItemType: LearningPathItemTypeEnum.Map, ConceptName: (string?)null, MapTitle: PickMapTitle("Mathematical operation", "level-topdown-1771989668367", "level-platform-01", mapIdsByTitle), SortOrder: 4),
+            (GoalName: "Logic cơ bản", ItemType: LearningPathItemTypeEnum.Game, ConceptName: (string?)null, MapTitle: PickMapTitle("Mathematical operation", "level-topdown-1771989668367", "level-platform-01", gameIdsByTitle), SortOrder: 4),
             (GoalName: "Logic cơ bản", ItemType: LearningPathItemTypeEnum.Concept, ConceptName: "Thứ tự thực thi", MapTitle: (string?)null, SortOrder: 5),
-            (GoalName: "Logic cơ bản", ItemType: LearningPathItemTypeEnum.Map, ConceptName: (string?)null, MapTitle: PickMapTitle("Platform movement tutorial", "level-topdown-foreground-example", "level-platform-01", mapIdsByTitle), SortOrder: 6),
+            (GoalName: "Logic cơ bản", ItemType: LearningPathItemTypeEnum.Game, ConceptName: (string?)null, MapTitle: PickMapTitle("Platform movement tutorial", "level-topdown-foreground-example", "level-platform-01", gameIdsByTitle), SortOrder: 6),
             (GoalName: "Điều kiện", ItemType: LearningPathItemTypeEnum.Concept, ConceptName: "If-else", MapTitle: (string?)null, SortOrder: 1),
-            (GoalName: "Điều kiện", ItemType: LearningPathItemTypeEnum.Map, ConceptName: (string?)null, MapTitle: PickMapTitle("Introduce trap", "level-platform-01", "level-topdown-1771989668367", mapIdsByTitle), SortOrder: 2),
+            (GoalName: "Điều kiện", ItemType: LearningPathItemTypeEnum.Game, ConceptName: (string?)null, MapTitle: PickMapTitle("Introduce trap", "level-platform-01", "level-topdown-1771989668367", gameIdsByTitle), SortOrder: 2),
             (GoalName: "Điều kiện", ItemType: LearningPathItemTypeEnum.Concept, ConceptName: "So sánh", MapTitle: (string?)null, SortOrder: 3),
-            (GoalName: "Điều kiện", ItemType: LearningPathItemTypeEnum.Map, ConceptName: (string?)null, MapTitle: PickMapTitle("More Box", "level-topdown-1771989668367", "level-platform-01", mapIdsByTitle), SortOrder: 4),
+            (GoalName: "Điều kiện", ItemType: LearningPathItemTypeEnum.Game, ConceptName: (string?)null, MapTitle: PickMapTitle("More Box", "level-topdown-1771989668367", "level-platform-01", gameIdsByTitle), SortOrder: 4),
             (GoalName: "Vòng lặp", ItemType: LearningPathItemTypeEnum.Concept, ConceptName: "For loop", MapTitle: (string?)null, SortOrder: 1),
-            (GoalName: "Vòng lặp", ItemType: LearningPathItemTypeEnum.Map, ConceptName: (string?)null, MapTitle: PickMapTitle("Introduce for loop", "level-platform-01", "level-topdown-1771989668367", mapIdsByTitle), SortOrder: 2),
+            (GoalName: "Vòng lặp", ItemType: LearningPathItemTypeEnum.Game, ConceptName: (string?)null, MapTitle: PickMapTitle("Introduce for loop", "level-platform-01", "level-topdown-1771989668367", gameIdsByTitle), SortOrder: 2),
             (GoalName: "Vòng lặp", ItemType: LearningPathItemTypeEnum.Concept, ConceptName: "While loop", MapTitle: (string?)null, SortOrder: 3),
-            (GoalName: "Vòng lặp", ItemType: LearningPathItemTypeEnum.Map, ConceptName: (string?)null, MapTitle: PickMapTitle("Introduce while/do while loop", "level-topdown-1771989668367", "level-platform-01", mapIdsByTitle), SortOrder: 4),
+            (GoalName: "Vòng lặp", ItemType: LearningPathItemTypeEnum.Game, ConceptName: (string?)null, MapTitle: PickMapTitle("Introduce while/do while loop", "level-topdown-1771989668367", "level-platform-01", gameIdsByTitle), SortOrder: 4),
             (GoalName: "Giải quyết vấn đề", ItemType: LearningPathItemTypeEnum.Concept, ConceptName: "Phân tích bài toán", MapTitle: (string?)null, SortOrder: 1),
-            (GoalName: "Giải quyết vấn đề", ItemType: LearningPathItemTypeEnum.Map, ConceptName: (string?)null, MapTitle: PickMapTitle("Basic top down map", "level-topdown-1771989668367", "level-platform-01", mapIdsByTitle), SortOrder: 2),
+            (GoalName: "Giải quyết vấn đề", ItemType: LearningPathItemTypeEnum.Game, ConceptName: (string?)null, MapTitle: PickMapTitle("Basic top down game", "level-topdown-1771989668367", "level-platform-01", gameIdsByTitle), SortOrder: 2),
             (GoalName: "Giải quyết vấn đề", ItemType: LearningPathItemTypeEnum.Concept, ConceptName: "Thuật toán cơ bản", MapTitle: (string?)null, SortOrder: 3),
-            (GoalName: "Giải quyết vấn đề", ItemType: LearningPathItemTypeEnum.Map, ConceptName: (string?)null, MapTitle: PickMapTitle("Maze map", "level-platform-01", "level-topdown-foreground-example", mapIdsByTitle), SortOrder: 4)
+            (GoalName: "Giải quyết vấn đề", ItemType: LearningPathItemTypeEnum.Game, ConceptName: (string?)null, MapTitle: PickMapTitle("Maze game", "level-platform-01", "level-topdown-foreground-example", gameIdsByTitle), SortOrder: 4)
         };
 
         foreach (var (goalName, itemType, conceptName, mapTitle, sortOrder) in pathItemSeeds)
@@ -536,11 +536,11 @@ public static class SeedingExtension
             if (!goalsByName.TryGetValue(goalName, out var goalId))
                 continue;
             Guid? conceptId = null;
-            Guid? mapId = null;
+            Guid? gameId = null;
             if (itemType == LearningPathItemTypeEnum.Concept && !string.IsNullOrEmpty(conceptName) && conceptIdLookup.TryGetValue(goalId, out var byName) && byName.TryGetValue(conceptName, out var cId))
                 conceptId = cId;
-            if (itemType == LearningPathItemTypeEnum.Map && !string.IsNullOrEmpty(mapTitle) && mapIdsByTitle.TryGetValue(mapTitle, out var mId))
-                mapId = mId;
+            if (itemType == LearningPathItemTypeEnum.Game && !string.IsNullOrEmpty(mapTitle) && gameIdsByTitle.TryGetValue(mapTitle, out var mId))
+                gameId = mId;
 
             var existingPathItem = await dbContext.LearningPathItems
                 .FirstOrDefaultAsync(i => !i.IsDeleted && i.LearningGoalId == goalId && i.SortOrder == sortOrder);
@@ -552,7 +552,7 @@ public static class SeedingExtension
                     LearningGoalId = goalId,
                     ItemType = itemType,
                     ConceptId = conceptId,
-                    MapId = mapId,
+                    GameId = gameId,
                     SortOrder = sortOrder,
                     CreatedAt = CapstoneProject.Domain.Common.VietnamDateTime.DbNow,
                     CreatedBy = existingAdmin?.Id,
@@ -566,11 +566,11 @@ public static class SeedingExtension
             {
                 existingPathItem.ItemType = itemType;
                 existingPathItem.ConceptId = itemType == LearningPathItemTypeEnum.Concept ? conceptId : null;
-                // Do not erase an existing MapId when current title lookup fails.
-                if (itemType == LearningPathItemTypeEnum.Map && mapId.HasValue)
-                    existingPathItem.MapId = mapId;
+                // Do not erase an existing GameId when current title lookup fails.
+                if (itemType == LearningPathItemTypeEnum.Game && gameId.HasValue)
+                    existingPathItem.GameId = gameId;
                 else if (itemType == LearningPathItemTypeEnum.Concept)
-                    existingPathItem.MapId = null;
+                    existingPathItem.GameId = null;
 
                 existingPathItem.Status = EntityStatusEnum.Active;
                 existingPathItem.UpdateEntity(existingAdmin?.Id);
@@ -589,36 +589,36 @@ public static class SeedingExtension
     {
         var actorId = userId ?? Guid.Empty;
 
-        // Legacy maps created before version-line feature: map is root of its own line.
-        var mapsMissingRoot = await dbContext.Maps
-            .Where(m => !m.IsDeleted && m.RootMapId == null)
+        // Legacy games created before version-line feature: game is root of its own line.
+        var mapsMissingRoot = await dbContext.Games
+            .Where(m => !m.IsDeleted && m.RootGameId == null)
             .ToListAsync();
 
         if (mapsMissingRoot.Count > 0)
         {
-            foreach (var map in mapsMissingRoot)
+            foreach (var game in mapsMissingRoot)
             {
-                map.RootMapId = map.Id;
-                map.IsActiveVersion = true;
-                map.UpdateEntity(actorId);
+                game.RootGameId = game.Id;
+                game.IsActiveVersion = true;
+                game.UpdateEntity(actorId);
             }
 
             await dbContext.SaveChangesAsync();
-            logger.LogInformation("Backfilled RootMapId for {Count} legacy maps.", mapsMissingRoot.Count);
+            logger.LogInformation("Backfilled RootGameId for {Count} legacy games.", mapsMissingRoot.Count);
         }
 
         // Normalize: keep only one active version per line.
-        var rootMapIds = await dbContext.Maps
+        var rootGameIds = await dbContext.Games
             .Where(m => !m.IsDeleted)
-            .Select(m => m.RootMapId ?? m.Id)
+            .Select(m => m.RootGameId ?? m.Id)
             .Distinct()
             .ToListAsync();
 
         var normalizedLines = 0;
-        foreach (var rootMapId in rootMapIds)
+        foreach (var rootGameId in rootGameIds)
         {
-            var lineMaps = await dbContext.Maps
-                .Where(m => !m.IsDeleted && (m.RootMapId ?? m.Id) == rootMapId)
+            var lineMaps = await dbContext.Games
+                .Where(m => !m.IsDeleted && (m.RootGameId ?? m.Id) == rootGameId)
                 .OrderByDescending(m => m.IsPublished)
                 .ThenByDescending(m => m.ContentVersion)
                 .ThenByDescending(m => m.CreatedAt)
@@ -630,13 +630,13 @@ public static class SeedingExtension
             var shouldBeActive = lineMaps.First();
             var changed = false;
 
-            foreach (var map in lineMaps)
+            foreach (var game in lineMaps)
             {
-                var expectedActive = map.Id == shouldBeActive.Id;
-                if (map.IsActiveVersion != expectedActive)
+                var expectedActive = game.Id == shouldBeActive.Id;
+                if (game.IsActiveVersion != expectedActive)
                 {
-                    map.IsActiveVersion = expectedActive;
-                    map.UpdateEntity(actorId);
+                    game.IsActiveVersion = expectedActive;
+                    game.UpdateEntity(actorId);
                     changed = true;
                 }
             }
@@ -648,7 +648,7 @@ public static class SeedingExtension
         if (normalizedLines > 0)
         {
             await dbContext.SaveChangesAsync();
-            logger.LogInformation("Normalized active-version flag for {Count} map lines.", normalizedLines);
+            logger.LogInformation("Normalized active-version flag for {Count} game lines.", normalizedLines);
         }
     }
 
@@ -764,13 +764,13 @@ public static class SeedingExtension
             }
         }
 
-        var mapSolveExisting = await dbContext.MapSolveScoreConfigs.FirstOrDefaultAsync(
-            x => !x.IsDeleted && x.ConfigKey == MapSolveScoreConfig.DefaultConfigKey);
+        var mapSolveExisting = await dbContext.GameSolveScoreConfigs.FirstOrDefaultAsync(
+            x => !x.IsDeleted && x.ConfigKey == GameSolveScoreConfig.DefaultConfigKey);
         if (mapSolveExisting == null)
         {
-            var mapSolveRow = new MapSolveScoreConfig
+            var mapSolveRow = new GameSolveScoreConfig
             {
-                ConfigKey = MapSolveScoreConfig.DefaultConfigKey,
+                ConfigKey = GameSolveScoreConfig.DefaultConfigKey,
                 BaseScore = 10,
                 TimeScore = 30,
                 StepsScore = 30,
@@ -778,7 +778,7 @@ public static class SeedingExtension
                 Status = EntityStatusEnum.Active
             };
             mapSolveRow.InitializeEntity(actorId);
-            await dbContext.MapSolveScoreConfigs.AddAsync(mapSolveRow);
+            await dbContext.GameSolveScoreConfigs.AddAsync(mapSolveRow);
         }
 
         await dbContext.SaveChangesAsync();
@@ -792,7 +792,7 @@ public static class SeedingExtension
         var categorySeeds = new[]
         {
             new { Key = "PaymentIssue", Name = "Payment Issue", Description = "Payment succeeded but entitlement/balance is incorrect", Sort = 10 },
-            new { Key = "AccessIssue", Name = "Access Issue", Description = "Purchased map/package but cannot access", Sort = 20 },
+            new { Key = "AccessIssue", Name = "Access Issue", Description = "Purchased game/package but cannot access", Sort = 20 },
             new { Key = "GameplayScoringIssue", Name = "Gameplay Scoring Issue", Description = "Unexpected score/stars/status after playing", Sort = 30 },
             new { Key = "RewardBalanceIssue", Name = "Reward Balance Issue", Description = "XP or OrbitCoin balance mismatch", Sort = 40 },
             new { Key = "TrialIssue", Name = "Trial Issue", Description = "Free trial attempts blocked or deducted incorrectly", Sort = 50 },
@@ -832,12 +832,12 @@ public static class SeedingExtension
 
         var ruleSeeds = new[]
         {
-            new { Category = "PaymentIssue", Rule = "required_context", Enabled = true, Priority = 10, Config = "{\"anyOf\":[\"paymentRecordId\",\"mapId\",\"packageId\"]}" },
+            new { Category = "PaymentIssue", Rule = "required_context", Enabled = true, Priority = 10, Config = "{\"anyOf\":[\"paymentRecordId\",\"gameId\",\"packageId\"]}" },
             new { Category = "PaymentIssue", Rule = "time_window", Enabled = true, Priority = 20, Config = "{\"hours\":168}" },
             new { Category = "PaymentIssue", Rule = "duplicate_window", Enabled = true, Priority = 30, Config = "{\"hours\":72}" },
             new { Category = "PaymentIssue", Rule = "rate_limit", Enabled = true, Priority = 40, Config = "{\"maxPerDay\":3}" },
 
-            new { Category = "AccessIssue", Rule = "required_context", Enabled = true, Priority = 10, Config = "{\"anyOf\":[\"mapId\",\"packageId\"]}" },
+            new { Category = "AccessIssue", Rule = "required_context", Enabled = true, Priority = 10, Config = "{\"anyOf\":[\"gameId\",\"packageId\"]}" },
             new { Category = "AccessIssue", Rule = "time_window", Enabled = true, Priority = 20, Config = "{\"hours\":168}" },
             new { Category = "AccessIssue", Rule = "duplicate_window", Enabled = true, Priority = 30, Config = "{\"hours\":72}" },
             new { Category = "AccessIssue", Rule = "rate_limit", Enabled = true, Priority = 40, Config = "{\"maxPerDay\":3}" },
@@ -847,12 +847,12 @@ public static class SeedingExtension
             new { Category = "GameplayScoringIssue", Rule = "duplicate_window", Enabled = true, Priority = 30, Config = "{\"hours\":72}" },
             new { Category = "GameplayScoringIssue", Rule = "rate_limit", Enabled = true, Priority = 40, Config = "{\"maxPerDay\":3}" },
 
-            new { Category = "RewardBalanceIssue", Rule = "required_context", Enabled = true, Priority = 10, Config = "{\"anyOf\":[\"xpTransactionId\",\"orbitCoinTransactionId\",\"submissionId\",\"mapId\"]}" },
+            new { Category = "RewardBalanceIssue", Rule = "required_context", Enabled = true, Priority = 10, Config = "{\"anyOf\":[\"xpTransactionId\",\"orbitCoinTransactionId\",\"submissionId\",\"gameId\"]}" },
             new { Category = "RewardBalanceIssue", Rule = "time_window", Enabled = true, Priority = 20, Config = "{\"hours\":72}" },
             new { Category = "RewardBalanceIssue", Rule = "duplicate_window", Enabled = true, Priority = 30, Config = "{\"hours\":72}" },
             new { Category = "RewardBalanceIssue", Rule = "rate_limit", Enabled = true, Priority = 40, Config = "{\"maxPerDay\":3}" },
 
-            new { Category = "TrialIssue", Rule = "required_context", Enabled = true, Priority = 10, Config = "{\"anyOf\":[\"mapId\",\"playHistoryId\"]}" },
+            new { Category = "TrialIssue", Rule = "required_context", Enabled = true, Priority = 10, Config = "{\"anyOf\":[\"gameId\",\"playHistoryId\"]}" },
             new { Category = "TrialIssue", Rule = "time_window", Enabled = true, Priority = 20, Config = "{\"hours\":24}" },
             new { Category = "TrialIssue", Rule = "duplicate_window", Enabled = true, Priority = 30, Config = "{\"hours\":72}" },
             new { Category = "TrialIssue", Rule = "rate_limit", Enabled = true, Priority = 40, Config = "{\"maxPerDay\":3}" },
@@ -907,17 +907,17 @@ public static class SeedingExtension
     {
         if (!File.Exists(scriptPath))
         {
-            logger.LogWarning("Maps SQL script not found: {Path}", scriptPath);
+            logger.LogWarning("Games SQL script not found: {Path}", scriptPath);
             return;
         }
 
-        // INSERT data only; no DDL. Existing seeded Tags are reused and MapTags are remapped by tag Name.
+        // INSERT data only; no DDL. Existing seeded Tags are reused and GameTags are remapped by tag Name.
         var allowedTables = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
         {
-            "Maps",
-            "MapDetails",
+            "Games",
+            "GameDetails",
             "Hints",
-            "MapTags"
+            "GameTags"
         };
 
         var sourceOrder = 0;
@@ -934,7 +934,7 @@ public static class SeedingExtension
             return;
         }
 
-        // Map TagId from script to current Tag Id in DB by Name.
+        // Game TagId from script to current Tag Id in DB by Name.
         var scriptTagIdToName = ExtractScriptTagIdToName(scriptPath);
         var nameToCurrentTagId = await dbContext.Tags
             .Where(t => !t.IsDeleted)
@@ -946,8 +946,8 @@ public static class SeedingExtension
                 scriptTagIdToCurrentId[scriptId] = currentId;
         }
 
-        // Execution order: Maps, MapDetails (mỗi map có thể nhiều level — cột LevelOrder trong DB sau migration), Hints, MapTags.
-        var tableOrder = new[] { "Maps", "MapDetails", "Hints", "MapTags" };
+        // Execution order: Games, GameDetails (mỗi game có thể nhiều level — cột LevelOrder trong DB sau migration), Hints, GameTags.
+        var tableOrder = new[] { "Games", "GameDetails", "Hints", "GameTags" };
         var orderIndex = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
         for (int i = 0; i < tableOrder.Length; i++)
             orderIndex[tableOrder[i]] = i;
@@ -961,7 +961,7 @@ public static class SeedingExtension
         // Replace CreatedBy/UpdatedBy in script with systemUserId to avoid FK_Maps_Users_CreatedBy errors.
         var scriptUserIdLiteral = $"N'{ScriptCreatedByUserIdLiteral}'";
 
-        logger.LogInformation("Seeding maps data from SQL script: {Path}. Statements: {Count}", scriptPath, ordered.Count);
+        logger.LogInformation("Seeding games data from SQL script: {Path}. Statements: {Count}", scriptPath, ordered.Count);
 
         int executed = 0;
         int skipped = 0;
@@ -976,13 +976,13 @@ public static class SeedingExtension
             if (!allowedTables.Contains(table))
                 return;
 
-            if (string.Equals(table, "MapTags", StringComparison.OrdinalIgnoreCase))
+            if (string.Equals(table, "GameTags", StringComparison.OrdinalIgnoreCase))
             {
                 foreach (var (scriptTagId, currentTagId) in scriptTagIdToCurrentId)
                     statement = statement.Replace($"N'{scriptTagId}'", $"N'{currentTagId}'", StringComparison.OrdinalIgnoreCase);
             }
 
-            if (string.Equals(table, "Maps", StringComparison.OrdinalIgnoreCase))
+            if (string.Equals(table, "Games", StringComparison.OrdinalIgnoreCase))
             {
                 statement = SqlServerToPostgreSqlInsertConverter.PrepareMapsInsertForPostgres(
                     statement,
@@ -1011,29 +1011,29 @@ public static class SeedingExtension
             if (affected > 0) executed++; else skipped++;
         }
 
-        // Phase 1: Maps only.
-        foreach (var item in ordered.Where(x => string.Equals(x.Table, "Maps", StringComparison.OrdinalIgnoreCase)))
+        // Phase 1: Games only.
+        foreach (var item in ordered.Where(x => string.Equals(x.Table, "Games", StringComparison.OrdinalIgnoreCase)))
             await RunOneInsertAsync(item);
 
-        var mapIds = (await dbContext.Maps.AsNoTracking().Select(m => m.Id).ToListAsync()).ToHashSet();
+        var gameIds = (await dbContext.Games.AsNoTracking().Select(m => m.Id).ToListAsync()).ToHashSet();
 
-        // Phase 2a: MapDetails (FK MapId → Maps). Hints giờ FK MapDetailId — xử lý sau khi có MapDetails.
-        foreach (var item in ordered.Where(x => string.Equals(x.Table, "MapDetails", StringComparison.OrdinalIgnoreCase)))
+        // Phase 2a: GameDetails (FK GameId → Games). Hints giờ FK GameDetailId — xử lý sau khi có GameDetails.
+        foreach (var item in ordered.Where(x => string.Equals(x.Table, "GameDetails", StringComparison.OrdinalIgnoreCase)))
         {
-            var mapIdMatch = ChildInsertMapIdRegex.Match(item.Statement);
-            if (!mapIdMatch.Success || !Guid.TryParse(mapIdMatch.Groups["mapId"].Value, out var fkMapId))
+            var gameIdMatch = ChildInsertGameIdRegex.Match(item.Statement);
+            if (!gameIdMatch.Success || !Guid.TryParse(gameIdMatch.Groups["gameId"].Value, out var fkGameId))
             {
-                logger.LogWarning("Skip MapDetails Id {RowId}: cannot parse MapId from VALUES.", item.Id);
+                logger.LogWarning("Skip GameDetails Id {RowId}: cannot parse GameId from VALUES.", item.Id);
                 skipped++;
                 continue;
             }
 
-            if (!mapIds.Contains(fkMapId))
+            if (!gameIds.Contains(fkGameId))
             {
                 logger.LogWarning(
-                    "Skip MapDetails Id {RowId}: MapId {MapId} does not exist in Maps table.",
+                    "Skip GameDetails Id {RowId}: GameId {GameId} does not exist in Games table.",
                     item.Id,
-                    fkMapId);
+                    fkGameId);
                 skipped++;
                 continue;
             }
@@ -1041,79 +1041,79 @@ public static class SeedingExtension
             await RunOneInsertAsync(item);
         }
 
-        // TimeLimitMs / WinCondition / Type đã chuyển sang MapDetails — backfill từ INSERT Maps (script cũ).
-        var mapIdsForBackfill = mapLimitsFromScript.Keys.Union(mapTypesFromScript.Keys).ToHashSet();
-        foreach (var mapId in mapIdsForBackfill)
+        // TimeLimitMs / WinCondition / Type đã chuyển sang GameDetails — backfill từ INSERT Games (script cũ).
+        var gameIdsForBackfill = mapLimitsFromScript.Keys.Union(mapTypesFromScript.Keys).ToHashSet();
+        foreach (var gameId in gameIdsForBackfill)
         {
-            var hasL = mapLimitsFromScript.TryGetValue(mapId, out var lim);
-            var hasT = mapTypesFromScript.TryGetValue(mapId, out var typ);
+            var hasL = mapLimitsFromScript.TryGetValue(gameId, out var lim);
+            var hasT = mapTypesFromScript.TryGetValue(gameId, out var typ);
             int affected;
             if (hasL && hasT)
             {
                 affected = await dbContext.Database.ExecuteSqlRawAsync(
-                    @"UPDATE ""MapDetails"" SET ""TimeLimitMs"" = {0}, ""WinCondition"" = {1}, ""Type"" = {2} WHERE ""MapId"" = {3} AND ""IsDeleted"" = false",
+                    @"UPDATE ""GameDetails"" SET ""TimeLimitMs"" = {0}, ""WinCondition"" = {1}, ""Type"" = {2} WHERE ""GameId"" = {3} AND ""IsDeleted"" = false",
                     lim.TimeLimitMs,
                     lim.WinCondition,
                     typ,
-                    mapId);
+                    gameId);
             }
             else if (hasL)
             {
                 affected = await dbContext.Database.ExecuteSqlRawAsync(
-                    @"UPDATE ""MapDetails"" SET ""TimeLimitMs"" = {0}, ""WinCondition"" = {1} WHERE ""MapId"" = {2} AND ""IsDeleted"" = false",
+                    @"UPDATE ""GameDetails"" SET ""TimeLimitMs"" = {0}, ""WinCondition"" = {1} WHERE ""GameId"" = {2} AND ""IsDeleted"" = false",
                     lim.TimeLimitMs,
                     lim.WinCondition,
-                    mapId);
+                    gameId);
             }
             else
             {
                 affected = await dbContext.Database.ExecuteSqlRawAsync(
-                    @"UPDATE ""MapDetails"" SET ""Type"" = {0} WHERE ""MapId"" = {1} AND ""IsDeleted"" = false",
+                    @"UPDATE ""GameDetails"" SET ""Type"" = {0} WHERE ""GameId"" = {1} AND ""IsDeleted"" = false",
                     typ,
-                    mapId);
+                    gameId);
             }
 
             if (affected > 0)
-                logger.LogDebug("Backfilled MapDetails from legacy Maps INSERT for MapId {MapId} ({Rows} row(s)).", mapId, affected);
+                logger.LogDebug("Backfilled GameDetails from legacy Games INSERT for GameId {GameId} ({Rows} row(s)).", gameId, affected);
         }
 
-        // MapId → MapDetailId đầu tiên (LevelOrder nhỏ nhất) — script cũ gán hint theo MapId.
-        var detailRows = await dbContext.MapDetails.AsNoTracking()
+        // GameId → GameDetailId đầu tiên (LevelOrder nhỏ nhất) — script cũ gán hint theo GameId.
+        var detailRows = await dbContext.GameDetails.AsNoTracking()
             .Where(d => !d.IsDeleted)
-            .OrderBy(d => d.MapId).ThenBy(d => d.LevelOrder)
-            .Select(d => new { d.MapId, d.Id })
+            .OrderBy(d => d.GameId).ThenBy(d => d.LevelOrder)
+            .Select(d => new { d.GameId, d.Id })
             .ToListAsync();
-        var mapIdToFirstDetailId = new Dictionary<Guid, Guid>();
-        var validMapDetailIds = new HashSet<Guid>();
+        var gameIdToFirstDetailId = new Dictionary<Guid, Guid>();
+        var validGameDetailIds = new HashSet<Guid>();
         foreach (var row in detailRows)
         {
-            validMapDetailIds.Add(row.Id);
-            if (!mapIdToFirstDetailId.ContainsKey(row.MapId))
-                mapIdToFirstDetailId[row.MapId] = row.Id;
+            validGameDetailIds.Add(row.Id);
+            if (!gameIdToFirstDetailId.ContainsKey(row.GameId))
+                gameIdToFirstDetailId[row.GameId] = row.Id;
         }
 
-        // Phase 2b: Hints — script cũ dùng [MapId] → đổi thành [MapDetailId] + FK đúng MapDetail.
+        // Phase 2b: Hints — script cũ dùng [GameId] → đổi thành [GameDetailId] + FK đúng GameDetail.
         foreach (var item in ordered.Where(x => string.Equals(x.Table, "Hints", StringComparison.OrdinalIgnoreCase)))
         {
-            var stmt = TransformHintsInsertMapIdToMapDetailId(item.Statement, mapIdToFirstDetailId, logger, item.Id);
+            var stmt = TransformHintsInsertGameIdToGameDetailId(item.Statement, gameIdToFirstDetailId, logger, item.Id);
             if (stmt == null)
             {
                 skipped++;
                 continue;
             }
 
-            var mapIdMatch = ChildInsertMapIdRegex.Match(stmt);
-            if (!mapIdMatch.Success || !Guid.TryParse(mapIdMatch.Groups["mapId"].Value, out var fkDetailId))
+            var gameIdMatch = ChildInsertGameIdRegex.Match(stmt);
+            if (!gameIdMatch.Success || !Guid.TryParse(gameIdMatch.Groups["gameId"].Value, out var fkDetailId))
             {
-                logger.LogWarning("Skip Hints Id {RowId}: cannot parse MapDetailId from VALUES after transform.", item.Id);
+                logger.LogWarning("Skip Hints Id {RowId}: cannot parse GameDetailId from VALUES after transform.", item.Id);
                 skipped++;
                 continue;
             }
 
-            if (!validMapDetailIds.Contains(fkDetailId))
+            if (!validGameDetailIds.Contains(fkDetailId))
             {
                 logger.LogWarning(
-                    "Skip Hints Id {RowId}: MapDetailId {MapDetailId} does not exist.",
+                    "Skip Hints Id {RowId}: GameDetailId {GameDetailId} does not exist.",
                     item.Id,
                     fkDetailId);
                 skipped++;
@@ -1124,23 +1124,23 @@ public static class SeedingExtension
             await RunOneInsertAsync(item);
         }
 
-        // Phase 2c: MapTags (FK MapId).
-        foreach (var item in ordered.Where(x => string.Equals(x.Table, "MapTags", StringComparison.OrdinalIgnoreCase)))
+        // Phase 2c: GameTags (FK GameId).
+        foreach (var item in ordered.Where(x => string.Equals(x.Table, "GameTags", StringComparison.OrdinalIgnoreCase)))
         {
-            var mapIdMatch = ChildInsertMapIdRegex.Match(item.Statement);
-            if (!mapIdMatch.Success || !Guid.TryParse(mapIdMatch.Groups["mapId"].Value, out var fkMapId))
+            var gameIdMatch = ChildInsertGameIdRegex.Match(item.Statement);
+            if (!gameIdMatch.Success || !Guid.TryParse(gameIdMatch.Groups["gameId"].Value, out var fkGameId))
             {
-                logger.LogWarning("Skip MapTags Id {RowId}: cannot parse MapId from VALUES.", item.Id);
+                logger.LogWarning("Skip GameTags Id {RowId}: cannot parse GameId from VALUES.", item.Id);
                 skipped++;
                 continue;
             }
 
-            if (!mapIds.Contains(fkMapId))
+            if (!gameIds.Contains(fkGameId))
             {
                 logger.LogWarning(
-                    "Skip MapTags Id {RowId}: MapId {MapId} does not exist in Maps table.",
+                    "Skip GameTags Id {RowId}: GameId {GameId} does not exist in Games table.",
                     item.Id,
-                    fkMapId);
+                    fkGameId);
                 skipped++;
                 continue;
             }
@@ -1148,7 +1148,7 @@ public static class SeedingExtension
             await RunOneInsertAsync(item);
         }
 
-        logger.LogInformation("Seed maps from SQL script done. Executed: {Executed}, Skipped: {Skipped}", executed, skipped);
+        logger.LogInformation("Seed games from SQL script done. Executed: {Executed}, Skipped: {Skipped}", executed, skipped);
     }
 
     private sealed class InsertStatementInfo
@@ -1160,40 +1160,40 @@ public static class SeedingExtension
         public int SourceOrder { get; set; }
     }
 
-    /// <summary>MapDetails/MapTags: cột 2 là MapId. Hints (sau transform): cột 2 là MapDetailId — cùng pattern N'guid'.</summary>
-    private static readonly Regex ChildInsertMapIdRegex = new(
-        @"VALUES\s*\(\s*N'(?<rowId>[0-9a-fA-F-]{36})'\s*,\s*N'(?<mapId>[0-9a-fA-F-]{36})'",
+    /// <summary>GameDetails/GameTags: cột 2 là GameId. Hints (sau transform): cột 2 là GameDetailId — cùng pattern N'guid'.</summary>
+    private static readonly Regex ChildInsertGameIdRegex = new(
+        @"VALUES\s*\(\s*N'(?<rowId>[0-9a-fA-F-]{36})'\s*,\s*N'(?<gameId>[0-9a-fA-F-]{36})'",
         RegexOptions.IgnoreCase | RegexOptions.Singleline | RegexOptions.Compiled);
 
-    /// <summary>Script SSMS cũ: <c>INSERT Hints (... [MapId] ...)</c> → schema mới dùng <c>MapDetailId</c> (level đầu của map).</summary>
-    private static string? TransformHintsInsertMapIdToMapDetailId(
+    /// <summary>Script SSMS cũ: <c>INSERT Hints (... [GameId] ...)</c> → schema mới dùng <c>GameDetailId</c> (level đầu của game).</summary>
+    private static string? TransformHintsInsertGameIdToGameDetailId(
         string statement,
-        IReadOnlyDictionary<Guid, Guid> mapIdToFirstDetailId,
+        IReadOnlyDictionary<Guid, Guid> gameIdToFirstDetailId,
         ILogger logger,
         string rowId)
     {
-        if (!statement.Contains("[MapId]", StringComparison.OrdinalIgnoreCase))
+        if (!statement.Contains("[GameId]", StringComparison.OrdinalIgnoreCase))
             return statement;
 
-        var m = ChildInsertMapIdRegex.Match(statement);
-        if (!m.Success || !Guid.TryParse(m.Groups["mapId"].Value, out var fkMapId))
+        var m = ChildInsertGameIdRegex.Match(statement);
+        if (!m.Success || !Guid.TryParse(m.Groups["gameId"].Value, out var fkGameId))
         {
-            logger.LogWarning("Hints Id {RowId}: cannot parse MapId from VALUES.", rowId);
+            logger.LogWarning("Hints Id {RowId}: cannot parse GameId from VALUES.", rowId);
             return null;
         }
 
-        if (!mapIdToFirstDetailId.TryGetValue(fkMapId, out var detailId))
+        if (!gameIdToFirstDetailId.TryGetValue(fkGameId, out var detailId))
         {
-            logger.LogWarning("Hints Id {RowId}: no MapDetail for MapId {MapId}.", rowId, fkMapId);
+            logger.LogWarning("Hints Id {RowId}: no GameDetail for GameId {GameId}.", rowId, fkGameId);
             return null;
         }
 
-        var s = statement.Replace("[MapId]", "[MapDetailId]", StringComparison.OrdinalIgnoreCase);
-        var mg = ChildInsertMapIdRegex.Match(s);
+        var s = statement.Replace("[GameId]", "[GameDetailId]", StringComparison.OrdinalIgnoreCase);
+        var mg = ChildInsertGameIdRegex.Match(s);
         if (!mg.Success)
             return null;
 
-        var g = mg.Groups["mapId"];
+        var g = mg.Groups["gameId"];
         var start = g.Index - 2;
         if (start < 0 || start + g.Length + 3 > s.Length)
             return null;
@@ -1269,7 +1269,7 @@ public static class SeedingExtension
                 continue;
             }
 
-            // Some sections in script do not separate INSERT statements with GO (especially Maps block).
+            // Some sections in script do not separate INSERT statements with GO (especially Games block).
             // When a new INSERT line is detected, flush previous statement and start a new one.
             if (trimmed.StartsWith("INSERT [dbo].[", StringComparison.OrdinalIgnoreCase))
             {

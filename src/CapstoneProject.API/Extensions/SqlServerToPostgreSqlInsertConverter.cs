@@ -5,17 +5,17 @@ namespace CapstoneProject.API.Extensions;
 
 /// <summary>
 /// Chuyển một câu INSERT kiểu SQL Server (script SSMS: [dbo].[Table], N'...', CAST(... AS DateTime), bit 0/1)
-/// sang PostgreSQL cho bảng seed Maps / MapDetails / Hints / MapTags.
-/// MapTags dùng ON CONFLICT (MapId, TagId) để idempotent với dữ liệu đã có (seed cũ / app).
+/// sang PostgreSQL cho bảng seed Games / GameDetails / Hints / GameTags.
+/// GameTags dùng ON CONFLICT (GameId, TagId) để idempotent với dữ liệu đã có (seed cũ / app).
 /// </summary>
 internal static class SqlServerToPostgreSqlInsertConverter
 {
     private static readonly Dictionary<string, HashSet<string>> BoolColumnsByTable =
         new(StringComparer.OrdinalIgnoreCase)
         {
-            ["Maps"] = new(StringComparer.OrdinalIgnoreCase) { "IsPublished", "IsDeleted" },
-            ["MapDetails"] = new(StringComparer.OrdinalIgnoreCase) { "IsDeleted" },
-            ["MapTags"] = new(StringComparer.OrdinalIgnoreCase) { "IsDeleted" },
+            ["Games"] = new(StringComparer.OrdinalIgnoreCase) { "IsPublished", "IsDeleted" },
+            ["GameDetails"] = new(StringComparer.OrdinalIgnoreCase) { "IsDeleted" },
+            ["GameTags"] = new(StringComparer.OrdinalIgnoreCase) { "IsDeleted" },
             ["Hints"] = new(StringComparer.OrdinalIgnoreCase) { "IsDeleted" },
         };
 
@@ -36,21 +36,21 @@ internal static class SqlServerToPostgreSqlInsertConverter
         RegexOptions.Compiled);
 
     /// <summary>
-    /// Script SSMS cũ: INSERT Maps có [TimeLimitMs], [WinCondition], [Type] — trên PostgreSQL đã chuyển sang <c>MapDetails</c>.
-    /// Gỡ khỏi câu INSERT Maps; trả về mapId → limits và mapId → Type (int enum) để backfill <c>MapDetails</c> sau.
+    /// Script SSMS cũ: INSERT Games có [TimeLimitMs], [WinCondition], [Type] — trên PostgreSQL đã chuyển sang <c>GameDetails</c>.
+    /// Gỡ khỏi câu INSERT Games; trả về gameId → limits và gameId → Type (int enum) để backfill <c>GameDetails</c> sau.
     /// </summary>
     public static string PrepareMapsInsertForPostgres(
         string statement,
-        out Dictionary<Guid, (int TimeLimitMs, int WinCondition)> limitsByMapId,
-        out Dictionary<Guid, int> mapTypeIntByMapId)
+        out Dictionary<Guid, (int TimeLimitMs, int WinCondition)> limitsByGameId,
+        out Dictionary<Guid, int> mapTypeIntByGameId)
     {
-        limitsByMapId = new Dictionary<Guid, (int, int)>();
-        mapTypeIntByMapId = new Dictionary<Guid, int>();
+        limitsByGameId = new Dictionary<Guid, (int, int)>();
+        mapTypeIntByGameId = new Dictionary<Guid, int>();
         var s = statement.Trim();
         var header = InsertHeaderRegex.Match(s);
         if (!header.Success)
             return statement;
-        if (!string.Equals(header.Groups[1].Value, "Maps", StringComparison.OrdinalIgnoreCase))
+        if (!string.Equals(header.Groups[1].Value, "Games", StringComparison.OrdinalIgnoreCase))
             return statement;
 
         var valuesMatch = ValuesClauseRegex.Match(s);
@@ -76,7 +76,7 @@ internal static class SqlServerToPostgreSqlInsertConverter
         if (iTime < 0 && iWin < 0 && iType < 0)
             return statement;
 
-        if (!TryParseGuidNToken(valueTokens[0], out var mapId))
+        if (!TryParseGuidNToken(valueTokens[0], out var gameId))
             return statement;
 
         int? tMs = null;
@@ -87,10 +87,10 @@ internal static class SqlServerToPostgreSqlInsertConverter
             wC = w;
 
         if (tMs.HasValue && wC.HasValue)
-            limitsByMapId[mapId] = (tMs.Value, wC.Value);
+            limitsByGameId[gameId] = (tMs.Value, wC.Value);
 
         if (iType >= 0 && TryParseIntSqlToken(valueTokens[iType], out var ty) && ty is 0 or 1)
-            mapTypeIntByMapId[mapId] = ty;
+            mapTypeIntByGameId[gameId] = ty;
 
         var removeIdx = new List<int>();
         if (iTime >= 0) removeIdx.Add(iTime);
@@ -104,7 +104,7 @@ internal static class SqlServerToPostgreSqlInsertConverter
             valueTokens.RemoveAt(idx);
         }
 
-        return RebuildSqlServerInsert("Maps", columns, valueTokens);
+        return RebuildSqlServerInsert("Games", columns, valueTokens);
     }
 
     private static string RebuildSqlServerInsert(string table, List<string> columns, List<string> valueTokens)
@@ -224,9 +224,9 @@ internal static class SqlServerToPostgreSqlInsertConverter
             sb.Append(converted[i]);
         }
 
-        // MapTags: unique IX_MapTags_MapId_TagId — re-seed / app may already have (MapId, TagId) with another Id.
-        if (string.Equals(table, "MapTags", StringComparison.OrdinalIgnoreCase))
-            sb.Append(") ON CONFLICT (\"MapId\", \"TagId\") DO NOTHING");
+        // GameTags: unique IX_GameTags_GameId_TagId — re-seed / app may already have (GameId, TagId) with another Id.
+        if (string.Equals(table, "GameTags", StringComparison.OrdinalIgnoreCase))
+            sb.Append(") ON CONFLICT (\"GameId\", \"TagId\") DO NOTHING");
         else
             sb.Append(") ON CONFLICT (\"Id\") DO NOTHING");
         return sb.ToString();

@@ -30,41 +30,41 @@ public class ReportMapCommandHandler : IRequestHandler<ReportMapCommand, Result<
         if (string.IsNullOrWhiteSpace(command.Reason))
             return Result<Guid>.Failure("Lý do báo cáo là bắt buộc. Vui lòng cung cấp lý do để báo cáo nội dung này.", ErrorCodeEnum.ValidationFailed);
 
-        var mapRepo = _unitOfWork.Repository<Map>();
-        var map = await mapRepo.GetQueryable()
-            .FirstOrDefaultAsync(g => g.Id == command.MapId && !g.IsDeleted && g.Status == EntityStatusEnum.Active, cancellationToken);
-        if (map == null)
-            return Result<Guid>.Failure($"Không tìm thấy bản đồ có Id: {command.MapId}. Bản đồ có thể đã bị xóa hoặc không tồn tại.", ErrorCodeEnum.NotFound);
-        if (map.CreatedBy.HasValue && map.CreatedBy.Value == userId)
+        var mapRepo = _unitOfWork.Repository<Game>();
+        var game = await mapRepo.GetQueryable()
+            .FirstOrDefaultAsync(g => g.Id == command.GameId && !g.IsDeleted && g.Status == EntityStatusEnum.Active, cancellationToken);
+        if (game == null)
+            return Result<Guid>.Failure($"Không tìm thấy bản đồ có Id: {command.GameId}. Bản đồ có thể đã bị xóa hoặc không tồn tại.", ErrorCodeEnum.NotFound);
+        if (game.CreatedBy.HasValue && game.CreatedBy.Value == userId)
             return Result<Guid>.Failure("Bạn không thể báo cáo bản đồ của riêng bạn.", ErrorCodeEnum.Forbidden);
 
-        // Only allow reporting maps the user can actually play:
-        // - Free maps (Price null or <= 0)
-        // - OR paid maps that the user has already purchased (PaymentRecord Completed for this map)
-        var isFreeMap = !map.Price.HasValue || map.Price <= 0;
+        // Only allow reporting games the user can actually play:
+        // - Free games (Price null or <= 0)
+        // - OR paid games that the user has already purchased (PaymentRecord Completed for this game)
+        var isFreeMap = !game.Price.HasValue || game.Price <= 0;
         if (!isFreeMap)
         {
             var paymentRepo = _unitOfWork.Repository<PaymentRecord>();
             var hasPurchased = await paymentRepo.GetQueryable()
                 .AnyAsync(p => !p.IsDeleted
                                && p.UserId == userId
-                               && p.MapId == map.Id
+                               && p.GameId == game.Id
                                && p.PaymentStatus == PaymentStatusEnum.Completed,
                     cancellationToken);
             if (!hasPurchased)
                 return Result<Guid>.Failure("Bạn chỉ có thể báo cáo những bản đồ mà bạn có quyền truy cập (bản đồ miễn phí hoặc bản đồ bạn đã mua).", ErrorCodeEnum.Forbidden);
         }
 
-        var report = new MapReport
+        var report = new GameReport
         {
             UserId = userId,
-            MapId = command.MapId,
+            GameId = command.GameId,
             Reason = command.Reason,
             Details = command.Details,
             ReportStatus = ReportStatusEnum.Pending
         };
         report.InitializeEntity(userId);
-        await _unitOfWork.Repository<MapReport>().AddAsync(report);
+        await _unitOfWork.Repository<GameReport>().AddAsync(report);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
         return Result<Guid>.Success(report.Id, "Đã gửi báo cáo.");
     }

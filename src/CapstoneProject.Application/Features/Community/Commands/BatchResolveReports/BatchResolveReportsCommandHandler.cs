@@ -31,7 +31,7 @@ public class BatchResolveReportsCommandHandler : IRequestHandler<BatchResolveRep
         if (!roles.Contains(RoleEnum.Admin) && !roles.Contains(RoleEnum.Moderator))
             return Result<BatchReportResultDto>.Failure("Bạn không có quyền giải quyết các báo cáo. Chỉ Quản trị viên hoặc Người điều hành mới có thể thực hiện giải quyết hàng loạt.", ErrorCodeEnum.Forbidden);
 
-        var repo = _unitOfWork.Repository<MapReport>();
+        var repo = _unitOfWork.Repository<GameReport>();
         var reports = await repo.GetQueryable()
             .Where(r => command.ReportIds.Contains(r.Id) && !r.IsDeleted)
             .ToListAsync(cancellationToken);

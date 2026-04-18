@@ -1,5 +1,5 @@
 using System.Text.Json;
-using CapstoneProject.Application.Commons.DTOs.Maps;
+using CapstoneProject.Application.Commons.DTOs.Games;
 using CapstoneProject.Domain.Enums;
 
 namespace CapstoneProject.Application.Commons.Helpers;
@@ -7,21 +7,21 @@ namespace CapstoneProject.Application.Commons.Helpers;
 /// <summary>Đọc <c>timeLimitMs</c> / <c>winCondition</c> / <c>type</c> từ JSON level (wrapper hoặc nội dung JSON).</summary>
 public static class MapLevelMetadataExtractor
 {
-    public const string InvalidMapTypeMessage = "Map type is invalid.";
+    public const string InvalidMapTypeMessage = "Game type is invalid.";
 
-    public static bool TryParseMapType(string? raw, out MapTypeEnum mapType)
+    public static bool TryParseMapType(string? raw, out GameTypeEnum mapType)
     {
-        mapType = MapTypeEnum.Topdown;
+        mapType = GameTypeEnum.Topdown;
         if (string.IsNullOrWhiteSpace(raw)) return false;
 
-        if (int.TryParse(raw, out var n) && Enum.IsDefined(typeof(MapTypeEnum), n))
+        if (int.TryParse(raw, out var n) && Enum.IsDefined(typeof(GameTypeEnum), n))
         {
-            mapType = (MapTypeEnum)n;
+            mapType = (GameTypeEnum)n;
             return true;
         }
 
         return Enum.TryParse(raw, ignoreCase: true, out mapType)
-            && Enum.IsDefined(typeof(MapTypeEnum), mapType);
+            && Enum.IsDefined(typeof(GameTypeEnum), mapType);
     }
 
     /// <summary>
@@ -33,7 +33,7 @@ public static class MapLevelMetadataExtractor
         MergeFromObject(level, wrapper, overwrite: false);
     }
 
-    /// <summary>Gộp từ nội dung level (root JSON của map detail).</summary>
+    /// <summary>Gộp từ nội dung level (root JSON của game detail).</summary>
     public static void MergeFromJson(MapLevelInputDto level)
     {
         MergeFromJson(level.JsonContent, level);
@@ -70,9 +70,9 @@ public static class MapLevelMetadataExtractor
             level.Type = mapType;
     }
 
-    static bool TryParseMapTypeProperty(JsonElement el, out MapTypeEnum mapType)
+    static bool TryParseMapTypeProperty(JsonElement el, out GameTypeEnum mapType)
     {
-        mapType = MapTypeEnum.Topdown;
+        mapType = GameTypeEnum.Topdown;
         JsonElement? p = null;
         if (el.TryGetProperty("type", out var p1)) p = p1;
         else if (el.TryGetProperty("Type", out var p2)) p = p2;
@@ -83,12 +83,12 @@ public static class MapLevelMetadataExtractor
         return TryParseMapTypeValue(p.Value, out mapType);
     }
 
-    static bool TryParseMapTypeValue(JsonElement p, out MapTypeEnum mapType)
+    static bool TryParseMapTypeValue(JsonElement p, out GameTypeEnum mapType)
     {
-        mapType = MapTypeEnum.Topdown;
-        if (p.ValueKind == JsonValueKind.Number && p.TryGetInt32(out var n) && Enum.IsDefined(typeof(MapTypeEnum), n))
+        mapType = GameTypeEnum.Topdown;
+        if (p.ValueKind == JsonValueKind.Number && p.TryGetInt32(out var n) && Enum.IsDefined(typeof(GameTypeEnum), n))
         {
-            mapType = (MapTypeEnum)n;
+            mapType = (GameTypeEnum)n;
             return true;
         }
 

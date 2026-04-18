@@ -28,7 +28,7 @@ public class GetReportsQueryHandler : IRequestHandler<GetReportsQuery, Result<Pa
         if (!roles.Contains(RoleEnum.Admin) && !roles.Contains(RoleEnum.Moderator))
             return Result<PaginationResult<ReportListItemDto>>.Failure("You do not have permission to view reports. Only Admin or Moderator can access this list.", ErrorCodeEnum.Forbidden);
 
-        var query = _unitOfWork.Repository<MapReport>().GetQueryable().Where(r => !r.IsDeleted);
+        var query = _unitOfWork.Repository<GameReport>().GetQueryable().Where(r => !r.IsDeleted);
         if (request.Status.HasValue && request.Status != ReportStatusFilter.All)
         {
             var status = request.Status.Value switch
@@ -42,8 +42,8 @@ public class GetReportsQueryHandler : IRequestHandler<GetReportsQuery, Result<Pa
             if (status.HasValue)
                 query = query.Where(r => r.ReportStatus == status.Value);
         }
-        if (request.MapId.HasValue)
-            query = query.Where(r => r.MapId == request.MapId.Value);
+        if (request.GameId.HasValue)
+            query = query.Where(r => r.GameId == request.GameId.Value);
         if (request.UserId.HasValue)
             query = query.Where(r => r.UserId == request.UserId.Value);
         if (request.DateFrom.HasValue)
@@ -55,15 +55,15 @@ public class GetReportsQueryHandler : IRequestHandler<GetReportsQuery, Result<Pa
         var pageNumber = Math.Max(1, request.PageNumber);
         var pageSize = Math.Clamp(request.PageSize, 1, 100);
         var list = await query
-            .Include(r => r.Map)
+            .Include(r => r.Game)
             .OrderByDescending(r => r.CreatedAt)
             .Skip((pageNumber - 1) * pageSize)
             .Take(pageSize)
             .Select(r => new ReportListItemDto
             {
                 Id = r.Id,
-                MapId = r.MapId,
-                MapTitle = r.Map.Title,
+                GameId = r.GameId,
+                MapTitle = r.Game.Title,
                 UserId = r.UserId,
                 Reason = r.Reason,
                 Details = r.Details,

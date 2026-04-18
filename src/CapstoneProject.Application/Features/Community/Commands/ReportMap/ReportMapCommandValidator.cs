@@ -6,7 +6,7 @@ public class ReportMapCommandValidator : AbstractValidator<ReportMapCommand>
 {
     public ReportMapCommandValidator()
     {
-        RuleFor(x => x.MapId)
+        RuleFor(x => x.GameId)
             .NotEmpty().WithMessage("Id bản đồ là bắt buộc.");
         RuleFor(x => x.Reason)
             .NotEmpty().WithMessage("Report reason is required.")

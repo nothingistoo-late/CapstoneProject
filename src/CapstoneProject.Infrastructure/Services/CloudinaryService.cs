@@ -102,8 +102,8 @@ public class CloudinaryService : ICloudinaryService
     public async Task<bool> DeleteAsync(string publicId, CancellationToken cancellationToken = default) =>
         await DeleteInternalAsync(publicId, ResourceType.Image, cancellationToken);
 
-    public async Task<bool> DeleteAsync(string publicId, MapMediaKind kind, CancellationToken cancellationToken = default) =>
-        await DeleteInternalAsync(publicId, kind == MapMediaKind.Video ? ResourceType.Video : ResourceType.Image, cancellationToken);
+    public async Task<bool> DeleteAsync(string publicId, GameMediaKind kind, CancellationToken cancellationToken = default) =>
+        await DeleteInternalAsync(publicId, kind == GameMediaKind.Video ? ResourceType.Video : ResourceType.Image, cancellationToken);
 
     async Task<bool> DeleteInternalAsync(string publicId, ResourceType resourceType, CancellationToken cancellationToken)
     {

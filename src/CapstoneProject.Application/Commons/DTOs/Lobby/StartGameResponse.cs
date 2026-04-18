@@ -4,7 +4,7 @@ public class StartGameResponse
 {
     public Guid RoomId { get; set; }
     public string RoomCode { get; set; } = string.Empty;
-    public Guid? MapId { get; set; }
+    public Guid? GameId { get; set; }
     public List<Guid> TurnOrder { get; set; } = new();
     public DateTime StartedAt { get; set; }
     public int CurrentTurnIndex { get; set; }

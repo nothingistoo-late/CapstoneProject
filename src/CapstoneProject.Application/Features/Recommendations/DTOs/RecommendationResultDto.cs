@@ -10,7 +10,7 @@ public class RecommendationResultDto
 
 public class RecommendationMapDto
 {
-    public Guid MapId { get; set; }
+    public Guid GameId { get; set; }
     public string Title { get; set; } = string.Empty;
     public int Difficulty { get; set; }
 

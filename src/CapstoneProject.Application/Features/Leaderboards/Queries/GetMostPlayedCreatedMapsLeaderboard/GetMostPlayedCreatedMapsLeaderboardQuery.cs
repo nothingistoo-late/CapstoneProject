@@ -12,7 +12,7 @@ public record GetMostPlayedCreatedMapsLeaderboardQuery(
 public class MostPlayedCreatedMapLeaderboardItemDto
 {
     public int Rank { get; set; }
-    public Guid MapId { get; set; }
+    public Guid GameId { get; set; }
     public string MapTitle { get; set; } = string.Empty;
     public Guid CreatorUserId { get; set; }
     public string CreatorDisplayName { get; set; } = string.Empty;

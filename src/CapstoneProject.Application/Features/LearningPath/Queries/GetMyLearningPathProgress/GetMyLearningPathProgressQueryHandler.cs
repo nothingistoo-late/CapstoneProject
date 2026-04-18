@@ -48,27 +48,27 @@ public class GetMyLearningPathProgressQueryHandler : IRequestHandler<GetMyLearni
             return Result<LearningPathProgressDto>.Success(dto, "Đã lấy tiến độ lộ trình học tập của bạn.");
 
         var conceptIds = pathItems.Where(i => i.ConceptId.HasValue).Select(i => i.ConceptId!.Value).ToList();
-        var mapIds = pathItems.Where(i => i.MapId.HasValue).Select(i => i.MapId!.Value).ToList();
+        var gameIds = pathItems.Where(i => i.GameId.HasValue).Select(i => i.GameId!.Value).ToList();
 
         var completedConcepts = await _unitOfWork.Repository<UserConceptProgress>().GetQueryable()
             .CountAsync(p => p.UserId == userId.Value && !p.IsDeleted && p.IsCompleted && conceptIds.Contains(p.ConceptId), cancellationToken);
 
-        var completedMaps = await _unitOfWork.Repository<UserMapResult>().GetQueryable()
-            .CountAsync(r => r.UserId == userId.Value && !r.IsDeleted && r.BestStars >= 1 && mapIds.Contains(r.MapId), cancellationToken);
+        var completedMaps = await _unitOfWork.Repository<UserGameResult>().GetQueryable()
+            .CountAsync(r => r.UserId == userId.Value && !r.IsDeleted && r.BestStars >= 1 && gameIds.Contains(r.GameId), cancellationToken);
 
         dto.CompletedCount = completedConcepts + completedMaps;
         dto.PercentComplete = (int)Math.Round(100.0 * dto.CompletedCount / dto.TotalItems);
 
-        var mapResults = await _unitOfWork.Repository<UserMapResult>().GetQueryable()
-            .Where(r => r.UserId == userId.Value && !r.IsDeleted && mapIds.Contains(r.MapId))
-            .Select(r => new { r.MapId, r.BestStars, r.BestScore })
+        var mapResults = await _unitOfWork.Repository<UserGameResult>().GetQueryable()
+            .Where(r => r.UserId == userId.Value && !r.IsDeleted && gameIds.Contains(r.GameId))
+            .Select(r => new { r.GameId, r.BestStars, r.BestScore })
             .ToListAsync(cancellationToken);
 
-        foreach (var mapId in mapIds)
+        foreach (var gameId in gameIds)
         {
-            var mr = mapResults.FirstOrDefault(r => r.MapId == mapId);
+            var mr = mapResults.FirstOrDefault(r => r.GameId == gameId);
             if (mr == null || mr.BestStars < 2)
-                dto.SuggestedReviewMapIds.Add(mapId);
+                dto.SuggestedReviewGameIds.Add(gameId);
         }
 
         return Result<LearningPathProgressDto>.Success(dto, "Đã lấy tiến độ lộ trình học tập của bạn.");

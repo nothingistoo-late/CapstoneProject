@@ -30,7 +30,7 @@ public class ResolveReportCommandHandler : IRequestHandler<ResolveReportCommand,
         if (!roles.Contains(RoleEnum.Admin) && !roles.Contains(RoleEnum.Moderator))
             return Result.Failure("Bạn không có quyền giải quyết các báo cáo. Chỉ Quản trị viên hoặc Người điều hành mới có thể thực hiện hành động này.", ErrorCodeEnum.Forbidden);
 
-        var report = await _unitOfWork.Repository<MapReport>().GetQueryable().FirstOrDefaultAsync(r => r.Id == command.ReportId && !r.IsDeleted, cancellationToken);
+        var report = await _unitOfWork.Repository<GameReport>().GetQueryable().FirstOrDefaultAsync(r => r.Id == command.ReportId && !r.IsDeleted, cancellationToken);
         if (report == null)
             return Result.Failure($"Không tìm thấy báo cáo có Id: {command.ReportId}. Báo cáo có thể đã bị xóa hoặc không tồn tại.", ErrorCodeEnum.NotFound);
 
@@ -39,7 +39,7 @@ public class ResolveReportCommandHandler : IRequestHandler<ResolveReportCommand,
         report.ReviewedAt = CapstoneProject.Domain.Common.VietnamDateTime.DbNow;
         report.ReviewNote = command.ReviewNote;
         report.UpdateEntity(userIdNullable.Value);
-        _unitOfWork.Repository<MapReport>().Update(report);
+        _unitOfWork.Repository<GameReport>().Update(report);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
         return Result.Success("Báo cáo đã được giải quyết.");
     }

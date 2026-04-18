@@ -195,7 +195,7 @@ public class ComplaintPolicyService : IComplaintPolicyService
         foreach (var key in requiredKeys)
         {
             if (key == "paymentRecordId" && ctx.PaymentRecordId.HasValue) return true;
-            if (key == "mapId" && ctx.MapId.HasValue) return true;
+            if (key == "gameId" && ctx.GameId.HasValue) return true;
             if (key == "packageId" && ctx.PackageId.HasValue) return true;
             if (key == "submissionId" && ctx.SubmissionId.HasValue) return true;
             if (key == "playHistoryId" && ctx.PlayHistoryId.HasValue) return true;
@@ -209,7 +209,7 @@ public class ComplaintPolicyService : IComplaintPolicyService
     private static bool HasAnyContext(ComplaintCreateContextInput ctx)
     {
         return ctx.PaymentRecordId.HasValue
-            || ctx.MapId.HasValue
+            || ctx.GameId.HasValue
             || ctx.PackageId.HasValue
             || ctx.SubmissionId.HasValue
             || ctx.PlayHistoryId.HasValue
@@ -235,7 +235,7 @@ public class ComplaintPolicyService : IComplaintPolicyService
 
         if (ctx.PlayHistoryId.HasValue)
         {
-            var ok = await _unitOfWork.Repository<UserMapPlayHistory>().GetQueryable()
+            var ok = await _unitOfWork.Repository<UserGamePlayHistory>().GetQueryable()
                 .AnyAsync(x => !x.IsDeleted && x.Id == ctx.PlayHistoryId.Value && x.UserId == userId, cancellationToken);
             if (!ok) return false;
         }
@@ -247,23 +247,23 @@ public class ComplaintPolicyService : IComplaintPolicyService
             if (!ok) return false;
         }
 
-        if (ctx.MapId.HasValue)
+        if (ctx.GameId.HasValue)
         {
-            var mapId = ctx.MapId.Value;
-            var map = await _unitOfWork.Repository<Map>().GetQueryable()
+            var gameId = ctx.GameId.Value;
+            var game = await _unitOfWork.Repository<Game>().GetQueryable()
                 .AsNoTracking()
-                .FirstOrDefaultAsync(x => !x.IsDeleted && x.Id == mapId, cancellationToken);
-            if (map == null)
+                .FirstOrDefaultAsync(x => !x.IsDeleted && x.Id == gameId, cancellationToken);
+            if (game == null)
                 return false;
 
             var purchased = await _unitOfWork.Repository<PaymentRecord>().GetQueryable()
-                .AnyAsync(x => !x.IsDeleted && x.UserId == userId && x.MapId == mapId && x.PaymentStatus == PaymentStatusEnum.Completed, cancellationToken);
-            if (map.Price.HasValue && map.Price.Value > 0)
+                .AnyAsync(x => !x.IsDeleted && x.UserId == userId && x.GameId == gameId && x.PaymentStatus == PaymentStatusEnum.Completed, cancellationToken);
+            if (game.Price.HasValue && game.Price.Value > 0)
                 return purchased;
 
-            var inMyMap = await _unitOfWork.Repository<MyMap>().GetQueryable()
-                .AnyAsync(x => !x.IsDeleted && x.UserId == userId && x.MapId == mapId, cancellationToken);
-            return inMyMap || purchased;
+            var inMyGame = await _unitOfWork.Repository<MyGame>().GetQueryable()
+                .AnyAsync(x => !x.IsDeleted && x.UserId == userId && x.GameId == gameId, cancellationToken);
+            return inMyGame || purchased;
         }
 
         if (ctx.PackageId.HasValue)
@@ -291,7 +291,7 @@ public class ComplaintPolicyService : IComplaintPolicyService
 
         if (ctx.PlayHistoryId.HasValue)
         {
-            var playedAt = await _unitOfWork.Repository<UserMapPlayHistory>().GetQueryable()
+            var playedAt = await _unitOfWork.Repository<UserGamePlayHistory>().GetQueryable()
                 .Where(x => !x.IsDeleted && x.Id == ctx.PlayHistoryId.Value)
                 .Select(x => x.EndTime ?? x.StartTime)
                 .FirstOrDefaultAsync(cancellationToken);
@@ -327,14 +327,14 @@ public class ComplaintPolicyService : IComplaintPolicyService
                 return VietnamDateTime.ToDbDateTime(orbitAt);
         }
 
-        if (ctx.MapId.HasValue)
+        if (ctx.GameId.HasValue)
         {
-            var mapPaymentAt = await ResolveLatestPaymentTimeForMapAsync(userId, ctx.MapId.Value, cancellationToken);
+            var mapPaymentAt = await ResolveLatestPaymentTimeForMapAsync(userId, ctx.GameId.Value, cancellationToken);
             if (mapPaymentAt.HasValue)
                 return mapPaymentAt.Value;
 
-            var mapCreatedAt = await _unitOfWork.Repository<Map>().GetQueryable()
-                .Where(x => !x.IsDeleted && x.Id == ctx.MapId.Value)
+            var mapCreatedAt = await _unitOfWork.Repository<Game>().GetQueryable()
+                .Where(x => !x.IsDeleted && x.Id == ctx.GameId.Value)
                 .Select(x => x.CreatedAt)
                 .FirstOrDefaultAsync(cancellationToken);
             if (mapCreatedAt.HasValue)
@@ -370,10 +370,10 @@ public class ComplaintPolicyService : IComplaintPolicyService
         return VietnamDateTime.ToDbDateTime(anchorTime.Value) >= VietnamDateTime.DbNow.AddHours(-hours);
     }
 
-    private async Task<DateTime?> ResolveLatestPaymentTimeForMapAsync(Guid userId, Guid mapId, CancellationToken cancellationToken)
+    private async Task<DateTime?> ResolveLatestPaymentTimeForMapAsync(Guid userId, Guid gameId, CancellationToken cancellationToken)
     {
         var paymentAt = await _unitOfWork.Repository<PaymentRecord>().GetQueryable()
-            .Where(x => !x.IsDeleted && x.UserId == userId && x.MapId == mapId)
+            .Where(x => !x.IsDeleted && x.UserId == userId && x.GameId == gameId)
             .OrderByDescending(x => x.PaidAt ?? x.CreatedAt)
             .Select(x => x.PaidAt ?? x.CreatedAt)
             .FirstOrDefaultAsync(cancellationToken);
@@ -404,10 +404,10 @@ public class ComplaintPolicyService : IComplaintPolicyService
                 return direct;
         }
 
-        if (string.Equals(contextType, "Map", StringComparison.OrdinalIgnoreCase))
+        if (string.Equals(contextType, "Game", StringComparison.OrdinalIgnoreCase))
         {
             return await _unitOfWork.Repository<PaymentRecord>().GetQueryable()
-                .Where(x => !x.IsDeleted && x.UserId == userId && x.MapId == contextId && x.PaymentStatus == PaymentStatusEnum.Completed)
+                .Where(x => !x.IsDeleted && x.UserId == userId && x.GameId == contextId && x.PaymentStatus == PaymentStatusEnum.Completed)
                 .OrderByDescending(x => x.PaidAt ?? x.CreatedAt)
                 .Select(x => (Guid?)x.Id)
                 .FirstOrDefaultAsync(cancellationToken);
@@ -438,7 +438,7 @@ public class ComplaintPolicyService : IComplaintPolicyService
         if (ctx.PlayHistoryId.HasValue) return ("PlayHistory", ctx.PlayHistoryId.Value);
         if (ctx.XpTransactionId.HasValue) return ("XpTransaction", ctx.XpTransactionId.Value);
         if (ctx.OrbitCoinTransactionId.HasValue) return ("OrbitCoinTransaction", ctx.OrbitCoinTransactionId.Value);
-        if (ctx.MapId.HasValue) return ("Map", ctx.MapId.Value);
+        if (ctx.GameId.HasValue) return ("Game", ctx.GameId.Value);
         if (ctx.PackageId.HasValue) return ("Package", ctx.PackageId.Value);
         return (null, null);
     }
@@ -450,7 +450,7 @@ public class ComplaintPolicyService : IComplaintPolicyService
             ?? ctx.PlayHistoryId?.ToString()
             ?? ctx.XpTransactionId?.ToString()
             ?? ctx.OrbitCoinTransactionId?.ToString()
-            ?? ctx.MapId?.ToString()
+            ?? ctx.GameId?.ToString()
             ?? ctx.PackageId?.ToString()
             ?? "none";
 

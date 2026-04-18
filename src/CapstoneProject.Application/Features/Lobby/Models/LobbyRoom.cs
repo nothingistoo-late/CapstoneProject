@@ -17,8 +17,8 @@ public class LobbyRoom
     public int MaxPlayers { get; set; } = 8;
     public RoomStatusEnum Status { get; set; } = RoomStatusEnum.Waiting;
     public bool IsLocked { get; set; }
-    /// <summary>Map chosen by host for this room (optional; host sets before start).</summary>
-    public Guid? SelectedMapId { get; set; }
+    /// <summary>Game chosen by host for this room (optional; host sets before start).</summary>
+    public Guid? SelectedGameId { get; set; }
 
     public int PlayerCount => Players.Count;
     public bool IsWaiting => Status == RoomStatusEnum.Waiting;

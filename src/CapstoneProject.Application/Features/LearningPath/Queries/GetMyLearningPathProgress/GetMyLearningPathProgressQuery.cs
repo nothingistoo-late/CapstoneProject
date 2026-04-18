@@ -10,8 +10,8 @@ public class LearningPathProgressDto
     public int TotalItems { get; set; }
     public int CompletedCount { get; set; }
     public int PercentComplete { get; set; }
-    /// <summary>Map IDs gợi ý ôn tập (điểm thấp hoặc chưa đạt sao).</summary>
-    public List<Guid> SuggestedReviewMapIds { get; set; } = new();
+    /// <summary>Game IDs gợi ý ôn tập (điểm thấp hoặc chưa đạt sao).</summary>
+    public List<Guid> SuggestedReviewGameIds { get; set; } = new();
 }
 
 /// <summary>Lấy tiến độ lộ trình: tổng số item, đã hoàn thành bao nhiêu, % hoàn thành, gợi ý ôn tập.</summary>

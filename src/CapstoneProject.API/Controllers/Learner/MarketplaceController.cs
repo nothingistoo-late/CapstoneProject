@@ -11,7 +11,7 @@ namespace CapstoneProject.API.Controllers.Learner;
 [Route("api/learner/marketplace")]
 [ApiExplorerSettings(GroupName = "v1")]
 [Configurations.Tags("Learner - Marketplace")]
-[SwaggerTag("Learner - Browse packages, purchase package or paid map")]
+[SwaggerTag("Learner - Browse packages, purchase package or paid game")]
 public class LearnerMarketplaceController : ControllerBase
 {
     private readonly IMediator _mediator;
@@ -129,31 +129,31 @@ public class LearnerMarketplaceController : ControllerBase
     }
 
     /// <summary>
-    /// Purchase paid challenge map with OrbitCoin
+    /// Purchase paid challenge game with OrbitCoin
     /// </summary>
     /// <remarks>
-    /// Purchases a paid challenge map (price &gt; 0) by deducting OrbitCoin. User must have topped up OrbitCoin first. Requires Bearer token (Learner).
+    /// Purchases a paid challenge game (price &gt; 0) by deducting OrbitCoin. User must have topped up OrbitCoin first. Requires Bearer token (Learner).
     ///
-    /// **Route:** mapId (Guid, required): Challenge map ID.
+    /// **Route:** gameId (Guid, required): Challenge game ID.
     ///
-    /// **METHOD and path:** POST /api/learner/marketplace/maps/{mapId}/purchase
+    /// **METHOD and path:** POST /api/learner/marketplace/games/{gameId}/purchase
     /// </remarks>
     /// <response code="200">Purchase successful.</response>
     /// <response code="401">Not authorized</response>
     /// <response code="403">Not a Learner</response>
-    /// <response code="404">Map not found</response>
+    /// <response code="404">Game not found</response>
     /// <response code="500">Internal server error</response>
-    [HttpPost("maps/{mapId:guid}/purchase")]
+    [HttpPost("games/{gameId:guid}/purchase")]
     [AuthorizeRoles(nameof(RoleEnum.Learner))]
     [ProducesResponseType(typeof(Result), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(Result), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(Result), StatusCodes.Status403Forbidden)]
     [ProducesResponseType(typeof(Result), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(Result), StatusCodes.Status500InternalServerError)]
-    [SwaggerOperation(Summary = "Mua map trả phí (OrbitCoin)", Description = "Purchases paid map by deducting OrbitCoin. User must top up first.", OperationId = "Learner_PurchaseMap", Tags = new[] { "Learner - Marketplace" })]
-    public async Task<IActionResult> PurchaseMap(Guid mapId)
+    [SwaggerOperation(Summary = "Mua game trả phí (OrbitCoin)", Description = "Purchases paid game by deducting OrbitCoin. User must top up first.", OperationId = "Learner_PurchaseMap", Tags = new[] { "Learner - Marketplace" })]
+    public async Task<IActionResult> PurchaseMap(Guid gameId)
     {
-        var result = await _mediator.Send(new PurchaseMapWithOrbitCoinCommand(mapId));
+        var result = await _mediator.Send(new PurchaseMapWithOrbitCoinCommand(gameId));
         return StatusCode(result.GetHttpStatusCode(), result);
     }
 }

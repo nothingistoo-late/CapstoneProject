@@ -1,9 +1,9 @@
 using CapstoneProject.Application.Common.Models;
 using MediatR;
 
-namespace CapstoneProject.Application.Features.Gameplay.Commands.UpdateMapSolveScoreConfig;
+namespace CapstoneProject.Application.Features.Gameplay.Commands.UpdateGameSolveScoreConfig;
 
-public record UpdateMapSolveScoreConfigCommand(
+public record UpdateGameSolveScoreConfigCommand(
     int BaseScore,
     int TimeScore,
     int StepsScore,

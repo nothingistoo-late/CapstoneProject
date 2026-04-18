@@ -27,14 +27,14 @@ public class GetMostPlayedCreatedMapsLeaderboardQueryHandler : IRequestHandler<G
 
         var (dateFrom, dateTo) = LeaderboardPeriodHelper.GetRange(request.PeriodType);
 
-        var mapPlayAggQuery = _unitOfWork.Repository<UserMapPlayHistory>().GetQueryable()
+        var mapPlayAggQuery = _unitOfWork.Repository<UserGamePlayHistory>().GetQueryable()
             .Where(p => !p.IsDeleted
                         && p.StartTime >= dateFrom
                         && p.StartTime <= dateTo)
-            .GroupBy(p => p.MapId)
+            .GroupBy(p => p.GameId)
             .Select(g => new
             {
-                MapId = g.Key,
+                GameId = g.Key,
                 PlayCount = g.Count(),
                 UniquePlayerCount = g.Select(x => x.UserId).Distinct().Count(),
                 LastPlayedAt = g.Max(x => x.StartTime)
@@ -42,14 +42,14 @@ public class GetMostPlayedCreatedMapsLeaderboardQueryHandler : IRequestHandler<G
 
         var leaderboardQuery =
             from agg in mapPlayAggQuery
-            join map in _unitOfWork.Repository<Map>().GetQueryable() on agg.MapId equals map.Id
-            join creator in _unitOfWork.Repository<AppUser>().GetQueryable() on map.CreatedBy equals creator.Id
-            where !map.IsDeleted && map.CreatedBy.HasValue
-            orderby agg.PlayCount descending, agg.UniquePlayerCount descending, agg.LastPlayedAt descending, map.CreatedAt ascending
+            join game in _unitOfWork.Repository<Game>().GetQueryable() on agg.GameId equals game.Id
+            join creator in _unitOfWork.Repository<AppUser>().GetQueryable() on game.CreatedBy equals creator.Id
+            where !game.IsDeleted && game.CreatedBy.HasValue
+            orderby agg.PlayCount descending, agg.UniquePlayerCount descending, agg.LastPlayedAt descending, game.CreatedAt ascending
             select new
             {
-                map.Id,
-                map.Title,
+                game.Id,
+                game.Title,
                 CreatorUserId = creator.Id,
                 creator.FirstName,
                 creator.LastName,
@@ -67,7 +67,7 @@ public class GetMostPlayedCreatedMapsLeaderboardQueryHandler : IRequestHandler<G
         var items = rows.Select((x, idx) => new MostPlayedCreatedMapLeaderboardItemDto
         {
             Rank = skip + idx + 1,
-            MapId = x.Id,
+            GameId = x.Id,
             MapTitle = x.Title,
             CreatorUserId = x.CreatorUserId,
             CreatorDisplayName = $"{x.FirstName} {x.LastName}".Trim(),
@@ -77,6 +77,6 @@ public class GetMostPlayedCreatedMapsLeaderboardQueryHandler : IRequestHandler<G
         }).ToList();
 
         var result = PaginationResult<MostPlayedCreatedMapLeaderboardItemDto>.Success(items, pageNumber, pageSize, total);
-        return Result<PaginationResult<MostPlayedCreatedMapLeaderboardItemDto>>.Success(result, "Đã lấy bảng xếp hạng map được chơi nhiều nhất trong kỳ.");
+        return Result<PaginationResult<MostPlayedCreatedMapLeaderboardItemDto>>.Success(result, "Đã lấy bảng xếp hạng game được chơi nhiều nhất trong kỳ.");
     }
 }

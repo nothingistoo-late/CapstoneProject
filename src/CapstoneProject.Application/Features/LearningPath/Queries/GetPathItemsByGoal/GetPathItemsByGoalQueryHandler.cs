@@ -33,11 +33,11 @@ public class GetPathItemsByGoalQueryHandler : IRequestHandler<GetPathItemsByGoal
                 ConceptName = i.Concept != null ? i.Concept.Name : null,
                 ConceptDescription = i.Concept != null ? i.Concept.Description : null,
                 ConceptContentKey = i.Concept != null ? i.Concept.ContentKey : null,
-                MapId = i.MapId,
-                MapTitle = i.Map != null ? i.Map.Title : null,
-                MapDescription = i.Map != null ? i.Map.Description : null,
-                MapDifficulty = i.Map != null ? i.Map.Difficulty : null,
-                MapAvatarUrl = i.Map != null ? i.Map.AvatarUrl : null
+                GameId = i.GameId,
+                MapTitle = i.Game != null ? i.Game.Title : null,
+                MapDescription = i.Game != null ? i.Game.Description : null,
+                MapDifficulty = i.Game != null ? i.Game.Difficulty : null,
+                MapAvatarUrl = i.Game != null ? i.Game.AvatarUrl : null
             })
             .AsNoTracking()
             .ToListAsync(cancellationToken);

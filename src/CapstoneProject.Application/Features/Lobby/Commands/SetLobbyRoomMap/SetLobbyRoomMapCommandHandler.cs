@@ -5,7 +5,7 @@ using CapstoneProject.Application.Common.Models;
 using CapstoneProject.Application.Commons.DTOs.Lobby;
 using CapstoneProject.Application.Commons.Interfaces;
 using CapstoneProject.Application.Features.Lobby.Models;
-using CapstoneProject.Application.Features.Maps.Queries.MapExists;
+using CapstoneProject.Application.Features.Games.Queries.MapExists;
 
 namespace CapstoneProject.Application.Features.Lobby.Commands.SetLobbyRoomMap;
 
@@ -28,14 +28,14 @@ public class SetLobbyRoomMapCommandHandler : IRequestHandler<SetLobbyRoomMapComm
         if (!isValid || !userIdNullable.HasValue)
             return Result<LobbyRoomDetailResponse>.Failure("Yêu cầu xác thực.", ErrorCodeEnum.Unauthorized);
 
-        if (command.Request.MapId.HasValue && command.Request.MapId.Value != Guid.Empty)
+        if (command.Request.GameId.HasValue && command.Request.GameId.Value != Guid.Empty)
         {
-            var mapExists = await _mediator.Send(new MapExistsQuery(command.Request.MapId.Value), cancellationToken);
+            var mapExists = await _mediator.Send(new MapExistsQuery(command.Request.GameId.Value), cancellationToken);
             if (!mapExists.IsSuccess || mapExists.Data != true)
                 return Result<LobbyRoomDetailResponse>.Failure(mapExists.Message ?? "Bản đồ không được tìm thấy hoặc đã bị xóa.", ErrorCodeEnum.NotFound);
         }
 
-        var (success, errorMessage, room) = _roomManager.SetRoomMap(command.RoomId, userIdNullable.Value, command.Request.MapId);
+        var (success, errorMessage, room) = _roomManager.SetRoomMap(command.RoomId, userIdNullable.Value, command.Request.GameId);
         if (!success || room == null)
         {
             var code = errorMessage?.Contains("not found", StringComparison.OrdinalIgnoreCase) == true ? ErrorCodeEnum.NotFound : ErrorCodeEnum.ValidationFailed;
@@ -51,7 +51,7 @@ public class SetLobbyRoomMapCommandHandler : IRequestHandler<SetLobbyRoomMapComm
             MaxPlayers = room.MaxPlayers,
             Status = room.Status,
             IsLocked = room.IsLocked,
-            SelectedMapId = room.SelectedMapId,
+            SelectedGameId = room.SelectedGameId,
             Players = room.Players.Values.Select(p => new LobbyPlayerDto { PlayerId = p.PlayerId, IsReady = p.IsReady, IsHost = p.IsHost }).ToList()
         };
         return Result<LobbyRoomDetailResponse>.Success(response, "Bản đồ được cập nhật.");

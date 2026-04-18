@@ -34,7 +34,7 @@ public class GetDepositOrderQueryHandler : IRequestHandler<GetDepositOrderQuery,
                 r => r.Id == request.OrderId
                      && r.UserId == userId.Value
                      && r.PackageId == null
-                     && r.MapId == null,
+                     && r.GameId == null,
                 cancellationToken);
 
         if (record == null)

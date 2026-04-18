@@ -12,7 +12,7 @@ namespace CapstoneProject.Infrastructure.Migrations
         {
             migrationBuilder.AddColumn<string>(
                 name: "ReviewNote",
-                table: "Maps",
+                table: "Games",
                 type: "text",
                 nullable: true);
         }
@@ -22,7 +22,7 @@ namespace CapstoneProject.Infrastructure.Migrations
         {
             migrationBuilder.DropColumn(
                 name: "ReviewNote",
-                table: "Maps");
+                table: "Games");
         }
     }
 }

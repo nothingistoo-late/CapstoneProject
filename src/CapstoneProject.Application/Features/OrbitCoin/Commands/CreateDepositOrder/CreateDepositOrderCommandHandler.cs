@@ -58,7 +58,7 @@ public class CreateDepositOrderCommandHandler : IRequestHandler<CreateDepositOrd
         {
             UserId = userId,
             PackageId = null,
-            MapId = null,
+            GameId = null,
             PaymentId = payOSPayment.Id,
             Amount = request.AmountOrbitCoin,
             AmountVnd = amountVnd,

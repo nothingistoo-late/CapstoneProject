@@ -1,10 +1,10 @@
 using FluentValidation;
 
-namespace CapstoneProject.Application.Features.Gameplay.Commands.UpdateMapSolveScoreConfig;
+namespace CapstoneProject.Application.Features.Gameplay.Commands.UpdateGameSolveScoreConfig;
 
-public class UpdateMapSolveScoreConfigCommandValidator : AbstractValidator<UpdateMapSolveScoreConfigCommand>
+public class UpdateGameSolveScoreConfigCommandValidator : AbstractValidator<UpdateGameSolveScoreConfigCommand>
 {
-    public UpdateMapSolveScoreConfigCommandValidator()
+    public UpdateGameSolveScoreConfigCommandValidator()
     {
         RuleFor(x => x.BaseScore).GreaterThanOrEqualTo(0);
         RuleFor(x => x.TimeScore).GreaterThanOrEqualTo(0);

@@ -21,25 +21,25 @@ public class CapstoneProjectDbContext : IdentityDbContext<AppUser, AppRole, Guid
     public DbSet<MessageRead> MessageReads { get; set; }
 
     // QuackOrbit: Challenge Management
-    public DbSet<Map> Maps { get; set; }
-    public DbSet<MapDetail> MapDetails { get; set; }
+    public DbSet<Game> Games { get; set; }
+    public DbSet<GameDetail> GameDetails { get; set; }
     public DbSet<Hint> Hints { get; set; }
     public DbSet<Tag> Tags { get; set; }
-    public DbSet<MapTag> MapTags { get; set; }
-    public DbSet<MapMedia> MapMedias { get; set; }
+    public DbSet<GameTag> GameTags { get; set; }
+    public DbSet<GameMedia> GameMedias { get; set; }
 
     // QuackOrbit: Gameplay & Progress
     public DbSet<Submission> Submissions { get; set; }
     public DbSet<ExecutionsResult> ExecutionsResults { get; set; }
-    public DbSet<UserMapResult> UserMapResults { get; set; }
-    public DbSet<UserMapPlayHistory> UserMapPlayHistories { get; set; }
+    public DbSet<UserGameResult> UserGameResults { get; set; }
+    public DbSet<UserGamePlayHistory> UserGamePlayHistories { get; set; }
     public DbSet<Achievement> Achievements { get; set; }
     public DbSet<UserAchievement> UserAchievements { get; set; }
     public DbSet<XpTransaction> XpTransactions { get; set; }
     public DbSet<LevelThreshold> LevelThresholds { get; set; }
     public DbSet<XpPolicyConfig> XpPolicyConfigs { get; set; }
     public DbSet<XpSourceConfig> XpSourceConfigs { get; set; }
-    public DbSet<MapSolveScoreConfig> MapSolveScoreConfigs { get; set; }
+    public DbSet<GameSolveScoreConfig> GameSolveScoreConfigs { get; set; }
 
     // QuackOrbit: Marketplace
     public DbSet<Package> Packages { get; set; }
@@ -48,9 +48,9 @@ public class CapstoneProjectDbContext : IdentityDbContext<AppUser, AppRole, Guid
     public DbSet<PaymentRecord> PaymentRecords { get; set; }
 
     // QuackOrbit: Community & Safety
-    public DbSet<MapRating> MapRatings { get; set; }
-    public DbSet<MapReport> MapReports { get; set; }
-    public DbSet<MyMap> MyMaps { get; set; }
+    public DbSet<GameRating> GameRatings { get; set; }
+    public DbSet<GameReport> GameReports { get; set; }
+    public DbSet<MyGame> MyGames { get; set; }
     public DbSet<Complaint> Complaints { get; set; }
     public DbSet<ComplaintCategoryCatalog> ComplaintCategoryCatalogs { get; set; }
     public DbSet<ComplaintPolicyRuleConfig> ComplaintPolicyRuleConfigs { get; set; }

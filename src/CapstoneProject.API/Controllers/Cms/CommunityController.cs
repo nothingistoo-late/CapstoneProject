@@ -20,15 +20,15 @@ public class CmsCommunityController : ControllerBase
 
     public CmsCommunityController(IMediator mediator) => _mediator = mediator;
 
-    /// <summary>Get list of reports (paginated, filter by status, map, user, date).</summary>
+    /// <summary>Get list of reports (paginated, filter by status, game, user, date).</summary>
     /// <remarks>
-    /// Returns paginated reports. Filter by status, mapId, userId, date range. Admin/Moderator only.
+    /// Returns paginated reports. Filter by status, gameId, userId, date range. Admin/Moderator only.
     ///
     /// **Query:**
     /// - status (ReportStatusFilter?, optional): All, Pending, Reviewed, Resolved, Dismissed.
     /// - pageNumber (int, optional): Page number. Default 1.
     /// - pageSize (int, optional): Items per page. Default 20.
-    /// - mapId (Guid?, optional): Filter by map ID.
+    /// - gameId (Guid?, optional): Filter by game ID.
     /// - userId (Guid?, optional): Filter by reporter user ID.
     /// - dateFrom (DateTime?, optional): From date.
     /// - dateTo (DateTime?, optional): To date.
@@ -42,10 +42,10 @@ public class CmsCommunityController : ControllerBase
     [ProducesResponseType(typeof(Result<PaginationResult<ReportListItemDto>>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(Result), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(Result), StatusCodes.Status403Forbidden)]
-    [SwaggerOperation(Summary = "Danh sách báo cáo", Description = "Trả về danh sách báo cáo có phân trang. Query: status (Pending/Reviewed/Resolved/Dismissed), mapId, userId, dateFrom, dateTo, pageNumber, pageSize. Admin/Moderator only.", OperationId = "Cms_GetReports", Tags = new[] { "CMS - Community" })]
-    public async Task<IActionResult> GetReports([FromQuery] ReportStatusFilter? status, [FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 20, [FromQuery] Guid? mapId = null, [FromQuery] Guid? userId = null, [FromQuery] DateTime? dateFrom = null, [FromQuery] DateTime? dateTo = null)
+    [SwaggerOperation(Summary = "Danh sách báo cáo", Description = "Trả về danh sách báo cáo có phân trang. Query: status (Pending/Reviewed/Resolved/Dismissed), gameId, userId, dateFrom, dateTo, pageNumber, pageSize. Admin/Moderator only.", OperationId = "Cms_GetReports", Tags = new[] { "CMS - Community" })]
+    public async Task<IActionResult> GetReports([FromQuery] ReportStatusFilter? status, [FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 20, [FromQuery] Guid? gameId = null, [FromQuery] Guid? userId = null, [FromQuery] DateTime? dateFrom = null, [FromQuery] DateTime? dateTo = null)
     {
-        var result = await _mediator.Send(new GetReportsQuery(status, pageNumber, pageSize, mapId, userId, dateFrom, dateTo));
+        var result = await _mediator.Send(new GetReportsQuery(status, pageNumber, pageSize, gameId, userId, dateFrom, dateTo));
         return StatusCode(result.GetHttpStatusCode(), result);
     }
 

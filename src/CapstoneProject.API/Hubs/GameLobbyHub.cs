@@ -6,7 +6,7 @@ using CapstoneProject.Application.Commons.DTOs.Gameplay;
 using CapstoneProject.Application.Commons.Interfaces;
 using CapstoneProject.Application.Features.Gameplay.Commands.ValidateSolution;
 using CapstoneProject.Application.Features.Lobby.Models;
-using CapstoneProject.Application.Features.Maps.Queries.MapExists;
+using CapstoneProject.Application.Features.Games.Queries.MapExists;
 using CapstoneProject.Domain.Enums;
 
 namespace CapstoneProject.API.Hubs;
@@ -55,17 +55,17 @@ public class GameLobbyHub : Hub
         await base.OnDisconnectedAsync(exception);
     }
 
-    /// <summary>Create a new room. Creator becomes host and is added to the room. Optionally set map now or later via SetSelectedMap.</summary>
-    public async Task CreateRoom(int maxPlayers = 8, Guid? selectedMapId = null)
+    /// <summary>Create a new room. Creator becomes host and is added to the room. Optionally set game now or later via SetSelectedMap.</summary>
+    public async Task CreateRoom(int maxPlayers = 8, Guid? selectedGameId = null)
     {
         if (!TryGetUserId(out var userId))
         {
             await Clients.Caller.SendAsync("Error", "Not authenticated.");
             return;
         }
-        if (selectedMapId.HasValue && selectedMapId.Value != Guid.Empty)
+        if (selectedGameId.HasValue && selectedGameId.Value != Guid.Empty)
         {
-            var mapExists = await _mediator.Send(new MapExistsQuery(selectedMapId.Value));
+            var mapExists = await _mediator.Send(new MapExistsQuery(selectedGameId.Value));
             if (!mapExists.IsSuccess || mapExists.Data != true)
             {
                 await Clients.Caller.SendAsync("Error", mapExists.Message ?? "Bản đồ không được tìm thấy hoặc đã bị xóa.");
@@ -79,7 +79,7 @@ public class GameLobbyHub : Hub
             await Clients.Caller.SendAsync("AlreadyInRoom", ToRoomDto(existingRoom));
             return;
         }
-        var room = _roomManager.CreateRoom(userId, Context.ConnectionId, maxPlayers, selectedMapId);
+        var room = _roomManager.CreateRoom(userId, Context.ConnectionId, maxPlayers, selectedGameId);
         if (room == null)
         {
             await Clients.Caller.SendAsync("Error", "Không tạo được phòng.");
@@ -206,9 +206,9 @@ public class GameLobbyHub : Hub
             return;
         }
         var room = _roomManager.GetRoomById(roomId);
-        if (room?.SelectedMapId is { } selectedMapId && selectedMapId != Guid.Empty)
+        if (room?.SelectedGameId is { } selectedGameId && selectedGameId != Guid.Empty)
         {
-            var mapExists = await _mediator.Send(new MapExistsQuery(selectedMapId));
+            var mapExists = await _mediator.Send(new MapExistsQuery(selectedGameId));
             if (!mapExists.IsSuccess || mapExists.Data != true)
             {
                 await Clients.Caller.SendAsync("Error", mapExists.Message ?? "Bản đồ không được tìm thấy hoặc đã bị xóa. Chọn bản đồ khác.");
@@ -229,7 +229,7 @@ public class GameLobbyHub : Hub
         {
             gameInstance.RoomId,
             gameInstance.RoomCode,
-            gameInstance.MapId,
+            gameInstance.GameId,
             Players = gameInstance.Players.Select(p => new { p.PlayerId, p.IsReady, p.IsHost }).ToList(),
             gameInstance.TurnOrder,
             GameState = state != null ? new { state.CurrentTurnIndex, state.CurrentPlayerId, state.RoundNumber } : null,
@@ -313,24 +313,24 @@ public class GameLobbyHub : Hub
         _logger.LogInformation("Game ended in room {RoomId}", roomId);
     }
 
-    /// <summary>Set or change the selected map for the room. Host only; room must be Waiting.</summary>
-    public async Task SetSelectedMap(Guid roomId, Guid? mapId)
+    /// <summary>Set or change the selected game for the room. Host only; room must be Waiting.</summary>
+    public async Task SetSelectedMap(Guid roomId, Guid? gameId)
     {
         if (!TryGetUserId(out var userId))
         {
             await Clients.Caller.SendAsync("Error", "Not authenticated.");
             return;
         }
-        if (mapId.HasValue && mapId.Value != Guid.Empty)
+        if (gameId.HasValue && gameId.Value != Guid.Empty)
         {
-            var mapExists = await _mediator.Send(new MapExistsQuery(mapId.Value));
+            var mapExists = await _mediator.Send(new MapExistsQuery(gameId.Value));
             if (!mapExists.IsSuccess || mapExists.Data != true)
             {
                 await Clients.Caller.SendAsync("Error", mapExists.Message ?? "Bản đồ không được tìm thấy hoặc đã bị xóa.");
                 return;
             }
         }
-        var (success, errorMessage, room) = _roomManager.SetRoomMap(roomId, userId, mapId);
+        var (success, errorMessage, room) = _roomManager.SetRoomMap(roomId, userId, gameId);
         if (!success || room == null)
         {
             await Clients.Caller.SendAsync("Error", errorMessage ?? "Không thể thiết lập bản đồ.");
@@ -341,7 +341,7 @@ public class GameLobbyHub : Hub
         await BroadcastLobbyRoomList();
     }
 
-    /// <summary>Submit solution for the current game. Server validates with room map, records score; when all have submitted, broadcasts RankingUpdated to the room.</summary>
+    /// <summary>Submit solution for the current game. Server validates with room game, records score; when all have submitted, broadcasts RankingUpdated to the room.</summary>
     public async Task SubmitSolution(
         Guid roomId,
         string? astSpec,
@@ -377,16 +377,16 @@ public class GameLobbyHub : Hub
         }
 
         var gameInstance = _roomManager.GetGameInstance(roomId);
-        if (gameInstance == null || !gameInstance.MapId.HasValue)
+        if (gameInstance == null || !gameInstance.GameId.HasValue)
         {
-            await Clients.Caller.SendAsync("Error", "No map for this game.");
+            await Clients.Caller.SendAsync("Error", "No game for this game.");
             return;
         }
 
         var validateRequest = new ValidateSolutionRequest
         {
-            MapId = gameInstance.MapId.Value,
-            MapDetailId = mapDetailId,
+            GameId = gameInstance.GameId.Value,
+            GameDetailId = mapDetailId,
             Language = language ?? "Blockly",
             AstSpec = astSpec,
             BytecodeSpec = bytecodeSpec,
@@ -466,7 +466,7 @@ public class GameLobbyHub : Hub
             r.MaxPlayers,
             Status = r.Status.ToString(),
             r.IsLocked,
-            r.SelectedMapId
+            r.SelectedGameId
         }).ToList();
         await Clients.Client(connectionId).SendAsync("LobbyRoomList", list);
     }
@@ -482,7 +482,7 @@ public class GameLobbyHub : Hub
             r.MaxPlayers,
             Status = r.Status.ToString(),
             r.IsLocked,
-            r.SelectedMapId
+            r.SelectedGameId
         }).ToList();
         await Clients.Group(LobbyGroupName).SendAsync("LobbyRoomList", list);
     }
@@ -504,7 +504,7 @@ public class GameLobbyHub : Hub
             room.MaxPlayers,
             Status = room.Status.ToString(),
             room.IsLocked,
-            room.SelectedMapId,
+            room.SelectedGameId,
             Players = room.Players.Values.Select(p => new { p.PlayerId, p.IsReady, p.IsHost }).ToList()
         };
     }

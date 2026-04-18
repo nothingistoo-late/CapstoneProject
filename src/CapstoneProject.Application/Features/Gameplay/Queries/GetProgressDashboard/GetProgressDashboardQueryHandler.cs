@@ -34,15 +34,15 @@ public class GetProgressDashboardQueryHandler : IRequestHandler<GetProgressDashb
             return Result<ProgressDashboardDto>.Failure("Không tìm thấy người dùng.", ErrorCodeEnum.NotFound);
         var totalXp = user.CurrentXp;
 
-        var umrRepo = _unitOfWork.Repository<UserMapResult>();
-        var mapRepo = _unitOfWork.Repository<Map>();
-        var mapIdsTouched = await umrRepo.GetQueryable()
+        var umrRepo = _unitOfWork.Repository<UserGameResult>();
+        var mapRepo = _unitOfWork.Repository<Game>();
+        var gameIdsTouched = await umrRepo.GetQueryable()
             .Where(u => u.UserId == userId && !u.IsDeleted)
-            .Select(u => u.MapId)
+            .Select(u => u.GameId)
             .Distinct()
             .ToListAsync(cancellationToken);
         var completed = 0;
-        foreach (var mid in mapIdsTouched)
+        foreach (var mid in gameIdsTouched)
         {
             if (await MapProgressHelper.MapHasAllLevelsCompletedAsync(_unitOfWork, userId, mid, minStars: 1, cancellationToken))
                 completed++;
@@ -70,10 +70,10 @@ public class GetProgressDashboardQueryHandler : IRequestHandler<GetProgressDashb
             .Where(u => u.UserId == userId && u.LastPlayedAt != null)
             .OrderByDescending(u => u.LastPlayedAt)
             .Take(10)
-            .Join(mapRepo.GetQueryable(), u => u.MapId, m => m.Id, (u, m) => new { u, m })
+            .Join(mapRepo.GetQueryable(), u => u.GameId, m => m.Id, (u, m) => new { u, m })
             .Select(x => new RecentActivityDto
             {
-                MapId = x.u.MapId,
+                GameId = x.u.GameId,
                 MapTitle = x.m.Title,
                 Stars = x.u.BestStars,
                 At = x.u.LastPlayedAt ?? DateTime.MinValue

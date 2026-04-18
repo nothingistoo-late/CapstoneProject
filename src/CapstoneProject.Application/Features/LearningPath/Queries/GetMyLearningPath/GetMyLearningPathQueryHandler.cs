@@ -45,7 +45,7 @@ public class GetMyLearningPathQueryHandler : IRequestHandler<GetMyLearningPathQu
         var pathItems = await _unitOfWork.Repository<LearningPathItem>().GetQueryable()
             .Where(i => i.LearningGoalId == goal.Id && !i.IsDeleted)
             .Include(i => i.Concept)
-            .Include(i => i.Map)
+            .Include(i => i.Game)
             .OrderBy(i => i.SortOrder)
             .ToListAsync(cancellationToken);
 
@@ -54,20 +54,20 @@ public class GetMyLearningPathQueryHandler : IRequestHandler<GetMyLearningPathQu
             .Select(p => p.ConceptId)
             .ToListAsync(cancellationToken);
 
-        var completedMapIds = await _unitOfWork.Repository<UserMapResult>().GetQueryable()
+        var completedGameIds = await _unitOfWork.Repository<UserGameResult>().GetQueryable()
             .Where(r => r.UserId == userId.Value && !r.IsDeleted && r.BestStars >= 1)
-            .Select(r => r.MapId)
+            .Select(r => r.GameId)
             .ToListAsync(cancellationToken);
 
         var completedConceptSet = conceptProgress.ToHashSet();
-        var completedMapSet = completedMapIds.ToHashSet();
+        var completedMapSet = completedGameIds.ToHashSet();
 
         bool allPreviousCompleted = true;
         foreach (var item in pathItems)
         {
             bool completed = item.ItemType == LearningPathItemTypeEnum.Concept
                 ? item.ConceptId.HasValue && completedConceptSet.Contains(item.ConceptId.Value)
-                : item.MapId.HasValue && completedMapSet.Contains(item.MapId.Value);
+                : item.GameId.HasValue && completedMapSet.Contains(item.GameId.Value);
 
             bool unlocked = allPreviousCompleted;
             if (!completed)
@@ -75,10 +75,10 @@ public class GetMyLearningPathQueryHandler : IRequestHandler<GetMyLearningPathQu
 
             int? bestStars = null;
             DateTime? completedAt = null;
-            if (item.ItemType == LearningPathItemTypeEnum.Map && item.MapId.HasValue)
+            if (item.ItemType == LearningPathItemTypeEnum.Game && item.GameId.HasValue)
             {
-                var umr = await _unitOfWork.Repository<UserMapResult>().GetQueryable()
-                    .Where(r => r.UserId == userId.Value && r.MapId == item.MapId.Value && !r.IsDeleted)
+                var umr = await _unitOfWork.Repository<UserGameResult>().GetQueryable()
+                    .Where(r => r.UserId == userId.Value && r.GameId == item.GameId.Value && !r.IsDeleted)
                     .Select(r => new { r.BestStars, r.LastPlayedAt })
                     .FirstOrDefaultAsync(cancellationToken);
                 if (umr != null)
@@ -105,11 +105,11 @@ public class GetMyLearningPathQueryHandler : IRequestHandler<GetMyLearningPathQu
                 ConceptName = item.Concept?.Name,
                 ConceptDescription = item.Concept?.Description,
                 ConceptContentKey = item.Concept?.ContentKey,
-                MapId = item.MapId,
-                MapTitle = item.Map?.Title,
-                MapDescription = item.Map?.Description,
-                MapDifficulty = item.Map?.Difficulty,
-                MapAvatarUrl = item.Map?.AvatarUrl,
+                GameId = item.GameId,
+                MapTitle = item.Game?.Title,
+                MapDescription = item.Game?.Description,
+                MapDifficulty = item.Game?.Difficulty,
+                MapAvatarUrl = item.Game?.AvatarUrl,
                 IsCompleted = completed,
                 IsUnlocked = unlocked,
                 BestStars = bestStars,

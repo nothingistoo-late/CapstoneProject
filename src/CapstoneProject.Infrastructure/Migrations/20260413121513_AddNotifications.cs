@@ -140,7 +140,7 @@ namespace CapstoneProject.Infrastructure.Migrations
                     DeletedBy = table.Column<Guid>(type: "uuid", nullable: true),
                     EndedAt = table.Column<DateTime>(type: "timestamp without time zone", nullable: true),
                     IsDeleted = table.Column<bool>(type: "boolean", nullable: false, defaultValue: false),
-                    MapId = table.Column<Guid>(type: "uuid", nullable: false),
+                    GameId = table.Column<Guid>(type: "uuid", nullable: false),
                     RulesSpec = table.Column<string>(type: "text", nullable: true),
                     StartedAt = table.Column<DateTime>(type: "timestamp without time zone", nullable: true),
                     Status = table.Column<int>(type: "integer", nullable: false),
@@ -258,9 +258,9 @@ namespace CapstoneProject.Infrastructure.Migrations
                 });
 
             migrationBuilder.CreateIndex(
-                name: "IX_Matches_MapId",
+                name: "IX_Matches_GameId",
                 table: "Matches",
-                column: "MapId");
+                column: "GameId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_RoomParticipants_RoomId_UserId",

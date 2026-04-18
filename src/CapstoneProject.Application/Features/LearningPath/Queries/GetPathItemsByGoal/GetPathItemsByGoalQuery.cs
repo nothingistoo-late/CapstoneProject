@@ -7,13 +7,13 @@ namespace CapstoneProject.Application.Features.LearningPath.Queries.GetPathItems
 public class PathItemPreviewDto
 {
     public Guid ItemId { get; set; }
-    public string ItemType { get; set; } = string.Empty; // Concept | Map
+    public string ItemType { get; set; } = string.Empty; // Concept | Game
     public int SortOrder { get; set; }
     public Guid? ConceptId { get; set; }
     public string? ConceptName { get; set; }
     public string? ConceptDescription { get; set; }
     public string? ConceptContentKey { get; set; }
-    public Guid? MapId { get; set; }
+    public Guid? GameId { get; set; }
     public string? MapTitle { get; set; }
     public string? MapDescription { get; set; }
     public int? MapDifficulty { get; set; }

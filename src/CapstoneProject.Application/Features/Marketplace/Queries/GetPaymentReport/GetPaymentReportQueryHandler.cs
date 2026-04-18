@@ -41,15 +41,63 @@ public class GetPaymentReportQueryHandler : IRequestHandler<GetPaymentReportQuer
         var groupBy = request.GroupBy ?? "Day";
         List<PaymentReportItemDto> items = groupBy.ToLowerInvariant() switch
         {
-            "year" => await query.GroupBy(pr => pr.PaidAt!.Value.Year).Select(g => new PaymentReportItemDto { Period = g.Key.ToString(), Amount = g.Sum(pr => pr.Amount), AmountVnd = g.Sum(pr => pr.AmountVnd ?? 0), Count = g.Count() }).OrderBy(x => x.Period).ToListAsync(cancellationToken),
-            "month" => await query.GroupBy(pr => new { pr.PaidAt!.Value.Year, pr.PaidAt.Value.Month }).Select(g => new PaymentReportItemDto { Period = $"{g.Key.Year}-{g.Key.Month:D2}", Amount = g.Sum(pr => pr.Amount), AmountVnd = g.Sum(pr => pr.AmountVnd ?? 0), Count = g.Count() }).OrderBy(x => x.Period).ToListAsync(cancellationToken),
-            _ => await query.GroupBy(pr => pr.PaidAt!.Value.Date).Select(g => new PaymentReportItemDto { Period = g.Key.ToString("yyyy-MM-dd"), Amount = g.Sum(pr => pr.Amount), AmountVnd = g.Sum(pr => pr.AmountVnd ?? 0), Count = g.Count() }).OrderBy(x => x.Period).ToListAsync(cancellationToken)
+            "year" => await BuildYearItemsAsync(query, cancellationToken),
+            "month" => await BuildMonthItemsAsync(query, cancellationToken),
+            _ => await BuildDayItemsAsync(query, cancellationToken)
         };
 
         return Result<PaymentReportDto>.Success(new PaymentReportDto { TotalAmount = totalAmount, TotalAmountVnd = totalAmountVnd, TotalCount = totalCount, Items = items }, "Đã lấy báo cáo thanh toán.");
     }
+
+    private static async Task<List<PaymentReportItemDto>> BuildYearItemsAsync(IQueryable<PaymentRecord> query, CancellationToken cancellationToken)
+    {
+        var rows = await query
+            .GroupBy(pr => pr.PaidAt!.Value.Year)
+            .Select(g => new { Year = g.Key, Amount = g.Sum(pr => pr.Amount), AmountVnd = g.Sum(pr => pr.AmountVnd ?? 0), Count = g.Count() })
+            .OrderBy(x => x.Year)
+            .ToListAsync(cancellationToken);
+
+        return rows.ConvertAll(x => new PaymentReportItemDto
+        {
+            Period = x.Year.ToString(),
+            Amount = x.Amount,
+            AmountVnd = x.AmountVnd,
+            Count = x.Count
+        });
+    }
+
+    private static async Task<List<PaymentReportItemDto>> BuildMonthItemsAsync(IQueryable<PaymentRecord> query, CancellationToken cancellationToken)
+    {
+        var rows = await query
+            .GroupBy(pr => new { pr.PaidAt!.Value.Year, pr.PaidAt.Value.Month })
+            .Select(g => new { g.Key.Year, g.Key.Month, Amount = g.Sum(pr => pr.Amount), AmountVnd = g.Sum(pr => pr.AmountVnd ?? 0), Count = g.Count() })
+            .OrderBy(x => x.Year).ThenBy(x => x.Month)
+            .ToListAsync(cancellationToken);
+
+        return rows.ConvertAll(x => new PaymentReportItemDto
+        {
+            Period = $"{x.Year}-{x.Month:D2}",
+            Amount = x.Amount,
+            AmountVnd = x.AmountVnd,
+            Count = x.Count
+        });
+    }
+
+    private static async Task<List<PaymentReportItemDto>> BuildDayItemsAsync(IQueryable<PaymentRecord> query, CancellationToken cancellationToken)
+    {
+        var rows = await query
+            .GroupBy(pr => pr.PaidAt!.Value.Date)
+            .Select(g => new { Date = g.Key, Amount = g.Sum(pr => pr.Amount), AmountVnd = g.Sum(pr => pr.AmountVnd ?? 0), Count = g.Count() })
+            .OrderBy(x => x.Date)
+            .ToListAsync(cancellationToken);
+
+        return rows.ConvertAll(x => new PaymentReportItemDto
+        {
+            Period = x.Date.ToString("yyyy-MM-dd"),
+            Amount = x.Amount,
+            AmountVnd = x.AmountVnd,
+            Count = x.Count
+        });
+    }
 }
-
-
-
 

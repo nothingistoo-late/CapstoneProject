@@ -13,46 +13,46 @@ namespace CapstoneProject.Infrastructure.Migrations
         {
             migrationBuilder.AddColumn<bool>(
                 name: "IsActiveVersion",
-                table: "Maps",
+                table: "Games",
                 type: "boolean",
                 nullable: false,
                 defaultValue: true);
 
             migrationBuilder.AddColumn<Guid>(
-                name: "RootMapId",
-                table: "Maps",
+                name: "RootGameId",
+                table: "Games",
                 type: "uuid",
                 nullable: true);
 
             migrationBuilder.CreateIndex(
-                name: "IX_Maps_RootMapId",
-                table: "Maps",
-                column: "RootMapId");
+                name: "IX_Maps_RootGameId",
+                table: "Games",
+                column: "RootGameId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Maps_RootMapId_IsActiveVersion",
-                table: "Maps",
-                columns: new[] { "RootMapId", "IsActiveVersion" });
+                name: "IX_Maps_RootGameId_IsActiveVersion",
+                table: "Games",
+                columns: new[] { "RootGameId", "IsActiveVersion" });
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropIndex(
-                name: "IX_Maps_RootMapId",
-                table: "Maps");
+                name: "IX_Maps_RootGameId",
+                table: "Games");
 
             migrationBuilder.DropIndex(
-                name: "IX_Maps_RootMapId_IsActiveVersion",
-                table: "Maps");
+                name: "IX_Maps_RootGameId_IsActiveVersion",
+                table: "Games");
 
             migrationBuilder.DropColumn(
                 name: "IsActiveVersion",
-                table: "Maps");
+                table: "Games");
 
             migrationBuilder.DropColumn(
-                name: "RootMapId",
-                table: "Maps");
+                name: "RootGameId",
+                table: "Games");
         }
     }
 }

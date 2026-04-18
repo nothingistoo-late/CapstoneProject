@@ -42,7 +42,7 @@ public class GetRecommendationsQueryHandler : IRequestHandler<GetRecommendations
 
         var learningGoalId = userGoal;
 
-        // Load learning path items (concepts + maps) for this goal
+        // Load learning path items (concepts + games) for this goal
         var pathItems = await _unitOfWork.Repository<LearningPathItem>().GetQueryable()
             .Where(i => i.LearningGoalId == learningGoalId && !i.IsDeleted)
             .OrderBy(i => i.SortOrder)
@@ -50,7 +50,7 @@ public class GetRecommendationsQueryHandler : IRequestHandler<GetRecommendations
             {
                 i.ItemType,
                 i.ConceptId,
-                i.MapId,
+                i.GameId,
                 i.SortOrder
             })
             .AsNoTracking()
@@ -63,13 +63,13 @@ public class GetRecommendationsQueryHandler : IRequestHandler<GetRecommendations
             .OrderBy(x => x.SortOrder)
             .ToList();
 
-        var mapIds = pathItems
-            .Where(i => i.ItemType == LearningPathItemTypeEnum.Map && i.MapId.HasValue)
-            .Select(i => i.MapId!.Value)
+        var gameIds = pathItems
+            .Where(i => i.ItemType == LearningPathItemTypeEnum.Game && i.GameId.HasValue)
+            .Select(i => i.GameId!.Value)
             .Distinct()
             .ToList();
 
-        if (mapIds.Count == 0 || conceptItems.Count == 0)
+        if (gameIds.Count == 0 || conceptItems.Count == 0)
             return Result<RecommendationResultDto>.Success(new RecommendationResultDto(), "Đã truy xuất thành công");
 
         var firstConceptId = conceptItems.First().ConceptId;
@@ -113,8 +113,8 @@ public class GetRecommendationsQueryHandler : IRequestHandler<GetRecommendations
             }
             : null;
 
-        // MapId -> ConceptId mapping using path order:
-        // a map belongs to the latest concept before it in the path
+        // GameId -> ConceptId mapping using path order:
+        // a game belongs to the latest concept before it in the path
         var mapToConceptId = new Dictionary<Guid, Guid?>();
         Guid? lastConceptId = null;
         foreach (var item in pathItems)
@@ -123,32 +123,32 @@ public class GetRecommendationsQueryHandler : IRequestHandler<GetRecommendations
             {
                 lastConceptId = item.ConceptId.Value;
             }
-            else if (item.ItemType == LearningPathItemTypeEnum.Map && item.MapId.HasValue)
+            else if (item.ItemType == LearningPathItemTypeEnum.Game && item.GameId.HasValue)
             {
-                mapToConceptId[item.MapId.Value] = lastConceptId ?? firstConceptId;
+                mapToConceptId[item.GameId.Value] = lastConceptId ?? firstConceptId;
             }
         }
 
-        // Preload map metadata
-        var maps = await _unitOfWork.Repository<Map>().GetQueryable()
-            .Where(m => mapIds.Contains(m.Id) && !m.IsDeleted && m.Status == EntityStatusEnum.Active)
+        // Preload game metadata
+        var games = await _unitOfWork.Repository<Game>().GetQueryable()
+            .Where(m => gameIds.Contains(m.Id) && !m.IsDeleted && m.Status == EntityStatusEnum.Active)
             .Select(m => new { m.Id, m.Title, m.Difficulty })
             .AsNoTracking()
             .ToListAsync(cancellationToken);
-        var mapById = maps.ToDictionary(m => m.Id, m => m);
+        var mapById = games.ToDictionary(m => m.Id, m => m);
         if (mapById.Count == 0)
             return Result<RecommendationResultDto>.Success(new RecommendationResultDto(), "Đã truy xuất thành công");
 
-        // Preload user play history for these maps (single batch)
+        // Preload user play history for these games (single batch)
         var nowUtc = CapstoneProject.Domain.Common.VietnamDateTime.DbNow;
         var recentFrom = nowUtc.AddDays(-7);
-        var relevantMapIds = mapById.Keys.ToList();
+        var relevantGameIds = mapById.Keys.ToList();
 
-        var histories = await _unitOfWork.Repository<UserMapPlayHistory>().GetQueryable()
-            .Where(h => h.UserId == userIdValue && relevantMapIds.Contains(h.MapId) && !h.IsDeleted)
+        var histories = await _unitOfWork.Repository<UserGamePlayHistory>().GetQueryable()
+            .Where(h => h.UserId == userIdValue && relevantGameIds.Contains(h.GameId) && !h.IsDeleted)
             .Select(h => new
             {
-                h.MapId,
+                h.GameId,
                 h.IsCompleted,
                 h.StartTime
             })
@@ -161,21 +161,21 @@ public class GetRecommendationsQueryHandler : IRequestHandler<GetRecommendations
 
         foreach (var h in histories)
         {
-            mapAttempts[h.MapId] = mapAttempts.TryGetValue(h.MapId, out var a) ? a + 1 : 1;
+            mapAttempts[h.GameId] = mapAttempts.TryGetValue(h.GameId, out var a) ? a + 1 : 1;
 
             if (!h.IsCompleted)
-                mapFailCount[h.MapId] = mapFailCount.TryGetValue(h.MapId, out var f) ? f + 1 : 1;
+                mapFailCount[h.GameId] = mapFailCount.TryGetValue(h.GameId, out var f) ? f + 1 : 1;
 
             if (h.StartTime >= recentFrom)
-                mapRecentCount[h.MapId] = mapRecentCount.TryGetValue(h.MapId, out var r) ? r + 1 : 1;
+                mapRecentCount[h.GameId] = mapRecentCount.TryGetValue(h.GameId, out var r) ? r + 1 : 1;
         }
 
-        // Concept failure aggregation from map failures
+        // Concept failure aggregation from game failures
         var conceptFailCount = new Dictionary<Guid, int>();
-        foreach (var mapId in mapById.Keys)
+        foreach (var gameId in mapById.Keys)
         {
-            var failCount = mapFailCount.TryGetValue(mapId, out var fc) ? fc : 0;
-            var conceptId = mapToConceptId.TryGetValue(mapId, out var cId) ? cId : null;
+            var failCount = mapFailCount.TryGetValue(gameId, out var fc) ? fc : 0;
+            var conceptId = mapToConceptId.TryGetValue(gameId, out var cId) ? cId : null;
             if (!conceptId.HasValue) continue;
 
             conceptFailCount[conceptId.Value] = conceptFailCount.TryGetValue(conceptId.Value, out var prev)
@@ -196,7 +196,7 @@ public class GetRecommendationsQueryHandler : IRequestHandler<GetRecommendations
             }
         }
 
-        // Build candidate map sets
+        // Build candidate game sets
         var reviewMapsIds = mapById.Keys
             .Where(mid => (mapFailCount.TryGetValue(mid, out var fc) ? fc : 0) >= 3)
             .ToHashSet();
@@ -221,34 +221,34 @@ public class GetRecommendationsQueryHandler : IRequestHandler<GetRecommendations
         var maxDifficulty = attemptedDifficulty.Count > 0 ? attemptedDifficulty.Max() : 0;
         var difficultyRange = Math.Max(1, maxDifficulty - minDifficulty);
 
-        double GetSuccessRate(Guid mapId)
+        double GetSuccessRate(Guid gameId)
         {
-            var attempts = mapAttempts.TryGetValue(mapId, out var a) ? a : 0;
-            var fails = mapFailCount.TryGetValue(mapId, out var f) ? f : 0;
+            var attempts = mapAttempts.TryGetValue(gameId, out var a) ? a : 0;
+            var fails = mapFailCount.TryGetValue(gameId, out var f) ? f : 0;
             return attempts > 0 ? (double)(attempts - fails) / attempts : 0;
         }
 
-        double GetRecentActivityScore(Guid mapId)
+        double GetRecentActivityScore(Guid gameId)
         {
-            var recentCount = mapRecentCount.TryGetValue(mapId, out var rc) ? rc : 0;
+            var recentCount = mapRecentCount.TryGetValue(gameId, out var rc) ? rc : 0;
             // Normalize: assume 3 recent attempts ~= 1.0
             return Math.Clamp(recentCount / 3.0, 0, 1);
         }
 
-        RecommendationMapDto CreateMapDto(Guid mapId, double? score = null)
+        RecommendationMapDto CreateMapDto(Guid gameId, double? score = null)
         {
-            var m = mapById[mapId];
-            var conceptId = mapToConceptId.TryGetValue(mapId, out var cId) ? cId : null;
+            var m = mapById[gameId];
+            var conceptId = mapToConceptId.TryGetValue(gameId, out var cId) ? cId : null;
             conceptById.TryGetValue(conceptId ?? Guid.Empty, out var c);
             var conceptName = conceptId.HasValue ? (conceptById.TryGetValue(conceptId.Value, out var cc) ? cc.Name : null) : null;
 
-            var attempts = mapAttempts.TryGetValue(mapId, out var a) ? a : 0;
-            var fails = mapFailCount.TryGetValue(mapId, out var f) ? f : 0;
-            var successRate = GetSuccessRate(mapId);
+            var attempts = mapAttempts.TryGetValue(gameId, out var a) ? a : 0;
+            var fails = mapFailCount.TryGetValue(gameId, out var f) ? f : 0;
+            var successRate = GetSuccessRate(gameId);
 
             return new RecommendationMapDto
             {
-                MapId = mapId,
+                GameId = gameId,
                 Title = m.Title,
                 Difficulty = m.Difficulty,
                 ConceptId = conceptId,
@@ -260,7 +260,7 @@ public class GetRecommendationsQueryHandler : IRequestHandler<GetRecommendations
             };
         }
 
-        // Review maps list (fail >= 3)
+        // Review games list (fail >= 3)
         var reviewMaps = reviewMapsIds
             .Select(mid => new { mid, Fail = mapFailCount.TryGetValue(mid, out var f) ? f : 0, Attempts = mapAttempts.TryGetValue(mid, out var a) ? a : 0 })
             .OrderByDescending(x => x.Fail)
@@ -269,12 +269,12 @@ public class GetRecommendationsQueryHandler : IRequestHandler<GetRecommendations
             .Select(x => CreateMapDto(x.mid))
             .ToList();
 
-        // Recommended maps: scoring on union(next + suggestedPractice)
-        var candidateMapIds = new HashSet<Guid>(nextMaps);
-        foreach (var id in suggestedPracticeMaps) candidateMapIds.Add(id);
+        // Recommended games: scoring on union(next + suggestedPractice)
+        var candidateGameIds = new HashSet<Guid>(nextMaps);
+        foreach (var id in suggestedPracticeMaps) candidateGameIds.Add(id);
 
         var desiredConceptId = weakConceptId ?? nextConceptId;
-        var scoredCandidates = candidateMapIds
+        var scoredCandidates = candidateGameIds
             .Select(mid =>
             {
                 var conceptId = mapToConceptId.TryGetValue(mid, out var cId) ? cId : null;
@@ -306,7 +306,7 @@ public class GetRecommendationsQueryHandler : IRequestHandler<GetRecommendations
 
         var recommendedMaps = scoredCandidates.Select(x => CreateMapDto(x.mid, x.score)).ToList();
 
-        // Suggested practice maps list (weak concept)
+        // Suggested practice games list (weak concept)
         var suggestedPracticeList = suggestedPracticeMaps
             .Select(mid => new
             {

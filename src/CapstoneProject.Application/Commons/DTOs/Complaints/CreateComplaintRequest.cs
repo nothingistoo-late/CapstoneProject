@@ -26,7 +26,7 @@ public class CreateComplaintRequest
 public class CreateComplaintContextRequest
 {
     public Guid? PaymentRecordId { get; set; }
-    public Guid? MapId { get; set; }
+    public Guid? GameId { get; set; }
     public Guid? PackageId { get; set; }
     public Guid? SubmissionId { get; set; }
     public Guid? PlayHistoryId { get; set; }

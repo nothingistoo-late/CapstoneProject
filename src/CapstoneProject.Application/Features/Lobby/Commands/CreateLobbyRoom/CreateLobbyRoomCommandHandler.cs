@@ -5,7 +5,7 @@ using CapstoneProject.Application.Common.Models;
 using CapstoneProject.Application.Commons.DTOs.Lobby;
 using CapstoneProject.Application.Commons.Interfaces;
 using CapstoneProject.Application.Features.Lobby.Models;
-using CapstoneProject.Application.Features.Maps.Queries.MapExists;
+using CapstoneProject.Application.Features.Games.Queries.MapExists;
 
 namespace CapstoneProject.Application.Features.Lobby.Commands.CreateLobbyRoom;
 
@@ -29,10 +29,10 @@ public class CreateLobbyRoomCommandHandler : IRequestHandler<CreateLobbyRoomComm
             return Result<CreateLobbyRoomResponse>.Failure("Yêu cầu xác thực.", ErrorCodeEnum.Unauthorized);
 
         var maxPlayers = command.Request?.MaxPlayers ?? 8;
-        var mapId = command.Request?.SelectedMapId;
-        if (mapId.HasValue && mapId.Value != Guid.Empty)
+        var gameId = command.Request?.SelectedGameId;
+        if (gameId.HasValue && gameId.Value != Guid.Empty)
         {
-            var mapExists = await _mediator.Send(new MapExistsQuery(mapId.Value), cancellationToken);
+            var mapExists = await _mediator.Send(new MapExistsQuery(gameId.Value), cancellationToken);
             if (!mapExists.IsSuccess || mapExists.Data != true)
                 return Result<CreateLobbyRoomResponse>.Failure(mapExists.Message ?? "Bản đồ không được tìm thấy hoặc đã bị xóa.", ErrorCodeEnum.NotFound);
         }
@@ -46,7 +46,7 @@ public class CreateLobbyRoomCommandHandler : IRequestHandler<CreateLobbyRoomComm
                 RoomId = existingRoom.RoomId,
                 RoomCode = existingRoom.RoomCode,
                 MaxPlayers = existingRoom.MaxPlayers,
-                SelectedMapId = existingRoom.SelectedMapId
+                SelectedGameId = existingRoom.SelectedGameId
             };
             return Result<CreateLobbyRoomResponse>.Failure(
                 "Không thể tạo phòng. Bạn đã ở trong một phòng rồi. Vui lòng rời phòng hiện tại trước khi tạo phòng mới.",
@@ -54,7 +54,7 @@ public class CreateLobbyRoomCommandHandler : IRequestHandler<CreateLobbyRoomComm
                 currentRoomInfo);
         }
 
-        var room = _roomManager.CreateRoom(userId, "", maxPlayers, mapId);
+        var room = _roomManager.CreateRoom(userId, "", maxPlayers, gameId);
         if (room == null)
             return Result<CreateLobbyRoomResponse>.Failure("Không tạo được phòng.", ErrorCodeEnum.InvalidOperation);
 
@@ -63,7 +63,7 @@ public class CreateLobbyRoomCommandHandler : IRequestHandler<CreateLobbyRoomComm
             RoomId = room.RoomId,
             RoomCode = room.RoomCode,
             MaxPlayers = room.MaxPlayers,
-            SelectedMapId = room.SelectedMapId
+            SelectedGameId = room.SelectedGameId
         }, "Phòng được tạo.");
     }
 }
