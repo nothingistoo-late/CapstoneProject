@@ -7,7 +7,7 @@ using CapstoneProject.Application.Features.Games.Commands.UpdateMap;
 
 namespace CapstoneProject.Application.Features.Games.Commands.UpdateMapFromJsonFile;
 
-public class UpdateMapFromJsonFileCommandHandler : IRequestHandler<UpdateMapFromJsonFileCommand, Result>
+public class UpdateMapFromJsonFileCommandHandler : IRequestHandler<UpdateMapFromJsonFileCommand, Result<Guid>>
 {
     private readonly IMediator _mediator;
 
@@ -16,12 +16,12 @@ public class UpdateMapFromJsonFileCommandHandler : IRequestHandler<UpdateMapFrom
         _mediator = mediator;
     }
 
-    public async Task<Result> Handle(UpdateMapFromJsonFileCommand command, CancellationToken cancellationToken)
+    public async Task<Result<Guid>> Handle(UpdateMapFromJsonFileCommand command, CancellationToken cancellationToken)
     {
         var input = command.Input;
         var (levelsFromFile, detailJson, parseErr) = MapFileJsonLevelsParser.ParseFromCreateMapInput(input);
         if (parseErr != null)
-            return Result.Failure(parseErr, ErrorCodeEnum.ValidationFailed);
+            return Result<Guid>.Failure(parseErr, ErrorCodeEnum.ValidationFailed);
 
         // KhÃ´ng dÃ¹ng HintsJson ná»¯a: hints Ä‘Æ°á»£c extract trá»±c tiáº¿p tá»« JSON game detail (má»—i level).
         if (levelsFromFile == null && detailJson.HasValue)
@@ -55,10 +55,10 @@ public class UpdateMapFromJsonFileCommandHandler : IRequestHandler<UpdateMapFrom
 
         var tagIds = ParseTagIdsCsv(input.TagIdsCsv);
         if (tagIds == null)
-            return Result.Failure("TagIdsCsv chứa (các) Hướng dẫn không hợp lệ.", ErrorCodeEnum.ValidationFailed);
+            return Result<Guid>.Failure("TagIdsCsv chứa (các) Hướng dẫn không hợp lệ.", ErrorCodeEnum.ValidationFailed);
         var learnedTags = ParseTagIdsCsv(input.LearnedTagsCsv);
         if (learnedTags == null)
-            return Result.Failure("LearnedTagsCsv chứa (các) Hướng dẫn không hợp lệ.", ErrorCodeEnum.ValidationFailed);
+            return Result<Guid>.Failure("LearnedTagsCsv chứa (các) Hướng dẫn không hợp lệ.", ErrorCodeEnum.ValidationFailed);
 
         var updateRequest = new UpdateMapRequest
         {
@@ -75,7 +75,13 @@ public class UpdateMapFromJsonFileCommandHandler : IRequestHandler<UpdateMapFrom
         };
 
         var result = await _mediator.Send(new UpdateMapCommand(command.GameId, updateRequest), cancellationToken);
-        return result;
+        if (!result.IsSuccess)
+            return Result<Guid>.Failure(
+                result.Message ?? "Cập nhật game thất bại.",
+                Enum.TryParse<ErrorCodeEnum>(result.ErrorCode, out var errorCode) ? errorCode : ErrorCodeEnum.InvalidInput,
+                result.Errors);
+
+        return Result<Guid>.Success(command.GameId, result.Message ?? "Cập nhật game thành công.");
     }
 
     private static List<Guid>? ParseTagIdsCsv(string? tagIdsCsv)

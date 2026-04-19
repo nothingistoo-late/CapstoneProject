@@ -4,5 +4,5 @@ using MediatR;
 
 namespace CapstoneProject.Application.Features.Games.Commands.UpdateMapFromJsonFile;
 
-public record UpdateMapFromJsonFileCommand(Guid GameId, CreateMapFromJsonFileInput Input) : IRequest<Result>;
+public record UpdateMapFromJsonFileCommand(Guid GameId, CreateMapFromJsonFileInput Input) : IRequest<Result<Guid>>;
 

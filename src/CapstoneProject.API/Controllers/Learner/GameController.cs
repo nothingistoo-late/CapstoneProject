@@ -414,7 +414,7 @@ public class LearnerGameController : ControllerBase
     ///
     /// **Example request body:** { "title": "Updated Game", "description": "Desc", "difficulty": 1, "timeLimitMs": 60000, "winCondition": 10, "mapDetailJson": { "id": "level-1", "layers": {} }, "tagIds": [] }
     /// </remarks>
-    /// <response code="200">Game updated. Returns message only.</response>
+    /// <response code="200">Game updated. Returns message and data (gameId).</response>
     /// <response code="401">Not authorized</response>
     /// <response code="403">Forbidden (not author or admin)</response>
     /// <response code="404">Game not found</response>
@@ -509,18 +509,18 @@ public class LearnerGameController : ControllerBase
     [HttpPut("{id:guid}/upload-json")]
     [AuthorizeRoles(nameof(RoleEnum.Learner), nameof(RoleEnum.Admin), nameof(RoleEnum.Moderator))]
     [Consumes("multipart/form-data")]
-    [ProducesResponseType(typeof(Result), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(Result), StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(typeof(Result), StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(typeof(Result), StatusCodes.Status403Forbidden)]
-    [ProducesResponseType(typeof(Result), StatusCodes.Status404NotFound)]
-    [ProducesResponseType(typeof(Result), StatusCodes.Status500InternalServerError)]
+    [ProducesResponseType(typeof(Result<Guid>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(Result<Guid>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(Result<Guid>), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(Result<Guid>), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(Result<Guid>), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(Result<Guid>), StatusCodes.Status500InternalServerError)]
     [SwaggerOperation(Summary = "Update game từ file JSON", Description = "Giống tạo game: mapDetailFiles (một hoặc nhiều file). Requires Bearer token.", OperationId = "Learner_UpdateMapFromJsonFile", Tags = new[] { "Learner - Games" })]
     public async Task<IActionResult> UpdateMapFromJsonFile(Guid id, [FromForm] CreateMapFromJsonFileRequest request)
     {
         var (input, formErr) = await MapJsonUploadFormReader.BuildCreateInputAsync(request, Request);
         if (formErr != null || input == null)
-            return BadRequest(Result.Failure(formErr ?? "Đầu vào tệp bản đồ không hợp lệ.", ErrorCodeEnum.ValidationFailed));
+            return BadRequest(Result<Guid>.Failure(formErr ?? "Đầu vào tệp bản đồ không hợp lệ.", ErrorCodeEnum.ValidationFailed));
 
         var result = await _mediator.Send(new UpdateMapFromJsonFileCommand(id, input));
         return StatusCode(result.GetHttpStatusCode(), result);
