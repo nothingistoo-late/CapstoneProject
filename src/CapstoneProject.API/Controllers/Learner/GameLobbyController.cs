@@ -20,6 +20,7 @@ using CapstoneProject.Application.Features.Lobby.Queries.GetLobbyRooms;
 using CapstoneProject.Application.Features.Chat.Commands.CreateTemporaryGroupConversation;
 using CapstoneProject.Application.Features.Chat.Commands.AddMemberToRoom;
 using CapstoneProject.Application.Common.Interfaces;
+using CapstoneProject.Application.Commons.Interfaces;
 using CapstoneProject.Application.Common.Extensions;
 using CapstoneProject.Domain.Entities;
 using CapstoneProject.Domain.Enums;
@@ -36,12 +37,18 @@ public class GameLobbyController : ControllerBase
     private readonly IMediator _mediator;
     private readonly IHubContext<GameLobbyHub> _hubContext;
     private readonly IUnitOfWork _unitOfWork;
+    private readonly IRoomManager _roomManager;
 
-    public GameLobbyController(IMediator mediator, IHubContext<GameLobbyHub> hubContext, IUnitOfWork unitOfWork)
+    public GameLobbyController(
+        IMediator mediator,
+        IHubContext<GameLobbyHub> hubContext,
+        IUnitOfWork unitOfWork,
+        IRoomManager roomManager)
     {
         _mediator = mediator;
         _hubContext = hubContext;
         _unitOfWork = unitOfWork;
+        _roomManager = roomManager;
     }
 
     /// <summary>Danh sách phòng lobby (REST).</summary>
@@ -300,6 +307,13 @@ public class GameLobbyController : ControllerBase
     [SwaggerOperation(Summary = "Leave room", Description = "Current user leaves the room. Requires Bearer token.", OperationId = "Lobby_LeaveRoom", Tags = new[] { "Learner - Game Lobby" })]
     public async Task<IActionResult> LeaveRoom(Guid roomId)
     {
+        string? roomCode = null;
+        var roomBeforeLeave = await _mediator.Send(new GetLobbyRoomQuery(roomId));
+        if (roomBeforeLeave.IsSuccess && roomBeforeLeave.Data != null)
+        {
+            roomCode = roomBeforeLeave.Data.RoomCode?.Trim();
+        }
+
         var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
             ?? User.FindFirst("sub")?.Value
             ?? User.FindFirst("userId")?.Value;
@@ -318,6 +332,7 @@ public class GameLobbyController : ControllerBase
                     PlayerId = userId,
                     PlayerName = leftPlayerName
                 });
+            await CleanupRoomConversationIfEmptyAsync(roomId, roomCode, userId);
         }
         return StatusCode(result.GetHttpStatusCode(), result);
     }
@@ -384,6 +399,92 @@ public class GameLobbyController : ControllerBase
     public async Task<IActionResult> SetRoomMap(Guid roomId, [FromBody] SetRoomMapRequest request)
     {
         var result = await _mediator.Send(new SetLobbyRoomMapCommand(roomId, request));
+        return StatusCode(result.GetHttpStatusCode(), result);
+    }
+
+    /// <summary>Dọn phòng rác và room chat tạm đã bỏ trống.</summary>
+    /// <remarks>
+    /// Dùng để cleanup thủ công:
+    /// - Xóa lobby room in-memory không hợp lệ (không còn room hoặc 0 người).
+    /// - Đóng + soft-delete room chat temporary group đã đóng hoặc không còn thành viên active.
+    /// Yêu cầu Bearer token.
+    /// </remarks>
+    [HttpPost("rooms/cleanup")]
+    [AuthorizeRoles(nameof(RoleEnum.Learner), nameof(RoleEnum.Admin), nameof(RoleEnum.Moderator))]
+    [ProducesResponseType(typeof(Result<object>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(Result), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(Result), StatusCodes.Status500InternalServerError)]
+    [SwaggerOperation(Summary = "Cleanup garbage rooms", Description = "Cleanup invalid in-memory lobby rooms and orphan temporary chat rooms.", OperationId = "Lobby_CleanupGarbageRooms", Tags = new[] { "Learner - Game Lobby" })]
+    public async Task<IActionResult> CleanupGarbageRooms()
+    {
+        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+            ?? User.FindFirst("sub")?.Value
+            ?? User.FindFirst("userId")?.Value;
+        Guid.TryParse(userIdClaim, out var actorId);
+
+        var removedLobbyRooms = 0;
+        var lobbyRoomsSnapshot = _roomManager.GetLobbyRooms().ToList();
+        foreach (var roomItem in lobbyRoomsSnapshot)
+        {
+            var room = _roomManager.GetRoomById(roomItem.RoomId);
+            if (room != null && room.PlayerCount > 0) continue;
+            if (_roomManager.RemoveRoom(roomItem.RoomId))
+            {
+                removedLobbyRooms++;
+            }
+        }
+
+        var deletedTemporaryChats = 0;
+        var closedTemporaryChats = 0;
+        var chatRoomRepo = _unitOfWork.Repository<ChatRoom>();
+        var temporaryChats = await chatRoomRepo.GetQueryable()
+            .Where(c => !c.IsDeleted && c.RoomType == ChatRoomTypeEnum.TemporaryGroup)
+            .Select(c => new
+            {
+                Room = c,
+                ActiveMemberCount = c.Members.Count(m => !m.IsDeleted && m.LeftAt == null)
+            })
+            .ToListAsync();
+
+        var now = CapstoneProject.Domain.Common.VietnamDateTime.DbNow;
+        var changed = false;
+        foreach (var item in temporaryChats)
+        {
+            if (!item.Room.IsClosed && item.ActiveMemberCount <= 0)
+            {
+                item.Room.Close(actorId == Guid.Empty ? Guid.Empty : actorId);
+                closedTemporaryChats++;
+                changed = true;
+            }
+
+            if (!item.Room.IsDeleted && (item.Room.IsClosed || item.ActiveMemberCount <= 0))
+            {
+                item.Room.IsDeleted = true;
+                item.Room.DeletedAt = now;
+                item.Room.DeletedBy = actorId == Guid.Empty ? Guid.Empty : actorId;
+                chatRoomRepo.Update(item.Room);
+                deletedTemporaryChats++;
+                changed = true;
+            }
+        }
+
+        if (changed)
+        {
+            await _unitOfWork.SaveChangesAsync();
+        }
+
+        if (removedLobbyRooms > 0)
+        {
+            await BroadcastLobbyListToAllAsync();
+        }
+
+        var payload = new
+        {
+            RemovedLobbyRooms = removedLobbyRooms,
+            ClosedTemporaryChats = closedTemporaryChats,
+            DeletedTemporaryChats = deletedTemporaryChats
+        };
+        var result = Result<object>.Success(payload, "Đã dọn phòng rác thành công.");
         return StatusCode(result.GetHttpStatusCode(), result);
     }
 
@@ -503,5 +604,36 @@ public class GameLobbyController : ControllerBase
         if (!string.IsNullOrWhiteSpace(fullName)) return fullName;
         if (!string.IsNullOrWhiteSpace(user.UserName)) return user.UserName;
         return userId.ToString("N")[..8];
+    }
+
+    private async Task CleanupRoomConversationIfEmptyAsync(Guid roomId, string? roomCode, Guid closedByUserId)
+    {
+        if (string.IsNullOrWhiteSpace(roomCode)) return;
+
+        var roomAfterLeave = await _mediator.Send(new GetLobbyRoomQuery(roomId));
+        if (roomAfterLeave.IsSuccess && roomAfterLeave.Data != null && roomAfterLeave.Data.CurrentPlayerCount > 0)
+            return;
+
+        var conversationName = $"Lobby {roomCode.Trim()}";
+        var chatRoomRepo = _unitOfWork.Repository<ChatRoom>();
+        var chatRoom = await chatRoomRepo.GetQueryable()
+            .FirstOrDefaultAsync(c =>
+                !c.IsDeleted &&
+                c.RoomType == ChatRoomTypeEnum.TemporaryGroup &&
+                c.Name != null &&
+                c.Name.ToLower() == conversationName.ToLower());
+        if (chatRoom == null) return;
+
+        var actor = closedByUserId == Guid.Empty ? Guid.Empty : closedByUserId;
+        if (!chatRoom.IsClosed)
+        {
+            chatRoom.Close(actor);
+        }
+
+        chatRoom.IsDeleted = true;
+        chatRoom.DeletedAt = CapstoneProject.Domain.Common.VietnamDateTime.DbNow;
+        chatRoom.DeletedBy = actor;
+        chatRoomRepo.Update(chatRoom);
+        await _unitOfWork.SaveChangesAsync();
     }
 }

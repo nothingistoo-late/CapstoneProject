@@ -186,6 +186,8 @@ public class GameLobbyHub : Hub
             return;
         }
 
+        var roomSnapshot = _roomManager.GetRoomById(roomId);
+        var roomCode = roomSnapshot?.RoomCode?.Trim();
         var leftPlayerName = await GetUserDisplayNameAsync(userId);
         var (success, errorMessage, updatedRoom) = _roomManager.LeaveRoom(roomId, userId);
         if (!success)
@@ -208,6 +210,7 @@ public class GameLobbyHub : Hub
             PlayerId = userId,
             PlayerName = leftPlayerName
         });
+        await CleanupRoomConversationIfEmptyAsync(roomId, roomCode, userId);
         await BroadcastLobbyRoomList();
         _logger.LogInformation("User {UserId} left room {RoomId}", userId, roomId);
     }
@@ -590,6 +593,7 @@ public class GameLobbyHub : Hub
                 PlayerId = userId,
                 PlayerName = leftPlayerName
             });
+            await CleanupRoomConversationIfEmptyAsync(room.RoomId, room.RoomCode, userId);
             await BroadcastLobbyRoomList();
             break;
         }
@@ -606,6 +610,35 @@ public class GameLobbyHub : Hub
         if (!string.IsNullOrWhiteSpace(fullName)) return fullName;
         if (!string.IsNullOrWhiteSpace(user.UserName)) return user.UserName;
         return userId.ToString("N")[..8];
+    }
+
+    private async Task CleanupRoomConversationIfEmptyAsync(Guid roomId, string? roomCode, Guid closedByUserId)
+    {
+        if (string.IsNullOrWhiteSpace(roomCode)) return;
+        var room = _roomManager.GetRoomById(roomId);
+        if (room != null && room.PlayerCount > 0) return;
+
+        var conversationName = $"Lobby {roomCode.Trim()}";
+        var chatRoomRepo = _unitOfWork.Repository<ChatRoom>();
+        var chatRoom = await chatRoomRepo.GetQueryable()
+            .FirstOrDefaultAsync(c =>
+                !c.IsDeleted &&
+                c.RoomType == ChatRoomTypeEnum.TemporaryGroup &&
+                c.Name != null &&
+                c.Name.ToLower() == conversationName.ToLower());
+        if (chatRoom == null) return;
+
+        var actor = closedByUserId == Guid.Empty ? Guid.Empty : closedByUserId;
+        if (!chatRoom.IsClosed)
+        {
+            chatRoom.Close(actor);
+        }
+
+        chatRoom.IsDeleted = true;
+        chatRoom.DeletedAt = CapstoneProject.Domain.Common.VietnamDateTime.DbNow;
+        chatRoom.DeletedBy = actor;
+        chatRoomRepo.Update(chatRoom);
+        await _unitOfWork.SaveChangesAsync();
     }
 
     private async Task SendLobbyRoomListToClient(string connectionId)
