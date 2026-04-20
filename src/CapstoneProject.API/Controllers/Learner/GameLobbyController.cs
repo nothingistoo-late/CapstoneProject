@@ -17,8 +17,6 @@ using CapstoneProject.Application.Features.Lobby.Commands.SubmitLobbySolution;
 using CapstoneProject.Application.Features.Lobby.Commands.ToggleLobbyReady;
 using CapstoneProject.Application.Features.Lobby.Queries.GetLobbyRoom;
 using CapstoneProject.Application.Features.Lobby.Queries.GetLobbyRooms;
-using CapstoneProject.Application.Features.Chat.Commands.CreateTemporaryGroupConversation;
-using CapstoneProject.Application.Features.Chat.Commands.AddMemberToRoom;
 using CapstoneProject.Application.Common.Interfaces;
 using CapstoneProject.Application.Commons.Interfaces;
 using CapstoneProject.Application.Common.Extensions;
@@ -102,7 +100,7 @@ public class GameLobbyController : ControllerBase
         var result = await _mediator.Send(new CreateLobbyRoomCommand(request));
         if (result.IsSuccess && result.Data != null)
         {
-            await EnsureRoomConversationSynchronizedAsync(result.Data.RoomId);
+            GameLobbyHub.EnsureRoomChat(result.Data.RoomId);
             await BroadcastLobbyListToAllAsync();
             await BroadcastRoomUpdatedToGroupAsync(result.Data.RoomId);
             return Created(string.Empty, result);
@@ -141,7 +139,6 @@ public class GameLobbyController : ControllerBase
         var result = await _mediator.Send(new JoinLobbyRoomCommand(request));
         if (result.IsSuccess && result.Data != null)
         {
-            await EnsureRoomConversationSynchronizedAsync(result.Data.RoomId);
             await BroadcastLobbyListToAllAsync();
             await BroadcastRoomUpdatedToGroupAsync(result.Data.RoomId);
         }
@@ -279,6 +276,26 @@ public class GameLobbyController : ControllerBase
     public async Task<IActionResult> SubmitSolution(Guid roomId, [FromBody] SubmissionSubmitRequest request)
     {
         var result = await _mediator.Send(new SubmitLobbySolutionCommand(roomId, request));
+        if (result.IsSuccess && result.Data?.RankingIfAllSubmitted is { Count: > 0 } ranking)
+        {
+            var rankingPayload = new
+            {
+                RoomId = roomId,
+                Ranking = ranking
+            };
+
+            await _hubContext.Clients.Group($"{GameLobbyHub.RoomGroupPrefix}{roomId}")
+                .SendAsync("RankingUpdated", rankingPayload);
+
+            var room = _roomManager.GetRoomById(roomId);
+            var userGroups = room?.Players.Keys
+                .Select(playerId => $"User_{playerId}")
+                .ToList();
+            if (userGroups is { Count: > 0 })
+            {
+                await _hubContext.Clients.Groups(userGroups).SendAsync("RankingUpdated", rankingPayload);
+            }
+        }
         return StatusCode(result.GetHttpStatusCode(), result);
     }
 
@@ -307,13 +324,6 @@ public class GameLobbyController : ControllerBase
     [SwaggerOperation(Summary = "Leave room", Description = "Current user leaves the room. Requires Bearer token.", OperationId = "Lobby_LeaveRoom", Tags = new[] { "Learner - Game Lobby" })]
     public async Task<IActionResult> LeaveRoom(Guid roomId)
     {
-        string? roomCode = null;
-        var roomBeforeLeave = await _mediator.Send(new GetLobbyRoomQuery(roomId));
-        if (roomBeforeLeave.IsSuccess && roomBeforeLeave.Data != null)
-        {
-            roomCode = roomBeforeLeave.Data.RoomCode?.Trim();
-        }
-
         var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
             ?? User.FindFirst("sub")?.Value
             ?? User.FindFirst("userId")?.Value;
@@ -332,7 +342,10 @@ public class GameLobbyController : ControllerBase
                     PlayerId = userId,
                     PlayerName = leftPlayerName
                 });
-            await CleanupRoomConversationIfEmptyAsync(roomId, roomCode, userId);
+            if (_roomManager.GetRoomById(roomId) == null)
+            {
+                GameLobbyHub.RemoveRoomChat(roomId);
+            }
         }
         return StatusCode(result.GetHttpStatusCode(), result);
     }
@@ -430,6 +443,7 @@ public class GameLobbyController : ControllerBase
             if (room != null && room.PlayerCount > 0) continue;
             if (_roomManager.RemoveRoom(roomItem.RoomId))
             {
+                GameLobbyHub.RemoveRoomChat(roomItem.RoomId);
                 removedLobbyRooms++;
             }
         }
@@ -529,70 +543,6 @@ public class GameLobbyController : ControllerBase
         await _hubContext.Clients.Group($"{GameLobbyHub.RoomGroupPrefix}{roomId}").SendAsync("RoomUpdated", dto);
     }
 
-    /// <summary>
-    /// Best-effort sync: ensure temporary room chat exists and all room players are members.
-    /// This keeps room chat auto-created on room creation and auto-joined on room join.
-    /// </summary>
-    private async Task EnsureRoomConversationSynchronizedAsync(Guid roomId)
-    {
-        var roomResult = await _mediator.Send(new GetLobbyRoomQuery(roomId));
-        if (!roomResult.IsSuccess || roomResult.Data == null) return;
-
-        var room = roomResult.Data;
-        var roomCode = room.RoomCode?.Trim();
-        if (string.IsNullOrWhiteSpace(roomCode)) return;
-        var conversationName = $"Lobby {roomCode}";
-
-        var chatRoomRepo = _unitOfWork.Repository<ChatRoom>();
-        var chatRoom = await chatRoomRepo.GetQueryable()
-            .FirstOrDefaultAsync(c =>
-                !c.IsDeleted &&
-                c.RoomType == ChatRoomTypeEnum.TemporaryGroup &&
-                c.Name != null &&
-                c.Name.ToLower() == conversationName.ToLower());
-
-        if (chatRoom == null)
-        {
-            var createChat = await _mediator.Send(new CreateTemporaryGroupConversationCommand
-            {
-                Name = conversationName
-            });
-            if (createChat.IsSuccess && createChat.Data != null)
-            {
-                chatRoom = await chatRoomRepo.GetQueryable()
-                    .FirstOrDefaultAsync(c => c.Id == createChat.Data.Id);
-            }
-            if (chatRoom == null)
-            {
-                chatRoom = await chatRoomRepo.GetQueryable()
-                    .FirstOrDefaultAsync(c =>
-                        !c.IsDeleted &&
-                        c.RoomType == ChatRoomTypeEnum.TemporaryGroup &&
-                        c.Name != null &&
-                        c.Name.ToLower() == conversationName.ToLower());
-            }
-        }
-
-        if (chatRoom == null) return;
-
-        var memberRepo = _unitOfWork.Repository<ChatRoomMember>();
-        var existingMemberIds = await memberRepo.GetQueryable()
-            .Where(m => !m.IsDeleted && m.ChatRoomId == chatRoom.Id && m.LeftAt == null)
-            .Select(m => m.UserId)
-            .ToListAsync();
-        var existingSet = existingMemberIds.ToHashSet();
-
-        foreach (var player in room.Players)
-        {
-            if (existingSet.Contains(player.PlayerId)) continue;
-            await _mediator.Send(new AddMemberToRoomCommand
-            {
-                ChatRoomId = chatRoom.Id,
-                UserId = player.PlayerId
-            });
-        }
-    }
-
     private async Task<string> ResolveUserDisplayNameAsync(Guid userId)
     {
         var user = await _unitOfWork.Repository<AppUser>().GetQueryable()
@@ -606,34 +556,4 @@ public class GameLobbyController : ControllerBase
         return userId.ToString("N")[..8];
     }
 
-    private async Task CleanupRoomConversationIfEmptyAsync(Guid roomId, string? roomCode, Guid closedByUserId)
-    {
-        if (string.IsNullOrWhiteSpace(roomCode)) return;
-
-        var roomAfterLeave = await _mediator.Send(new GetLobbyRoomQuery(roomId));
-        if (roomAfterLeave.IsSuccess && roomAfterLeave.Data != null && roomAfterLeave.Data.CurrentPlayerCount > 0)
-            return;
-
-        var conversationName = $"Lobby {roomCode.Trim()}";
-        var chatRoomRepo = _unitOfWork.Repository<ChatRoom>();
-        var chatRoom = await chatRoomRepo.GetQueryable()
-            .FirstOrDefaultAsync(c =>
-                !c.IsDeleted &&
-                c.RoomType == ChatRoomTypeEnum.TemporaryGroup &&
-                c.Name != null &&
-                c.Name.ToLower() == conversationName.ToLower());
-        if (chatRoom == null) return;
-
-        var actor = closedByUserId == Guid.Empty ? Guid.Empty : closedByUserId;
-        if (!chatRoom.IsClosed)
-        {
-            chatRoom.Close(actor);
-        }
-
-        chatRoom.IsDeleted = true;
-        chatRoom.DeletedAt = CapstoneProject.Domain.Common.VietnamDateTime.DbNow;
-        chatRoom.DeletedBy = actor;
-        chatRoomRepo.Update(chatRoom);
-        await _unitOfWork.SaveChangesAsync();
-    }
 }
