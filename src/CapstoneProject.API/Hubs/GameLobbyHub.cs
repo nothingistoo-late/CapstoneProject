@@ -1,5 +1,6 @@
 ﻿using MediatR;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.SignalR;
 using CapstoneProject.Application.Common.Interfaces;
 using CapstoneProject.Application.Commons.DTOs.Gameplay;
@@ -7,6 +8,7 @@ using CapstoneProject.Application.Commons.Interfaces;
 using CapstoneProject.Application.Features.Gameplay.Commands.ValidateSolution;
 using CapstoneProject.Application.Features.Lobby.Models;
 using CapstoneProject.Application.Features.Games.Queries.MapExists;
+using CapstoneProject.Domain.Entities;
 using CapstoneProject.Domain.Enums;
 
 namespace CapstoneProject.API.Hubs;
@@ -25,17 +27,20 @@ public class GameLobbyHub : Hub
     private readonly ICurrentUserService _currentUserService;
     private readonly IMediator _mediator;
     private readonly ILogger<GameLobbyHub> _logger;
+    private readonly IUnitOfWork _unitOfWork;
 
     public GameLobbyHub(
         IRoomManager roomManager,
         ICurrentUserService currentUserService,
         IMediator mediator,
-        ILogger<GameLobbyHub> logger)
+        ILogger<GameLobbyHub> logger,
+        IUnitOfWork unitOfWork)
     {
         _roomManager = roomManager;
         _currentUserService = currentUserService;
         _mediator = mediator;
         _logger = logger;
+        _unitOfWork = unitOfWork;
     }
 
     public override async Task OnConnectedAsync()
@@ -101,6 +106,17 @@ public class GameLobbyHub : Hub
             return;
         }
 
+        var roomSnapshot = _roomManager.GetRoomById(roomId);
+        if (roomSnapshot?.SelectedGameId is { } selectedGameId && selectedGameId != Guid.Empty)
+        {
+            var canJoinSelectedMap = await EnsureUserOwnsPaidGame(selectedGameId, userId);
+            if (!canJoinSelectedMap.Success)
+            {
+                await Clients.Caller.SendAsync("Error", canJoinSelectedMap.ErrorMessage ?? "Khong the vao phong.");
+                return;
+            }
+        }
+
         var (success, errorMessage, room) = _roomManager.JoinRoom(roomId, userId, Context.ConnectionId, roomCode);
         if (!success)
         {
@@ -134,6 +150,17 @@ public class GameLobbyHub : Hub
         {
             await Clients.Caller.SendAsync("Error", "Not authenticated.");
             return;
+        }
+
+        var roomByCode = _roomManager.GetRoomByCode(roomCode.Trim());
+        if (roomByCode?.SelectedGameId is { } selectedGameId && selectedGameId != Guid.Empty)
+        {
+            var canJoinSelectedMap = await EnsureUserOwnsPaidGame(selectedGameId, userId);
+            if (!canJoinSelectedMap.Success)
+            {
+                await Clients.Caller.SendAsync("Error", canJoinSelectedMap.ErrorMessage ?? "Khong the vao phong.");
+                return;
+            }
         }
 
         var (success, errorMessage, room) = _roomManager.JoinRoomByCode(roomCode.Trim(), userId, Context.ConnectionId);
@@ -212,6 +239,13 @@ public class GameLobbyHub : Hub
             if (!mapExists.IsSuccess || mapExists.Data != true)
             {
                 await Clients.Caller.SendAsync("Error", mapExists.Message ?? "Bản đồ không được tìm thấy hoặc đã bị xóa. Chọn bản đồ khác.");
+                return;
+            }
+            var playerIds = room.Players.Keys.ToList();
+            var ownershipCheck = await EnsurePlayersCanPlayGame(selectedGameId, playerIds);
+            if (!ownershipCheck.Success)
+            {
+                await Clients.Caller.SendAsync("Error", ownershipCheck.ErrorMessage ?? "Tất cả người chơi trong phòng phải sở hữu bản đồ.");
                 return;
             }
         }
@@ -329,6 +363,18 @@ public class GameLobbyHub : Hub
                 await Clients.Caller.SendAsync("Error", mapExists.Message ?? "Bản đồ không được tìm thấy hoặc đã bị xóa.");
                 return;
             }
+            var roomForOwnership = _roomManager.GetRoomById(roomId);
+            if (roomForOwnership == null)
+            {
+                await Clients.Caller.SendAsync("Error", "Không tìm thấy phòng.");
+                return;
+            }
+            var ownershipCheck = await EnsurePlayersCanPlayGame(gameId.Value, roomForOwnership.Players.Keys.ToList());
+            if (!ownershipCheck.Success)
+            {
+                await Clients.Caller.SendAsync("Error", ownershipCheck.ErrorMessage ?? "Tất cả người chơi trong phòng phải sở hữu bản đồ.");
+                return;
+            }
         }
         var (success, errorMessage, room) = _roomManager.SetRoomMap(roomId, userId, gameId);
         if (!success || room == null)
@@ -406,7 +452,16 @@ public class GameLobbyHub : Hub
 
         var score = validateResult.Data.Score ?? 0;
         var status = validateResult.Data.Status.ToString();
-        var (recordSuccess, recordError, ranking) = _roomManager.RecordSubmission(roomId, userId, score, status, validateResult.Data.SubmissionId);
+        var (recordSuccess, recordError, ranking) = _roomManager.RecordSubmission(
+            roomId,
+            userId,
+            score,
+            status,
+            validateResult.Data.SubmissionId,
+            mapDetailId,
+            stepsUsed,
+            blocksUsed,
+            timeSeconds);
         if (!recordSuccess)
         {
             await Clients.Caller.SendAsync("SubmissionResult", new { Success = false, Message = recordError ?? "Không thể ghi lại bài nộp." });
@@ -421,11 +476,16 @@ public class GameLobbyHub : Hub
             SubmissionId = validateResult.Data.SubmissionId,
             Message = validateResult.Data.Message
         });
-
         if (ranking != null && ranking.Count > 0)
-            await Clients.Group(RoomGroup(roomId)).SendAsync("RankingUpdated", ranking);
+        {
+            await Clients.Group(RoomGroup(roomId)).SendAsync("RankingUpdated", new
+            {
+                RoomId = roomId,
+                Ranking = ranking
+            });
+        }
 
-        _logger.LogInformation("User {UserId} submitted in room {RoomId}; score={Score}, ranking broadcast={HasRanking}", userId, roomId, score, ranking?.Count > 0);
+        _logger.LogInformation("User {UserId} submitted in room {RoomId}; score={Score}, ranking prepared={HasRanking}", userId, roomId, score, ranking?.Count > 0);
     }
 
     private bool TryGetUserId(out Guid userId)
@@ -436,6 +496,72 @@ public class GameLobbyHub : Hub
     }
 
     private static string RoomGroup(Guid roomId) => $"{RoomGroupPrefix}{roomId}";
+
+    private async Task<(bool Success, string? ErrorMessage)> EnsurePlayersCanPlayGame(Guid gameId, List<Guid> playerIds)
+    {
+        var game = await _unitOfWork.Repository<Game>().GetQueryable()
+            .AsNoTracking()
+            .FirstOrDefaultAsync(g => g.Id == gameId);
+        if (game == null || game.IsDeleted)
+            return (false, "Bản đồ không được tìm thấy hoặc đã bị xóa.");
+
+        var price = game.Price.GetValueOrDefault();
+        if (price <= 0)
+            return (true, null);
+
+        var paidUserIds = await _unitOfWork.Repository<PaymentRecord>().GetQueryable()
+            .Where(p => !p.IsDeleted
+                        && p.GameId == game.Id
+                        && p.PaymentStatus == PaymentStatusEnum.Completed
+                        && playerIds.Contains(p.UserId))
+            .Select(p => p.UserId)
+            .Distinct()
+            .ToListAsync();
+
+        var myGameUserIds = await _unitOfWork.Repository<MyGame>().GetQueryable()
+            .Where(mg => !mg.IsDeleted
+                         && mg.GameId == game.Id
+                         && playerIds.Contains(mg.UserId))
+            .Select(mg => mg.UserId)
+            .Distinct()
+            .ToListAsync();
+
+        var ownedUserIds = paidUserIds.Concat(myGameUserIds).ToHashSet();
+        foreach (var playerId in playerIds)
+        {
+            if (game.CreatedBy == playerId || ownedUserIds.Contains(playerId))
+                continue;
+            return (false, "Tất cả người chơi trong phòng phải sở hữu bản đồ trước khi chơi.");
+        }
+        return (true, null);
+    }
+
+    private async Task<(bool Success, string? ErrorMessage)> EnsureUserOwnsPaidGame(Guid gameId, Guid userId)
+    {
+        var game = await _unitOfWork.Repository<Game>().GetQueryable()
+            .AsNoTracking()
+            .FirstOrDefaultAsync(g => g.Id == gameId);
+        if (game == null || game.IsDeleted)
+            return (false, "Khong the vao phong: tro choi da chon khong con ton tai.");
+
+        if (game.CreatedBy == userId || game.Price.GetValueOrDefault() <= 0)
+            return (true, null);
+
+        var purchased = await _unitOfWork.Repository<PaymentRecord>().GetQueryable()
+            .AnyAsync(p => !p.IsDeleted
+                           && p.UserId == userId
+                           && p.GameId == game.Id
+                           && p.PaymentStatus == PaymentStatusEnum.Completed);
+        if (purchased)
+            return (true, null);
+
+        var inMyGame = await _unitOfWork.Repository<MyGame>().GetQueryable()
+            .AnyAsync(mg => !mg.IsDeleted && mg.UserId == userId && mg.GameId == game.Id);
+        if (inMyGame)
+            return (true, null);
+
+        return (false, "Khong the vao phong: ban chua so huu tro choi dang duoc chon.");
+    }
 
     private async Task LeaveAllRoomsForUser(Guid userId)
     {

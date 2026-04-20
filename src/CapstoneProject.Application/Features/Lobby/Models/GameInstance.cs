@@ -21,6 +21,10 @@ public class GameInstance
     public DateTime StartedAt { get; set; } = CapstoneProject.Domain.Common.VietnamDateTime.DbNow;
     /// <summary>Per-player submission result (score, status). Filled when player submits.</summary>
     public ConcurrentDictionary<Guid, PlayerGameResult> PlayerResults { get; } = new();
+    /// <summary>Per-level submissions for multiplayer campaign flow.</summary>
+    public ConcurrentDictionary<Guid, ConcurrentDictionary<Guid, PlayerGameResult>> LevelResults { get; } = new();
+    /// <summary>Total score across submitted levels by player.</summary>
+    public ConcurrentDictionary<Guid, int> TotalScores { get; } = new();
 }
 
 

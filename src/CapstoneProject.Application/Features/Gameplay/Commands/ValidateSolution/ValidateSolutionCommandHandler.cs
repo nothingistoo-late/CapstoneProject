@@ -45,15 +45,19 @@ public class ValidateSolutionCommandHandler : IRequestHandler<ValidateSolutionCo
         if (game == null)
             return Result<ValidateSolutionResultDto>.Failure("Không tìm thấy bản đồ", ErrorCodeEnum.NotFound);
 
-        var isOwned = false;
-        if (game.IsDeleted || game.FreeTrialAttemptLimit > 0)
-            isOwned = await IsMapOwnedByUserAsync(game, userId, cancellationToken);
+        var isOwned = await IsMapOwnedByUserAsync(game, userId, cancellationToken);
+        var isAuthor = game.CreatedBy.HasValue && game.CreatedBy.Value == userId;
 
-        if (game.IsDeleted)
+        if (game.IsDeleted || (!game.IsPublished && !isAuthor))
         {
             if (!isOwned)
                 return Result<ValidateSolutionResultDto>.Failure("Không tìm thấy bản đồ", ErrorCodeEnum.NotFound);
         }
+
+        var mapPrice = game.Price.GetValueOrDefault();
+        var isPaidMap = mapPrice > 0;
+        if (isPaidMap && !isOwned)
+            return Result<ValidateSolutionResultDto>.Failure("Bạn chưa sở hữu bản đồ này.", ErrorCodeEnum.Forbidden);
 
         var levelsOrdered = game.GameDetails.OrderBy(d => d.LevelOrder).ToList();
         if (levelsOrdered.Count == 0)
@@ -69,14 +73,6 @@ public class ValidateSolutionCommandHandler : IRequestHandler<ValidateSolutionCo
         var umr = await umrRepo.GetQueryable().FirstOrDefaultAsync(
             u => u.UserId == userId && u.GameDetailId == mapDetail.Id,
             cancellationToken);
-        var currentMapAttempts = await umrRepo.GetQueryable()
-            .Where(u => u.UserId == userId && u.GameId == game.Id && !u.IsDeleted)
-            .Select(u => (int?)u.Attempts)
-            .SumAsync(cancellationToken) ?? 0;
-        var isTrialPlay = game.FreeTrialAttemptLimit > 0 && !isOwned;
-        if (isTrialPlay && currentMapAttempts >= game.FreeTrialAttemptLimit)
-            return Result<ValidateSolutionResultDto>.Failure("Không còn lượt dùng thử miễn phí nào cho bản đồ này.", ErrorCodeEnum.ValidationFailed);
-
         var mapSolveCfg = await _unitOfWork.Repository<GameSolveScoreConfig>().GetQueryable()
             .AsNoTracking()
             .FirstOrDefaultAsync(
@@ -178,7 +174,7 @@ public class ValidateSolutionCommandHandler : IRequestHandler<ValidateSolutionCo
         history.InitializeEntity(userId);
         await _unitOfWork.Repository<UserGamePlayHistory>().AddAsync(history);
 
-        if (accepted && !isTrialPlay)
+        if (accepted)
         {
             var xpDelta = 10 + stars * 5;
             var xpResult = await _xpEngineService.GrantXpAsync(new XpGrantInput

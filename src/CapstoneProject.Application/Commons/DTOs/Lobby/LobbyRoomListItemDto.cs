@@ -7,9 +7,11 @@ public class LobbyRoomListItemDto
     public Guid RoomId { get; set; }
     public string RoomCode { get; set; } = string.Empty;
     public Guid HostId { get; set; }
+    public string? HostName { get; set; }
     public int CurrentPlayerCount { get; set; }
     public int MaxPlayers { get; set; }
     public RoomStatusEnum Status { get; set; }
     public bool IsLocked { get; set; }
     public Guid? SelectedGameId { get; set; }
+    public string? SelectedGameTitle { get; set; }
 }

@@ -6,4 +6,5 @@ public class PlayerRankingDto
     public int Score { get; set; }
     public int Rank { get; set; }
     public string Status { get; set; } = string.Empty;
+    public List<PlayerLevelScoreDetailDto> LevelDetails { get; set; } = new();
 }

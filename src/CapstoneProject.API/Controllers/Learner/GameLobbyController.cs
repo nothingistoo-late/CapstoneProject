@@ -262,8 +262,6 @@ public class GameLobbyController : ControllerBase
     public async Task<IActionResult> SubmitSolution(Guid roomId, [FromBody] SubmissionSubmitRequest request)
     {
         var result = await _mediator.Send(new SubmitLobbySolutionCommand(roomId, request));
-        if (result.IsSuccess && result.Data?.RankingIfAllSubmitted?.Count > 0)
-            await _hubContext.Clients.Group($"{GameLobbyHub.RoomGroupPrefix}{roomId}").SendAsync("RankingUpdated", result.Data.RankingIfAllSubmitted);
         return StatusCode(result.GetHttpStatusCode(), result);
     }
 
@@ -327,6 +325,10 @@ public class GameLobbyController : ControllerBase
     public async Task<IActionResult> ToggleReady(Guid roomId)
     {
         var result = await _mediator.Send(new ToggleLobbyReadyCommand(roomId));
+        if (result.IsSuccess && result.Data != null)
+        {
+            await BroadcastRoomUpdatedToGroupAsync(result.Data.RoomId);
+        }
         return StatusCode(result.GetHttpStatusCode(), result);
     }
 
@@ -372,11 +374,13 @@ public class GameLobbyController : ControllerBase
             r.RoomId,
             r.RoomCode,
             r.HostId,
+            r.HostName,
             r.CurrentPlayerCount,
             r.MaxPlayers,
             Status = r.Status.ToString(),
             r.IsLocked,
-            r.SelectedGameId
+            r.SelectedGameId,
+            r.SelectedGameTitle
         }).ToList();
         await _hubContext.Clients.Group(GameLobbyHub.LobbyGroupName).SendAsync("LobbyRoomList", payload);
     }
@@ -396,7 +400,7 @@ public class GameLobbyController : ControllerBase
             Status = r.Status.ToString(),
             r.IsLocked,
             r.SelectedGameId,
-            Players = r.Players.Select(p => new { p.PlayerId, p.IsReady, p.IsHost }).ToList()
+            Players = r.Players.Select(p => new { p.PlayerId, p.PlayerName, p.IsReady, p.IsHost }).ToList()
         };
         await _hubContext.Clients.Group($"{GameLobbyHub.RoomGroupPrefix}{roomId}").SendAsync("RoomUpdated", dto);
     }

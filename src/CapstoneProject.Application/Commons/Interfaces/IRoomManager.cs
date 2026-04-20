@@ -51,8 +51,17 @@ public interface IRoomManager
     /// <summary>Get the active game instance for a room, if any.</summary>
     GameInstance? GetGameInstance(Guid roomId);
 
-    /// <summary>Record a player's submission (score, status). Returns ranking when all players have submitted.</summary>
-    (bool Success, string? ErrorMessage, IReadOnlyList<PlayerRankingDto>? RankingIfAllSubmitted) RecordSubmission(Guid roomId, Guid playerId, int score, string status, Guid? submissionId = null);
+    /// <summary>Record a player's submission for the current level and return ranking snapshot.</summary>
+    (bool Success, string? ErrorMessage, IReadOnlyList<PlayerRankingDto>? RankingIfAllSubmitted) RecordSubmission(
+        Guid roomId,
+        Guid playerId,
+        int score,
+        string status,
+        Guid? submissionId = null,
+        Guid? mapDetailId = null,
+        int? stepsUsed = null,
+        int? blocksUsed = null,
+        double? timeSeconds = null);
 
     /// <summary>End the current game: remove GameInstance, set room back to Waiting so room can start again.</summary>
     (bool Success, string? ErrorMessage, LobbyRoom? Room) EndGame(Guid roomId, Guid requestedByPlayerId);

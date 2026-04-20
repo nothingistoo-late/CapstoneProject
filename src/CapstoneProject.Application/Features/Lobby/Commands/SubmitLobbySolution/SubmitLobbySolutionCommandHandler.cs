@@ -65,7 +65,15 @@ public class SubmitLobbySolutionCommandHandler : IRequestHandler<SubmitLobbySolu
         var score = validateResult.Data.Score ?? 0;
         var status = validateResult.Data.Status.ToString();
         var (recordSuccess, recordError, ranking) = _roomManager.RecordSubmission(
-            command.RoomId, userId, score, status, validateResult.Data.SubmissionId);
+            command.RoomId,
+            userId,
+            score,
+            status,
+            validateResult.Data.SubmissionId,
+            validateRequest.GameDetailId,
+            command.Request.StepsUsed,
+            command.Request.BlocksUsed,
+            command.Request.Time);
         if (!recordSuccess)
             return Result<SubmitGameResponse>.Failure(recordError ?? "Không thể ghi lại bài nộp.", ErrorCodeEnum.ValidationFailed);
 

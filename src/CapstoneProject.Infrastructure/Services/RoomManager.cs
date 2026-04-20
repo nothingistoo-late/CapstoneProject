@@ -272,36 +272,87 @@ public class RoomManager : IRoomManager
         return _gameInstances.TryGetValue(roomId, out var instance) ? instance : null;
     }
 
-    public (bool Success, string? ErrorMessage, IReadOnlyList<PlayerRankingDto>? RankingIfAllSubmitted) RecordSubmission(Guid roomId, Guid playerId, int score, string status, Guid? submissionId = null)
+    public (bool Success, string? ErrorMessage, IReadOnlyList<PlayerRankingDto>? RankingIfAllSubmitted) RecordSubmission(
+        Guid roomId,
+        Guid playerId,
+        int score,
+        string status,
+        Guid? submissionId = null,
+        Guid? mapDetailId = null,
+        int? stepsUsed = null,
+        int? blocksUsed = null,
+        double? timeSeconds = null)
     {
         var instance = GetGameInstance(roomId);
         if (instance == null)
             return (false, "Game not found or not started.", null);
         if (!instance.Players.Any(p => p.PlayerId == playerId))
             return (false, "You are not in this game.", null);
-        if (instance.PlayerResults.ContainsKey(playerId))
-            return (false, "Already submitted for this game.", null);
 
-        instance.PlayerResults[playerId] = new PlayerGameResult
+        var levelKey = mapDetailId ?? Guid.Empty;
+        var levelResults = instance.LevelResults.GetOrAdd(levelKey, _ => new ConcurrentDictionary<Guid, PlayerGameResult>());
+        if (levelResults.ContainsKey(playerId))
+            return (false, "Already submitted for this level.", null);
+
+        var playerResult = new PlayerGameResult
         {
             PlayerId = playerId,
+            MapDetailId = mapDetailId,
             Score = score,
             Status = status ?? string.Empty,
+            StepsUsed = stepsUsed,
+            BlocksUsed = blocksUsed,
+            TimeSeconds = timeSeconds,
             SubmittedAt = CapstoneProject.Domain.Common.VietnamDateTime.DbNow,
             SubmissionId = submissionId
         };
+        levelResults[playerId] = playerResult;
+        instance.PlayerResults[playerId] = playerResult;
+        instance.TotalScores.AddOrUpdate(playerId, score, (_, current) => current + score);
 
-        if (instance.PlayerResults.Count < instance.Players.Count)
-            return (true, null, null);
+        var rankingRows = new List<PlayerRankingDto>();
+        foreach (var p in instance.Players.Select(x => x.PlayerId))
+        {
+            var hasSubmittedCurrentLevel = levelResults.TryGetValue(p, out var currentLevelResult);
+            var totalScore = instance.TotalScores.TryGetValue(p, out var sum) ? sum : 0;
+            rankingRows.Add(new PlayerRankingDto
+            {
+                PlayerId = p,
+                Score = totalScore,
+                Status = hasSubmittedCurrentLevel ? currentLevelResult!.Status : "Pending",
+                Rank = 0,
+                LevelDetails = instance.LevelResults
+                    .OrderBy(x => x.Value.Values.Min(v => v.SubmittedAt))
+                    .Select((x, idx) => new { x.Key, x.Value, Index = idx + 1 })
+                    .Where(x => x.Value.TryGetValue(p, out _))
+                    .Select(x =>
+                    {
+                        var levelResult = x.Value[p];
+                        return new PlayerLevelScoreDetailDto
+                        {
+                            MapDetailId = x.Key == Guid.Empty ? null : x.Key,
+                            LevelIndex = x.Index,
+                            Score = levelResult.Score,
+                            Status = levelResult.Status,
+                            StepsUsed = levelResult.StepsUsed,
+                            BlocksUsed = levelResult.BlocksUsed,
+                            TimeSeconds = levelResult.TimeSeconds
+                        };
+                    })
+                    .ToList()
+            });
+        }
 
-        var ordered = instance.PlayerResults.Values
+        var ordered = rankingRows
             .OrderByDescending(r => r.Score)
-            .ThenBy(r => r.SubmittedAt)
+            .ThenBy(r => r.Status == "Pending" ? 1 : 0)
+            .ThenBy(r => r.PlayerId)
             .ToList();
-        var ranking = new List<PlayerRankingDto>();
         for (var i = 0; i < ordered.Count; i++)
-            ranking.Add(new PlayerRankingDto { PlayerId = ordered[i].PlayerId, Score = ordered[i].Score, Rank = i + 1, Status = ordered[i].Status });
-        return (true, null, ranking);
+        {
+            ordered[i].Rank = i + 1;
+        }
+        return (true, null, ordered);
     }
 
     public (bool Success, string? ErrorMessage, LobbyRoom? Room) EndGame(Guid roomId, Guid requestedByPlayerId)
