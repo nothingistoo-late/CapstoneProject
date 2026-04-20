@@ -6,6 +6,7 @@ using CapstoneProject.Domain.Entities;
 using CapstoneProject.Domain.Enums;
 using CapstoneProject.Infrastructure.Context;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 
 namespace CapstoneProject.Infrastructure.Services;
 
@@ -22,11 +23,13 @@ public class ComplaintPolicyService : IComplaintPolicyService
 
     private readonly IUnitOfWork _unitOfWork;
     private readonly CapstoneProjectDbContext _dbContext;
+    private readonly ComplaintWorkflowOptions _workflowOptions;
 
-    public ComplaintPolicyService(IUnitOfWork unitOfWork, CapstoneProjectDbContext dbContext)
+    public ComplaintPolicyService(IUnitOfWork unitOfWork, CapstoneProjectDbContext dbContext, IOptions<ComplaintWorkflowOptions> workflowOptions)
     {
         _unitOfWork = unitOfWork;
         _dbContext = dbContext;
+        _workflowOptions = workflowOptions.Value;
     }
 
     public async Task<ComplaintCreatePolicyResult> ValidateCreateAsync(ComplaintCreatePolicyInput input, CancellationToken cancellationToken)
@@ -83,10 +86,13 @@ public class ComplaintPolicyService : IComplaintPolicyService
                 return Fail("A similar complaint is already open or in progress.");
         }
 
-        var rateRule = rules.FirstOrDefault(x => x.RuleKey == "rate_limit");
-        if (rateRule != null)
+        if (_workflowOptions.EnableDailyComplaintLimit)
         {
-            var maxPerDay = ReadIntConfig(rateRule.ConfigJson, "maxPerDay", 3);
+            var rateRule = rules.FirstOrDefault(x => x.RuleKey == "rate_limit");
+            var maxPerDay = Math.Max(1, _workflowOptions.MaxReportsPerBuyerPerDay);
+            if (rateRule != null)
+                maxPerDay = ReadIntConfig(rateRule.ConfigJson, "maxPerDay", maxPerDay);
+
             var dayStart = VietnamDateTime.DbNow.Date;
             var dayEnd = dayStart.AddDays(1);
             var complaintQuery = _unitOfWork.Repository<Complaint>().GetQueryable()
@@ -132,7 +138,8 @@ public class ComplaintPolicyService : IComplaintPolicyService
         if (complaint == null)
             return RefundFail("Không tìm thấy khiếu nại hợp lệ của người dùng.");
 
-        if (complaint.ComplaintStatus != ComplaintStatusEnum.Resolved)
+        if (complaint.ComplaintStatus != ComplaintStatusEnum.Resolved
+            && complaint.ComplaintStatus != ComplaintStatusEnum.ResolvedRefund)
             return RefundFail("Chỉ khiếu nại đã được giải quyết mới có thể hoàn tiền.");
 
         if (!complaint.CreatedAt.HasValue)
@@ -164,8 +171,8 @@ public class ComplaintPolicyService : IComplaintPolicyService
         if (payment.PaymentStatus == PaymentStatusEnum.Refunded)
             return RefundFail("Giao dịch này đã được hoàn tiền trước đó.");
 
-        if (payment.PaymentStatus != PaymentStatusEnum.Completed)
-            return RefundFail("Chỉ giao dịch đã hoàn tất mới được hoàn tiền.");
+        if (payment.PaymentStatus != PaymentStatusEnum.Completed && payment.PaymentStatus != PaymentStatusEnum.Pending)
+            return RefundFail("Chỉ giao dịch hợp lệ (Pending/Completed) mới được hoàn tiền.");
 
         var refundAmount = payment.Amount;
         if (refundAmount <= 0)
@@ -257,7 +264,11 @@ public class ComplaintPolicyService : IComplaintPolicyService
                 return false;
 
             var purchased = await _unitOfWork.Repository<PaymentRecord>().GetQueryable()
-                .AnyAsync(x => !x.IsDeleted && x.UserId == userId && x.GameId == gameId && x.PaymentStatus == PaymentStatusEnum.Completed, cancellationToken);
+                .AnyAsync(x => !x.IsDeleted
+                               && x.UserId == userId
+                               && x.GameId == gameId
+                               && (x.PaymentStatus == PaymentStatusEnum.Pending || x.PaymentStatus == PaymentStatusEnum.Completed),
+                    cancellationToken);
             if (game.Price.HasValue && game.Price.Value > 0)
                 return purchased;
 
@@ -407,7 +418,10 @@ public class ComplaintPolicyService : IComplaintPolicyService
         if (string.Equals(contextType, "Game", StringComparison.OrdinalIgnoreCase))
         {
             return await _unitOfWork.Repository<PaymentRecord>().GetQueryable()
-                .Where(x => !x.IsDeleted && x.UserId == userId && x.GameId == contextId && x.PaymentStatus == PaymentStatusEnum.Completed)
+                .Where(x => !x.IsDeleted
+                            && x.UserId == userId
+                            && x.GameId == contextId
+                            && (x.PaymentStatus == PaymentStatusEnum.Pending || x.PaymentStatus == PaymentStatusEnum.Completed))
                 .OrderByDescending(x => x.PaidAt ?? x.CreatedAt)
                 .Select(x => (Guid?)x.Id)
                 .FirstOrDefaultAsync(cancellationToken);
@@ -416,7 +430,10 @@ public class ComplaintPolicyService : IComplaintPolicyService
         if (string.Equals(contextType, "Package", StringComparison.OrdinalIgnoreCase))
         {
             return await _unitOfWork.Repository<PaymentRecord>().GetQueryable()
-                .Where(x => !x.IsDeleted && x.UserId == userId && x.PackageId == contextId && x.PaymentStatus == PaymentStatusEnum.Completed)
+                .Where(x => !x.IsDeleted
+                            && x.UserId == userId
+                            && x.PackageId == contextId
+                            && (x.PaymentStatus == PaymentStatusEnum.Pending || x.PaymentStatus == PaymentStatusEnum.Completed))
                 .OrderByDescending(x => x.PaidAt ?? x.CreatedAt)
                 .Select(x => (Guid?)x.Id)
                 .FirstOrDefaultAsync(cancellationToken);

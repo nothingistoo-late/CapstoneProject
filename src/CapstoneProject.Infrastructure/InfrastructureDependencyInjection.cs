@@ -7,6 +7,7 @@ using CapstoneProject.Application.Common.Interfaces;
 using CapstoneProject.Application.Common.Models;
 using CapstoneProject.Application.Commons.Interfaces;
 using CapstoneProject.Application.Commons.Models;
+using CapstoneProject.Application.Commons.Models.Complaints;
 using CapstoneProject.Domain.Entities;
 using CapstoneProject.Infrastructure.Context;
 using CapstoneProject.Infrastructure.Repositories;
@@ -104,6 +105,8 @@ public static class InfrastructureDependencyInjection
             services.AddHangfireServices(configuration);
         }
 
+        services.Configure<ComplaintWorkflowOptions>(configuration.GetSection(ComplaintWorkflowOptions.SectionName));
+
         // Configure Storage settings
         //services.Configure<StorageSettings>(configuration.GetSection("Storage"));
 
@@ -135,6 +138,7 @@ public static class InfrastructureDependencyInjection
         services.AddScoped<ICurrentUserService, CurrentUserService>();
         services.AddScoped<IOtpCacheService, OtpCacheService>();
         services.AddScoped<LeaderboardRewardSettlementJob>();
+        services.AddScoped<ComplaintWorkflowAutoTransitionJob>();
         services.AddScoped<IEmailService, EmailService>();
         services.AddScoped<INotificationFactory, NotificationFactory>();
         services.AddScoped<Application.Commons.Interfaces.IConversationService, Application.Features.Chat.Services.ConversationService>();

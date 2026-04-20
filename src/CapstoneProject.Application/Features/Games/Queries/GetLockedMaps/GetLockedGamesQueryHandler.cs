@@ -1,0 +1,129 @@
+using MediatR;
+using Microsoft.EntityFrameworkCore;
+using CapstoneProject.Application.Common.Interfaces;
+using CapstoneProject.Application.Common.Models;
+using CapstoneProject.Application.Commons.DTOs.Games;
+using CapstoneProject.Application.Commons.Helpers;
+using CapstoneProject.Domain.Entities;
+using CapstoneProject.Domain.Enums;
+
+namespace CapstoneProject.Application.Features.Games.Queries.GetLockedMaps;
+
+public class GetLockedMapsQueryHandler : IRequestHandler<GetLockedMapsQuery, Result<PaginationResult<MapListItemDto>>>
+{
+    private readonly IUnitOfWork _unitOfWork;
+
+    public GetLockedMapsQueryHandler(IUnitOfWork unitOfWork)
+    {
+        _unitOfWork = unitOfWork;
+    }
+
+    public async Task<Result<PaginationResult<MapListItemDto>>> Handle(GetLockedMapsQuery request, CancellationToken cancellationToken)
+    {
+        var query = _unitOfWork.Repository<Game>().GetQueryable()
+            .Where(m => !m.IsDeleted && m.Status == EntityStatusEnum.Inactive)
+            .Include(m => m.GameDetails)
+            .Include(m => m.GameTags).ThenInclude(mt => mt.Tag)
+            .Include(m => m.GameMedias)
+            .Include(m => m.Creator)
+            .AsNoTracking();
+
+        if (request.GameStatus.HasValue)
+            query = query.Where(m => m.GameStatus == request.GameStatus.Value);
+
+        if (request.Difficulty.HasValue)
+            query = query.Where(m => m.Difficulty == request.Difficulty.Value);
+
+        if (request.Type.HasValue)
+        {
+            var mapType = request.Type.Value;
+            query = query.Where(m => m.GameDetails.Any(d => !d.IsDeleted && d.Type == mapType));
+        }
+
+        if (request.TagId.HasValue)
+            query = query.Where(m => m.GameTags.Any(t => t.TagId == request.TagId.Value));
+
+        if (request.CreatedByUserId.HasValue)
+            query = query.Where(m => m.CreatedBy == request.CreatedByUserId.Value);
+
+        if (request.MinPrice.HasValue)
+            query = query.Where(m => (m.Price ?? 0) >= request.MinPrice.Value);
+
+        if (request.MaxPrice.HasValue)
+            query = query.Where(m => (m.Price ?? 0) <= request.MaxPrice.Value);
+
+        if (!string.IsNullOrWhiteSpace(request.Search))
+        {
+            var term = request.Search.Trim().ToLower();
+            query = query.Where(m =>
+                (m.Title != null && m.Title.ToLower().Contains(term)) ||
+                (m.Description != null && m.Description.ToLower().Contains(term)));
+        }
+
+        var total = await query.CountAsync(cancellationToken);
+        var pageNumber = Math.Max(1, request.PageNumber);
+        var pageSize = Math.Clamp(request.PageSize, 1, 100);
+
+        var sortBy = (request.SortBy ?? "UpdatedAt").ToLowerInvariant();
+        query = sortBy switch
+        {
+            "title" => request.SortAscending ? query.OrderBy(m => m.Title) : query.OrderByDescending(m => m.Title),
+            "difficulty" => request.SortAscending ? query.OrderBy(m => m.Difficulty) : query.OrderByDescending(m => m.Difficulty),
+            "timelimitms" => request.SortAscending
+                ? query.OrderBy(m => m.GameDetails.Where(d => !d.IsDeleted).OrderBy(d => d.LevelOrder).Select(d => d.TimeLimitMs).FirstOrDefault())
+                : query.OrderByDescending(m => m.GameDetails.Where(d => !d.IsDeleted).OrderBy(d => d.LevelOrder).Select(d => d.TimeLimitMs).FirstOrDefault()),
+            "price" => request.SortAscending ? query.OrderBy(m => m.Price ?? 0) : query.OrderByDescending(m => m.Price ?? 0),
+            "mapstatus" => request.SortAscending ? query.OrderBy(m => m.GameStatus) : query.OrderByDescending(m => m.GameStatus),
+            "createdat" => request.SortAscending ? query.OrderBy(m => m.CreatedAt) : query.OrderByDescending(m => m.CreatedAt),
+            _ => request.SortAscending ? query.OrderBy(m => m.UpdatedAt ?? m.CreatedAt) : query.OrderByDescending(m => m.UpdatedAt ?? m.CreatedAt)
+        };
+
+        var page = await query.Skip((pageNumber - 1) * pageSize).Take(pageSize).ToListAsync(cancellationToken);
+        var learnedTagIds = page.SelectMany(m => m.LearnedTags).Distinct().ToList();
+        var learnedTagNameMap = await _unitOfWork.Repository<Tag>().GetQueryable()
+            .Where(t => learnedTagIds.Contains(t.Id))
+            .ToDictionaryAsync(t => t.Id, t => t.Name, cancellationToken);
+
+        var list = page.Select(m =>
+        {
+            var (tLimit, win, mapType) = MapFirstLevelHelper.FirstLevelMetadata(m.GameDetails);
+            return new MapListItemDto
+            {
+                Id = m.Id,
+                Title = m.Title,
+                Description = m.Description,
+                Difficulty = m.Difficulty,
+                Type = mapType.ToString(),
+                TimeLimitMs = tLimit,
+                IsPublished = m.IsPublished,
+                GameStatus = m.GameStatus.ToString(),
+                Price = m.Price,
+                FreeTrialAttemptLimit = m.FreeTrialAttemptLimit,
+                CreatedByUserId = m.CreatedBy ?? Guid.Empty,
+                CreatedByUserName = m.Creator != null ? $"{m.Creator.FirstName} {m.Creator.LastName}".Trim() : null,
+                CreatedAt = m.CreatedAt,
+                UpdatedAt = m.UpdatedAt,
+                ContentVersion = m.ContentVersion,
+                TagNames = m.GameTags.Select(t => t.Tag.Name).ToList(),
+                LearnedTags = m.LearnedTags
+                    .Select(id => learnedTagNameMap.TryGetValue(id, out var name) ? name : id.ToString())
+                    .ToList(),
+                WinCondition = win,
+                AvatarUrl = m.AvatarUrl,
+                Gallery = m.GameMedias
+                    .OrderBy(media => media.SortOrder)
+                    .Select(media => new GameMediaItemDto
+                    {
+                        Id = media.Id,
+                        Url = media.Url,
+                        Kind = media.Kind.ToString(),
+                        SortOrder = media.SortOrder
+                    })
+                    .ToList()
+            };
+        }).ToList();
+
+        var result = PaginationResult<MapListItemDto>.Success(list, pageNumber, pageSize, total, "?ã truy xu?t thành công");
+        return Result<PaginationResult<MapListItemDto>>.Success(result, "?ã l?y danh sách game ?ã khóa.");
+    }
+}

@@ -91,9 +91,35 @@ public class UpdateMapCommandHandler : IRequestHandler<UpdateMapCommand, Result>
                         level.Type = requestedType.Value;
                 }
             }
-            foreach (var d in game.GameDetails.ToList())
-                _unitOfWork.Repository<GameDetail>().Delete(d);
-            foreach (var lv in req.Levels.OrderBy(x => x.LevelOrder))
+
+            var incomingLevels = req.Levels.OrderBy(x => x.LevelOrder).ToList();
+            var existingDetailsByLevelOrder = game.GameDetails
+                .ToDictionary(x => x.LevelOrder, x => x);
+
+            var incomingLevelOrders = incomingLevels
+                .Select(x => x.LevelOrder)
+                .ToHashSet();
+
+            var removedDetails = game.GameDetails
+                .Where(x => !incomingLevelOrders.Contains(x.LevelOrder))
+                .ToList();
+
+            if (removedDetails.Count > 0)
+            {
+                var removedDetailIds = removedDetails.Select(x => x.Id).ToList();
+                var hasSubmissionOnRemovedLevels = await _unitOfWork.Repository<Submission>()
+                    .GetQueryable()
+                    .AnyAsync(x => x.GameDetailId.HasValue && removedDetailIds.Contains(x.GameDetailId.Value), cancellationToken);
+                if (hasSubmissionOnRemovedLevels)
+                    return Result.Failure(
+                        "Không thể xoá level đã có bài nộp. Vui lòng giữ lại level đó hoặc tạo version mới.",
+                        ErrorCodeEnum.InvalidOperation);
+
+                foreach (var detailToDelete in removedDetails)
+                    _unitOfWork.Repository<GameDetail>().Delete(detailToDelete);
+            }
+
+            foreach (var lv in incomingLevels)
             {
                 MapHintsExtractor.MergeHintsFromJson(lv);
                 MapLevelMetadataExtractor.MergeFromJson(lv);
@@ -105,6 +131,29 @@ public class UpdateMapCommandHandler : IRequestHandler<UpdateMapCommand, Result>
                     return Result.Failure(
                         MapLevelMetadataExtractor.InvalidMapTypeMessage,
                         ErrorCodeEnum.ValidationFailed);
+
+                if (existingDetailsByLevelOrder.TryGetValue(lv.LevelOrder, out var existingDetail))
+                {
+                    existingDetail.Title = lv.Title;
+                    existingDetail.JsonContent = lv.JsonContent.GetRawText();
+                    existingDetail.TimeLimitMs = lv.TimeLimitMs;
+                    existingDetail.WinCondition = lv.WinCondition;
+                    existingDetail.Type = lv.Type.Value;
+                    existingDetail.UpdateEntity(userId);
+                    _unitOfWork.Repository<GameDetail>().Update(existingDetail);
+
+                    foreach (var existingHint in existingDetail.Hints.ToList())
+                        _unitOfWork.Repository<Hint>().Delete(existingHint);
+                    foreach (var h in lv.Hints.OrderBy(x => x.OrderNo))
+                    {
+                        var hint = new Hint { GameDetailId = existingDetail.Id, OrderNo = h.OrderNo, Content = h.Content };
+                        hint.InitializeEntity(userId);
+                        await _unitOfWork.Repository<Hint>().AddAsync(hint);
+                    }
+
+                    continue;
+                }
+
                 var detail = new GameDetail
                 {
                     GameId = game.Id,

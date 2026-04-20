@@ -25,7 +25,8 @@ public class GetMapByIdQueryHandler : IRequestHandler<GetMapByIdQuery, Result<Ga
     {
         var mapRepo = _unitOfWork.Repository<Game>();
         var requestedMap = await mapRepo.GetQueryable()
-            .Where(m => m.Id == request.GameId && m.Status == EntityStatusEnum.Active)
+            .Where(m => m.Id == request.GameId
+                        && (request.IncludeInactive || m.Status == EntityStatusEnum.Active))
             .AsNoTracking()
             .FirstOrDefaultAsync(cancellationToken);
         if (requestedMap == null)
@@ -48,7 +49,8 @@ public class GetMapByIdQueryHandler : IRequestHandler<GetMapByIdQuery, Result<Ga
         }
 
         var game = await mapRepo.GetQueryable()
-            .Where(m => m.Id == resolvedGameId && m.Status == EntityStatusEnum.Active)
+            .Where(m => m.Id == resolvedGameId
+                        && (request.IncludeInactive || m.Status == EntityStatusEnum.Active))
             .Include(m => m.GameDetails).ThenInclude(d => d.Hints)
             .Include(m => m.GameMedias)
             .Include(m => m.GameTags).ThenInclude(mt => mt.Tag)

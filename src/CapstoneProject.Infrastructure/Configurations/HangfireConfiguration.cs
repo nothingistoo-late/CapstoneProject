@@ -6,6 +6,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Npgsql;
 using CapstoneProject.Application.Commons.Interfaces;
+using CapstoneProject.Application.Commons.Models.Complaints;
 using CapstoneProject.Application.Commons.Models.Leaderboards;
 using CapstoneProject.Infrastructure.Services;
 
@@ -278,6 +279,28 @@ DELETE FROM hangfire.set WHERE ""key"" = 'recurring-jobs' AND value = 'quicklogi
         CleanupObsoleteQuickLoginRecurringRecords(configuration, logger);
         
         // Setup leaderboard reward settlement jobs (weekly + monthly + optional minute test)
+        var complaintWorkflowOptions = configuration.GetSection(ComplaintWorkflowOptions.SectionName).Get<ComplaintWorkflowOptions>()
+                                      ?? new ComplaintWorkflowOptions();
+        if (complaintWorkflowOptions.EnableAutoTransitions)
+        {
+            var complaintWorkflowCron = string.IsNullOrWhiteSpace(complaintWorkflowOptions.AutoTransitionCron)
+                ? "*/5 * * * *"
+                : complaintWorkflowOptions.AutoTransitionCron;
+
+            TryScheduleRecurringJob(() =>
+                    recurringJobManager.AddOrUpdate(
+                        "complaint-workflow-auto-transition",
+                        (ComplaintWorkflowAutoTransitionJob job) => job.ExecuteAsync(),
+                        complaintWorkflowCron,
+                        new RecurringJobOptions { TimeZone = TimeZoneInfo.Utc }),
+                logger,
+                "complaint-workflow-auto-transition");
+        }
+        else
+        {
+            TryRemoveRecurringJob(recurringJobManager, logger, "complaint-workflow-auto-transition");
+        }
+
         var lbOptions = configuration.GetSection(LeaderboardRewardsOptions.SectionName).Get<LeaderboardRewardsOptions>()
                         ?? new LeaderboardRewardsOptions();
         var cycle = lbOptions.Cycle ?? new LeaderboardCycleOptions();

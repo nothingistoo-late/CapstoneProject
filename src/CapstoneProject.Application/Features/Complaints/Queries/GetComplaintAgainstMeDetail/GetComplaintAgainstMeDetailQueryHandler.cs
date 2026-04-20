@@ -1,21 +1,22 @@
-﻿using CapstoneProject.Application.Common.Enums;
+using CapstoneProject.Application.Common.Enums;
 using CapstoneProject.Application.Common.Interfaces;
 using CapstoneProject.Application.Common.Models;
 using CapstoneProject.Application.Commons.DTOs.Complaints;
+using CapstoneProject.Application.Commons.Interfaces;
+using CapstoneProject.Application.Features.Complaints.Queries.GetComplaintDetail;
 using CapstoneProject.Domain.Entities;
-using CapstoneProject.Domain.Enums;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 
-namespace CapstoneProject.Application.Features.Complaints.Queries.GetComplaintDetail;
+namespace CapstoneProject.Application.Features.Complaints.Queries.GetComplaintAgainstMeDetail;
 
-public class GetComplaintDetailQueryHandler : IRequestHandler<GetComplaintDetailQuery, Result<ComplaintDetailDto>>
+public class GetComplaintAgainstMeDetailQueryHandler : IRequestHandler<GetComplaintAgainstMeDetailQuery, Result<ComplaintDetailDto>>
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly ICurrentUserService _currentUserService;
     private readonly IComplaintContextResolver _complaintContextResolver;
 
-    public GetComplaintDetailQueryHandler(
+    public GetComplaintAgainstMeDetailQueryHandler(
         IUnitOfWork unitOfWork,
         ICurrentUserService currentUserService,
         IComplaintContextResolver complaintContextResolver)
@@ -25,18 +26,16 @@ public class GetComplaintDetailQueryHandler : IRequestHandler<GetComplaintDetail
         _complaintContextResolver = complaintContextResolver;
     }
 
-    public async Task<Result<ComplaintDetailDto>> Handle(GetComplaintDetailQuery request, CancellationToken cancellationToken)
+    public async Task<Result<ComplaintDetailDto>> Handle(GetComplaintAgainstMeDetailQuery request, CancellationToken cancellationToken)
     {
-        var (isValid, _) = await _currentUserService.IsUserValidAsync();
-        if (!isValid)
-            return Result<ComplaintDetailDto>.Failure("Yêu cầu xác thực. Vui lòng đăng nhập để xem chi tiết khiếu nại.", ErrorCodeEnum.Unauthorized);
-
-        var roles = await _currentUserService.GetCurrentRolesAsync();
-        if (!roles.Contains(RoleEnum.Admin) && !roles.Contains(RoleEnum.Moderator))
-            return Result<ComplaintDetailDto>.Failure("Bạn không có quyền xem chi tiết khiếu nại. Chỉ có Quản trị viên hoặc Người điều hành mới có thể truy cập.", ErrorCodeEnum.Forbidden);
+        var (isValid, userIdNullable) = await _currentUserService.IsUserValidAsync();
+        if (!isValid || !userIdNullable.HasValue)
+            return Result<ComplaintDetailDto>.Failure("Authentication required. Please log in to view complaint detail.", ErrorCodeEnum.Unauthorized);
 
         if (request.ComplaintId == Guid.Empty)
-            return Result<ComplaintDetailDto>.Failure("Khiếu nạiId là bắt buộc.", ErrorCodeEnum.ValidationFailed);
+            return Result<ComplaintDetailDto>.Failure("ComplaintId is required.", ErrorCodeEnum.ValidationFailed);
+
+        var userId = userIdNullable.Value;
 
         var complaint = await _unitOfWork.Repository<Complaint>().GetQueryable()
             .Include(c => c.Messages)
@@ -45,16 +44,21 @@ public class GetComplaintDetailQueryHandler : IRequestHandler<GetComplaintDetail
             .FirstOrDefaultAsync(c => c.Id == request.ComplaintId && !c.IsDeleted, cancellationToken);
 
         if (complaint == null)
-            return Result<ComplaintDetailDto>.Failure($"Không tìm thấy khiếu nại với Id: {request.ComplaintId}.", ErrorCodeEnum.NotFound);
+            return Result<ComplaintDetailDto>.Failure($"Complaint not found: {request.ComplaintId}", ErrorCodeEnum.NotFound);
 
-        var sellerUserId = await ResolveSellerUserIdAsync(complaint, cancellationToken);
+        var gameId = await ResolveComplaintGameIdAsync(complaint, cancellationToken);
+        if (!gameId.HasValue)
+            return Result<ComplaintDetailDto>.Failure("This complaint is not associated with a seller-owned game context.", ErrorCodeEnum.Forbidden);
+
+        var isSeller = await _unitOfWork.Repository<Game>().GetQueryable()
+            .AnyAsync(g => !g.IsDeleted && g.Id == gameId.Value && g.CreatedBy == userId, cancellationToken);
+        if (!isSeller)
+            return Result<ComplaintDetailDto>.Failure("You do not have permission to view this complaint.", ErrorCodeEnum.Forbidden);
 
         var dto = new ComplaintDetailDto
         {
             Id = complaint.Id,
             UserId = complaint.UserId,
-            BuyerUserId = complaint.UserId,
-            SellerUserId = sellerUserId,
             Subject = complaint.Subject,
             Category = complaint.Category,
             CategoryKey = complaint.CategoryKey,
@@ -79,15 +83,12 @@ public class GetComplaintDetailQueryHandler : IRequestHandler<GetComplaintDetail
             RefundedAt = complaint.RefundedAt,
             RefundReason = complaint.RefundReason,
             Messages = complaint.Messages
-                .Where(m => !m.IsDeleted)
+                .Where(m => !m.IsDeleted && !m.IsInternal)
                 .OrderBy(m => m.CreatedAt)
                 .Select(m => new ComplaintMessageDto
                 {
                     Id = m.Id,
                     SenderId = m.SenderId,
-                    SenderParty = m.SenderId == complaint.UserId
-                        ? "Buyer"
-                        : (sellerUserId.HasValue && m.SenderId == sellerUserId.Value ? "Seller" : "Other"),
                     Content = m.Content,
                     IsInternal = m.IsInternal,
                     CreatedAt = m.CreatedAt,
@@ -121,33 +122,22 @@ public class GetComplaintDetailQueryHandler : IRequestHandler<GetComplaintDetail
                 .ToList()
         };
 
-        return Result<ComplaintDetailDto>.Success(dto, "Đã lấy chi tiết khiếu nại.");
+        return Result<ComplaintDetailDto>.Success(dto, "Retrieved complaint detail.");
     }
 
-    private async Task<Guid?> ResolveSellerUserIdAsync(Complaint complaint, CancellationToken cancellationToken)
+    private async Task<Guid?> ResolveComplaintGameIdAsync(Complaint complaint, CancellationToken cancellationToken)
     {
-        Guid? gameId = null;
-
         if (string.Equals(complaint.ContextType, "Game", StringComparison.OrdinalIgnoreCase) && complaint.ContextId.HasValue)
-            gameId = complaint.ContextId.Value;
+            return complaint.ContextId.Value;
 
-        if (gameId == null
-            && string.Equals(complaint.ContextType, "PaymentRecord", StringComparison.OrdinalIgnoreCase)
-            && complaint.ContextId.HasValue)
+        if (string.Equals(complaint.ContextType, "PaymentRecord", StringComparison.OrdinalIgnoreCase) && complaint.ContextId.HasValue)
         {
-            gameId = await _unitOfWork.Repository<PaymentRecord>().GetQueryable()
+            return await _unitOfWork.Repository<PaymentRecord>().GetQueryable()
                 .Where(x => !x.IsDeleted && x.Id == complaint.ContextId.Value)
                 .Select(x => x.GameId)
                 .FirstOrDefaultAsync(cancellationToken);
         }
 
-        if (!gameId.HasValue)
-            return null;
-
-        return await _unitOfWork.Repository<Game>().GetQueryable()
-            .Where(x => !x.IsDeleted && x.Id == gameId.Value)
-            .Select(x => x.CreatedBy)
-            .FirstOrDefaultAsync(cancellationToken);
+        return null;
     }
 }
-
