@@ -16,11 +16,13 @@ public class RoomManager : IRoomManager
     private static readonly ConcurrentDictionary<Guid, LobbyRoom> _rooms = new();
     private static readonly ConcurrentDictionary<Guid, GameInstance> _gameInstances = new();
     private static readonly ConcurrentDictionary<string, Guid> _roomIdByCode = new(StringComparer.OrdinalIgnoreCase);
+    private static readonly TimeSpan WaitingRoomIdleTtl = TimeSpan.FromHours(2);
     private const int RoomCodeLength = 6;
     private static readonly Random _random = new();
 
     public IReadOnlyList<LobbyRoomListItemDto> GetLobbyRooms()
     {
+        CleanupExpiredWaitingRooms();
         return _rooms.Values
             .Select(r => new LobbyRoomListItemDto
             {
@@ -38,11 +40,13 @@ public class RoomManager : IRoomManager
 
     public LobbyRoom? GetRoomById(Guid roomId)
     {
+        CleanupExpiredWaitingRooms();
         return _rooms.TryGetValue(roomId, out var room) ? room : null;
     }
 
     public LobbyRoom? GetRoomByCode(string roomCode)
     {
+        CleanupExpiredWaitingRooms();
         if (string.IsNullOrWhiteSpace(roomCode)) return null;
         return _roomIdByCode.TryGetValue(roomCode.Trim(), out var roomId) && _rooms.TryGetValue(roomId, out var room)
             ? room
@@ -51,6 +55,7 @@ public class RoomManager : IRoomManager
 
     public LobbyRoom? GetRoomContainingPlayer(Guid playerId)
     {
+        CleanupExpiredWaitingRooms();
         if (playerId == Guid.Empty) return null;
         return _rooms.Values.FirstOrDefault(r => r.Players.ContainsKey(playerId));
     }
@@ -74,7 +79,8 @@ public class RoomManager : IRoomManager
             MaxPlayers = maxPlayers,
             Status = RoomStatusEnum.Waiting,
             IsLocked = false,
-            SelectedGameId = selectedGameId
+            SelectedGameId = selectedGameId,
+            LastActivityAt = CapstoneProject.Domain.Common.VietnamDateTime.DbNow
         };
 
         var host = new LobbyPlayer
@@ -100,10 +106,17 @@ public class RoomManager : IRoomManager
         var room = GetRoomById(roomId);
         if (room == null)
             return (false, "Không tìm thấy phòng.", null);
+        // Member reconnect / re-join SignalR group while Playing: must run before Waiting gate.
+        if (room.Players.ContainsKey(playerId))
+        {
+            TouchRoom(room);
+            if (room.Players.TryGetValue(playerId, out var existing))
+                existing.ConnectionId = connectionId ?? string.Empty;
+            return (false, "Already in this room.", room);
+        }
+
         if (room.Status != RoomStatusEnum.Waiting)
             return (false, "Room is not accepting players.", null);
-        if (room.Players.ContainsKey(playerId))
-            return (false, "Already in this room.", null);
         if (room.IsFull)
             return (false, "Room is full.", null);
         if (room.IsLocked)
@@ -122,6 +135,7 @@ public class RoomManager : IRoomManager
         if (!room.Players.TryAdd(playerId, player))
             return (false, "Could not join room.", null);
 
+        TouchRoom(room);
         return (true, null, room);
     }
 
@@ -166,6 +180,7 @@ public class RoomManager : IRoomManager
             gi.TurnOrder = stillIn.Select(p => p.PlayerId).ToList();
         }
 
+        TouchRoom(room);
         return (true, null, room);
     }
 
@@ -180,6 +195,7 @@ public class RoomManager : IRoomManager
             return (false, "Player not in room.", null);
 
         player.IsReady = !player.IsReady;
+        TouchRoom(room);
         return (true, null, room);
     }
 
@@ -219,6 +235,7 @@ public class RoomManager : IRoomManager
         };
         _gameInstances[roomId] = gameInstance;
 
+        TouchRoom(room);
         return (true, null, gameInstance, room);
     }
 
@@ -236,6 +253,7 @@ public class RoomManager : IRoomManager
         if (!room.Players.TryRemove(targetPlayerId, out _))
             return (false, "Player not in room.", null);
 
+        TouchRoom(room);
         return (true, null, room);
     }
 
@@ -250,6 +268,7 @@ public class RoomManager : IRoomManager
             return (false, "Cannot change lock after game has started.", null);
 
         room.IsLocked = isLocked;
+        TouchRoom(room);
         return (true, null, room);
     }
 
@@ -276,6 +295,7 @@ public class RoomManager : IRoomManager
         }
 
         room.SelectedGameId = gameId;
+        TouchRoom(room);
         return (true, null, room);
     }
 
@@ -364,6 +384,8 @@ public class RoomManager : IRoomManager
         {
             ordered[i].Rank = i + 1;
         }
+        if (_rooms.TryGetValue(roomId, out var room))
+            TouchRoom(room);
         return (true, null, ordered);
     }
 
@@ -382,6 +404,7 @@ public class RoomManager : IRoomManager
         foreach (var p in room.Players.Values)
             p.IsReady = false;
 
+        TouchRoom(room);
         return (true, null, room);
     }
 
@@ -410,6 +433,28 @@ public class RoomManager : IRoomManager
         for (var i = 0; i < RoomCodeLength; i++)
             sb.Append(chars[_random.Next(chars.Length)]);
         return sb.ToString();
+    }
+
+    private static void TouchRoom(LobbyRoom room)
+    {
+        room.LastActivityAt = CapstoneProject.Domain.Common.VietnamDateTime.DbNow;
+    }
+
+    private static void CleanupExpiredWaitingRooms()
+    {
+        var now = CapstoneProject.Domain.Common.VietnamDateTime.DbNow;
+        foreach (var kvp in _rooms)
+        {
+            var room = kvp.Value;
+            if (room.Status != RoomStatusEnum.Waiting)
+                continue;
+            if ((now - room.LastActivityAt) < WaitingRoomIdleTtl)
+                continue;
+
+            _rooms.TryRemove(room.RoomId, out _);
+            _roomIdByCode.TryRemove(room.RoomCode, out _);
+            _gameInstances.TryRemove(room.RoomId, out _);
+        }
     }
 }
 

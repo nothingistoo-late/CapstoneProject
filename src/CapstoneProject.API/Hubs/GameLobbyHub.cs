@@ -1,4 +1,5 @@
 ﻿using MediatR;
+using System.Collections.Concurrent;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.SignalR;
@@ -28,6 +29,8 @@ public class GameLobbyHub : Hub
     private readonly IMediator _mediator;
     private readonly ILogger<GameLobbyHub> _logger;
     private readonly IUnitOfWork _unitOfWork;
+    private static readonly ConcurrentDictionary<Guid, ConcurrentQueue<RoomChatMessageDto>> RoomChatStore = new();
+    private const int MaxRoomChatMessages = 200;
 
     public GameLobbyHub(
         IRoomManager roomManager,
@@ -90,6 +93,8 @@ public class GameLobbyHub : Hub
             await Clients.Caller.SendAsync("Error", "Không tạo được phòng.");
             return;
         }
+
+        EnsureRoomChat(room.RoomId);
 
         await Groups.AddToGroupAsync(Context.ConnectionId, RoomGroup(room.RoomId));
         await Clients.Caller.SendAsync("RoomCreated", ToRoomDto(room));
@@ -186,8 +191,6 @@ public class GameLobbyHub : Hub
             return;
         }
 
-        var roomSnapshot = _roomManager.GetRoomById(roomId);
-        var roomCode = roomSnapshot?.RoomCode?.Trim();
         var leftPlayerName = await GetUserDisplayNameAsync(userId);
         var (success, errorMessage, updatedRoom) = _roomManager.LeaveRoom(roomId, userId);
         if (!success)
@@ -202,7 +205,10 @@ public class GameLobbyHub : Hub
         if (updatedRoom != null)
             await BroadcastRoomUpdated(updatedRoom);
         else
+        {
             _roomManager.RemoveRoom(roomId);
+            RemoveRoomChat(roomId);
+        }
 
         await Clients.Group(RoomGroup(roomId)).SendAsync("PlayerLeftRoom", new
         {
@@ -210,7 +216,6 @@ public class GameLobbyHub : Hub
             PlayerId = userId,
             PlayerName = leftPlayerName
         });
-        await CleanupRoomConversationIfEmptyAsync(roomId, roomCode, userId);
         await BroadcastLobbyRoomList();
         _logger.LogInformation("User {UserId} left room {RoomId}", userId, roomId);
     }
@@ -488,11 +493,23 @@ public class GameLobbyHub : Hub
         });
         if (ranking != null && ranking.Count > 0)
         {
-            await Clients.Group(RoomGroup(roomId)).SendAsync("RankingUpdated", new
+            var rankingPayload = new
             {
                 RoomId = roomId,
                 Ranking = ranking
-            });
+            };
+
+            await Clients.Group(RoomGroup(roomId)).SendAsync("RankingUpdated", rankingPayload);
+
+            // Also push to per-user groups so result screens still receive realtime updates
+            // even when the connection is temporarily not in the room SignalR group.
+            var roomPlayerGroupNames = room.Players.Keys
+                .Select(playerId => $"User_{playerId}")
+                .ToList();
+            if (roomPlayerGroupNames.Count > 0)
+            {
+                await Clients.Groups(roomPlayerGroupNames).SendAsync("RankingUpdated", rankingPayload);
+            }
         }
 
         _logger.LogInformation("User {UserId} submitted in room {RoomId}; score={Score}, ranking prepared={HasRanking}", userId, roomId, score, ranking?.Count > 0);
@@ -586,14 +603,16 @@ public class GameLobbyHub : Hub
             if (updatedRoom != null)
                 await BroadcastRoomUpdated(updatedRoom);
             else
+            {
                 _roomManager.RemoveRoom(room.RoomId);
+                RemoveRoomChat(room.RoomId);
+            }
             await Clients.Group(RoomGroup(room.RoomId)).SendAsync("PlayerLeftRoom", new
             {
                 RoomId = room.RoomId,
                 PlayerId = userId,
                 PlayerName = leftPlayerName
             });
-            await CleanupRoomConversationIfEmptyAsync(room.RoomId, room.RoomCode, userId);
             await BroadcastLobbyRoomList();
             break;
         }
@@ -612,33 +631,66 @@ public class GameLobbyHub : Hub
         return userId.ToString("N")[..8];
     }
 
-    private async Task CleanupRoomConversationIfEmptyAsync(Guid roomId, string? roomCode, Guid closedByUserId)
+    public async Task<List<object>> GetRoomChatMessages(Guid roomId, int take = 50)
     {
-        if (string.IsNullOrWhiteSpace(roomCode)) return;
-        var room = _roomManager.GetRoomById(roomId);
-        if (room != null && room.PlayerCount > 0) return;
-
-        var conversationName = $"Lobby {roomCode.Trim()}";
-        var chatRoomRepo = _unitOfWork.Repository<ChatRoom>();
-        var chatRoom = await chatRoomRepo.GetQueryable()
-            .FirstOrDefaultAsync(c =>
-                !c.IsDeleted &&
-                c.RoomType == ChatRoomTypeEnum.TemporaryGroup &&
-                c.Name != null &&
-                c.Name.ToLower() == conversationName.ToLower());
-        if (chatRoom == null) return;
-
-        var actor = closedByUserId == Guid.Empty ? Guid.Empty : closedByUserId;
-        if (!chatRoom.IsClosed)
+        if (!TryGetUserId(out var userId))
         {
-            chatRoom.Close(actor);
+            await Clients.Caller.SendAsync("Error", "Not authenticated.");
+            return new List<object>();
         }
 
-        chatRoom.IsDeleted = true;
-        chatRoom.DeletedAt = CapstoneProject.Domain.Common.VietnamDateTime.DbNow;
-        chatRoom.DeletedBy = actor;
-        chatRoomRepo.Update(chatRoom);
-        await _unitOfWork.SaveChangesAsync();
+        var room = _roomManager.GetRoomById(roomId);
+        if (room?.Players.ContainsKey(userId) != true)
+        {
+            await Clients.Caller.SendAsync("Error", "Bạn không ở trong phòng này.");
+            return new List<object>();
+        }
+
+        var queue = EnsureRoomChat(roomId);
+
+        return queue.ToArray()
+            .TakeLast(Math.Clamp(take, 1, 200))
+            .Select(m => (object)m)
+            .ToList();
+    }
+
+    public async Task SendRoomChatMessage(Guid roomId, string content)
+    {
+        if (!TryGetUserId(out var userId))
+        {
+            await Clients.Caller.SendAsync("Error", "Not authenticated.");
+            return;
+        }
+
+        var room = _roomManager.GetRoomById(roomId);
+        if (room?.Players.ContainsKey(userId) != true)
+        {
+            await Clients.Caller.SendAsync("Error", "Bạn không ở trong phòng này.");
+            return;
+        }
+
+        var text = (content ?? string.Empty).Trim();
+        if (string.IsNullOrWhiteSpace(text))
+            return;
+
+        var message = new RoomChatMessageDto
+        {
+            Id = Guid.NewGuid(),
+            RoomId = roomId,
+            SenderId = userId,
+            SenderName = await GetUserDisplayNameAsync(userId),
+            Content = text.Length > 1000 ? text[..1000] : text,
+            CreatedAt = DateTime.UtcNow
+        };
+
+        var queue = EnsureRoomChat(roomId);
+        queue.Enqueue(message);
+        while (queue.Count > MaxRoomChatMessages && queue.TryDequeue(out _))
+        {
+            // trim old messages in-memory
+        }
+
+        await Clients.Group(RoomGroup(roomId)).SendAsync("RoomChatMessage", message);
     }
 
     private async Task SendLobbyRoomListToClient(string connectionId)
@@ -694,4 +746,20 @@ public class GameLobbyHub : Hub
             Players = room.Players.Values.Select(p => new { p.PlayerId, p.IsReady, p.IsHost }).ToList()
         };
     }
+
+    public static ConcurrentQueue<RoomChatMessageDto> EnsureRoomChat(Guid roomId)
+        => RoomChatStore.GetOrAdd(roomId, _ => new ConcurrentQueue<RoomChatMessageDto>());
+
+    public static void RemoveRoomChat(Guid roomId)
+        => RoomChatStore.TryRemove(roomId, out _);
+}
+
+public class RoomChatMessageDto
+{
+    public Guid Id { get; set; }
+    public Guid RoomId { get; set; }
+    public Guid SenderId { get; set; }
+    public string SenderName { get; set; } = string.Empty;
+    public string Content { get; set; } = string.Empty;
+    public DateTime CreatedAt { get; set; }
 }
