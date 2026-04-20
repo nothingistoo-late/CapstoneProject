@@ -52,9 +52,9 @@ public class CheckMapOwnershipQueryHandler : IRequestHandler<CheckMapOwnershipQu
                             && p.UserId == userId.Value
                             && p.GameId.HasValue
                             && lineGameIds.Contains(p.GameId.Value)
-                            && p.PaymentStatus == PaymentStatusEnum.Completed)
-                .OrderByDescending(p => p.CreatedAt)
-                .Select(p => (DateTime?)p.CreatedAt)
+                            && (p.PaymentStatus == PaymentStatusEnum.Pending || p.PaymentStatus == PaymentStatusEnum.Completed))
+                .OrderByDescending(p => p.PaidAt ?? p.CreatedAt)
+                .Select(p => (DateTime?)(p.PaidAt ?? p.CreatedAt))
                 .FirstOrDefaultAsync(cancellationToken);
             purchased = purchasedAt.HasValue;
             if (!purchased)

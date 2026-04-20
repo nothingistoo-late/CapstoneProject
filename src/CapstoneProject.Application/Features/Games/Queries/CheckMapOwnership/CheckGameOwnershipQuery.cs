@@ -13,8 +13,8 @@ public class CheckMapOwnershipDto
     public bool IsOwned { get; set; }
     /// <summary>True nếu user là tác giả (CreatedBy); false nếu chỉ mua.</summary>
     public bool IsAuthor { get; set; }
-    /// <summary>True nếu game được sở hữu thông qua giao dịch mua game thành công.</summary>
+    /// <summary>True nếu game được sở hữu thông qua giao dịch mua game (escrow Pending hoặc Completed).</summary>
     public bool IsPurchased { get; set; }
-    /// <summary>Thời điểm giao dịch mua game thành công gần nhất trong line game.</summary>
+    /// <summary>Thời điểm giao dịch mua game gần nhất trong line game.</summary>
     public DateTime? PurchasedAt { get; set; }
 }

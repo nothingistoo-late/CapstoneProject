@@ -8,6 +8,7 @@ using CapstoneProject.Domain.Entities;
 using CapstoneProject.Domain.Enums;
 using MediatR;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using System.Text.Json;
 
@@ -28,6 +29,7 @@ public class CreateComplaintCommandHandler : IRequestHandler<CreateComplaintComm
     private readonly IComplaintContextResolver _complaintContextResolver;
     private readonly ICloudinaryService _cloudinaryService;
     private readonly INotificationPersistenceService _notificationPersistenceService;
+    private readonly UserManager<AppUser> _userManager;
 
     public CreateComplaintCommandHandler(
         IUnitOfWork unitOfWork,
@@ -35,7 +37,8 @@ public class CreateComplaintCommandHandler : IRequestHandler<CreateComplaintComm
         IComplaintPolicyService complaintPolicyService,
         IComplaintContextResolver complaintContextResolver,
         ICloudinaryService cloudinaryService,
-        INotificationPersistenceService notificationPersistenceService)
+        INotificationPersistenceService notificationPersistenceService,
+        UserManager<AppUser> userManager)
     {
         _unitOfWork = unitOfWork;
         _currentUserService = currentUserService;
@@ -43,6 +46,7 @@ public class CreateComplaintCommandHandler : IRequestHandler<CreateComplaintComm
         _complaintContextResolver = complaintContextResolver;
         _cloudinaryService = cloudinaryService;
         _notificationPersistenceService = notificationPersistenceService;
+        _userManager = userManager;
     }
 
     public async Task<Result<CreateComplaintResponseDto>> Handle(CreateComplaintCommand command, CancellationToken cancellationToken)
@@ -168,37 +172,48 @@ public class CreateComplaintCommandHandler : IRequestHandler<CreateComplaintComm
             // Log error but don't fail the complaint creation if notification fails
         }
 
-        // Notify context owner (e.g., game creator if complaint is about a game)
-        if (complaint.ContextType == "Game" && complaint.ContextId.HasValue)
+        // Notify context owner (seller) and moderators/admins
+        var recipients = new HashSet<Guid>();
+        var sellerId = await ResolveSellerUserIdAsync(complaint, cancellationToken);
+        if (sellerId.HasValue && sellerId.Value != userId)
+            recipients.Add(sellerId.Value);
+
+        var moderatorUsers = await _userManager.GetUsersInRoleAsync(RoleEnum.Moderator.ToString());
+        foreach (var moderatorUser in moderatorUsers)
+        {
+            if (moderatorUser.Id != userId)
+                recipients.Add(moderatorUser.Id);
+        }
+
+        var adminUsers = await _userManager.GetUsersInRoleAsync(RoleEnum.Admin.ToString());
+        foreach (var adminUser in adminUsers)
+        {
+            if (adminUser.Id != userId)
+                recipients.Add(adminUser.Id);
+        }
+
+        if (recipients.Count > 0)
         {
             try
             {
-                var game = await _unitOfWork.Repository<Game>()
-                    .GetQueryable()
-                    .AsNoTracking()
-                    .FirstOrDefaultAsync(m => m.Id == complaint.ContextId && !m.IsDeleted, cancellationToken);
-
-                if (game?.CreatedBy.HasValue == true && game.CreatedBy != userId)
+                var contextPayloadJson = JsonSerializer.Serialize(new
                 {
-                    var contextPayloadJson = JsonSerializer.Serialize(new
-                    {
-                        complaintId = complaint.Id,
-                        gameId = game.Id,
-                        mapTitle = game.Title,
-                        subject = complaint.Subject,
-                        complainer = complaint.UserId
-                    });
+                    complaintId = complaint.Id,
+                    subject = complaint.Subject,
+                    complainer = complaint.UserId,
+                    contextType = complaint.ContextType,
+                    contextId = complaint.ContextId
+                });
 
-                    await _notificationPersistenceService.CreateNotificationAsync(
-                        NotificationTypeEnum.MapComplainedAbout,
-                        "Game của bạn bị khiếu nại",
-                        $"Game \"{game.Title}\" đã nhận một khiếu nại: \"{complaint.Subject}\"",
-                        new List<Guid> { game.CreatedBy.Value },
-                        userId,
-                        contextPayloadJson,
-                        $"/learner/complaints/{complaint.Id}",
-                        cancellationToken);
-                }
+                await _notificationPersistenceService.CreateNotificationAsync(
+                    NotificationTypeEnum.MapComplainedAbout,
+                    "Có khiếu nại mới",
+                    $"Khiếu nại \"{complaint.Subject}\" vừa được tạo và cần phản hồi.",
+                    recipients.ToList(),
+                    userId,
+                    contextPayloadJson,
+                    $"/learner/complaints/{complaint.Id}",
+                    cancellationToken);
             }
             catch
             {
@@ -286,6 +301,32 @@ public class CreateComplaintCommandHandler : IRequestHandler<CreateComplaintComm
                 // ignore cleanup failures
             }
         }
+    }
+
+    private async Task<Guid?> ResolveSellerUserIdAsync(Complaint complaint, CancellationToken cancellationToken)
+    {
+        Guid? gameId = null;
+
+        if (string.Equals(complaint.ContextType, "Game", StringComparison.OrdinalIgnoreCase) && complaint.ContextId.HasValue)
+            gameId = complaint.ContextId.Value;
+
+        if (gameId == null
+            && string.Equals(complaint.ContextType, "PaymentRecord", StringComparison.OrdinalIgnoreCase)
+            && complaint.ContextId.HasValue)
+        {
+            gameId = await _unitOfWork.Repository<PaymentRecord>().GetQueryable()
+                .Where(x => !x.IsDeleted && x.Id == complaint.ContextId.Value)
+                .Select(x => x.GameId)
+                .FirstOrDefaultAsync(cancellationToken);
+        }
+
+        if (!gameId.HasValue)
+            return null;
+
+        return await _unitOfWork.Repository<Game>().GetQueryable()
+            .Where(x => !x.IsDeleted && x.Id == gameId.Value)
+            .Select(x => x.CreatedBy)
+            .FirstOrDefaultAsync(cancellationToken);
     }
 }
 

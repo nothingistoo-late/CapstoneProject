@@ -17,9 +17,12 @@ using CapstoneProject.Application.Features.Games.Commands.UpdateTag;
 using CapstoneProject.Application.Features.Games.Commands.UploadMapAvatar;
 using CapstoneProject.Application.Features.Games.Commands.AddMapGalleryMedia;
 using CapstoneProject.Application.Features.Games.Commands.DeleteMapGalleryMedia;
+using CapstoneProject.Application.Features.Games.Commands.LockMap;
+using CapstoneProject.Application.Features.Games.Commands.UnlockMap;
 using CapstoneProject.Application.Features.Games.Queries.GetMapById;
 using CapstoneProject.Application.Features.Games.Queries.GetAllMapsForAdmin;
 using CapstoneProject.Application.Features.Games.Queries.GetDeletedMaps;
+using CapstoneProject.Application.Features.Games.Queries.GetLockedMaps;
 using CapstoneProject.Application.Features.Games.Queries.GetMaps;
 using CapstoneProject.Application.Features.Games.Queries.GetTags;
 using CapstoneProject.Application.Common.Enums;
@@ -107,6 +110,39 @@ public class CmsGameController : ControllerBase
         return StatusCode(result.GetHttpStatusCode(), result);
     }
 
+    /// <summary>Get locked games for moderation (paginated, filter).</summary>
+    /// <remarks>
+    /// Returns paginated locked games (`Status = Inactive`) managed by CMS.
+    /// Admin/Moderator only.
+    ///
+    /// **Query:**
+    /// - pageNumber (int, optional): Default 1.
+    /// - pageSize (int, optional): Default 20.
+    /// - mapStatus (int?, optional): 0=Draft, 1=PendingReview, 2=Approved, 3=Rejected, 4=Published.
+    /// - createdByUserId (Guid?, optional): Filter by creator.
+    /// - difficulty (int?, optional): Difficulty level (1-5).
+    /// - type (int?, optional): 0=Topdown, 1=Platform, 2=Snake.
+    /// - tagId (Guid?, optional): Filter by tag.
+    /// - search (string, optional): Search in title, description.
+    /// - minPrice (decimal?, optional): Price >= minPrice.
+    /// - maxPrice (decimal?, optional): Price <= maxPrice.
+    /// - sortBy (string, optional): UpdatedAt | CreatedAt | Title | Difficulty | TimeLimitMs | Price | GameStatus. Default UpdatedAt.
+    /// - sortAscending (bool, optional): Default false.
+    ///
+    /// **METHOD and path:** GET /api/cms/games/locked
+    /// </remarks>
+    [HttpGet("locked")]
+    [AuthorizeRoles(nameof(RoleEnum.Admin), nameof(RoleEnum.Moderator))]
+    [ProducesResponseType(typeof(Result<PaginationResult<MapListItemDto>>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(Result), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(Result), StatusCodes.Status403Forbidden)]
+    [SwaggerOperation(Summary = "Get locked games", Description = "Returns paginated locked games (Status=Inactive) with filters. Admin/Moderator only.", OperationId = "Cms_GetLockedMaps", Tags = new[] { "CMS - Games" })]
+    public async Task<IActionResult> GetLockedMaps([FromQuery] GetLockedMapsQuery query)
+    {
+        var result = await _mediator.Send(query);
+        return StatusCode(result.GetHttpStatusCode(), result);
+    }
+
     /// <summary>Get all games (no filter) for Admin.</summary>
     /// <remarks>
     /// Tráº£ vá» táº¥t cáº£ game, khÃ´ng lá»c theo status hay Ä‘iá»u kiá»‡n nÃ o. Chá»‰ phÃ¢n trang vÃ  sáº¯p xáº¿p. Admin/Moderator only.
@@ -152,7 +188,7 @@ public class CmsGameController : ControllerBase
     [SwaggerOperation(Summary = "Get game by ID", Description = "Returns full game detail for moderation. includeEditorialForUser optional. Admin/Moderator only.", OperationId = "Cms_GetMapById", Tags = new[] { "CMS - Games" })]
     public async Task<IActionResult> GetMapById(Guid id, [FromQuery] bool includeEditorialForUser = false)
     {
-        var result = await _mediator.Send(new GetMapByIdQuery(id, includeEditorialForUser));
+        var result = await _mediator.Send(new GetMapByIdQuery(id, includeEditorialForUser, true));
         return StatusCode(result.GetHttpStatusCode(), result);
     }
 
@@ -433,6 +469,57 @@ public class CmsGameController : ControllerBase
     public async Task<IActionResult> DeleteMap(Guid id)
     {
         var result = await _mediator.Send(new DeleteMapCommand(id));
+        return StatusCode(result.GetHttpStatusCode(), result);
+    }
+
+    /// <summary>Lock game (set inactive, hide from learner catalog).</summary>
+    /// <remarks>
+    /// Locks a game so it no longer appears in learner catalog APIs (e.g. GET /api/learner/games).
+    /// Admin/Moderator only.
+    ///
+    /// **Route:** id (Guid, required): Game ID.
+    ///
+    /// **Query:** note (string, optional): Internal moderation note saved to ReviewNote.
+    ///
+    /// **METHOD and path:** POST /api/cms/games/{id}/lock
+    /// </remarks>
+    [HttpPost("{id:guid}/lock")]
+    [AuthorizeRoles(nameof(RoleEnum.Admin), nameof(RoleEnum.Moderator))]
+    [ProducesResponseType(typeof(Result), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(Result), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(Result), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(Result), StatusCodes.Status404NotFound)]
+    [SwaggerOperation(Summary = "Lock game", Description = "Set game status to Inactive and hide it from learner catalog. Admin/Moderator only.", OperationId = "Cms_LockMap", Tags = new[] { "CMS - Games" })]
+    public async Task<IActionResult> LockMap(Guid id, [FromQuery] string? note = null)
+    {
+        var result = await _mediator.Send(new LockMapCommand(id, note));
+        return StatusCode(result.GetHttpStatusCode(), result);
+    }
+
+    /// <summary>Unlock game (set active, optional republish when status is Published).</summary>
+    /// <remarks>
+    /// Unlocks a previously locked game so it can be returned by learner catalog APIs again.
+    ///
+    /// Admin/Moderator only.
+    ///
+    /// **Route:** id (Guid, required): Game ID.
+    ///
+    /// **Query:** republishIfPublishedStatus (bool, optional, default true):
+    /// - true: if GameStatus == Published then set IsPublished = true after unlock.
+    /// - false: keep IsPublished as-is.
+    ///
+    /// **METHOD and path:** POST /api/cms/games/{id}/unlock
+    /// </remarks>
+    [HttpPost("{id:guid}/unlock")]
+    [AuthorizeRoles(nameof(RoleEnum.Admin), nameof(RoleEnum.Moderator))]
+    [ProducesResponseType(typeof(Result), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(Result), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(Result), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(Result), StatusCodes.Status404NotFound)]
+    [SwaggerOperation(Summary = "Unlock game", Description = "Set game status to Active; optionally republish if GameStatus is Published. Admin/Moderator only.", OperationId = "Cms_UnlockMap", Tags = new[] { "CMS - Games" })]
+    public async Task<IActionResult> UnlockMap(Guid id, [FromQuery] bool republishIfPublishedStatus = true)
+    {
+        var result = await _mediator.Send(new UnlockMapCommand(id, republishIfPublishedStatus));
         return StatusCode(result.GetHttpStatusCode(), result);
     }
 

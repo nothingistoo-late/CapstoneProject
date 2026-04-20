@@ -2,9 +2,12 @@ using CapstoneProject.Application.Common.Extensions;
 using CapstoneProject.Application.Common.Models;
 using CapstoneProject.Application.Commons.DTOs.Complaints;
 using CapstoneProject.Application.Features.Complaints.Commands.CreateComplaint;
+using CapstoneProject.Application.Features.Complaints.Commands.ChangeComplaintStatus;
 using CapstoneProject.Application.Features.Complaints.Commands.SendComplaintMessage;
+using CapstoneProject.Application.Features.Complaints.Queries.GetComplaintAgainstMeDetail;
 using CapstoneProject.Application.Features.Complaints.Queries.GetAvailableComplaintCategories;
 using CapstoneProject.Application.Features.Complaints.Queries.GetComplaintCategoryConfigs;
+using CapstoneProject.Application.Features.Complaints.Queries.GetComplaintsAgainstMe;
 using CapstoneProject.Application.Features.Complaints.Queries.GetMyComplaintDetail;
 using CapstoneProject.Application.Features.Complaints.Queries.GetMyComplaints;
 
@@ -169,6 +172,54 @@ public class LearnerComplaintController : ControllerBase
     public async Task<IActionResult> SendMessage(Guid complaintId, [FromForm] SendComplaintMessageRequest request)
     {
         var result = await _mediator.Send(new SendComplaintMessageCommand(complaintId, request.Content, request.Attachments));
+        return StatusCode(result.GetHttpStatusCode(), result);
+    }
+
+    /// <summary>Get complaints against my maps (seller view).</summary>
+    [HttpGet("against-me")]
+    [AuthorizeRoles(nameof(RoleEnum.Learner), nameof(RoleEnum.Admin), nameof(RoleEnum.Moderator))]
+    [ProducesResponseType(typeof(Result<PaginationResult<CapstoneProject.Application.Features.Complaints.Queries.GetComplaints.ComplaintListItemDto>>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(Result), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(Result), StatusCodes.Status403Forbidden)]
+    [SwaggerOperation(Summary = "Complaints against my maps", OperationId = "Learner_GetComplaintsAgainstMe", Tags = new[] { "Learner - Complaints" })]
+    public async Task<IActionResult> GetComplaintsAgainstMe(
+        [FromQuery] CapstoneProject.Domain.Enums.ComplaintStatusEnum? status,
+        [FromQuery] int pageNumber = 1,
+        [FromQuery] int pageSize = 20,
+        [FromQuery] DateTime? dateFrom = null,
+        [FromQuery] DateTime? dateTo = null,
+        [FromQuery] string? keyword = null)
+    {
+        var result = await _mediator.Send(new GetComplaintsAgainstMeQuery(status, pageNumber, pageSize, dateFrom, dateTo, keyword));
+        return StatusCode(result.GetHttpStatusCode(), result);
+    }
+
+    /// <summary>Get complaint detail against my map (seller view).</summary>
+    [HttpGet("against-me/{complaintId:guid}")]
+    [AuthorizeRoles(nameof(RoleEnum.Learner), nameof(RoleEnum.Admin), nameof(RoleEnum.Moderator))]
+    [ProducesResponseType(typeof(Result<CapstoneProject.Application.Features.Complaints.Queries.GetComplaintDetail.ComplaintDetailDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(Result), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(Result), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(Result), StatusCodes.Status404NotFound)]
+    [SwaggerOperation(Summary = "Complaint detail against my map", OperationId = "Learner_GetComplaintAgainstMeDetail", Tags = new[] { "Learner - Complaints" })]
+    public async Task<IActionResult> GetComplaintAgainstMeDetail(Guid complaintId)
+    {
+        var result = await _mediator.Send(new GetComplaintAgainstMeDetailQuery(complaintId));
+        return StatusCode(result.GetHttpStatusCode(), result);
+    }
+
+    /// <summary>Update complaint status as seller (accept fix/reject/fix submitted).</summary>
+    [HttpPost("against-me/{complaintId:guid}/status")]
+    [AuthorizeRoles(nameof(RoleEnum.Learner), nameof(RoleEnum.Admin), nameof(RoleEnum.Moderator))]
+    [ProducesResponseType(typeof(Result<ComplaintStatusUpdateDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(Result<ComplaintStatusUpdateDto>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(Result<ComplaintStatusUpdateDto>), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(Result<ComplaintStatusUpdateDto>), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(Result<ComplaintStatusUpdateDto>), StatusCodes.Status404NotFound)]
+    [SwaggerOperation(Summary = "Seller change complaint status", OperationId = "Learner_ChangeComplaintStatusAsSeller", Tags = new[] { "Learner - Complaints" })]
+    public async Task<IActionResult> ChangeStatusAsSeller(Guid complaintId, [FromBody] ChangeComplaintStatusRequest request)
+    {
+        var result = await _mediator.Send(new ChangeComplaintStatusCommand(complaintId, request.ToStatus, request.Note, request.IssueRefund));
         return StatusCode(result.GetHttpStatusCode(), result);
     }
 }

@@ -18,7 +18,7 @@ public class PurchaseMapWithOrbitCoinCommandHandler : IRequestHandler<PurchaseMa
     private readonly ICurrentUserService _currentUserService;
     private readonly INotificationPersistenceService _notificationPersistenceService;
 
-    private const decimal PlatformFeePercent = 5m; // 5% platform fee
+    private const decimal PlatformFeePercent = 5m; // 5% platform fee (charged on seller at escrow release)
 
     public PurchaseMapWithOrbitCoinCommandHandler(
         IUnitOfWork unitOfWork,
@@ -54,19 +54,16 @@ public class PurchaseMapWithOrbitCoinCommandHandler : IRequestHandler<PurchaseMa
             return Result.Failure("Bạn không thể mua bản đồ của riêng bạn.", ErrorCodeEnum.InvalidOperation);
 
         var amount = game.Price.Value;
-        var feeAmount = Math.Round(amount * (PlatformFeePercent / 100m), 4);
-
-        // NgÆ°á»i mua tráº£ Ä‘Ãºng giÃ¡ game; ngÆ°á»i bÃ¡n nháº­n = giÃ¡ - phÃ­ (ngÆ°á»i bÃ¡n chá»‹u phÃ­)
-        var (success, error) = await _orbitCoinService.TransferWithSellerFeeAsync(
+        // Escrow: deduct from buyer now, seller receives later when complaint window closes or complaint is resolved as reject.
+        var (success, error) = await _orbitCoinService.DebitAsync(
             buyerUserId,
-            sellerUserId,
             amount,
-            feeAmount,
             CoinTransactionTypeEnum.SpendMapPurchase,
-            CoinTransactionTypeEnum.EarnMapSold,
-            "Game",
+            "GameEscrow",
             game.Id,
+            feeAmount: 0,
             $"Purchase game: {game.Title}",
+            buyerUserId,
             cancellationToken);
 
         if (!success)
@@ -97,72 +94,76 @@ public class PurchaseMapWithOrbitCoinCommandHandler : IRequestHandler<PurchaseMa
             return Result.Failure(error ?? "Chuyển không thành công.", ErrorCodeEnum.InvalidOperation);
         }
 
-        // Reuse PaymentRecords: record this game purchase (paid with OrbitCoin) for unified purchase history
+        // Reuse PaymentRecords: record this game purchase as escrow pending
         var orbitCoinPayment = await _unitOfWork.Repository<Payment>()
             .GetQueryable()
             .FirstOrDefaultAsync(p => p.Code == "OrbitCoin", cancellationToken);
-        if (orbitCoinPayment != null)
-        {
-            var record = new PaymentRecord
-            {
-                UserId = buyerUserId,
-                GameId = game.Id,
-                Amount = amount,
-                PaymentStatus = PaymentStatusEnum.Completed,
-                PaidAt = CapstoneProject.Domain.Common.VietnamDateTime.DbNow,
-                PaymentId = orbitCoinPayment.Id
-            };
-            record.InitializeEntity(buyerUserId);
-            await _unitOfWork.Repository<PaymentRecord>().AddAsync(record);
 
+        var record = new PaymentRecord
+        {
+            UserId = buyerUserId,
+            GameId = game.Id,
+            Amount = amount,
+            PaymentStatus = PaymentStatusEnum.Pending,
+            PaidAt = CapstoneProject.Domain.Common.VietnamDateTime.DbNow,
+            PaymentId = orbitCoinPayment?.Id
+        };
+        record.InitializeEntity(buyerUserId);
+        await _unitOfWork.Repository<PaymentRecord>().AddAsync(record);
+
+        var existedInMyGame = await _unitOfWork.Repository<MyGame>().GetQueryable()
+            .AnyAsync(x => !x.IsDeleted && x.UserId == buyerUserId && x.GameId == game.Id, cancellationToken);
+        if (!existedInMyGame)
+        {
             var myMap = new MyGame { GameId = game.Id, UserId = buyerUserId, IsAuthor = false };
             myMap.InitializeEntity(buyerUserId);
             await _unitOfWork.Repository<MyGame>().AddAsync(myMap);
-            await _unitOfWork.SaveChangesAsync(cancellationToken);
+        }
 
-            await TryNotifyPaymentAsync(
-                NotificationTypeEnum.PaymentSucceeded,
-                buyerUserId,
-                null,
-                game,
-                amount,
-                "Mua game thành công",
-                $"Bạn đã mua thành công game \"{game.Title}\" với giá {amount:0.##} OrbitCoin.",
-                cancellationToken);
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-            // Notify game creator about the purchase
-            if (sellerUserId != Guid.Empty && sellerUserId != buyerUserId)
+        await TryNotifyPaymentAsync(
+            NotificationTypeEnum.PaymentSucceeded,
+            buyerUserId,
+            null,
+            game,
+            amount,
+            "Mua game thành công (Escrow)",
+            $"Bạn đã mua thành công game \"{game.Title}\" với giá {amount:0.##} OrbitCoin. Tiền đang được giữ tạm cho đến khi hết thời gian ưu tiên khiếu nại.",
+            cancellationToken);
+
+        // Notify game creator about the purchase
+        if (sellerUserId != Guid.Empty && sellerUserId != buyerUserId)
+        {
+            try
             {
-                try
+                var sellerPayloadJson = JsonSerializer.Serialize(new
                 {
-                    var sellerPayloadJson = JsonSerializer.Serialize(new
-                    {
-                        gameId = game.Id,
-                        mapTitle = game.Title,
-                        buyerId = buyerUserId,
-                        buyerAmount = amount,
-                        sellerEarns = amount - feeAmount,
-                        platformFee = feeAmount
-                    });
+                    gameId = game.Id,
+                    mapTitle = game.Title,
+                    buyerId = buyerUserId,
+                    buyerAmount = amount,
+                    escrow = true,
+                    estimatedSellerReceives = amount - Math.Round(amount * (PlatformFeePercent / 100m), 4)
+                });
 
-                    await _notificationPersistenceService.CreateNotificationAsync(
-                        NotificationTypeEnum.MapPurchased,
-                        "Có người mua game của bạn",
-                        $"Game \"{game.Title}\" vừa được mua với giá {amount:0.##} OrbitCoin. Bạn nhận được {amount - feeAmount:0.##} OrbitCoin (sau phí).",
-                        new List<Guid> { sellerUserId },
-                        buyerUserId,
-                        sellerPayloadJson,
-                        $"/learner/games/{game.Id}",
-                        cancellationToken);
-                }
-                catch
-                {
-                    // Notification failure must not break purchase flow.
-                }
+                await _notificationPersistenceService.CreateNotificationAsync(
+                    NotificationTypeEnum.MapPurchased,
+                    "Có người mua game của bạn (Escrow)",
+                    $"Game \"{game.Title}\" vừa được mua với giá {amount:0.##} OrbitCoin. Tiền đang ở escrow và sẽ được chuyển sau thời gian ưu tiên khiếu nại.",
+                    new List<Guid> { sellerUserId },
+                    buyerUserId,
+                    sellerPayloadJson,
+                    $"/learner/games/{game.Id}",
+                    cancellationToken);
+            }
+            catch
+            {
+                // Notification failure must not break purchase flow.
             }
         }
 
-        return Result.Success("Bản đồ được mua bằng OrbitCoin. Phí nền tảng được khấu trừ từ người bán.");
+        return Result.Success("Bản đồ được mua bằng OrbitCoin. Tiền đang được giữ ở escrow.");
     }
 
     private async Task TryNotifyPaymentAsync(

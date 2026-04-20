@@ -72,7 +72,7 @@ public class UserController : ControllerBase
     /// Get user by ID
     /// </summary>
     /// <remarks>
-    /// Returns full user details including roles and profile by user Id. Admin only.
+    /// Returns full user details including roles and profile by user Id. Admin/Moderator.
     ///
     /// **Route:** id (Guid, required): User ID.
     ///
@@ -83,12 +83,12 @@ public class UserController : ControllerBase
     /// **Example request:** GET /api/cms/users/3fa85f64-5717-4562-b3fc-2c963f66afa6
     /// </remarks>
     [HttpGet("{id}")]
-    [AuthorizeRoles(nameof(RoleEnum.Admin))]
+    [AuthorizeRoles(nameof(RoleEnum.Admin), nameof(RoleEnum.Moderator))]
     [ProducesResponseType(typeof(Result<UserResponse>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(Result), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(Result), StatusCodes.Status403Forbidden)]
     [ProducesResponseType(typeof(Result), StatusCodes.Status404NotFound)]
-    [SwaggerOperation(Summary = "Get user by ID", Description = "Returns full user details including roles and profile by user Id. Admin only.", OperationId = "GetUserById", Tags = new[] { "CMS" })]
+    [SwaggerOperation(Summary = "Get user by ID", Description = "Returns full user details including roles and profile by user Id. Admin/Moderator.", OperationId = "GetUserById", Tags = new[] { "CMS" })]
     public async Task<IActionResult> GetUserById(Guid id)
     {
         var query = new GetUserByIdQuery(id);

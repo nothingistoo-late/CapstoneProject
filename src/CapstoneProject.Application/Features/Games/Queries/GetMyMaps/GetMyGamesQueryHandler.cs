@@ -39,7 +39,7 @@ public class GetMyGamesQueryHandler : IRequestHandler<GetMyGamesQuery, Result<Pa
 
         // Backward compat: game do user táº¡o hoáº·c Ä‘Ã£ mua (trÆ°á»›c khi cÃ³ báº£ng MyGame)
         var createdGameIds = await mapRepo.GetQueryable()
-            .Where(m => !m.IsDeleted && m.Status == EntityStatusEnum.Active && m.CreatedBy == userId.Value)
+            .Where(m => !m.IsDeleted && m.CreatedBy == userId.Value)
             .Select(m => m.Id)
             .ToListAsync(cancellationToken);
         var purchasedGameIds = await paymentRepo.GetQueryable()
@@ -59,13 +59,13 @@ public class GetMyGamesQueryHandler : IRequestHandler<GetMyGamesQuery, Result<Pa
         }
 
         var ownedRootGameIds = await mapRepo.GetQueryable()
-            .Where(m => m.Status == EntityStatusEnum.Active && allOwnedIds.Contains(m.Id))
+            .Where(m => !m.IsDeleted && allOwnedIds.Contains(m.Id))
             .Select(m => m.RootGameId ?? m.Id)
             .Distinct()
             .ToListAsync(cancellationToken);
 
         var query = mapRepo.GetQueryable()
-            .Where(m => m.Status == EntityStatusEnum.Active && !m.IsDeleted)
+            .Where(m => !m.IsDeleted)
             .Include(m => m.GameDetails)
             .Include(m => m.GameTags).ThenInclude(mt => mt.Tag)
             .Include(m => m.GameMedias)
@@ -75,7 +75,7 @@ public class GetMyGamesQueryHandler : IRequestHandler<GetMyGamesQuery, Result<Pa
         if (request.IsAuthorOnly)
         {
             var latestAuthorGameIds = await mapRepo.GetQueryable()
-                .Where(m => m.Status == EntityStatusEnum.Active && !m.IsDeleted && m.CreatedBy == userId.Value)
+                .Where(m => !m.IsDeleted && m.CreatedBy == userId.Value)
                 .GroupBy(m => m.RootGameId ?? m.Id)
                 .Select(g => g
                     .OrderByDescending(m => m.ContentVersion)

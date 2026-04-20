@@ -11,6 +11,8 @@ public class ComplaintDetailDto
 {
     public Guid Id { get; set; }
     public Guid UserId { get; set; }
+    public Guid BuyerUserId { get; set; }
+    public Guid? SellerUserId { get; set; }
     public string Subject { get; set; } = string.Empty;
     public string Category { get; set; } = string.Empty;
     public string CategoryKey { get; set; } = string.Empty;
@@ -38,6 +40,7 @@ public class ComplaintMessageDto
 {
     public Guid Id { get; set; }
     public Guid SenderId { get; set; }
+    public string SenderParty { get; set; } = "Other";
     public string Content { get; set; } = string.Empty;
     public bool IsInternal { get; set; }
     public DateTime? CreatedAt { get; set; }

@@ -32,6 +32,20 @@ public class CmsComplaintController : ControllerBase
     /// **Query:**
     /// - status, userId, dateFrom, dateTo, keyword, pageNumber, pageSize
     ///
+    /// **Supported status values (v2 flow):**
+    /// - Open
+    /// - SellerPending
+    /// - FixInProgress
+    /// - FixSubmitted
+    /// - Verified
+    /// - SellerRejected
+    /// - SellerNoResponse
+    /// - ResolvedRefund
+    /// - ResolvedReject
+    /// - Closed
+    ///
+    /// Compatibility values from legacy flow (`InProgress`, `Resolved`) may still appear for old records.
+    ///
     /// **Example request:** GET /api/cms/complaints?status=Open&amp;keyword=payment&amp;pageNumber=1&amp;pageSize=20
     ///
     /// **Example item data:**
@@ -75,15 +89,45 @@ public class CmsComplaintController : ControllerBase
         return StatusCode(result.GetHttpStatusCode(), result);
     }
 
-    /// <summary>Change complaint status (Open -> InProgress -> Resolved).</summary>
+    /// <summary>Change complaint status (v2 complaint workflow).</summary>
     /// <remarks>
     /// **METHOD and path:** POST /api/cms/complaints/{complaintId}/status
     ///
     /// **Body (JSON):**
-    /// - toStatus (Open|InProgress|Resolved)
+    /// - toStatus (required): target status in v2 flow
     /// - note (optional)
+    /// - issueRefund (optional, bool): used when resolving with refund
     ///
-    /// **Example request body:** { "toStatus": "InProgress", "note": "Investigating payment logs" }
+    /// **V2 statuses:**
+    /// - Open
+    /// - SellerPending
+    /// - FixInProgress
+    /// - FixSubmitted
+    /// - Verified
+    /// - SellerRejected
+    /// - SellerNoResponse
+    /// - ResolvedRefund
+    /// - ResolvedReject
+    /// - Closed
+    ///
+    /// **Moderator/Admin typical transitions:**
+    /// - Open -> SellerPending | SellerNoResponse
+    /// - SellerPending -> FixInProgress | SellerRejected | SellerNoResponse
+    /// - FixInProgress -> FixSubmitted | SellerNoResponse
+    /// - FixSubmitted -> Verified
+    /// - Verified -> ResolvedRefund | ResolvedReject
+    /// - SellerRejected -> ResolvedRefund | ResolvedReject
+    /// - SellerNoResponse -> ResolvedRefund | ResolvedReject
+    /// - ResolvedRefund -> Closed
+    /// - ResolvedReject -> Closed
+    ///
+    /// **Compatibility normalization:**
+    /// - InProgress is normalized to SellerPending
+    /// - Resolved + issueRefund=true => ResolvedRefund
+    /// - Resolved + issueRefund=false => ResolvedReject
+    ///
+    /// **Example request body:**
+    /// { "toStatus": "SellerPending", "note": "Requested seller response", "issueRefund": false }
     ///
     /// Returns `Result&lt;ComplaintStatusUpdateDto&gt;` with new status and context summary.
     /// </remarks>
@@ -94,7 +138,11 @@ public class CmsComplaintController : ControllerBase
     [ProducesResponseType(typeof(Result<ComplaintStatusUpdateDto>), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(Result<ComplaintStatusUpdateDto>), StatusCodes.Status403Forbidden)]
     [ProducesResponseType(typeof(Result<ComplaintStatusUpdateDto>), StatusCodes.Status404NotFound)]
-    [SwaggerOperation(Summary = "Change complaint status", OperationId = "Cms_ChangeComplaintStatus", Tags = new[] { "CMS - Complaints" })]
+    [SwaggerOperation(
+        Summary = "Change complaint status (v2 workflow)",
+        Description = "Update complaint status using v2 states: Open, SellerPending, FixInProgress, FixSubmitted, Verified, SellerRejected, SellerNoResponse, ResolvedRefund, ResolvedReject, Closed.",
+        OperationId = "Cms_ChangeComplaintStatus",
+        Tags = new[] { "CMS - Complaints" })]
     public async Task<IActionResult> ChangeStatus(Guid complaintId, [FromBody] ChangeComplaintStatusRequest request)
     {
         var result = await _mediator.Send(new ChangeComplaintStatusCommand(complaintId, request.ToStatus, request.Note, request.IssueRefund));
