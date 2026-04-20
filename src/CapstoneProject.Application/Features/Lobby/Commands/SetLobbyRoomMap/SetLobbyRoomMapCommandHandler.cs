@@ -49,7 +49,11 @@ public class SetLobbyRoomMapCommandHandler : IRequestHandler<SetLobbyRoomMapComm
                 return Result<LobbyRoomDetailResponse>.Failure(ownershipCheck.ErrorMessage!, ErrorCodeEnum.Forbidden);
         }
 
-        var (success, errorMessage, room) = _roomManager.SetRoomMap(command.RoomId, userIdNullable.Value, command.Request.GameId);
+        var (success, errorMessage, room) = _roomManager.SetRoomMap(
+            command.RoomId,
+            userIdNullable.Value,
+            command.Request.GameId,
+            command.Request.MaxPlayers);
         if (!success || room == null)
         {
             var code = errorMessage?.Contains("not found", StringComparison.OrdinalIgnoreCase) == true ? ErrorCodeEnum.NotFound : ErrorCodeEnum.ValidationFailed;

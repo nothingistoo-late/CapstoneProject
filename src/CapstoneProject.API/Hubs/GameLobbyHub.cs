@@ -186,6 +186,7 @@ public class GameLobbyHub : Hub
             return;
         }
 
+        var leftPlayerName = await GetUserDisplayNameAsync(userId);
         var (success, errorMessage, updatedRoom) = _roomManager.LeaveRoom(roomId, userId);
         if (!success)
         {
@@ -201,6 +202,12 @@ public class GameLobbyHub : Hub
         else
             _roomManager.RemoveRoom(roomId);
 
+        await Clients.Group(RoomGroup(roomId)).SendAsync("PlayerLeftRoom", new
+        {
+            RoomId = roomId,
+            PlayerId = userId,
+            PlayerName = leftPlayerName
+        });
         await BroadcastLobbyRoomList();
         _logger.LogInformation("User {UserId} left room {RoomId}", userId, roomId);
     }
@@ -566,6 +573,7 @@ public class GameLobbyHub : Hub
     private async Task LeaveAllRoomsForUser(Guid userId)
     {
         var rooms = _roomManager.GetLobbyRooms();
+        var leftPlayerName = await GetUserDisplayNameAsync(userId);
         foreach (var r in rooms)
         {
             var room = _roomManager.GetRoomById(r.RoomId);
@@ -576,9 +584,28 @@ public class GameLobbyHub : Hub
                 await BroadcastRoomUpdated(updatedRoom);
             else
                 _roomManager.RemoveRoom(room.RoomId);
+            await Clients.Group(RoomGroup(room.RoomId)).SendAsync("PlayerLeftRoom", new
+            {
+                RoomId = room.RoomId,
+                PlayerId = userId,
+                PlayerName = leftPlayerName
+            });
             await BroadcastLobbyRoomList();
             break;
         }
+    }
+
+    private async Task<string> GetUserDisplayNameAsync(Guid userId)
+    {
+        var user = await _unitOfWork.Repository<AppUser>().GetQueryable()
+            .Where(u => u.Id == userId)
+            .Select(u => new { u.FirstName, u.LastName, u.UserName })
+            .FirstOrDefaultAsync();
+        if (user == null) return userId.ToString("N")[..8];
+        var fullName = $"{user.FirstName} {user.LastName}".Trim();
+        if (!string.IsNullOrWhiteSpace(fullName)) return fullName;
+        if (!string.IsNullOrWhiteSpace(user.UserName)) return user.UserName;
+        return userId.ToString("N")[..8];
     }
 
     private async Task SendLobbyRoomListToClient(string connectionId)

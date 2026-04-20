@@ -1,5 +1,7 @@
 using System.Linq;
+using System.Security.Claims;
 using MediatR;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
 using CapstoneProject.API.Hubs;
@@ -15,7 +17,11 @@ using CapstoneProject.Application.Features.Lobby.Commands.SubmitLobbySolution;
 using CapstoneProject.Application.Features.Lobby.Commands.ToggleLobbyReady;
 using CapstoneProject.Application.Features.Lobby.Queries.GetLobbyRoom;
 using CapstoneProject.Application.Features.Lobby.Queries.GetLobbyRooms;
+using CapstoneProject.Application.Features.Chat.Commands.CreateTemporaryGroupConversation;
+using CapstoneProject.Application.Features.Chat.Commands.AddMemberToRoom;
+using CapstoneProject.Application.Common.Interfaces;
 using CapstoneProject.Application.Common.Extensions;
+using CapstoneProject.Domain.Entities;
 using CapstoneProject.Domain.Enums;
 
 namespace CapstoneProject.API.Controllers.Learner;
@@ -29,11 +35,13 @@ public class GameLobbyController : ControllerBase
 {
     private readonly IMediator _mediator;
     private readonly IHubContext<GameLobbyHub> _hubContext;
+    private readonly IUnitOfWork _unitOfWork;
 
-    public GameLobbyController(IMediator mediator, IHubContext<GameLobbyHub> hubContext)
+    public GameLobbyController(IMediator mediator, IHubContext<GameLobbyHub> hubContext, IUnitOfWork unitOfWork)
     {
         _mediator = mediator;
         _hubContext = hubContext;
+        _unitOfWork = unitOfWork;
     }
 
     /// <summary>Danh sách phòng lobby (REST).</summary>
@@ -87,6 +95,7 @@ public class GameLobbyController : ControllerBase
         var result = await _mediator.Send(new CreateLobbyRoomCommand(request));
         if (result.IsSuccess && result.Data != null)
         {
+            await EnsureRoomConversationSynchronizedAsync(result.Data.RoomId);
             await BroadcastLobbyListToAllAsync();
             await BroadcastRoomUpdatedToGroupAsync(result.Data.RoomId);
             return Created(string.Empty, result);
@@ -125,6 +134,7 @@ public class GameLobbyController : ControllerBase
         var result = await _mediator.Send(new JoinLobbyRoomCommand(request));
         if (result.IsSuccess && result.Data != null)
         {
+            await EnsureRoomConversationSynchronizedAsync(result.Data.RoomId);
             await BroadcastLobbyListToAllAsync();
             await BroadcastRoomUpdatedToGroupAsync(result.Data.RoomId);
         }
@@ -290,11 +300,24 @@ public class GameLobbyController : ControllerBase
     [SwaggerOperation(Summary = "Leave room", Description = "Current user leaves the room. Requires Bearer token.", OperationId = "Lobby_LeaveRoom", Tags = new[] { "Learner - Game Lobby" })]
     public async Task<IActionResult> LeaveRoom(Guid roomId)
     {
+        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+            ?? User.FindFirst("sub")?.Value
+            ?? User.FindFirst("userId")?.Value;
+        Guid.TryParse(userIdClaim, out var userId);
+        var leftPlayerName = userId != Guid.Empty ? await ResolveUserDisplayNameAsync(userId) : "Unknown";
+
         var result = await _mediator.Send(new LeaveLobbyRoomCommand(roomId));
         if (result.IsSuccess)
         {
             await BroadcastLobbyListToAllAsync();
             await BroadcastRoomUpdatedToGroupAsync(roomId);
+            await _hubContext.Clients.Group($"{GameLobbyHub.RoomGroupPrefix}{roomId}")
+                .SendAsync("PlayerLeftRoom", new
+                {
+                    RoomId = roomId,
+                    PlayerId = userId,
+                    PlayerName = leftPlayerName
+                });
         }
         return StatusCode(result.GetHttpStatusCode(), result);
     }
@@ -403,5 +426,82 @@ public class GameLobbyController : ControllerBase
             Players = r.Players.Select(p => new { p.PlayerId, p.PlayerName, p.IsReady, p.IsHost }).ToList()
         };
         await _hubContext.Clients.Group($"{GameLobbyHub.RoomGroupPrefix}{roomId}").SendAsync("RoomUpdated", dto);
+    }
+
+    /// <summary>
+    /// Best-effort sync: ensure temporary room chat exists and all room players are members.
+    /// This keeps room chat auto-created on room creation and auto-joined on room join.
+    /// </summary>
+    private async Task EnsureRoomConversationSynchronizedAsync(Guid roomId)
+    {
+        var roomResult = await _mediator.Send(new GetLobbyRoomQuery(roomId));
+        if (!roomResult.IsSuccess || roomResult.Data == null) return;
+
+        var room = roomResult.Data;
+        var roomCode = room.RoomCode?.Trim();
+        if (string.IsNullOrWhiteSpace(roomCode)) return;
+        var conversationName = $"Lobby {roomCode}";
+
+        var chatRoomRepo = _unitOfWork.Repository<ChatRoom>();
+        var chatRoom = await chatRoomRepo.GetQueryable()
+            .FirstOrDefaultAsync(c =>
+                !c.IsDeleted &&
+                c.RoomType == ChatRoomTypeEnum.TemporaryGroup &&
+                c.Name != null &&
+                c.Name.ToLower() == conversationName.ToLower());
+
+        if (chatRoom == null)
+        {
+            var createChat = await _mediator.Send(new CreateTemporaryGroupConversationCommand
+            {
+                Name = conversationName
+            });
+            if (createChat.IsSuccess && createChat.Data != null)
+            {
+                chatRoom = await chatRoomRepo.GetQueryable()
+                    .FirstOrDefaultAsync(c => c.Id == createChat.Data.Id);
+            }
+            if (chatRoom == null)
+            {
+                chatRoom = await chatRoomRepo.GetQueryable()
+                    .FirstOrDefaultAsync(c =>
+                        !c.IsDeleted &&
+                        c.RoomType == ChatRoomTypeEnum.TemporaryGroup &&
+                        c.Name != null &&
+                        c.Name.ToLower() == conversationName.ToLower());
+            }
+        }
+
+        if (chatRoom == null) return;
+
+        var memberRepo = _unitOfWork.Repository<ChatRoomMember>();
+        var existingMemberIds = await memberRepo.GetQueryable()
+            .Where(m => !m.IsDeleted && m.ChatRoomId == chatRoom.Id && m.LeftAt == null)
+            .Select(m => m.UserId)
+            .ToListAsync();
+        var existingSet = existingMemberIds.ToHashSet();
+
+        foreach (var player in room.Players)
+        {
+            if (existingSet.Contains(player.PlayerId)) continue;
+            await _mediator.Send(new AddMemberToRoomCommand
+            {
+                ChatRoomId = chatRoom.Id,
+                UserId = player.PlayerId
+            });
+        }
+    }
+
+    private async Task<string> ResolveUserDisplayNameAsync(Guid userId)
+    {
+        var user = await _unitOfWork.Repository<AppUser>().GetQueryable()
+            .Where(u => u.Id == userId)
+            .Select(u => new { u.FirstName, u.LastName, u.UserName })
+            .FirstOrDefaultAsync();
+        if (user == null) return userId.ToString("N")[..8];
+        var fullName = $"{user.FirstName} {user.LastName}".Trim();
+        if (!string.IsNullOrWhiteSpace(fullName)) return fullName;
+        if (!string.IsNullOrWhiteSpace(user.UserName)) return user.UserName;
+        return userId.ToString("N")[..8];
     }
 }

@@ -1,6 +1,11 @@
 ﻿using Microsoft.AspNetCore.SignalR;
 using Microsoft.AspNetCore.Authorization;
 using CapstoneProject.Application.Common.Interfaces;
+using CapstoneProject.Application.Features.Chat.Queries.GetMessages;
+using CapstoneProject.Application.Features.Chat.Commands.SendMessage;
+using CapstoneProject.Application.Commons.DTOs.Chat;
+using CapstoneProject.Domain.Enums;
+using MediatR;
 
 namespace CapstoneProject.API.Hubs;
 
@@ -13,11 +18,13 @@ public class ChatHub : Hub
 {
     private readonly ICurrentUserService _currentUserService;
     private readonly ILogger<ChatHub> _logger;
+    private readonly IMediator _mediator;
 
-    public ChatHub(ICurrentUserService currentUserService, ILogger<ChatHub> logger)
+    public ChatHub(ICurrentUserService currentUserService, ILogger<ChatHub> logger, IMediator mediator)
     {
         _currentUserService = currentUserService;
         _logger = logger;
+        _mediator = mediator;
     }
 
     public override async Task OnConnectedAsync()
@@ -97,6 +104,71 @@ public class ChatHub : Hub
                 Timestamp = CapstoneProject.Domain.Common.VietnamDateTime.DbNow
             });
         }
+    }
+
+    /// <summary>
+    /// Load conversation messages via SignalR (history + load-more).
+    /// Replaces REST polling for message retrieval in chat clients.
+    /// </summary>
+    public async Task<List<MessageResponse>> GetConversationMessages(string conversationId, int pageSize = 50, string? beforeMessageId = null)
+    {
+        if (!Guid.TryParse(conversationId, out var convId))
+        {
+            return new List<MessageResponse>();
+        }
+
+        Guid? beforeId = null;
+        if (!string.IsNullOrWhiteSpace(beforeMessageId) && Guid.TryParse(beforeMessageId, out var parsedBeforeId))
+        {
+            beforeId = parsedBeforeId;
+        }
+
+        var result = await _mediator.Send(new GetMessagesQuery
+        {
+            Request = new GetMessagesRequest
+            {
+                ChatRoomId = convId,
+                PageNumber = 1,
+                PageSize = Math.Clamp(pageSize, 1, 100),
+                BeforeMessageId = beforeId
+            }
+        });
+
+        if (!result.IsSuccess || result.Data?.Items == null)
+        {
+            return new List<MessageResponse>();
+        }
+
+        return result.Data.Items.ToList();
+    }
+
+    /// <summary>
+    /// Send a text message via SignalR hub.
+    /// For image uploads, keep using REST endpoint.
+    /// </summary>
+    public async Task<MessageResponse?> SendMessage(string conversationId, string content, string? replyToMessageId = null)
+    {
+        if (!Guid.TryParse(conversationId, out var convId))
+        {
+            return null;
+        }
+
+        Guid? replyId = null;
+        if (!string.IsNullOrWhiteSpace(replyToMessageId) && Guid.TryParse(replyToMessageId, out var parsedReplyId))
+        {
+            replyId = parsedReplyId;
+        }
+
+        var result = await _mediator.Send(new SendMessageCommand
+        {
+            ChatRoomId = convId,
+            Content = content ?? string.Empty,
+            MessageType = MessageTypeEnum.Text,
+            ReplyToMessageId = replyId,
+            ImageFile = null
+        });
+
+        return result.IsSuccess ? result.Data : null;
     }
 }
 

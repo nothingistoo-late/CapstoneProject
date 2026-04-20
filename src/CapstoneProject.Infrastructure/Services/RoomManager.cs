@@ -253,7 +253,11 @@ public class RoomManager : IRoomManager
         return (true, null, room);
     }
 
-    public (bool Success, string? ErrorMessage, LobbyRoom? Room) SetRoomMap(Guid roomId, Guid hostPlayerId, Guid? gameId)
+    public (bool Success, string? ErrorMessage, LobbyRoom? Room) SetRoomMap(
+        Guid roomId,
+        Guid hostPlayerId,
+        Guid? gameId,
+        int? maxPlayers = null)
     {
         var room = GetRoomById(roomId);
         if (room == null)
@@ -262,6 +266,14 @@ public class RoomManager : IRoomManager
             return (false, "Only the host can set the game.", null);
         if (room.Status != RoomStatusEnum.Waiting)
             return (false, "Cannot change game after game has started.", null);
+
+        if (maxPlayers.HasValue)
+        {
+            var nextMaxPlayers = Math.Clamp(maxPlayers.Value, 2, 8);
+            if (nextMaxPlayers < room.PlayerCount)
+                return (false, "Max players không thể nhỏ hơn số người hiện tại trong phòng.", null);
+            room.MaxPlayers = nextMaxPlayers;
+        }
 
         room.SelectedGameId = gameId;
         return (true, null, room);

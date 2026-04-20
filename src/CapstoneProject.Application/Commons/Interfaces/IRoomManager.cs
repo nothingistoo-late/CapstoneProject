@@ -25,7 +25,11 @@ public interface IRoomManager
     LobbyRoom? CreateRoom(Guid hostPlayerId, string hostConnectionId, int maxPlayers = 8, Guid? selectedGameId = null);
 
     /// <summary>Set or change the selected game for the room. Host only; room must be Waiting.</summary>
-    (bool Success, string? ErrorMessage, LobbyRoom? Room) SetRoomMap(Guid roomId, Guid hostPlayerId, Guid? gameId);
+    (bool Success, string? ErrorMessage, LobbyRoom? Room) SetRoomMap(
+        Guid roomId,
+        Guid hostPlayerId,
+        Guid? gameId,
+        int? maxPlayers = null);
 
     /// <summary>Join room by roomId (e.g. from lobby). Validates room exists, waiting, not full, and lock/code if locked.</summary>
     (bool Success, string? ErrorMessage, LobbyRoom? Room) JoinRoom(Guid roomId, Guid playerId, string connectionId, string? roomCode = null);
