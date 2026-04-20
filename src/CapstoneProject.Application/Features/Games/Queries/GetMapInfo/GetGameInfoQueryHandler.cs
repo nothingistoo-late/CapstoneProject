@@ -62,6 +62,20 @@ public class GetMapInfoQueryHandler : IRequestHandler<GetMapInfoQuery, Result<Ma
             .ToDictionaryAsync(t => t.Id, t => t.Name, cancellationToken);
 
         var (tLimit, win, mapType) = MapFirstLevelHelper.FirstLevelMetadata(game.GameDetails);
+        var levelDtos = game.GameDetails
+            .OrderBy(d => d.LevelOrder)
+            .Select(d => new MapLevelItemDto
+            {
+                Id = d.Id,
+                LevelOrder = d.LevelOrder,
+                Title = d.Title,
+                TimeLimitMs = d.TimeLimitMs,
+                WinCondition = d.WinCondition,
+                Type = d.Type.ToString(),
+                DetailJson = null,
+                Hints = new List<HintItemDto>()
+            })
+            .ToList();
         var dto = new MapInfoDto
         {
             Id = game.Id,
@@ -83,7 +97,8 @@ public class GetMapInfoQueryHandler : IRequestHandler<GetMapInfoQuery, Result<Ma
                 .Select(id => learnedTagNameMap.TryGetValue(id, out var name) ? name : id.ToString())
                 .ToList(),
             WinCondition = win,
-            AvatarUrl = game.AvatarUrl
+            AvatarUrl = game.AvatarUrl,
+            Levels = levelDtos
         };
         return Result<MapInfoDto>.Success(dto, "Đã lấy thông tin bản đồ.");
     }

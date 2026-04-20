@@ -8,8 +8,7 @@ public record GetGameRatingsQuery(Guid GameId, bool IsAuthorOnly = false) : IReq
 public class GameRatingDto
 {
     public Guid Id { get; set; }
-    public Guid UserId { get; set; }
-    public Guid GameId { get; set; }
+    public string ReviewerName { get; set; } = "Player";
     public int Rating { get; set; }
     public string? Comment { get; set; }
     public DateTime? CreatedAt { get; set; }

@@ -1,14 +1,12 @@
 namespace CapstoneProject.Application.Commons.DTOs.Lobby;
 
-public class PlayerGameResult
+public class PlayerLevelScoreDetailDto
 {
-    public Guid PlayerId { get; set; }
     public Guid? MapDetailId { get; set; }
+    public int LevelIndex { get; set; }
     public int Score { get; set; }
     public string Status { get; set; } = string.Empty;
     public int? StepsUsed { get; set; }
     public int? BlocksUsed { get; set; }
     public double? TimeSeconds { get; set; }
-    public DateTime SubmittedAt { get; set; }
-    public Guid? SubmissionId { get; set; }
 }

@@ -29,6 +29,6 @@ public class LeaveLobbyRoomCommandHandler : IRequestHandler<LeaveLobbyRoomComman
             var code = errorMessage?.Contains("not found", StringComparison.OrdinalIgnoreCase) == true ? ErrorCodeEnum.NotFound : ErrorCodeEnum.ValidationFailed;
             return Result.Failure(errorMessage ?? "Không thể rời khỏi phòng.", code);
         }
-        return Result.Success("Phòng bên trái.");
+        return Result.Success("Đã rời khỏi phòng.");
     }
 }

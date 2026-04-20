@@ -28,4 +28,6 @@ public class MapInfoDto
     /// <summary>Điều kiện thắng của level đầu tiên.</summary>
     public int WinCondition { get; set; }
     public string? AvatarUrl { get; set; }
+    /// <summary>Danh sách level metadata (không bao gồm JSON/hints) theo thứ tự.</summary>
+    public List<MapLevelItemDto> Levels { get; set; } = new();
 }

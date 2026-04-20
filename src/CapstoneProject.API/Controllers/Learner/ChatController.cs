@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authorization;
 using CapstoneProject.Application.Features.Chat.Commands.CloseConversation;
 using CapstoneProject.Application.Features.Chat.Commands.CreatePrivateConversation;
 using CapstoneProject.Application.Features.Chat.Commands.CreateTemporaryGroupConversation;
+using CapstoneProject.Application.Features.Chat.Commands.AddMemberToRoom;
 using CapstoneProject.Application.Features.Chat.Commands.DeleteMessage;
 using CapstoneProject.Application.Features.Chat.Commands.SendMessage;
 using CapstoneProject.Application.Features.Chat.Commands.UpdateMessage;
@@ -78,6 +79,26 @@ public class LearnerChatController : ControllerBase
     [SwaggerOperation(Summary = "Create temporary group conversation", OperationId = "Learner_CreateTemporaryGroupConversation", Tags = new[] { "Learner - Chat" })]
     public async Task<IActionResult> CreateTemporaryGroupConversation([FromBody] CreateTemporaryGroupConversationCommand command)
     {
+        var result = await _mediator.Send(command);
+        return result.IsSuccess ? Ok(result) : BadRequest(result);
+    }
+
+    /// <summary>Add a member to temporary group conversation.</summary>
+    /// <remarks>
+    /// Adds one user to an existing temporary group conversation.
+    ///
+    /// **METHOD and path:** POST /api/learner/chat/conversations/{conversationId}/members
+    ///
+    /// **Body (JSON):** { "userId": "guid" }
+    /// </remarks>
+    [HttpPost("conversations/{conversationId}/members")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [SwaggerOperation(Summary = "Add member to temporary group", OperationId = "Learner_AddMemberToConversation", Tags = new[] { "Learner - Chat" })]
+    public async Task<IActionResult> AddMemberToConversation([FromRoute] Guid conversationId, [FromBody] AddMemberToRoomCommand command)
+    {
+        command.ChatRoomId = conversationId;
         var result = await _mediator.Send(command);
         return result.IsSuccess ? Ok(result) : BadRequest(result);
     }
