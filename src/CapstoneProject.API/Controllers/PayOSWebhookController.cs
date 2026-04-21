@@ -36,14 +36,12 @@ public class PayOSWebhookController : ControllerBase
     ///
     /// **Body:** application/json — payload từ PayOS (data, signature...).
     ///
-    /// **Response:** 200 OK khi xử lý thành công; 400 Bad Request khi body rỗng hoặc xử lý thất bại.
+    /// **Response:** always 200 OK (ACK). Invalid payloads are ignored and logged.
     /// </remarks>
-    /// <response code="200">Webhook processed successfully (payment verified and OrbitCoin credited).</response>
-    /// <response code="400">Empty body or verification/processing failed</response>
+    /// <response code="200">Webhook acknowledged. Valid payloads are processed, invalid payloads are ignored.</response>
     [HttpPost]
     [Consumes("application/json")]
     [ProducesResponseType(StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [SwaggerOperation(Summary = "PayOS webhook", Description = "Called by PayOS when payment succeeds. Verifies signature and credits OrbitCoin. Do not call from client.", OperationId = "PayOS_Webhook", Tags = new[] { "Webhooks" })]
     public async Task<IActionResult> HandleWebhook(CancellationToken cancellationToken)
     {
@@ -54,13 +52,13 @@ public class PayOSWebhookController : ControllerBase
         if (string.IsNullOrWhiteSpace(webhookJson))
         {
             _logger.LogWarning("PayOS webhook: empty body.");
-            return BadRequest();
+            return Ok(); // ACK to avoid PayOS endpoint health-check failure.
         }
 
         _logger.LogInformation("PayOS webhook: received body length={Length}", webhookJson.Length);
         var success = await _mediator.Send(new HandlePayOSWebhookCommand(webhookJson), cancellationToken);
         if (!success)
             _logger.LogWarning("PayOS webhook: processing returned false (verify failed or credit failed).");
-        return success ? Ok() : BadRequest();
+        return Ok(); // Always ACK webhook transport. Business handling is logged internally.
     }
 }
