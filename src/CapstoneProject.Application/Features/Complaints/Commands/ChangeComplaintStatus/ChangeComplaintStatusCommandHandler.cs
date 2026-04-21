@@ -103,6 +103,7 @@ public class ChangeComplaintStatusCommandHandler : IRequestHandler<ChangeComplai
             {
                 ComplaintId = complaint.Id,
                 UserId = complaint.UserId,
+                TargetStatus = toStatus,
                 CategoryKey = complaint.CategoryKey,
                 ContextType = complaint.ContextType,
                 ContextId = complaint.ContextId,

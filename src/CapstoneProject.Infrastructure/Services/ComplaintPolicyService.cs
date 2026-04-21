@@ -138,8 +138,9 @@ public class ComplaintPolicyService : IComplaintPolicyService
         if (complaint == null)
             return RefundFail("Không tìm thấy khiếu nại hợp lệ của người dùng.");
 
-        if (complaint.ComplaintStatus != ComplaintStatusEnum.Resolved
-            && complaint.ComplaintStatus != ComplaintStatusEnum.ResolvedRefund)
+        var effectiveStatus = input.TargetStatus ?? complaint.ComplaintStatus;
+        if (effectiveStatus != ComplaintStatusEnum.Resolved
+            && effectiveStatus != ComplaintStatusEnum.ResolvedRefund)
             return RefundFail("Chỉ khiếu nại đã được giải quyết mới có thể hoàn tiền.");
 
         if (!complaint.CreatedAt.HasValue)

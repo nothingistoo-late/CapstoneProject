@@ -1,3 +1,5 @@
+using CapstoneProject.Domain.Enums;
+
 namespace CapstoneProject.Application.Commons.Models.Complaints;
 
 public class ComplaintCreateContextInput
@@ -38,6 +40,7 @@ public class ComplaintRefundPolicyInput
 {
     public Guid ComplaintId { get; set; }
     public Guid UserId { get; set; }
+    public ComplaintStatusEnum? TargetStatus { get; set; }
     public string CategoryKey { get; set; } = string.Empty;
     public string? ContextType { get; set; }
     public Guid? ContextId { get; set; }
