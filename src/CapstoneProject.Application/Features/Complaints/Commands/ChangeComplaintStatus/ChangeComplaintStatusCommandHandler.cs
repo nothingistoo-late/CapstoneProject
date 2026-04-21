@@ -72,12 +72,12 @@ public class ChangeComplaintStatusCommandHandler : IRequestHandler<ChangeComplai
             if (!complaintGameId.HasValue)
                 return Result<ComplaintStatusUpdateDto>.Failure("Game chưa được gửi hoặc chưa được sửa.", ErrorCodeEnum.ValidationFailed);
 
-            var gameStatus = await _unitOfWork.Repository<Game>().GetQueryable()
-                .Where(g => !g.IsDeleted && g.Id == complaintGameId.Value)
-                .Select(g => (GameStatusEnum?)g.GameStatus)
-                .FirstOrDefaultAsync(cancellationToken);
+            var hasPendingReviewInLine = await HasSellerSubmittedFixForComplaintGameAsync(
+                complaintGameId.Value,
+                userId,
+                cancellationToken);
 
-            if (!gameStatus.HasValue || gameStatus.Value != GameStatusEnum.PendingReview)
+            if (!hasPendingReviewInLine)
                 return Result<ComplaintStatusUpdateDto>.Failure("Game chưa được gửi hoặc chưa được sửa.", ErrorCodeEnum.ValidationFailed);
         }
 
@@ -177,6 +177,7 @@ public class ChangeComplaintStatusCommandHandler : IRequestHandler<ChangeComplai
             toStatus,
             refundProcessed,
             refundAmount,
+            sellerId,
             userId,
             cancellationToken);
 
@@ -286,6 +287,27 @@ public class ChangeComplaintStatusCommandHandler : IRequestHandler<ChangeComplai
         }
 
         return null;
+    }
+
+    private async Task<bool> HasSellerSubmittedFixForComplaintGameAsync(
+        Guid complaintGameId,
+        Guid sellerUserId,
+        CancellationToken cancellationToken)
+    {
+        var gameLineRootId = await _unitOfWork.Repository<Game>().GetQueryable()
+            .Where(g => g.Id == complaintGameId)
+            .Select(g => g.RootGameId ?? g.Id)
+            .FirstOrDefaultAsync(cancellationToken);
+
+        if (gameLineRootId == Guid.Empty)
+            return false;
+
+        return await _unitOfWork.Repository<Game>().GetQueryable()
+            .AnyAsync(g => !g.IsDeleted
+                           && g.CreatedBy == sellerUserId
+                           && (g.RootGameId ?? g.Id) == gameLineRootId
+                           && g.GameStatus == GameStatusEnum.PendingReview,
+                cancellationToken);
     }
 
     private async Task<(bool Success, string? ErrorMessage)> TryReleaseEscrowToSellerIfPendingAsync(
@@ -459,6 +481,7 @@ public class ChangeComplaintStatusCommandHandler : IRequestHandler<ChangeComplai
         ComplaintStatusEnum toStatus,
         bool refundProcessed,
         decimal? refundAmount,
+        Guid? sellerUserId,
         Guid actorUserId,
         CancellationToken cancellationToken)
     {
@@ -473,11 +496,15 @@ public class ChangeComplaintStatusCommandHandler : IRequestHandler<ChangeComplai
                 refundAmount
             });
 
+            var recipients = new HashSet<Guid> { complaint.UserId };
+            if (sellerUserId.HasValue && sellerUserId.Value != complaint.UserId)
+                recipients.Add(sellerUserId.Value);
+
             await _notificationPersistenceService.CreateNotificationAsync(
                 NotificationTypeEnum.ComplaintStatusChanged,
                 "Cập nhật trạng thái khiếu nại",
                 $"Khiếu nại \"{complaint.Subject}\" đã chuyển từ {fromStatus} sang {toStatus}.",
-                new List<Guid> { complaint.UserId },
+                recipients.ToList(),
                 actorUserId,
                 statusPayload,
                 $"/learner/complaints/{complaint.Id}",
