@@ -26,6 +26,7 @@ public class GetMapInfoQueryHandler : IRequestHandler<GetMapInfoQuery, Result<Ma
         var game = await _unitOfWork.Repository<Game>().GetQueryable()
             .Where(m => m.Id == request.GameId && m.Status == EntityStatusEnum.Active)
             .Include(m => m.GameDetails)
+            .Include(m => m.GameMedias)
             .Include(m => m.GameTags).ThenInclude(mt => mt.Tag)
             .Include(m => m.Creator)
             .AsNoTracking()
@@ -98,6 +99,17 @@ public class GetMapInfoQueryHandler : IRequestHandler<GetMapInfoQuery, Result<Ma
                 .ToList(),
             WinCondition = win,
             AvatarUrl = game.AvatarUrl,
+            Gallery = game.GameMedias
+                .Where(x => !x.IsDeleted)
+                .OrderBy(x => x.SortOrder)
+                .Select(x => new GameMediaItemDto
+                {
+                    Id = x.Id,
+                    Url = x.Url,
+                    Kind = x.Kind.ToString(),
+                    SortOrder = x.SortOrder
+                })
+                .ToList(),
             Levels = levelDtos
         };
         return Result<MapInfoDto>.Success(dto, "Đã lấy thông tin bản đồ.");
