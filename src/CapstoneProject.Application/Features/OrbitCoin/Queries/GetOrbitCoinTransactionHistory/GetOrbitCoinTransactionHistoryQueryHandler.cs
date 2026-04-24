@@ -3,6 +3,7 @@ using CapstoneProject.Application.Common.Enums;
 using CapstoneProject.Application.Common.Interfaces;
 using CapstoneProject.Application.Common.Models;
 using CapstoneProject.Application.Commons.Interfaces;
+using CapstoneProject.Domain.Enums;
 
 namespace CapstoneProject.Application.Features.OrbitCoin.Queries.GetOrbitCoinTransactionHistory;
 
@@ -31,13 +32,28 @@ public class GetOrbitCoinTransactionHistoryQueryHandler : IRequestHandler<GetOrb
             userId.Value,
             request.PageNumber,
             request.PageSize,
+            new OrbitCoinTransactionFilter
+            {
+                Direction = request.Direction,
+                Categories = request.Categories,
+                RelatedEntityType = request.RelatedEntityType,
+                RelatedEntityId = request.RelatedEntityId,
+                From = request.From,
+                To = request.To,
+                MinAmount = request.MinAmount,
+                MaxAmount = request.MaxAmount,
+                Status = request.Status,
+                Statuses = request.Statuses,
+                Search = request.Search
+            },
             cancellationToken);
         var result = new OrbitCoinTransactionHistoryResult
         {
             Items = items,
             TotalCount = total,
             PageNumber = request.PageNumber,
-            PageSize = request.PageSize
+            PageSize = request.PageSize,
+            AvailableStatuses = Enum.GetNames<PaymentStatusEnum>()
         };
         return Result<OrbitCoinTransactionHistoryResult>.Success(result, "Lịch sử giao dịch được truy xuất.");
     }

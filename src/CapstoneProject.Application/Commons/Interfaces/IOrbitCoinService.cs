@@ -13,6 +13,7 @@ public interface IOrbitCoinService
         Guid userId,
         int pageNumber,
         int pageSize,
+        OrbitCoinTransactionFilter? filter = null,
         CancellationToken cancellationToken = default);
 
     Task<(bool Success, string? Error)> CreditAsync(
@@ -68,6 +69,21 @@ public interface IOrbitCoinService
         CancellationToken cancellationToken = default);
 }
 
+public class OrbitCoinTransactionFilter
+{
+    public string? Direction { get; set; }
+    public List<CoinTransactionTypeEnum>? Categories { get; set; }
+    public string? RelatedEntityType { get; set; }
+    public Guid? RelatedEntityId { get; set; }
+    public DateTime? From { get; set; }
+    public DateTime? To { get; set; }
+    public decimal? MinAmount { get; set; }
+    public decimal? MaxAmount { get; set; }
+    public string? Status { get; set; }
+    public List<string>? Statuses { get; set; }
+    public string? Search { get; set; }
+}
+
 public class OrbitCoinTransactionDto
 {
     public Guid Id { get; set; }
@@ -80,9 +96,18 @@ public class OrbitCoinTransactionDto
     /// </summary>
     public long? AmountVnd { get; set; }
     public CoinTransactionTypeEnum TransactionType { get; set; }
+    public string Direction { get; set; } = "Out";
+    public string Category { get; set; } = "Other";
     public string? RelatedEntityType { get; set; }
     public Guid? RelatedEntityId { get; set; }
+    public Guid? PaymentRecordId { get; set; }
+    public Guid? GameId { get; set; }
+    public Guid? PackageId { get; set; }
+    public string? CounterpartyName { get; set; }
+    public decimal GrossAmount { get; set; }
+    public decimal NetAmount { get; set; }
     public decimal FeeAmount { get; set; }
+    public string? Status { get; set; }
     public decimal? BalanceAfter { get; set; }
     public string? Note { get; set; }
     public DateTime CreatedAt { get; set; }

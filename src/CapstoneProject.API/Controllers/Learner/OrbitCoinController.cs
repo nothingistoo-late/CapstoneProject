@@ -2,8 +2,13 @@ using CapstoneProject.Application.Commons.DTOs.OrbitCoin;
 using CapstoneProject.Application.Features.OrbitCoin.Commands.ConfirmDeposit;
 using CapstoneProject.Application.Features.OrbitCoin.Commands.CreateDepositOrder;
 using CapstoneProject.Application.Features.OrbitCoin.Queries.GetDepositOrder;
+using CapstoneProject.Application.Features.OrbitCoin.Queries.GetWalletDashboardGames;
 using CapstoneProject.Application.Features.OrbitCoin.Queries.GetOrbitCoinBalance;
+using CapstoneProject.Application.Features.OrbitCoin.Queries.GetWalletDashboardSummary;
+using CapstoneProject.Application.Features.OrbitCoin.Queries.GetWalletDashboardTrend;
 using CapstoneProject.Application.Features.OrbitCoin.Queries.GetOrbitCoinTransactionHistory;
+using CapstoneProject.Application.Features.OrbitCoin.Queries.GetExchangeRate;
+using CapstoneProject.Domain.Enums;
 
 namespace CapstoneProject.API.Controllers.Learner;
 
@@ -64,9 +69,75 @@ public class LearnerOrbitCoinController : ControllerBase
     [ProducesResponseType(typeof(Result<OrbitCoinTransactionHistoryResult>), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(Result<OrbitCoinTransactionHistoryResult>), StatusCodes.Status500InternalServerError)]
     [SwaggerOperation(Summary = "Get transaction history", Description = "Returns paginated OrbitCoin transaction history. Query: pageNumber, pageSize. Requires Bearer token.", OperationId = "Learner_GetOrbitCoinTransactionHistory", Tags = new[] { "Learner - OrbitCoin" })]
-    public async Task<IActionResult> GetTransactionHistory([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 20)
+    public async Task<IActionResult> GetTransactionHistory(
+        [FromQuery] int pageNumber = 1,
+        [FromQuery] int pageSize = 20,
+        [FromQuery] string? direction = null,
+        [FromQuery] List<CoinTransactionTypeEnum>? categories = null,
+        [FromQuery] string? relatedEntityType = null,
+        [FromQuery] Guid? relatedEntityId = null,
+        [FromQuery] DateTime? from = null,
+        [FromQuery] DateTime? to = null,
+        [FromQuery] decimal? minAmount = null,
+        [FromQuery] decimal? maxAmount = null,
+        [FromQuery] string? status = null,
+        [FromQuery] List<string>? statuses = null,
+        [FromQuery] string? search = null)
     {
-        var result = await _mediator.Send(new GetOrbitCoinTransactionHistoryQuery(pageNumber, pageSize));
+        var result = await _mediator.Send(new GetOrbitCoinTransactionHistoryQuery(
+            pageNumber,
+            pageSize,
+            direction,
+            categories,
+            relatedEntityType,
+            relatedEntityId,
+            from,
+            to,
+            minAmount,
+            maxAmount,
+            status,
+            statuses,
+            search));
+        return StatusCode(result.GetHttpStatusCode(), result);
+    }
+
+    [HttpGet("dashboard/summary")]
+    [AuthorizeRoles(nameof(RoleEnum.Learner), nameof(RoleEnum.Admin), nameof(RoleEnum.Moderator))]
+    [ProducesResponseType(typeof(Result<WalletDashboardSummaryDto>), StatusCodes.Status200OK)]
+    [SwaggerOperation(Summary = "Get wallet dashboard summary", OperationId = "Learner_GetWalletDashboardSummary", Tags = new[] { "Learner - OrbitCoin" })]
+    public async Task<IActionResult> GetDashboardSummary([FromQuery] string role = "Buyer", [FromQuery] DateTime? from = null, [FromQuery] DateTime? to = null)
+    {
+        var result = await _mediator.Send(new GetWalletDashboardSummaryQuery(role, from, to));
+        return StatusCode(result.GetHttpStatusCode(), result);
+    }
+
+    [HttpGet("dashboard/trend")]
+    [AuthorizeRoles(nameof(RoleEnum.Learner), nameof(RoleEnum.Admin), nameof(RoleEnum.Moderator))]
+    [ProducesResponseType(typeof(Result<WalletDashboardTrendDto>), StatusCodes.Status200OK)]
+    [SwaggerOperation(Summary = "Get wallet dashboard trend", OperationId = "Learner_GetWalletDashboardTrend", Tags = new[] { "Learner - OrbitCoin" })]
+    public async Task<IActionResult> GetDashboardTrend([FromQuery] string role = "Buyer", [FromQuery] DateTime? from = null, [FromQuery] DateTime? to = null, [FromQuery] string bucket = "Day")
+    {
+        var result = await _mediator.Send(new GetWalletDashboardTrendQuery(role, from, to, bucket));
+        return StatusCode(result.GetHttpStatusCode(), result);
+    }
+
+    [HttpGet("dashboard/games")]
+    [AuthorizeRoles(nameof(RoleEnum.Learner), nameof(RoleEnum.Admin), nameof(RoleEnum.Moderator))]
+    [ProducesResponseType(typeof(Result<WalletDashboardGamesResultDto>), StatusCodes.Status200OK)]
+    [SwaggerOperation(Summary = "Get wallet dashboard game breakdown", OperationId = "Learner_GetWalletDashboardGames", Tags = new[] { "Learner - OrbitCoin" })]
+    public async Task<IActionResult> GetDashboardGames([FromQuery] DateTime? from = null, [FromQuery] DateTime? to = null, [FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 20)
+    {
+        var result = await _mediator.Send(new GetWalletDashboardGamesQuery(from, to, pageNumber, pageSize));
+        return StatusCode(result.GetHttpStatusCode(), result);
+    }
+
+    [HttpGet("exchange-rate")]
+    [AuthorizeRoles(nameof(RoleEnum.Learner), nameof(RoleEnum.Admin), nameof(RoleEnum.Moderator))]
+    [ProducesResponseType(typeof(Result<ExchangeRateDto>), StatusCodes.Status200OK)]
+    [SwaggerOperation(Summary = "Get current OrbitCoin/VND exchange rate", OperationId = "Learner_GetOrbitCoinExchangeRate", Tags = new[] { "Learner - OrbitCoin" })]
+    public async Task<IActionResult> GetExchangeRate([FromQuery] string fromCurrency = "OrbitCoin", [FromQuery] string toCurrency = "VND")
+    {
+        var result = await _mediator.Send(new GetExchangeRateQuery(fromCurrency, toCurrency));
         return StatusCode(result.GetHttpStatusCode(), result);
     }
 
