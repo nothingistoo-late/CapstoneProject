@@ -278,7 +278,7 @@ public class AuthController : ControllerBase
     /// Get profile of the logged-in user
     /// </summary>
     /// <remarks>
-    /// Láº¥y thÃ´ng tin profile cá»§a Learner Ä‘ang Ä‘Äƒng nháº­p (email, firstName, lastName, phoneNumber, avatarUrl, learnerCode, gender, dateOfBirth,...). Chá»‰ user cÃ³ role Learner. KhÃ´ng cÃ³ request body, chá»‰ cáº§n Bearer token.
+    /// Láº¥y thÃ´ng tin profile cá»§a user Ä‘ang Ä‘Äƒng nháº­p (email, firstName, lastName, phoneNumber, avatarUrl, learnerCode, gender, dateOfBirth,...). Cho phÃ©p role Learner hoáº·c Admin. KhÃ´ng cÃ³ request body, chá»‰ cáº§n Bearer token.
     ///
     /// **METHOD and path:** GET /api/learner/auth/profile
     ///
@@ -291,17 +291,17 @@ public class AuthController : ControllerBase
     /// </remarks>
     /// <response code="200">Profile retrieved successfully. Returns message and data (profile).</response>
     /// <response code="401">Not authorized</response>
-    /// <response code="403">User is not Learner</response>
+    /// <response code="403">Role is not allowed</response>
     /// <response code="500">Internal server error</response>
     [HttpGet("profile")]
-    [AuthorizeRoles(nameof(RoleEnum.Learner))]
+    [AuthorizeRoles(nameof(RoleEnum.Learner), nameof(RoleEnum.Admin))]
     [ProducesResponseType(typeof(Result<ProfileResponse>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(Result<ProfileResponse>), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(Result<ProfileResponse>), StatusCodes.Status403Forbidden)]
     [ProducesResponseType(typeof(Result<ProfileResponse>), StatusCodes.Status500InternalServerError)]
     [SwaggerOperation(
         Summary = "Get profile of the logged-in user",
-        Description = "Returns profile (email, name, phone, avatar, etc.) of the authenticated Learner. Requires Bearer token.",
+        Description = "Returns profile (email, name, phone, avatar, etc.) of the authenticated user (Learner/Admin). Requires Bearer token.",
         OperationId = "GetProfile",
         Tags = new[] { "Learner" }
     )]

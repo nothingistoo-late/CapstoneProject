@@ -29,8 +29,8 @@ public class GetPaymentReportQueryHandler : IRequestHandler<GetPaymentReportQuer
         if (!roles.Contains(RoleEnum.Admin))
             return Result<PaymentReportDto>.Failure("Bạn không có quyền xem báo cáo thanh toán. Chỉ quản trị viên mới có thể truy cập báo cáo này.", ErrorCodeEnum.Forbidden);
 
-        var from = request.From ?? CapstoneProject.Domain.Common.VietnamDateTime.DbNow.AddYears(-1);
-        var to = request.To ?? CapstoneProject.Domain.Common.VietnamDateTime.DbNow;
+        var from = NormalizeTimestamp(request.From ?? CapstoneProject.Domain.Common.VietnamDateTime.DbNow.AddYears(-1));
+        var to = NormalizeTimestamp(request.To ?? CapstoneProject.Domain.Common.VietnamDateTime.DbNow);
         var query = _unitOfWork.Repository<PaymentRecord>().GetQueryable()
             .Where(pr => !pr.IsDeleted && pr.PaymentStatus == PaymentStatusEnum.Completed && pr.PaidAt >= from && pr.PaidAt <= to);
 
@@ -43,6 +43,7 @@ public class GetPaymentReportQueryHandler : IRequestHandler<GetPaymentReportQuer
         {
             "year" => await BuildYearItemsAsync(query, cancellationToken),
             "month" => await BuildMonthItemsAsync(query, cancellationToken),
+            "week" => await BuildWeekItemsAsync(query, cancellationToken),
             _ => await BuildDayItemsAsync(query, cancellationToken)
         };
 
@@ -99,5 +100,39 @@ public class GetPaymentReportQueryHandler : IRequestHandler<GetPaymentReportQuer
             Count = x.Count
         });
     }
+
+    private static async Task<List<PaymentReportItemDto>> BuildWeekItemsAsync(IQueryable<PaymentRecord> query, CancellationToken cancellationToken)
+    {
+        var rows = query
+            .Where(pr => pr.PaidAt != null)
+            .AsEnumerable()
+            .GroupBy(pr =>
+            {
+                var paidDate = DateOnly.FromDateTime(pr.PaidAt!.Value.Date);
+                var dayOfWeek = (int)paidDate.DayOfWeek;
+                var diff = dayOfWeek == 0 ? 6 : dayOfWeek - 1;
+                return paidDate.AddDays(-diff);
+            })
+            .Select(g => new
+            {
+                WeekStart = g.Key,
+                Amount = g.Sum(pr => pr.Amount),
+                AmountVnd = g.Sum(pr => pr.AmountVnd ?? 0),
+                Count = g.Count()
+            })
+            .OrderBy(x => x.WeekStart)
+            .ToList();
+
+        return await Task.FromResult(rows.ConvertAll(x => new PaymentReportItemDto
+        {
+            Period = x.WeekStart.ToString("yyyy-MM-dd"),
+            Amount = x.Amount,
+            AmountVnd = x.AmountVnd,
+            Count = x.Count
+        }));
+    }
+
+    private static DateTime NormalizeTimestamp(DateTime input)
+        => input.Kind == DateTimeKind.Unspecified ? input : DateTime.SpecifyKind(input, DateTimeKind.Unspecified);
 }
 

@@ -59,7 +59,7 @@ public class LearnerMarketplaceController : ControllerBase
     /// - pageNumber (int, default 1), pageSize (int, default 20, max 100).
     /// </remarks>
     [HttpGet("my-packages")]
-    [AuthorizeRoles(nameof(RoleEnum.Learner))]
+    [AuthorizeRoles(nameof(RoleEnum.Learner), nameof(RoleEnum.Admin))]
     [ProducesResponseType(typeof(Result<PaginationResult<MyPackageDto>>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(Result<PaginationResult<MyPackageDto>>), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(Result<PaginationResult<MyPackageDto>>), StatusCodes.Status403Forbidden)]
@@ -103,7 +103,7 @@ public class LearnerMarketplaceController : ControllerBase
     /// Purchase feature package with OrbitCoin
     /// </summary>
     /// <remarks>
-    /// Purchases a feature package for the current user by deducting OrbitCoin. User must have topped up OrbitCoin first. Requires Bearer token (Learner).
+    /// Purchases a feature package for the current user by deducting OrbitCoin. User must have topped up OrbitCoin first. Requires Bearer token (Learner/Admin).
     ///
     /// **Route:** id (Guid, required): Package ID.
     ///
@@ -115,7 +115,7 @@ public class LearnerMarketplaceController : ControllerBase
     /// <response code="404">Package not found</response>
     /// <response code="500">Internal server error</response>
     [HttpPost("packages/{id:guid}/purchase")]
-    [AuthorizeRoles(nameof(RoleEnum.Learner))]
+    [AuthorizeRoles(nameof(RoleEnum.Learner), nameof(RoleEnum.Admin))]
     [ProducesResponseType(typeof(Result<Guid>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(Result<Guid>), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(Result<Guid>), StatusCodes.Status403Forbidden)]
@@ -140,7 +140,7 @@ public class LearnerMarketplaceController : ControllerBase
     /// </remarks>
     /// <response code="200">Purchase successful.</response>
     /// <response code="401">Not authorized</response>
-    /// <response code="403">Not a Learner</response>
+    /// <response code="403">Role is not allowed</response>
     /// <response code="404">Game not found</response>
     /// <response code="500">Internal server error</response>
     [HttpPost("games/{gameId:guid}/purchase")]

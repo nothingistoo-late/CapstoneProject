@@ -3,6 +3,12 @@ using CapstoneProject.Application.Features.Marketplace.Commands.BatchUpdatePacka
 using CapstoneProject.Application.Features.Marketplace.Commands.CreatePackage;
 using CapstoneProject.Application.Features.Marketplace.Commands.DeletePackage;
 using CapstoneProject.Application.Features.Marketplace.Commands.UpdatePackage;
+using CapstoneProject.Application.Features.Marketplace.Queries.ExportCmsRevenueReport;
+using CapstoneProject.Application.Features.Marketplace.Queries.ExportCmsTransactionsReport;
+using CapstoneProject.Application.Features.Marketplace.Queries.GetCmsMarketplaceTransactions;
+using CapstoneProject.Application.Features.Marketplace.Queries.GetCmsOrbitCoinInsights;
+using CapstoneProject.Application.Features.Marketplace.Queries.GetCmsOrbitCoinTransactions;
+using CapstoneProject.Application.Features.Marketplace.Queries.GetCmsRevenueOverview;
 using CapstoneProject.Application.Features.Marketplace.Queries.GetPackageById;
 using CapstoneProject.Application.Features.Marketplace.Queries.GetPackages;
 using CapstoneProject.Application.Features.Marketplace.Queries.GetPaymentReport;
@@ -172,12 +178,12 @@ public class CmsMarketplaceController : ControllerBase
 
     /// <summary>Payment report (by date range, groupBy).</summary>
     /// <remarks>
-    /// Returns payment report. Query: from, to (date), groupBy (Day|Month|Year). Includes both OrbitCoin amount and VND amount fields. Admin only.
+    /// Returns payment report. Query: from, to (date), groupBy (Day|Week|Month|Year). Includes both OrbitCoin amount and VND amount fields. Admin only.
     ///
     /// **Query:**
     /// - from (DateTime?, optional): Start date.
     /// - to (DateTime?, optional): End date.
-    /// - groupBy (string, optional): "Day", "Month", or "Year". Default "Day".
+    /// - groupBy (string, optional): "Day", "Week", "Month", or "Year". Default "Day".
     ///
     /// **METHOD and path:** GET /api/cms/marketplace/reports/payments
     ///
@@ -188,10 +194,86 @@ public class CmsMarketplaceController : ControllerBase
     [ProducesResponseType(typeof(Result<PaymentReportDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(Result), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(Result), StatusCodes.Status403Forbidden)]
-    [SwaggerOperation(Summary = "Payment report", Description = "Returns payment report. Query: from, to (date), groupBy (Day|Month|Year). Response includes totalAmount/amount (OrbitCoin) and totalAmountVnd/amountVnd (VND). Admin only.", OperationId = "Cms_GetPaymentReport", Tags = new[] { "CMS - Marketplace" })]
+    [SwaggerOperation(Summary = "Payment report", Description = "Returns payment report. Query: from, to (date), groupBy (Day|Week|Month|Year). Response includes totalAmount/amount (OrbitCoin) and totalAmountVnd/amountVnd (VND). Admin only.", OperationId = "Cms_GetPaymentReport", Tags = new[] { "CMS - Marketplace" })]
     public async Task<IActionResult> GetPaymentReport([FromQuery] DateTime? from, [FromQuery] DateTime? to, [FromQuery] string? groupBy = "Day")
     {
         var result = await _mediator.Send(new GetPaymentReportQuery(from, to, groupBy));
         return StatusCode(result.GetHttpStatusCode(), result);
+    }
+
+    [HttpGet("reports/overview")]
+    [AuthorizeRoles(nameof(RoleEnum.Admin))]
+    [ProducesResponseType(typeof(Result<CmsRevenueOverviewDto>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetRevenueOverview([FromQuery] DateTime? from, [FromQuery] DateTime? to, [FromQuery] string groupBy = "Day")
+    {
+        var result = await _mediator.Send(new GetCmsRevenueOverviewQuery(from, to, groupBy));
+        return StatusCode(result.GetHttpStatusCode(), result);
+    }
+
+    [HttpGet("transactions/marketplace")]
+    [AuthorizeRoles(nameof(RoleEnum.Admin))]
+    [ProducesResponseType(typeof(Result<PaginationResult<CmsMarketplaceTransactionItemDto>>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetMarketplaceTransactions(
+        [FromQuery] int pageNumber = 1,
+        [FromQuery] int pageSize = 20,
+        [FromQuery] DateTime? from = null,
+        [FromQuery] DateTime? to = null,
+        [FromQuery] string? paymentStatus = null,
+        [FromQuery] string? search = null)
+    {
+        var result = await _mediator.Send(new GetCmsMarketplaceTransactionsQuery(pageNumber, pageSize, from, to, paymentStatus, search));
+        return StatusCode(result.GetHttpStatusCode(), result);
+    }
+
+    [HttpGet("transactions/orbitcoin")]
+    [AuthorizeRoles(nameof(RoleEnum.Admin))]
+    [ProducesResponseType(typeof(Result<PaginationResult<CmsOrbitCoinTransactionItemDto>>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetOrbitCoinTransactions(
+        [FromQuery] int pageNumber = 1,
+        [FromQuery] int pageSize = 20,
+        [FromQuery] DateTime? from = null,
+        [FromQuery] DateTime? to = null,
+        [FromQuery] string? transactionType = null,
+        [FromQuery] string? search = null)
+    {
+        var result = await _mediator.Send(new GetCmsOrbitCoinTransactionsQuery(pageNumber, pageSize, from, to, transactionType, search));
+        return StatusCode(result.GetHttpStatusCode(), result);
+    }
+
+    [HttpGet("reports/orbitcoin-insights")]
+    [AuthorizeRoles(nameof(RoleEnum.Admin))]
+    [ProducesResponseType(typeof(Result<CmsOrbitCoinInsightsDto>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetOrbitCoinInsights([FromQuery] int top = 5)
+    {
+        var result = await _mediator.Send(new GetCmsOrbitCoinInsightsQuery(top));
+        return StatusCode(result.GetHttpStatusCode(), result);
+    }
+
+    [HttpGet("reports/payments/export")]
+    [AuthorizeRoles(nameof(RoleEnum.Admin))]
+    public async Task<IActionResult> ExportPaymentReport(
+        [FromQuery] DateTime? from,
+        [FromQuery] DateTime? to,
+        [FromQuery] string groupBy = "Day",
+        [FromQuery] string format = "csv")
+    {
+        var result = await _mediator.Send(new ExportCmsRevenueReportQuery(from, to, groupBy, format));
+        if (!result.IsSuccess || result.Data == null)
+            return StatusCode(result.GetHttpStatusCode(), result);
+        return File(result.Data.Content, result.Data.ContentType, result.Data.FileName);
+    }
+
+    [HttpGet("transactions/export")]
+    [AuthorizeRoles(nameof(RoleEnum.Admin))]
+    public async Task<IActionResult> ExportTransactions(
+        [FromQuery] string source = "marketplace",
+        [FromQuery] DateTime? from = null,
+        [FromQuery] DateTime? to = null,
+        [FromQuery] string format = "csv")
+    {
+        var result = await _mediator.Send(new ExportCmsTransactionsReportQuery(source, from, to, format));
+        if (!result.IsSuccess || result.Data == null)
+            return StatusCode(result.GetHttpStatusCode(), result);
+        return File(result.Data.Content, result.Data.ContentType, result.Data.FileName);
     }
 }
