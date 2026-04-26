@@ -29,7 +29,10 @@ public class GetPackageByIdQueryHandler : IRequestHandler<GetPackageByIdQuery, R
                 Limit = p.Limit,
                 Price = p.Price,
                 FeaturesSpec = p.FeaturesSpec,
-                Status = p.Status
+                Status = p.Status,
+                CreatedAt = p.CreatedAt,
+                UpdatedAt = p.UpdatedAt,
+                UpdatedBy = p.UpdatedBy
             })
             .FirstOrDefaultAsync(cancellationToken);
 

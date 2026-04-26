@@ -252,7 +252,7 @@ public static class SeedingExtension
                 DurationDays = 3650,
                 Limit = 20,
                 Price = 0,
-                FeaturesSpec = "Play basic games; max 20 games; no hints; cannot create/publish games; no XP boost."
+                FeaturesSpec = "{\"plan\":\"free\",\"features\":{\"can_create_game\":false,\"advanced_assets\":false,\"can_private_room\":false,\"xp_boost_multiplier\":1.0,\"monthly_hint_quota\":20}}"
             },
             new Package
             {
@@ -260,7 +260,7 @@ public static class SeedingExtension
                 DurationDays = 30,
                 Limit = null,
                 Price = 149m,
-                FeaturesSpec = "Play basic and advanced games; hints enabled; cannot create/publish games; XP boost enabled."
+                FeaturesSpec = "{\"plan\":\"pro\",\"features\":{\"can_create_game\":true,\"advanced_assets\":false,\"can_private_room\":true,\"xp_boost_multiplier\":1.15,\"monthly_hint_quota\":120}}"
             },
             new Package
             {
@@ -268,7 +268,7 @@ public static class SeedingExtension
                 DurationDays = 30,
                 Limit = null,
                 Price = 299m,
-                FeaturesSpec = "Play basic and advanced games; hints enabled; can create and publish games; game analytics; XP boost enabled."
+                FeaturesSpec = "{\"plan\":\"creator\",\"features\":{\"can_create_game\":true,\"advanced_assets\":true,\"can_private_room\":true,\"xp_boost_multiplier\":1.3,\"monthly_hint_quota\":500}}"
             }
         };
 

@@ -50,6 +50,7 @@ public static class QuackOrbitEntityConfiguration
         builder.Entity<UserLearningGoal>(ConfigureUserLearningGoal);
         builder.Entity<UserConceptProgress>(ConfigureUserConceptProgress);
         builder.Entity<UserGamePlayHistory>(ConfigureUserGamePlayHistory);
+        builder.Entity<UserMonthlyHintUsage>(ConfigureUserMonthlyHintUsage);
     }
 
     static void ConfigureLearningGoal(EntityTypeBuilder<LearningGoal> e)
@@ -221,6 +222,14 @@ public static class QuackOrbitEntityConfiguration
         e.HasIndex(x => new { x.UserId, x.GameId, x.StartTime });
         e.HasIndex(x => x.SubmissionId);
         e.HasIndex(x => x.ExecutionsResultId);
+    }
+
+    static void ConfigureUserMonthlyHintUsage(EntityTypeBuilder<UserMonthlyHintUsage> e)
+    {
+        e.ToTable("UserMonthlyHintUsages");
+        e.HasIndex(x => new { x.UserId, x.MonthKey }).IsUnique();
+        e.HasIndex(x => x.MonthKey);
+        e.HasOne(x => x.User).WithMany().HasForeignKey(x => x.UserId).OnDelete(DeleteBehavior.Cascade);
     }
 
     static void ConfigureXpTransaction(EntityTypeBuilder<XpTransaction> e)

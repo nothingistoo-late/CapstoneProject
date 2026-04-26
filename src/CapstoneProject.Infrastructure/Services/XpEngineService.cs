@@ -1,6 +1,7 @@
 ﻿using CapstoneProject.Application.Common.Enums;
 using CapstoneProject.Application.Common.Interfaces;
 using CapstoneProject.Application.Common.Models;
+using CapstoneProject.Application.Common.Security;
 using CapstoneProject.Application.Commons.Models.Xp;
 using CapstoneProject.Domain.Common;
 using CapstoneProject.Domain.Entities;
@@ -12,11 +13,16 @@ public class XpEngineService : IXpEngineService
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly IEnumerable<IXpPolicy> _policies;
+    private readonly IEntitlementService _entitlementService;
 
-    public XpEngineService(IUnitOfWork unitOfWork, IEnumerable<IXpPolicy> policies)
+    public XpEngineService(
+        IUnitOfWork unitOfWork,
+        IEnumerable<IXpPolicy> policies,
+        IEntitlementService entitlementService)
     {
         _unitOfWork = unitOfWork;
         _policies = policies;
+        _entitlementService = entitlementService;
     }
 
     public async Task<Result<XpGrantResult>> GrantXpAsync(XpGrantInput input, CancellationToken cancellationToken = default)
@@ -83,6 +89,13 @@ public class XpEngineService : IXpEngineService
         {
             if (policyContext.PolicyConfigs.ContainsKey(policy.PolicyKey))
                 xpValue = await policy.ApplyAsync(policyContext, xpValue, cancellationToken);
+        }
+
+        var boostMultiplier = await _entitlementService
+            .GetNumericFeatureAsync(input.UserId, FeatureKeys.XpBoostMultiplier, cancellationToken);
+        if (boostMultiplier.HasValue && boostMultiplier.Value > 0m && boostMultiplier.Value != 1m)
+        {
+            xpValue = (int)Math.Floor(xpValue * (double)boostMultiplier.Value);
         }
 
         if (xpValue <= 0)

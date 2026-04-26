@@ -10,6 +10,9 @@ public class PackageDto
     public string? FeaturesSpec { get; set; }
     public bool IsActive => Status == Domain.Enums.EntityStatusEnum.Active;
     public Domain.Enums.EntityStatusEnum Status { get; set; }
+    public DateTime? CreatedAt { get; set; }
+    public DateTime? UpdatedAt { get; set; }
+    public Guid? UpdatedBy { get; set; }
 }
 
 public class CreatePackageRequest
@@ -29,6 +32,7 @@ public class UpdatePackageRequest
     public decimal? Price { get; set; }
     public string? FeaturesSpec { get; set; }
     public bool? IsActive { get; set; }
+    public Domain.Enums.EntityStatusEnum? Status { get; set; }
 }
 
 public class BatchUpdatePackageStatusRequest
@@ -47,7 +51,7 @@ public class MyPackageDto
     public int? Limit { get; set; }
     public decimal Price { get; set; }
     public string? FeaturesSpec { get; set; }
-    public int Remaining { get; set; }
+    public int? Remaining { get; set; }
     public DateTime? ExpiresAt { get; set; }
     /// <summary>Thời điểm mua (CreatedAt của UserPackage).</summary>
     public DateTime? PurchasedAt { get; set; }
