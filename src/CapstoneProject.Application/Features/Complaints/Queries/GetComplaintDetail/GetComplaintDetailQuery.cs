@@ -12,7 +12,11 @@ public class ComplaintDetailDto
     public Guid Id { get; set; }
     public Guid UserId { get; set; }
     public Guid BuyerUserId { get; set; }
+    /// <summary>Display name of the complainant (same user as <see cref="BuyerUserId"/>).</summary>
+    public string BuyerDisplayName { get; set; } = string.Empty;
     public Guid? SellerUserId { get; set; }
+    /// <summary>Display name of the game author / seller when applicable.</summary>
+    public string? SellerDisplayName { get; set; }
     public string Subject { get; set; } = string.Empty;
     public string Category { get; set; } = string.Empty;
     public string CategoryKey { get; set; } = string.Empty;
@@ -40,6 +44,7 @@ public class ComplaintMessageDto
 {
     public Guid Id { get; set; }
     public Guid SenderId { get; set; }
+    public string SenderDisplayName { get; set; } = string.Empty;
     public string SenderParty { get; set; } = "Other";
     public string Content { get; set; } = string.Empty;
     public bool IsInternal { get; set; }
@@ -53,6 +58,7 @@ public class ComplaintStatusHistoryDto
     public string FromStatus { get; set; } = string.Empty;
     public string ToStatus { get; set; } = string.Empty;
     public Guid ChangedBy { get; set; }
+    public string ChangedByDisplayName { get; set; } = string.Empty;
     public DateTime ChangedAt { get; set; }
     public string? Note { get; set; }
 }

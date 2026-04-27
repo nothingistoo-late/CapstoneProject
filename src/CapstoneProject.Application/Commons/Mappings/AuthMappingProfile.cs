@@ -18,6 +18,7 @@ public class AuthMappingProfile : Profile
             .ForMember(dest => dest.JoiningAt, opt => opt.MapFrom(src => CapstoneProject.Domain.Common.VietnamDateTime.DbNow))
             .ForMember(dest => dest.EmailConfirmed, opt => opt.MapFrom(src => true))
             .ForMember(dest => dest.AvatarPath, opt => opt.Ignore())
+            .ForMember(dest => dest.CoverImagePath, opt => opt.Ignore())
             .ForMember(dest => dest.Gender, opt => opt.MapFrom(src => src.Gender))
             .ForMember(dest => dest.DateOfBirth, opt => opt.MapFrom(src => src.DateOfBirth))
             .ForMember(dest => dest.Bio, opt => opt.Ignore())
@@ -27,6 +28,7 @@ public class AuthMappingProfile : Profile
         CreateMap<AppUser, ProfileResponse>()
             .ForMember(dest => dest.UserId, opt => opt.MapFrom(src => src.Id))
             .ForMember(dest => dest.AvatarPath, opt => opt.MapFrom<AvatarUrlResolver>())
+            .ForMember(dest => dest.CoverImagePath, opt => opt.MapFrom<CoverWallUrlResolver>())
             .ForMember(dest => dest.Gender, opt => opt.MapFrom(src =>
                 src.Gender.HasValue ? src.Gender.Value.ToString() : null))
             .ForMember(dest => dest.DateOfBirth, opt => opt.MapFrom(src => src.DateOfBirth))

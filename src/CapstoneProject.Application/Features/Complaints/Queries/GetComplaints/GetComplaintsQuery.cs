@@ -18,6 +18,9 @@ public class ComplaintListItemDto
 {
     public Guid Id { get; set; }
     public Guid UserId { get; set; }
+    /// <summary>Same as <see cref="UserId"/> — user who filed the complaint (buyer).</summary>
+    public Guid BuyerUserId { get; set; }
+    public string BuyerDisplayName { get; set; } = string.Empty;
     public string Subject { get; set; } = string.Empty;
     public string Category { get; set; } = string.Empty;
     public string CategoryKey { get; set; } = string.Empty;

@@ -13,6 +13,8 @@ public class AppUser : IdentityUser<Guid>, IEntityLike
     public string? RefreshToken { get; set; }
     public DateTime? RefreshTokenExpiryTime { get; set; }
     public string? AvatarPath { get; set; }
+    /// <summary>Profile cover / wall image (Cloudinary URL or stored path).</summary>
+    public string? CoverImagePath { get; set; }
     public GenderEnum? Gender { get; set; }
     public DateTime? DateOfBirth { get; set; }
     public string? Bio { get; set; }

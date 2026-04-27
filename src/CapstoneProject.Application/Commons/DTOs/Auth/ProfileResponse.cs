@@ -22,6 +22,10 @@ public class ProfileResponse
     public string? Bio { get; set; }
 
     public string? AvatarPath { get; set; }
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? CoverImagePath { get; set; }
+
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public string? LearnerCode { get; set; }
 
