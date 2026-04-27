@@ -3,6 +3,7 @@ using System;
 using CapstoneProject.Infrastructure.Context;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace CapstoneProject.Infrastructure.Migrations
 {
     [DbContext(typeof(CapstoneProjectDbContext))]
-    partial class CapstoneProjectDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260427173048_RemoveAchievementTables")]
+    partial class RemoveAchievementTables
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

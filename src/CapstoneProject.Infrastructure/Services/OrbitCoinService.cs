@@ -310,7 +310,7 @@ public class OrbitCoinService : IOrbitCoinService
         CancellationToken cancellationToken = default)
     {
         if (amount <= 0)
-            return (false, "Credit amount must be positive.");
+            return (false, "Số tiền cộng vào ví phải lớn hơn 0.");
         var wallet = await GetOrCreateWalletAsync(userId, cancellationToken);
         wallet.Balance += amount;
         wallet.UpdatedAt = CapstoneProject.Domain.Common.VietnamDateTime.DbNow;
@@ -346,11 +346,11 @@ public class OrbitCoinService : IOrbitCoinService
         CancellationToken cancellationToken = default)
     {
         if (amount <= 0)
-            return (false, "Debit amount must be positive.");
+            return (false, "Số tiền trừ phải lớn hơn 0.");
         var wallet = await GetOrCreateWalletAsync(userId, cancellationToken);
         var totalDebit = amount + feeAmount;
         if (wallet.Balance < totalDebit)
-            return (false, "Insufficient OrbitCoin balance.");
+            return (false, "Số dư OrbitCoin không đủ.");
         wallet.Balance -= totalDebit;
         wallet.UpdatedAt = CapstoneProject.Domain.Common.VietnamDateTime.DbNow;
         wallet.UpdatedBy = createdBy;
@@ -386,11 +386,11 @@ public class OrbitCoinService : IOrbitCoinService
         CancellationToken cancellationToken = default)
     {
         if (amount <= 0)
-            return (false, "Transfer amount must be positive.");
+            return (false, "Số tiền chuyển phải lớn hơn 0.");
         var buyerWallet = await GetOrCreateWalletAsync(buyerUserId, cancellationToken);
         var totalCharge = amount + feeAmount;
         if (buyerWallet.Balance < totalCharge)
-            return (false, "Insufficient OrbitCoin balance.");
+            return (false, "Số dư OrbitCoin không đủ.");
         var sellerWallet = await GetOrCreateWalletAsync(sellerUserId, cancellationToken);
 
         buyerWallet.Balance -= totalCharge;
@@ -446,14 +446,14 @@ public class OrbitCoinService : IOrbitCoinService
         CancellationToken cancellationToken = default)
     {
         if (amount <= 0)
-            return (false, "Transfer amount must be positive.");
+            return (false, "Số tiền chuyển phải lớn hơn 0.");
         var sellerReceives = amount - feeAmount;
         if (sellerReceives < 0)
-            return (false, "Fee cannot exceed amount.");
+            return (false, "Phí không được vượt quá số tiền.");
 
         var buyerWallet = await GetOrCreateWalletAsync(buyerUserId, cancellationToken);
         if (buyerWallet.Balance < amount)
-            return (false, "Insufficient OrbitCoin balance.");
+            return (false, "Số dư OrbitCoin không đủ.");
         var sellerWallet = await GetOrCreateWalletAsync(sellerUserId, cancellationToken);
 
         buyerWallet.Balance -= amount;

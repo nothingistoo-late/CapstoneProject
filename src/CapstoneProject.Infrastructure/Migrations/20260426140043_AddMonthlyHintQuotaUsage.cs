@@ -1,97 +1,115 @@
-﻿using System;
-using Microsoft.EntityFrameworkCore.Migrations;
+﻿using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
 namespace CapstoneProject.Infrastructure.Migrations
 {
-    /// <inheritdoc />
+    /// <summary>
+    /// Adds <c>UserMonthlyHintUsages</c> and aligns <c>UserGamePlayHistories</c> PK/index names with the model.
+    /// Idempotent: safe when migration <c>20260417130000_RenameLegacyMapSchemaToGame</c> already renamed the play-history table.
+    /// </summary>
     public partial class AddMonthlyHintQuotaUsage : Migration
     {
-        /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropPrimaryKey(
-                name: "PK_UserMapPlayHistories",
-                table: "UserMapPlayHistories");
+            migrationBuilder.Sql(
+                """
+                DO $$
+                BEGIN
+                  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'UserMapPlayHistories')
+                     AND NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'UserGamePlayHistories') THEN
+                    ALTER TABLE "UserMapPlayHistories" RENAME TO "UserGamePlayHistories";
+                  END IF;
+                END $$;
 
-            migrationBuilder.RenameTable(
-                name: "UserMapPlayHistories",
-                newName: "UserGamePlayHistories");
+                DO $$
+                BEGIN
+                  IF EXISTS (
+                    SELECT 1 FROM pg_constraint c
+                    JOIN pg_class t ON c.conrelid = t.oid
+                    JOIN pg_namespace n ON t.relnamespace = n.oid
+                    WHERE n.nspname = 'public' AND t.relname = 'UserGamePlayHistories' AND c.conname = 'PK_UserMapPlayHistories'
+                  ) THEN
+                    ALTER TABLE "UserGamePlayHistories" RENAME CONSTRAINT "PK_UserMapPlayHistories" TO "PK_UserGamePlayHistories";
+                  END IF;
+                END $$;
 
-            migrationBuilder.RenameIndex(
-                name: "IX_UserMapPlayHistories_UserId_GameId_StartTime",
-                table: "UserGamePlayHistories",
-                newName: "IX_UserGamePlayHistories_UserId_GameId_StartTime");
+                DO $$
+                BEGIN
+                  IF EXISTS (SELECT 1 FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace
+                             WHERE n.nspname = 'public' AND c.relkind IN ('i', 'I') AND c.relname = 'IX_UserMapPlayHistories_UserId_GameId_StartTime')
+                     AND NOT EXISTS (SELECT 1 FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace
+                                     WHERE n.nspname = 'public' AND c.relkind IN ('i', 'I') AND c.relname = 'IX_UserGamePlayHistories_UserId_GameId_StartTime') THEN
+                    EXECUTE 'ALTER INDEX "IX_UserMapPlayHistories_UserId_GameId_StartTime" RENAME TO "IX_UserGamePlayHistories_UserId_GameId_StartTime"';
+                  END IF;
 
-            migrationBuilder.RenameIndex(
-                name: "IX_UserMapPlayHistories_UserId",
-                table: "UserGamePlayHistories",
-                newName: "IX_UserGamePlayHistories_UserId");
+                  IF EXISTS (SELECT 1 FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace
+                             WHERE n.nspname = 'public' AND c.relkind IN ('i', 'I') AND c.relname = 'IX_UserMapPlayHistories_UserId')
+                     AND NOT EXISTS (SELECT 1 FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace
+                                     WHERE n.nspname = 'public' AND c.relkind IN ('i', 'I') AND c.relname = 'IX_UserGamePlayHistories_UserId') THEN
+                    EXECUTE 'ALTER INDEX "IX_UserMapPlayHistories_UserId" RENAME TO "IX_UserGamePlayHistories_UserId"';
+                  END IF;
 
-            migrationBuilder.RenameIndex(
-                name: "IX_UserMapPlayHistories_SubmissionId",
-                table: "UserGamePlayHistories",
-                newName: "IX_UserGamePlayHistories_SubmissionId");
+                  IF EXISTS (SELECT 1 FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace
+                             WHERE n.nspname = 'public' AND c.relkind IN ('i', 'I') AND c.relname = 'IX_UserMapPlayHistories_SubmissionId')
+                     AND NOT EXISTS (SELECT 1 FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace
+                                     WHERE n.nspname = 'public' AND c.relkind IN ('i', 'I') AND c.relname = 'IX_UserGamePlayHistories_SubmissionId') THEN
+                    EXECUTE 'ALTER INDEX "IX_UserMapPlayHistories_SubmissionId" RENAME TO "IX_UserGamePlayHistories_SubmissionId"';
+                  END IF;
 
-            migrationBuilder.RenameIndex(
-                name: "IX_UserMapPlayHistories_GameId",
-                table: "UserGamePlayHistories",
-                newName: "IX_UserGamePlayHistories_GameId");
+                  IF EXISTS (SELECT 1 FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace
+                             WHERE n.nspname = 'public' AND c.relkind IN ('i', 'I') AND c.relname = 'IX_UserMapPlayHistories_GameId')
+                     AND NOT EXISTS (SELECT 1 FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace
+                                     WHERE n.nspname = 'public' AND c.relkind IN ('i', 'I') AND c.relname = 'IX_UserGamePlayHistories_GameId') THEN
+                    EXECUTE 'ALTER INDEX "IX_UserMapPlayHistories_GameId" RENAME TO "IX_UserGamePlayHistories_GameId"';
+                  END IF;
 
-            migrationBuilder.RenameIndex(
-                name: "IX_UserMapPlayHistories_GameDetailId",
-                table: "UserGamePlayHistories",
-                newName: "IX_UserGamePlayHistories_GameDetailId");
+                  IF EXISTS (SELECT 1 FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace
+                             WHERE n.nspname = 'public' AND c.relkind IN ('i', 'I') AND c.relname = 'IX_UserMapPlayHistories_GameDetailId')
+                     AND NOT EXISTS (SELECT 1 FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace
+                                     WHERE n.nspname = 'public' AND c.relkind IN ('i', 'I') AND c.relname = 'IX_UserGamePlayHistories_GameDetailId') THEN
+                    EXECUTE 'ALTER INDEX "IX_UserMapPlayHistories_GameDetailId" RENAME TO "IX_UserGamePlayHistories_GameDetailId"';
+                  END IF;
 
-            migrationBuilder.RenameIndex(
-                name: "IX_UserMapPlayHistories_ExecutionsResultId",
-                table: "UserGamePlayHistories",
-                newName: "IX_UserGamePlayHistories_ExecutionsResultId");
+                  IF EXISTS (SELECT 1 FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace
+                             WHERE n.nspname = 'public' AND c.relkind IN ('i', 'I') AND c.relname = 'IX_UserMapPlayHistories_MapDetailId')
+                     AND NOT EXISTS (SELECT 1 FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace
+                                     WHERE n.nspname = 'public' AND c.relkind IN ('i', 'I') AND c.relname = 'IX_UserGamePlayHistories_GameDetailId') THEN
+                    EXECUTE 'ALTER INDEX "IX_UserMapPlayHistories_MapDetailId" RENAME TO "IX_UserGamePlayHistories_GameDetailId"';
+                  END IF;
 
-            migrationBuilder.AddPrimaryKey(
-                name: "PK_UserGamePlayHistories",
-                table: "UserGamePlayHistories",
-                column: "Id");
+                  IF EXISTS (SELECT 1 FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace
+                             WHERE n.nspname = 'public' AND c.relkind IN ('i', 'I') AND c.relname = 'IX_UserMapPlayHistories_ExecutionsResultId')
+                     AND NOT EXISTS (SELECT 1 FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace
+                                     WHERE n.nspname = 'public' AND c.relkind IN ('i', 'I') AND c.relname = 'IX_UserGamePlayHistories_ExecutionsResultId') THEN
+                    EXECUTE 'ALTER INDEX "IX_UserMapPlayHistories_ExecutionsResultId" RENAME TO "IX_UserGamePlayHistories_ExecutionsResultId"';
+                  END IF;
+                END $$;
 
-            migrationBuilder.CreateTable(
-                name: "UserMonthlyHintUsages",
-                columns: table => new
-                {
-                    Id = table.Column<Guid>(type: "uuid", nullable: false),
-                    UserId = table.Column<Guid>(type: "uuid", nullable: false),
-                    MonthKey = table.Column<int>(type: "integer", nullable: false),
-                    UsedCount = table.Column<int>(type: "integer", nullable: false),
-                    CreatedAt = table.Column<DateTime>(type: "timestamp without time zone", nullable: true, defaultValueSql: "(now() AT TIME ZONE 'Asia/Ho_Chi_Minh')"),
-                    CreatedBy = table.Column<Guid>(type: "uuid", nullable: true),
-                    UpdatedAt = table.Column<DateTime>(type: "timestamp without time zone", nullable: true),
-                    UpdatedBy = table.Column<Guid>(type: "uuid", nullable: true),
-                    IsDeleted = table.Column<bool>(type: "boolean", nullable: false, defaultValue: false),
-                    DeletedBy = table.Column<Guid>(type: "uuid", nullable: true),
-                    DeletedAt = table.Column<DateTime>(type: "timestamp without time zone", nullable: true),
-                    Status = table.Column<int>(type: "integer", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_UserMonthlyHintUsages", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_UserMonthlyHintUsages_Users_UserId",
-                        column: x => x.UserId,
-                        principalTable: "Users",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateIndex(
-                name: "IX_UserMonthlyHintUsages_MonthKey",
-                table: "UserMonthlyHintUsages",
-                column: "MonthKey");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_UserMonthlyHintUsages_UserId_MonthKey",
-                table: "UserMonthlyHintUsages",
-                columns: new[] { "UserId", "MonthKey" },
-                unique: true);
+                DO $$
+                BEGIN
+                  IF NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'UserMonthlyHintUsages') THEN
+                    CREATE TABLE "UserMonthlyHintUsages" (
+                        "Id" uuid NOT NULL,
+                        "UserId" uuid NOT NULL,
+                        "MonthKey" integer NOT NULL,
+                        "UsedCount" integer NOT NULL,
+                        "CreatedAt" timestamp without time zone NULL DEFAULT (now() AT TIME ZONE 'Asia/Ho_Chi_Minh'),
+                        "CreatedBy" uuid NULL,
+                        "UpdatedAt" timestamp without time zone NULL,
+                        "UpdatedBy" uuid NULL,
+                        "IsDeleted" boolean NOT NULL DEFAULT FALSE,
+                        "DeletedBy" uuid NULL,
+                        "DeletedAt" timestamp without time zone NULL,
+                        "Status" integer NOT NULL,
+                        CONSTRAINT "PK_UserMonthlyHintUsages" PRIMARY KEY ("Id"),
+                        CONSTRAINT "FK_UserMonthlyHintUsages_Users_UserId" FOREIGN KEY ("UserId") REFERENCES "Users" ("Id") ON DELETE CASCADE
+                    );
+                    CREATE INDEX "IX_UserMonthlyHintUsages_MonthKey" ON "UserMonthlyHintUsages" ("MonthKey");
+                    CREATE UNIQUE INDEX "IX_UserMonthlyHintUsages_UserId_MonthKey" ON "UserMonthlyHintUsages" ("UserId", "MonthKey");
+                  END IF;
+                END $$;
+                """);
         }
 
         /// <inheritdoc />

@@ -19,8 +19,6 @@ public static class QuackOrbitEntityConfiguration
         builder.Entity<Hint>(ConfigureHint);
         builder.Entity<Tag>(ConfigureTag);
         builder.Entity<GameTag>(ConfigureGameTag);
-        builder.Entity<Achievement>(ConfigureAchievement);
-        builder.Entity<UserAchievement>(ConfigureUserAchievement);
         builder.Entity<Submission>(ConfigureSubmission);
         builder.Entity<ExecutionsResult>(ConfigureExecutionsResult);
         builder.Entity<UserGameResult>(ConfigureUserGameResult);
@@ -168,18 +166,6 @@ public static class QuackOrbitEntityConfiguration
         e.ToTable("GameTags");
         e.Property(x => x.GameId);
         e.HasIndex(x => new { x.GameId, x.TagId }).IsUnique();
-    }
-
-
-    static void ConfigureAchievement(EntityTypeBuilder<Achievement> e)
-    {
-        e.HasIndex(x => x.Code).IsUnique();
-        e.HasMany(x => x.UserAchievements).WithOne(x => x.Achievement).HasForeignKey(x => x.AchievementId).OnDelete(DeleteBehavior.Cascade);
-    }
-
-    static void ConfigureUserAchievement(EntityTypeBuilder<UserAchievement> e)
-    {
-        e.HasIndex(x => new { x.UserId, x.AchievementId }).IsUnique();
     }
 
     static void ConfigureSubmission(EntityTypeBuilder<Submission> e)

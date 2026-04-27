@@ -580,7 +580,6 @@ public static class SeedingExtension
         await dbContext.SaveChangesAsync();
 
         await SeedXpConfigurationDataAsync(dbContext, existingAdmin?.Id, logger);
-        await SeedComplaintConfigurationDataAsync(dbContext, existingAdmin?.Id, logger);
 
         logger.LogInformation("Data seeding completed.");
     }
@@ -783,115 +782,6 @@ public static class SeedingExtension
 
         await dbContext.SaveChangesAsync();
         logger.LogInformation("XP configuration seeding completed.");
-    }
-
-    private static async Task SeedComplaintConfigurationDataAsync(CapstoneProjectDbContext dbContext, Guid? userId, ILogger logger)
-    {
-        var actorId = userId ?? Guid.Empty;
-
-        var categorySeeds = new[]
-        {
-            new { Key = "PaymentIssue", Name = "Payment Issue", Description = "Payment succeeded but entitlement/balance is incorrect", Sort = 10 },
-            new { Key = "AccessIssue", Name = "Access Issue", Description = "Purchased game/package but cannot access", Sort = 20 },
-            new { Key = "GameplayScoringIssue", Name = "Gameplay Scoring Issue", Description = "Unexpected score/stars/status after playing", Sort = 30 },
-            new { Key = "RewardBalanceIssue", Name = "Reward Balance Issue", Description = "XP or OrbitCoin balance mismatch", Sort = 40 },
-            new { Key = "TrialIssue", Name = "Trial Issue", Description = "Free trial attempts blocked or deducted incorrectly", Sort = 50 },
-            new { Key = "Other", Name = "Other", Description = "General issue report that does not match predefined categories", Sort = 60 }
-        };
-
-        foreach (var seed in categorySeeds)
-        {
-            var existing = await dbContext.ComplaintCategoryCatalogs
-                .FirstOrDefaultAsync(x => x.CategoryKey == seed.Key);
-
-            if (existing == null)
-            {
-                var row = new ComplaintCategoryCatalog
-                {
-                    CategoryKey = seed.Key,
-                    DisplayName = seed.Name,
-                    Description = seed.Description,
-                    IsEnabled = true,
-                    SortOrder = seed.Sort,
-                    Status = EntityStatusEnum.Active
-                };
-                row.InitializeEntity(actorId);
-                await dbContext.ComplaintCategoryCatalogs.AddAsync(row);
-            }
-            else
-            {
-                existing.DisplayName = seed.Name;
-                existing.Description = seed.Description;
-                existing.IsEnabled = true;
-                existing.SortOrder = seed.Sort;
-                if (existing.IsDeleted)
-                    existing.RestoreEntity(actorId);
-                existing.UpdateEntity(actorId);
-            }
-        }
-
-        var ruleSeeds = new[]
-        {
-            new { Category = "PaymentIssue", Rule = "required_context", Enabled = true, Priority = 10, Config = "{\"anyOf\":[\"paymentRecordId\",\"gameId\",\"packageId\"]}" },
-            new { Category = "PaymentIssue", Rule = "time_window", Enabled = true, Priority = 20, Config = "{\"hours\":168}" },
-            new { Category = "PaymentIssue", Rule = "duplicate_window", Enabled = true, Priority = 30, Config = "{\"hours\":72}" },
-            new { Category = "PaymentIssue", Rule = "rate_limit", Enabled = true, Priority = 40, Config = "{\"maxPerDay\":3}" },
-
-            new { Category = "AccessIssue", Rule = "required_context", Enabled = true, Priority = 10, Config = "{\"anyOf\":[\"gameId\",\"packageId\"]}" },
-            new { Category = "AccessIssue", Rule = "time_window", Enabled = true, Priority = 20, Config = "{\"hours\":168}" },
-            new { Category = "AccessIssue", Rule = "duplicate_window", Enabled = true, Priority = 30, Config = "{\"hours\":72}" },
-            new { Category = "AccessIssue", Rule = "rate_limit", Enabled = true, Priority = 40, Config = "{\"maxPerDay\":3}" },
-
-            new { Category = "GameplayScoringIssue", Rule = "required_context", Enabled = true, Priority = 10, Config = "{\"anyOf\":[\"submissionId\",\"playHistoryId\"]}" },
-            new { Category = "GameplayScoringIssue", Rule = "time_window", Enabled = true, Priority = 20, Config = "{\"hours\":72}" },
-            new { Category = "GameplayScoringIssue", Rule = "duplicate_window", Enabled = true, Priority = 30, Config = "{\"hours\":72}" },
-            new { Category = "GameplayScoringIssue", Rule = "rate_limit", Enabled = true, Priority = 40, Config = "{\"maxPerDay\":3}" },
-
-            new { Category = "RewardBalanceIssue", Rule = "required_context", Enabled = true, Priority = 10, Config = "{\"anyOf\":[\"xpTransactionId\",\"orbitCoinTransactionId\",\"submissionId\",\"gameId\"]}" },
-            new { Category = "RewardBalanceIssue", Rule = "time_window", Enabled = true, Priority = 20, Config = "{\"hours\":72}" },
-            new { Category = "RewardBalanceIssue", Rule = "duplicate_window", Enabled = true, Priority = 30, Config = "{\"hours\":72}" },
-            new { Category = "RewardBalanceIssue", Rule = "rate_limit", Enabled = true, Priority = 40, Config = "{\"maxPerDay\":3}" },
-
-            new { Category = "TrialIssue", Rule = "required_context", Enabled = true, Priority = 10, Config = "{\"anyOf\":[\"gameId\",\"playHistoryId\"]}" },
-            new { Category = "TrialIssue", Rule = "time_window", Enabled = true, Priority = 20, Config = "{\"hours\":24}" },
-            new { Category = "TrialIssue", Rule = "duplicate_window", Enabled = true, Priority = 30, Config = "{\"hours\":72}" },
-            new { Category = "TrialIssue", Rule = "rate_limit", Enabled = true, Priority = 40, Config = "{\"maxPerDay\":3}" },
-
-            new { Category = "Other", Rule = "rate_limit", Enabled = true, Priority = 40, Config = "{\"maxPerDay\":2}" }
-        };
-
-        foreach (var seed in ruleSeeds)
-        {
-            var existing = await dbContext.ComplaintPolicyRuleConfigs
-                .FirstOrDefaultAsync(x => x.CategoryKey == seed.Category && x.RuleKey == seed.Rule);
-
-            if (existing == null)
-            {
-                var row = new ComplaintPolicyRuleConfig
-                {
-                    CategoryKey = seed.Category,
-                    RuleKey = seed.Rule,
-                    IsEnabled = seed.Enabled,
-                    Priority = seed.Priority,
-                    ConfigJson = seed.Config,
-                    Status = EntityStatusEnum.Active
-                };
-                row.InitializeEntity(actorId);
-                await dbContext.ComplaintPolicyRuleConfigs.AddAsync(row);
-            }
-            else
-            {
-                existing.IsEnabled = seed.Enabled;
-                existing.Priority = seed.Priority;
-                existing.ConfigJson = seed.Config;
-                if (existing.IsDeleted)
-                    existing.RestoreEntity(actorId);
-                existing.UpdateEntity(actorId);
-            }
-        }
-
-        await dbContext.SaveChangesAsync();
-        logger.LogInformation("Complaint configuration seeding completed.");
     }
 
     private sealed class ConceptKeyComparer : IEqualityComparer<(Guid, string)>

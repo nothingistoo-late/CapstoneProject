@@ -34,8 +34,6 @@ public class CapstoneProjectDbContext : IdentityDbContext<AppUser, AppRole, Guid
     public DbSet<UserGameResult> UserGameResults { get; set; }
     public DbSet<UserGamePlayHistory> UserGamePlayHistories { get; set; }
     public DbSet<UserMonthlyHintUsage> UserMonthlyHintUsages { get; set; }
-    public DbSet<Achievement> Achievements { get; set; }
-    public DbSet<UserAchievement> UserAchievements { get; set; }
     public DbSet<XpTransaction> XpTransactions { get; set; }
     public DbSet<LevelThreshold> LevelThresholds { get; set; }
     public DbSet<XpPolicyConfig> XpPolicyConfigs { get; set; }
