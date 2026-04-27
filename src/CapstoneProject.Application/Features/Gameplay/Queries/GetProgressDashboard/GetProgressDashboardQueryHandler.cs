@@ -51,18 +51,7 @@ public class GetProgressDashboardQueryHandler : IRequestHandler<GetProgressDashb
             .Where(u => u.UserId == userId && !u.IsDeleted)
             .SumAsync(u => (int?)u.BestStars, cancellationToken) ?? 0;
 
-        var badges = await _unitOfWork.Repository<UserAchievement>().GetQueryable()
-            .Where(ua => ua.UserId == userId && !ua.IsDeleted)
-            .Include(ua => ua.Achievement)
-            .OrderByDescending(ua => ua.UnlockedAt)
-            .Take(20)
-            .Select(ua => new BadgeDto
-            {
-                Code = ua.Achievement.Code,
-                Name = ua.Achievement.Name,
-                UnlockedAt = ua.UnlockedAt
-            })
-            .ToListAsync(cancellationToken);
+        var badges = new List<BadgeDto>();
 
         var conceptsPracticed = new List<string>();
 

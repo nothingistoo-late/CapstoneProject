@@ -19,8 +19,6 @@ public static class QuackOrbitEntityConfiguration
         builder.Entity<Hint>(ConfigureHint);
         builder.Entity<Tag>(ConfigureTag);
         builder.Entity<GameTag>(ConfigureGameTag);
-        builder.Entity<Achievement>(ConfigureAchievement);
-        builder.Entity<UserAchievement>(ConfigureUserAchievement);
         builder.Entity<Submission>(ConfigureSubmission);
         builder.Entity<ExecutionsResult>(ConfigureExecutionsResult);
         builder.Entity<UserGameResult>(ConfigureUserGameResult);
@@ -50,6 +48,7 @@ public static class QuackOrbitEntityConfiguration
         builder.Entity<UserLearningGoal>(ConfigureUserLearningGoal);
         builder.Entity<UserConceptProgress>(ConfigureUserConceptProgress);
         builder.Entity<UserGamePlayHistory>(ConfigureUserGamePlayHistory);
+        builder.Entity<UserMonthlyHintUsage>(ConfigureUserMonthlyHintUsage);
     }
 
     static void ConfigureLearningGoal(EntityTypeBuilder<LearningGoal> e)
@@ -169,18 +168,6 @@ public static class QuackOrbitEntityConfiguration
         e.HasIndex(x => new { x.GameId, x.TagId }).IsUnique();
     }
 
-
-    static void ConfigureAchievement(EntityTypeBuilder<Achievement> e)
-    {
-        e.HasIndex(x => x.Code).IsUnique();
-        e.HasMany(x => x.UserAchievements).WithOne(x => x.Achievement).HasForeignKey(x => x.AchievementId).OnDelete(DeleteBehavior.Cascade);
-    }
-
-    static void ConfigureUserAchievement(EntityTypeBuilder<UserAchievement> e)
-    {
-        e.HasIndex(x => new { x.UserId, x.AchievementId }).IsUnique();
-    }
-
     static void ConfigureSubmission(EntityTypeBuilder<Submission> e)
     {
         e.Property(x => x.GameId);
@@ -221,6 +208,14 @@ public static class QuackOrbitEntityConfiguration
         e.HasIndex(x => new { x.UserId, x.GameId, x.StartTime });
         e.HasIndex(x => x.SubmissionId);
         e.HasIndex(x => x.ExecutionsResultId);
+    }
+
+    static void ConfigureUserMonthlyHintUsage(EntityTypeBuilder<UserMonthlyHintUsage> e)
+    {
+        e.ToTable("UserMonthlyHintUsages");
+        e.HasIndex(x => new { x.UserId, x.MonthKey }).IsUnique();
+        e.HasIndex(x => x.MonthKey);
+        e.HasOne(x => x.User).WithMany().HasForeignKey(x => x.UserId).OnDelete(DeleteBehavior.Cascade);
     }
 
     static void ConfigureXpTransaction(EntityTypeBuilder<XpTransaction> e)

@@ -3,6 +3,7 @@ using CapstoneProject.Application.Common.Interfaces;
 using CapstoneProject.Application.Common.Models;
 using CapstoneProject.Application.Commons.DTOs.Complaints;
 using CapstoneProject.Application.Commons.Interfaces;
+using CapstoneProject.Application.Features.Complaints;
 using CapstoneProject.Application.Features.Complaints.Queries.GetComplaintDetail;
 using CapstoneProject.Domain.Entities;
 using MediatR;
@@ -55,10 +56,37 @@ public class GetComplaintAgainstMeDetailQueryHandler : IRequestHandler<GetCompla
         if (!isSeller)
             return Result<ComplaintDetailDto>.Failure("You do not have permission to view this complaint.", ErrorCodeEnum.Forbidden);
 
+        var sellerUserId = await ComplaintSellerUserResolver.ResolveSellerUserIdAsync(_unitOfWork, complaint, cancellationToken);
+
+        var messages = complaint.Messages
+            .Where(m => !m.IsDeleted && !m.IsInternal)
+            .OrderBy(m => m.CreatedAt)
+            .ToList();
+        var histories = complaint.StatusHistories
+            .Where(h => !h.IsDeleted)
+            .OrderBy(h => h.ChangedAt)
+            .ToList();
+
+        var nameIds = new HashSet<Guid> { complaint.UserId, userId };
+        if (sellerUserId.HasValue)
+            nameIds.Add(sellerUserId.Value);
+        foreach (var m in messages)
+            nameIds.Add(m.SenderId);
+        foreach (var h in histories)
+            nameIds.Add(h.ChangedBy);
+
+        var displayNames = await ComplaintUserDisplayHelper.LoadDisplayNamesAsync(_unitOfWork, nameIds, cancellationToken);
+
         var dto = new ComplaintDetailDto
         {
             Id = complaint.Id,
             UserId = complaint.UserId,
+            BuyerUserId = complaint.UserId,
+            BuyerDisplayName = displayNames.GetValueOrDefault(complaint.UserId) ?? "",
+            SellerUserId = sellerUserId,
+            SellerDisplayName = sellerUserId.HasValue
+                ? (displayNames.GetValueOrDefault(sellerUserId.Value) ?? "")
+                : null,
             Subject = complaint.Subject,
             Category = complaint.Category,
             CategoryKey = complaint.CategoryKey,
@@ -82,44 +110,41 @@ public class GetComplaintAgainstMeDetailQueryHandler : IRequestHandler<GetCompla
             RefundAmount = complaint.RefundAmount,
             RefundedAt = complaint.RefundedAt,
             RefundReason = complaint.RefundReason,
-            Messages = complaint.Messages
-                .Where(m => !m.IsDeleted && !m.IsInternal)
-                .OrderBy(m => m.CreatedAt)
-                .Select(m => new ComplaintMessageDto
-                {
-                    Id = m.Id,
-                    SenderId = m.SenderId,
-                    Content = m.Content,
-                    IsInternal = m.IsInternal,
-                    CreatedAt = m.CreatedAt,
-                    Attachments = m.Attachments
-                        .Where(a => !a.IsDeleted)
-                        .OrderBy(a => a.SortOrder)
-                        .Select(a => new ComplaintAttachmentDto
-                        {
-                            Id = a.Id,
-                            FileName = a.FileName,
-                            Url = a.Url,
-                            MimeType = a.MimeType,
-                            SizeBytes = a.SizeBytes,
-                            SortOrder = a.SortOrder
-                        })
-                        .ToList()
-                })
-                .ToList(),
-            StatusHistories = complaint.StatusHistories
-                .Where(h => !h.IsDeleted)
-                .OrderBy(h => h.ChangedAt)
-                .Select(h => new ComplaintStatusHistoryDto
-                {
-                    Id = h.Id,
-                    FromStatus = h.FromStatus.ToString(),
-                    ToStatus = h.ToStatus.ToString(),
-                    ChangedBy = h.ChangedBy,
-                    ChangedAt = h.ChangedAt,
-                    Note = h.Note
-                })
-                .ToList()
+            Messages = messages.Select(m => new ComplaintMessageDto
+            {
+                Id = m.Id,
+                SenderId = m.SenderId,
+                SenderDisplayName = displayNames.GetValueOrDefault(m.SenderId) ?? "",
+                SenderParty = m.SenderId == complaint.UserId
+                    ? "Buyer"
+                    : (sellerUserId.HasValue && m.SenderId == sellerUserId.Value ? "Seller" : "Other"),
+                Content = m.Content,
+                IsInternal = m.IsInternal,
+                CreatedAt = m.CreatedAt,
+                Attachments = m.Attachments
+                    .Where(a => !a.IsDeleted)
+                    .OrderBy(a => a.SortOrder)
+                    .Select(a => new ComplaintAttachmentDto
+                    {
+                        Id = a.Id,
+                        FileName = a.FileName,
+                        Url = a.Url,
+                        MimeType = a.MimeType,
+                        SizeBytes = a.SizeBytes,
+                        SortOrder = a.SortOrder
+                    })
+                    .ToList()
+            }).ToList(),
+            StatusHistories = histories.Select(h => new ComplaintStatusHistoryDto
+            {
+                Id = h.Id,
+                FromStatus = h.FromStatus.ToString(),
+                ToStatus = h.ToStatus.ToString(),
+                ChangedBy = h.ChangedBy,
+                ChangedByDisplayName = displayNames.GetValueOrDefault(h.ChangedBy) ?? "",
+                ChangedAt = h.ChangedAt,
+                Note = h.Note
+            }).ToList()
         };
 
         return Result<ComplaintDetailDto>.Success(dto, "Retrieved complaint detail.");

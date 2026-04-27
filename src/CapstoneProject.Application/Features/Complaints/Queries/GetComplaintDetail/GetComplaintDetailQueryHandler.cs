@@ -2,6 +2,7 @@
 using CapstoneProject.Application.Common.Interfaces;
 using CapstoneProject.Application.Common.Models;
 using CapstoneProject.Application.Commons.DTOs.Complaints;
+using CapstoneProject.Application.Features.Complaints;
 using CapstoneProject.Domain.Entities;
 using CapstoneProject.Domain.Enums;
 using MediatR;
@@ -47,14 +48,37 @@ public class GetComplaintDetailQueryHandler : IRequestHandler<GetComplaintDetail
         if (complaint == null)
             return Result<ComplaintDetailDto>.Failure($"Không tìm thấy khiếu nại với Id: {request.ComplaintId}.", ErrorCodeEnum.NotFound);
 
-        var sellerUserId = await ResolveSellerUserIdAsync(complaint, cancellationToken);
+        var sellerUserId = await ComplaintSellerUserResolver.ResolveSellerUserIdAsync(_unitOfWork, complaint, cancellationToken);
+
+        var messages = complaint.Messages
+            .Where(m => !m.IsDeleted)
+            .OrderBy(m => m.CreatedAt)
+            .ToList();
+        var histories = complaint.StatusHistories
+            .Where(h => !h.IsDeleted)
+            .OrderBy(h => h.ChangedAt)
+            .ToList();
+
+        var nameIds = new HashSet<Guid> { complaint.UserId };
+        if (sellerUserId.HasValue)
+            nameIds.Add(sellerUserId.Value);
+        foreach (var m in messages)
+            nameIds.Add(m.SenderId);
+        foreach (var h in histories)
+            nameIds.Add(h.ChangedBy);
+
+        var displayNames = await ComplaintUserDisplayHelper.LoadDisplayNamesAsync(_unitOfWork, nameIds, cancellationToken);
 
         var dto = new ComplaintDetailDto
         {
             Id = complaint.Id,
             UserId = complaint.UserId,
             BuyerUserId = complaint.UserId,
+            BuyerDisplayName = displayNames.GetValueOrDefault(complaint.UserId) ?? "",
             SellerUserId = sellerUserId,
+            SellerDisplayName = sellerUserId.HasValue
+                ? (displayNames.GetValueOrDefault(sellerUserId.Value) ?? "")
+                : null,
             Subject = complaint.Subject,
             Category = complaint.Category,
             CategoryKey = complaint.CategoryKey,
@@ -78,76 +102,44 @@ public class GetComplaintDetailQueryHandler : IRequestHandler<GetComplaintDetail
             RefundAmount = complaint.RefundAmount,
             RefundedAt = complaint.RefundedAt,
             RefundReason = complaint.RefundReason,
-            Messages = complaint.Messages
-                .Where(m => !m.IsDeleted)
-                .OrderBy(m => m.CreatedAt)
-                .Select(m => new ComplaintMessageDto
-                {
-                    Id = m.Id,
-                    SenderId = m.SenderId,
-                    SenderParty = m.SenderId == complaint.UserId
-                        ? "Buyer"
-                        : (sellerUserId.HasValue && m.SenderId == sellerUserId.Value ? "Seller" : "Other"),
-                    Content = m.Content,
-                    IsInternal = m.IsInternal,
-                    CreatedAt = m.CreatedAt,
-                    Attachments = m.Attachments
-                        .Where(a => !a.IsDeleted)
-                        .OrderBy(a => a.SortOrder)
-                        .Select(a => new ComplaintAttachmentDto
-                        {
-                            Id = a.Id,
-                            FileName = a.FileName,
-                            Url = a.Url,
-                            MimeType = a.MimeType,
-                            SizeBytes = a.SizeBytes,
-                            SortOrder = a.SortOrder
-                        })
-                        .ToList()
-                })
-                .ToList(),
-            StatusHistories = complaint.StatusHistories
-                .Where(h => !h.IsDeleted)
-                .OrderBy(h => h.ChangedAt)
-                .Select(h => new ComplaintStatusHistoryDto
-                {
-                    Id = h.Id,
-                    FromStatus = h.FromStatus.ToString(),
-                    ToStatus = h.ToStatus.ToString(),
-                    ChangedBy = h.ChangedBy,
-                    ChangedAt = h.ChangedAt,
-                    Note = h.Note
-                })
-                .ToList()
+            Messages = messages.Select(m => new ComplaintMessageDto
+            {
+                Id = m.Id,
+                SenderId = m.SenderId,
+                SenderDisplayName = displayNames.GetValueOrDefault(m.SenderId) ?? "",
+                SenderParty = m.SenderId == complaint.UserId
+                    ? "Buyer"
+                    : (sellerUserId.HasValue && m.SenderId == sellerUserId.Value ? "Seller" : "Other"),
+                Content = m.Content,
+                IsInternal = m.IsInternal,
+                CreatedAt = m.CreatedAt,
+                Attachments = m.Attachments
+                    .Where(a => !a.IsDeleted)
+                    .OrderBy(a => a.SortOrder)
+                    .Select(a => new ComplaintAttachmentDto
+                    {
+                        Id = a.Id,
+                        FileName = a.FileName,
+                        Url = a.Url,
+                        MimeType = a.MimeType,
+                        SizeBytes = a.SizeBytes,
+                        SortOrder = a.SortOrder
+                    })
+                    .ToList()
+            }).ToList(),
+            StatusHistories = histories.Select(h => new ComplaintStatusHistoryDto
+            {
+                Id = h.Id,
+                FromStatus = h.FromStatus.ToString(),
+                ToStatus = h.ToStatus.ToString(),
+                ChangedBy = h.ChangedBy,
+                ChangedByDisplayName = displayNames.GetValueOrDefault(h.ChangedBy) ?? "",
+                ChangedAt = h.ChangedAt,
+                Note = h.Note
+            }).ToList()
         };
 
         return Result<ComplaintDetailDto>.Success(dto, "Đã lấy chi tiết khiếu nại.");
-    }
-
-    private async Task<Guid?> ResolveSellerUserIdAsync(Complaint complaint, CancellationToken cancellationToken)
-    {
-        Guid? gameId = null;
-
-        if (string.Equals(complaint.ContextType, "Game", StringComparison.OrdinalIgnoreCase) && complaint.ContextId.HasValue)
-            gameId = complaint.ContextId.Value;
-
-        if (gameId == null
-            && string.Equals(complaint.ContextType, "PaymentRecord", StringComparison.OrdinalIgnoreCase)
-            && complaint.ContextId.HasValue)
-        {
-            gameId = await _unitOfWork.Repository<PaymentRecord>().GetQueryable()
-                .Where(x => !x.IsDeleted && x.Id == complaint.ContextId.Value)
-                .Select(x => x.GameId)
-                .FirstOrDefaultAsync(cancellationToken);
-        }
-
-        if (!gameId.HasValue)
-            return null;
-
-        return await _unitOfWork.Repository<Game>().GetQueryable()
-            .Where(x => !x.IsDeleted && x.Id == gameId.Value)
-            .Select(x => x.CreatedBy)
-            .FirstOrDefaultAsync(cancellationToken);
     }
 }
 

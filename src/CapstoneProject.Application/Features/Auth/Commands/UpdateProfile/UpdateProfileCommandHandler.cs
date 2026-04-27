@@ -74,6 +74,7 @@ public class UpdateProfileCommandHandler : IRequestHandler<UpdateProfileCommand,
             }
 
             var oldAvatarPath = user.AvatarPath;
+            var oldCoverPath = user.CoverImagePath;
 
             // Update basic user info (email cannot be changed in profile update)
             if (!string.IsNullOrEmpty(request.FirstName))
@@ -106,6 +107,17 @@ public class UpdateProfileCommandHandler : IRequestHandler<UpdateProfileCommand,
                     user.AvatarPath = avatarUrl;
             }
 
+            if (command.CoverImageFile != null)
+            {
+                var coverUrl = await _cloudinaryService.UploadImageAsync(
+                    command.CoverImageFile,
+                    "profile-covers",
+                    $"user_{userId:N}_cover",
+                    cancellationToken);
+                if (!string.IsNullOrEmpty(coverUrl))
+                    user.CoverImagePath = coverUrl;
+            }
+
             // Update user entity with tracking info and SecurityStamp
             user.UpdateEntity(userId);
             
@@ -117,24 +129,30 @@ public class UpdateProfileCommandHandler : IRequestHandler<UpdateProfileCommand,
                 return Result<ProfileResponse>.Failure("Không thể cập nhật hồ sơ", ErrorCodeEnum.ValidationFailed, errors);
             }
 
-            // Delete old avatar if a new one was uploaded (fire-and-forget)
+            // Delete old avatar / cover if replaced (fire-and-forget)
             _ = Task.Run(async () =>
             {
-                if (command.AvatarFile != null && !string.IsNullOrEmpty(oldAvatarPath))
+                async Task TryDeleteStoredPathAsync(string? path)
                 {
+                    if (string.IsNullOrEmpty(path)) return;
                     try
                     {
-                        var publicId = _cloudinaryService.GetPublicIdFromUrl(oldAvatarPath);
+                        var publicId = _cloudinaryService.GetPublicIdFromUrl(path);
                         if (publicId != null)
                             await _cloudinaryService.DeleteAsync(publicId, cancellationToken);
                         else
                         {
                             var fileService = _fileServiceFactory.CreateFileService();
-                            await fileService.DeleteFileAsync(oldAvatarPath, cancellationToken);
+                            await fileService.DeleteFileAsync(path, cancellationToken);
                         }
                     }
                     catch { /* ignore */ }
                 }
+
+                if (command.AvatarFile != null && !string.IsNullOrEmpty(oldAvatarPath))
+                    await TryDeleteStoredPathAsync(oldAvatarPath);
+                if (command.CoverImageFile != null && !string.IsNullOrEmpty(oldCoverPath))
+                    await TryDeleteStoredPathAsync(oldCoverPath);
             });
 
             // Return updated profile

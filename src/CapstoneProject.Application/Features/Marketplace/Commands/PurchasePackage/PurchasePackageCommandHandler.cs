@@ -98,13 +98,15 @@ public class PurchasePackageCommandHandler : IRequestHandler<PurchasePackageComm
         record.InitializeEntity(userId);
         await _unitOfWork.Repository<PaymentRecord>().AddAsync(record);
 
-        var remaining = pkg.Limit ?? 1;
-        var expiresAt = CapstoneProject.Domain.Common.VietnamDateTime.DbNow.AddDays(pkg.DurationDays);
+        var remaining = pkg.Limit.HasValue && pkg.Limit.Value > 0 ? pkg.Limit.Value : (int?)null;
+        var expiresAt = pkg.DurationDays > 0
+            ? CapstoneProject.Domain.Common.VietnamDateTime.DbNow.AddDays(pkg.DurationDays)
+            : (DateTime?)null;
         var userPkg = new UserPackage
         {
             UserId = userId,
             PackageId = pkg.Id,
-            Remaining = remaining,
+            Remaining = remaining ?? 0,
             ExpiresAt = expiresAt
         };
         userPkg.InitializeEntity(userId);

@@ -136,6 +136,7 @@ public static class InfrastructureDependencyInjection
         services.AddScoped<IJwtService, JwtService>();
         services.AddScoped<IIdentityService, IdentityService>();
         services.AddScoped<ICurrentUserService, CurrentUserService>();
+        services.AddScoped<IEntitlementService, EntitlementService>();
         services.AddScoped<IOtpCacheService, OtpCacheService>();
         services.AddScoped<LeaderboardRewardSettlementJob>();
         services.AddScoped<ComplaintWorkflowAutoTransitionJob>();

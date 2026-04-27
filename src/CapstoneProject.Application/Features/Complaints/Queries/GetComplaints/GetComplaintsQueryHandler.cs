@@ -1,6 +1,7 @@
 ﻿using CapstoneProject.Application.Common.Enums;
 using CapstoneProject.Application.Common.Interfaces;
 using CapstoneProject.Application.Common.Models;
+using CapstoneProject.Application.Features.Complaints;
 using CapstoneProject.Domain.Common;
 using CapstoneProject.Domain.Entities;
 using CapstoneProject.Domain.Enums;
@@ -68,6 +69,9 @@ public class GetComplaintsQueryHandler : IRequestHandler<GetComplaintsQuery, Res
             .Take(pageSize)
             .ToListAsync(cancellationToken);
 
+        var buyerIds = complaints.Select(c => c.UserId).Distinct().ToList();
+        var buyerNames = await ComplaintUserDisplayHelper.LoadDisplayNamesAsync(_unitOfWork, buyerIds, cancellationToken);
+
         var list = new List<ComplaintListItemDto>(complaints.Count);
         foreach (var complaint in complaints)
         {
@@ -75,6 +79,8 @@ public class GetComplaintsQueryHandler : IRequestHandler<GetComplaintsQuery, Res
             {
                 Id = complaint.Id,
                 UserId = complaint.UserId,
+                BuyerUserId = complaint.UserId,
+                BuyerDisplayName = buyerNames.GetValueOrDefault(complaint.UserId) ?? "",
                 Subject = complaint.Subject,
                 Category = complaint.Category,
                 CategoryKey = complaint.CategoryKey,

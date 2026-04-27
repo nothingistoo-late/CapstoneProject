@@ -8,6 +8,7 @@ using CapstoneProject.Application.Commons.Interfaces;
 using CapstoneProject.Domain.Common;
 using CapstoneProject.Domain.Entities;
 using CapstoneProject.Domain.Enums;
+using System.Text.Json;
 
 namespace CapstoneProject.Application.Features.Marketplace.Commands.UpdatePackage;
 
@@ -39,8 +40,42 @@ public class UpdatePackageCommandHandler : IRequestHandler<UpdatePackageCommand,
         if (req.DurationDays.HasValue) pkg.DurationDays = req.DurationDays.Value;
         if (req.Limit.HasValue) pkg.Limit = req.Limit;
         if (req.Price.HasValue) pkg.Price = req.Price.Value;
-        if (req.FeaturesSpec != null) pkg.FeaturesSpec = req.FeaturesSpec;
-        if (req.IsActive.HasValue) pkg.Status = req.IsActive.Value ? EntityStatusEnum.Active : EntityStatusEnum.Inactive;
+        if (req.FeaturesSpec != null)
+        {
+            if (!string.IsNullOrWhiteSpace(req.FeaturesSpec))
+            {
+                try
+                {
+                    JsonDocument.Parse(req.FeaturesSpec);
+                }
+                catch
+                {
+                    return Result.Failure("FeaturesSpec phải là chuỗi JSON hợp lệ.", ErrorCodeEnum.ValidationFailed);
+                }
+            }
+
+            pkg.FeaturesSpec = req.FeaturesSpec;
+        }
+
+        if (req.Status.HasValue)
+        {
+            pkg.Status = req.Status.Value;
+        }
+        else if (req.IsActive.HasValue)
+        {
+            pkg.Status = req.IsActive.Value ? EntityStatusEnum.Active : EntityStatusEnum.Inactive;
+        }
+
+        if (pkg.Status == EntityStatusEnum.Active)
+        {
+            if (pkg.Price < 0)
+                return Result.Failure("Không thể kích hoạt gói có giá âm.", ErrorCodeEnum.ValidationFailed);
+            if (pkg.DurationDays <= 0)
+                return Result.Failure("Không thể kích hoạt gói có thời hạn không hợp lệ.", ErrorCodeEnum.ValidationFailed);
+            if (string.IsNullOrWhiteSpace(pkg.FeaturesSpec))
+                return Result.Failure("Không thể kích hoạt gói khi chưa cấu hình FeaturesSpec.", ErrorCodeEnum.ValidationFailed);
+        }
+
         pkg.UpdateEntity(userIdNullable!.Value);
         _unitOfWork.Repository<Package>().Update(pkg);
         await _unitOfWork.SaveChangesAsync(cancellationToken);

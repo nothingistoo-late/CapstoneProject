@@ -4,9 +4,11 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.SignalR;
 using CapstoneProject.Application.Common.Interfaces;
+using CapstoneProject.Application.Common.Models;
 using CapstoneProject.Application.Commons.DTOs.Gameplay;
 using CapstoneProject.Application.Commons.Interfaces;
 using CapstoneProject.Application.Features.Gameplay.Commands.ValidateSolution;
+using CapstoneProject.Application.Features.Lobby.Commands.SetLobbyRoomLock;
 using CapstoneProject.Application.Features.Lobby.Models;
 using CapstoneProject.Application.Features.Games.Queries.MapExists;
 using CapstoneProject.Domain.Entities;
@@ -316,16 +318,33 @@ public class GameLobbyHub : Hub
     /// <summary>Lock or unlock the room. Host only.</summary>
     public async Task SetRoomLocked(Guid roomId, bool isLocked)
     {
-        if (!TryGetUserId(out var userId))
+        if (!TryGetUserId(out _))
         {
             await Clients.Caller.SendAsync("Error", "Not authenticated.");
             return;
         }
 
-        var (success, errorMessage, room) = _roomManager.SetRoomLocked(roomId, userId, isLocked);
-        if (!success || room == null)
+        Result<CapstoneProject.Application.Commons.DTOs.Lobby.LobbyRoomDetailResponse> result;
+        try
         {
-            await Clients.Caller.SendAsync("Error", errorMessage ?? "Could not update room lock.");
+            result = await _mediator.Send(new SetLobbyRoomLockCommand(roomId, isLocked));
+        }
+        catch (Exception ex)
+        {
+            await Clients.Caller.SendAsync("Error", ex.Message);
+            return;
+        }
+
+        if (!result.IsSuccess || result.Data == null)
+        {
+            await Clients.Caller.SendAsync("Error", result.Message ?? "Could not update room lock.");
+            return;
+        }
+
+        var room = _roomManager.GetRoomById(roomId);
+        if (room == null)
+        {
+            await Clients.Caller.SendAsync("Error", "Không tìm thấy phòng.");
             return;
         }
 

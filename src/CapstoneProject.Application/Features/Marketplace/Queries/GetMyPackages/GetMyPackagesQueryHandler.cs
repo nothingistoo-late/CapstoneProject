@@ -38,7 +38,7 @@ public class GetMyPackagesQueryHandler : IRequestHandler<GetMyPackagesQuery, Res
         if (f.ActiveOnly == true)
         {
             query = query.Where(up =>
-                up.Remaining > 0 &&
+                ((up.Package != null && up.Package.Limit == null) || up.Remaining > 0) &&
                 (up.ExpiresAt == null || up.ExpiresAt > now));
         }
 
@@ -59,7 +59,7 @@ public class GetMyPackagesQueryHandler : IRequestHandler<GetMyPackagesQuery, Res
                 Limit = up.Package != null ? up.Package.Limit : null,
                 Price = up.Package != null ? up.Package.Price : 0,
                 FeaturesSpec = up.Package != null ? up.Package.FeaturesSpec : null,
-                Remaining = up.Remaining,
+                Remaining = up.Package != null && up.Package.Limit == null ? null : up.Remaining,
                 ExpiresAt = up.ExpiresAt,
                 PurchasedAt = up.CreatedAt
             })

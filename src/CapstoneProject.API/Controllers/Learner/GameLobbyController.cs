@@ -12,6 +12,7 @@ using CapstoneProject.Application.Features.Lobby.Commands.EndLobbyGame;
 using CapstoneProject.Application.Features.Lobby.Commands.JoinLobbyRoom;
 using CapstoneProject.Application.Features.Lobby.Commands.LeaveLobbyRoom;
 using CapstoneProject.Application.Features.Lobby.Commands.SetLobbyRoomMap;
+using CapstoneProject.Application.Features.Lobby.Commands.SetLobbyRoomLock;
 using CapstoneProject.Application.Features.Lobby.Commands.StartLobbyGame;
 using CapstoneProject.Application.Features.Lobby.Commands.SubmitLobbySolution;
 using CapstoneProject.Application.Features.Lobby.Commands.ToggleLobbyReady;
@@ -412,6 +413,40 @@ public class GameLobbyController : ControllerBase
     public async Task<IActionResult> SetRoomMap(Guid roomId, [FromBody] SetRoomMapRequest request)
     {
         var result = await _mediator.Send(new SetLobbyRoomMapCommand(roomId, request));
+        return StatusCode(result.GetHttpStatusCode(), result);
+    }
+
+    /// <summary>Bật/tắt phòng riêng tư (host only).</summary>
+    /// <remarks>
+    /// Đặt phòng về trạng thái private/public khi phòng đang Waiting.
+    /// Chỉ host mới được đổi trạng thái. Quyền này được kiểm tra theo package feature `can_private_room`.
+    ///
+    /// **METHOD and path:** POST /api/learner/lobby/rooms/{roomId}/lock
+    ///
+    /// **Body (JSON):**
+    /// - isLocked (bool, required): true = khóa phòng (private), false = mở phòng.
+    /// </remarks>
+    /// <response code="200">Updated. Returns message and data (room detail).</response>
+    /// <response code="400">Validation error / not host / room not waiting</response>
+    /// <response code="401">Not authorized</response>
+    /// <response code="403">Current package does not include private room capability</response>
+    /// <response code="404">Room not found</response>
+    [HttpPost("rooms/{roomId:guid}/lock")]
+    [AuthorizeRoles(nameof(RoleEnum.Learner), nameof(RoleEnum.Admin), nameof(RoleEnum.Moderator))]
+    [ProducesResponseType(typeof(Result<LobbyRoomDetailResponse>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(Result), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(Result), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(Result), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(Result), StatusCodes.Status404NotFound)]
+    [SwaggerOperation(Summary = "Set room private/public", Description = "Host toggles room private mode. Requires package feature can_private_room.", OperationId = "Lobby_SetRoomLock", Tags = new[] { "Learner - Game Lobby" })]
+    public async Task<IActionResult> SetRoomLock(Guid roomId, [FromBody] SetLobbyRoomLockRequest request)
+    {
+        var result = await _mediator.Send(new SetLobbyRoomLockCommand(roomId, request.IsLocked));
+        if (result.IsSuccess && result.Data != null)
+        {
+            await BroadcastLobbyListToAllAsync();
+            await BroadcastRoomUpdatedToGroupAsync(result.Data.RoomId);
+        }
         return StatusCode(result.GetHttpStatusCode(), result);
     }
 

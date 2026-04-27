@@ -2,6 +2,7 @@ using CapstoneProject.Application.Common.Enums;
 using CapstoneProject.Application.Common.Interfaces;
 using CapstoneProject.Application.Common.Models;
 using CapstoneProject.Application.Commons.Interfaces;
+using CapstoneProject.Application.Features.Complaints;
 using CapstoneProject.Application.Features.Complaints.Queries.GetComplaints;
 using CapstoneProject.Domain.Common;
 using CapstoneProject.Domain.Entities;
@@ -82,6 +83,9 @@ public class GetComplaintsAgainstMeQueryHandler : IRequestHandler<GetComplaintsA
             .Take(pageSize)
             .ToListAsync(cancellationToken);
 
+        var buyerIds = complaints.Select(c => c.UserId).Distinct().ToList();
+        var buyerNames = await ComplaintUserDisplayHelper.LoadDisplayNamesAsync(_unitOfWork, buyerIds, cancellationToken);
+
         var list = new List<ComplaintListItemDto>(complaints.Count);
         foreach (var complaint in complaints)
         {
@@ -89,6 +93,8 @@ public class GetComplaintsAgainstMeQueryHandler : IRequestHandler<GetComplaintsA
             {
                 Id = complaint.Id,
                 UserId = complaint.UserId,
+                BuyerUserId = complaint.UserId,
+                BuyerDisplayName = buyerNames.GetValueOrDefault(complaint.UserId) ?? "",
                 Subject = complaint.Subject,
                 Category = complaint.Category,
                 CategoryKey = complaint.CategoryKey,

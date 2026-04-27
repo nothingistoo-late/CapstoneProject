@@ -171,9 +171,12 @@ public class AuthController : ControllerBase
         OperationId = "UpdateProfile",
         Tags = new[] { "CMS" }
     )]
-    public async Task<IActionResult> UpdateProfile([FromForm] UpdateProfileRequest request, IFormFile? avatarFile)
+    public async Task<IActionResult> UpdateProfile(
+        [FromForm] UpdateProfileRequest request,
+        IFormFile? avatarFile,
+        IFormFile? coverImageFile)
     {
-        var command = new UpdateProfileCommand(request, avatarFile);
+        var command = new UpdateProfileCommand(request, avatarFile, coverImageFile);
         var result = await _mediator.Send(command);
         return StatusCode(result.GetHttpStatusCode(), result);
     }

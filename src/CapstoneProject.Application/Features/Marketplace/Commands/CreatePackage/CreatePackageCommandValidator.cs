@@ -17,6 +17,9 @@ public class CreatePackageCommandValidator : AbstractValidator<CreatePackageComm
                 .GreaterThan(0).WithMessage("DurationDays must be positive.");
             RuleFor(x => x.Request!.Price)
                 .GreaterThanOrEqualTo(0).WithMessage("Price must be non-negative.");
+            RuleFor(x => x.Request!.Limit)
+                .Must(limit => !limit.HasValue || limit.Value >= 0)
+                .WithMessage("Limit must be non-negative when provided.");
         });
     }
 }

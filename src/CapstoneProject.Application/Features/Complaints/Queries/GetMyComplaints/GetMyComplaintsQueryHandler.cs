@@ -2,6 +2,7 @@
 using CapstoneProject.Application.Common.Interfaces;
 using CapstoneProject.Application.Common.Models;
 using CapstoneProject.Application.Commons.Interfaces;
+using CapstoneProject.Application.Features.Complaints;
 using CapstoneProject.Domain.Common;
 using CapstoneProject.Domain.Entities;
 using MediatR;
@@ -55,12 +56,16 @@ public class GetMyComplaintsQueryHandler : IRequestHandler<GetMyComplaintsQuery,
             .Take(pageSize)
             .ToListAsync(cancellationToken);
 
+        var buyerNames = await ComplaintUserDisplayHelper.LoadDisplayNamesAsync(_unitOfWork, new[] { userId }, cancellationToken);
+
         var list = new List<MyComplaintListItemDto>(complaints.Count);
         foreach (var complaint in complaints)
         {
             list.Add(new MyComplaintListItemDto
             {
                 Id = complaint.Id,
+                BuyerUserId = complaint.UserId,
+                BuyerDisplayName = buyerNames.GetValueOrDefault(userId) ?? "",
                 Subject = complaint.Subject,
                 Category = complaint.Category,
                 CategoryKey = complaint.CategoryKey,

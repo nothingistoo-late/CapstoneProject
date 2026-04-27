@@ -39,16 +39,23 @@ public class BatchUpdatePackageStatusCommandHandler : IRequestHandler<BatchUpdat
         var newStatus = command.IsActive ? EntityStatusEnum.Active : EntityStatusEnum.Inactive;
         foreach (var pkg in toUpdate)
         {
+            if (newStatus == EntityStatusEnum.Active)
+            {
+                if (pkg.Price < 0 || pkg.DurationDays <= 0 || string.IsNullOrWhiteSpace(pkg.FeaturesSpec))
+                    continue;
+            }
+
             pkg.Status = newStatus;
             pkg.UpdateEntity(userIdNullable.Value);
             repo.Update(pkg);
         }
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
+        var successCount = toUpdate.Count(p => p.Status == newStatus);
         var dto = new BatchUpdatePackageStatusResultDto
         {
-            SuccessCount = toUpdate.Count,
-            FailedCount = notFoundIds.Count,
+            SuccessCount = successCount,
+            FailedCount = notFoundIds.Count + (toUpdate.Count - successCount),
             NotFoundIds = notFoundIds
         };
         return Result<BatchUpdatePackageStatusResultDto>.Success(dto, $"Đã cập nhật (các) gói {dto.SuccessCount}.");

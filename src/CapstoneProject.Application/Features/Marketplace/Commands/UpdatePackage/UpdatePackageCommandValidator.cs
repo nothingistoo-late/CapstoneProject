@@ -19,5 +19,8 @@ public class UpdatePackageCommandValidator : AbstractValidator<UpdatePackageComm
         When(x => x.Request != null && x.Request.Price.HasValue, () =>
             RuleFor(x => x.Request!.Price!.Value)
                 .GreaterThanOrEqualTo(0).WithMessage("Price must be non-negative."));
+        When(x => x.Request != null && x.Request.Limit.HasValue, () =>
+            RuleFor(x => x.Request!.Limit!.Value)
+                .GreaterThanOrEqualTo(0).WithMessage("Limit must be non-negative."));
     }
 }

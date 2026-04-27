@@ -10,6 +10,11 @@ public record GetMyComplaintDetailQuery(Guid ComplaintId) : IRequest<Result<MyCo
 public class MyComplaintDetailDto
 {
     public Guid Id { get; set; }
+    public Guid UserId { get; set; }
+    public Guid BuyerUserId { get; set; }
+    public string BuyerDisplayName { get; set; } = string.Empty;
+    public Guid? SellerUserId { get; set; }
+    public string? SellerDisplayName { get; set; }
     public string Subject { get; set; } = string.Empty;
     public string Category { get; set; } = string.Empty;
     public string CategoryKey { get; set; } = string.Empty;
@@ -35,6 +40,8 @@ public class MyComplaintMessageDto
 {
     public Guid Id { get; set; }
     public Guid SenderId { get; set; }
+    public string SenderDisplayName { get; set; } = string.Empty;
+    public string SenderParty { get; set; } = "Other";
     public string Content { get; set; } = string.Empty;
     public bool IsInternal { get; set; }
     public DateTime? CreatedAt { get; set; }
@@ -47,6 +54,7 @@ public class MyComplaintStatusHistoryDto
     public string FromStatus { get; set; } = string.Empty;
     public string ToStatus { get; set; } = string.Empty;
     public Guid ChangedBy { get; set; }
+    public string ChangedByDisplayName { get; set; } = string.Empty;
     public DateTime ChangedAt { get; set; }
     public string? Note { get; set; }
 }

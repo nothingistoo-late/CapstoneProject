@@ -6,4 +6,5 @@ using Microsoft.AspNetCore.Http;
 
 namespace CapstoneProject.Application.Features.Auth.Commands.UpdateProfile;
 
-public record UpdateProfileCommand(UpdateProfileRequest Request, IFormFile? AvatarFile) : IRequest<Result<ProfileResponse>>;
+public record UpdateProfileCommand(UpdateProfileRequest Request, IFormFile? AvatarFile, IFormFile? CoverImageFile)
+    : IRequest<Result<ProfileResponse>>;

@@ -87,7 +87,10 @@ public class LearnerGameplayController : ControllerBase
     /// **Example request:** GET /api/learner/gameplay/games/3fa85f64-5717-4562-b3fc-2c963f66afa6/hints
     /// </remarks>
     [HttpGet("games/{gameId:guid}/hints")]
+    [AuthorizeRoles(nameof(RoleEnum.Learner), nameof(RoleEnum.Admin), nameof(RoleEnum.Moderator))]
     [ProducesResponseType(typeof(Result<List<HintLevelDto>>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(Result), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(Result), StatusCodes.Status403Forbidden)]
     [ProducesResponseType(typeof(Result), StatusCodes.Status404NotFound)]
     [SwaggerOperation(Summary = "Get hints for game", Description = "Returns hints per level (levelOrder, mapDetailId, orderNo, content). Optional mapDetailId filters to one level.", OperationId = "Learner_GetHintsForMap", Tags = new[] { "Learner - Gameplay" })]
     public async Task<IActionResult> GetHintsForMap(Guid gameId, [FromQuery] Guid? mapDetailId = null)
