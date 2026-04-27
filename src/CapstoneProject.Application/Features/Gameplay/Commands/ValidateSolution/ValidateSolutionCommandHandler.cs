@@ -43,7 +43,7 @@ public class ValidateSolutionCommandHandler : IRequestHandler<ValidateSolutionCo
             .Include(m => m.GameDetails)
             .FirstOrDefaultAsync(m => m.Id == command.Request.GameId, cancellationToken);
         if (game == null)
-            return Result<ValidateSolutionResultDto>.Failure("Không tìm thấy bản đồ", ErrorCodeEnum.NotFound);
+            return Result<ValidateSolutionResultDto>.Failure("Không tìm thấy trò chơi", ErrorCodeEnum.NotFound);
 
         var isOwned = await IsMapOwnedByUserAsync(game, userId, cancellationToken);
         var isAuthor = game.CreatedBy.HasValue && game.CreatedBy.Value == userId;
@@ -51,22 +51,22 @@ public class ValidateSolutionCommandHandler : IRequestHandler<ValidateSolutionCo
         if (game.IsDeleted || (!game.IsPublished && !isAuthor))
         {
             if (!isOwned)
-                return Result<ValidateSolutionResultDto>.Failure("Không tìm thấy bản đồ", ErrorCodeEnum.NotFound);
+                return Result<ValidateSolutionResultDto>.Failure("Không tìm thấy trò chơi", ErrorCodeEnum.NotFound);
         }
 
         var mapPrice = game.Price.GetValueOrDefault();
         var isPaidMap = mapPrice > 0;
         if (isPaidMap && !isOwned)
-            return Result<ValidateSolutionResultDto>.Failure("Bạn chưa sở hữu bản đồ này.", ErrorCodeEnum.Forbidden);
+            return Result<ValidateSolutionResultDto>.Failure("Bạn chưa sở hữu trò chơi này.", ErrorCodeEnum.Forbidden);
 
         var levelsOrdered = game.GameDetails.OrderBy(d => d.LevelOrder).ToList();
         if (levelsOrdered.Count == 0)
-            return Result<ValidateSolutionResultDto>.Failure("Không tìm thấy dữ liệu bản đồ", ErrorCodeEnum.ValidationFailed);
+            return Result<ValidateSolutionResultDto>.Failure("Không tìm thấy dữ liệu trò chơi", ErrorCodeEnum.ValidationFailed);
 
         var mapDetail = ResolveGameDetail(command.Request.GameDetailId, levelsOrdered);
         if (mapDetail == null)
             return Result<ValidateSolutionResultDto>.Failure(
-                "GameDetailId là bắt buộc khi bản đồ có nhiều cấp độ hoặc không hợp lệ đối với bản đồ này.",
+                "GameDetailId là bắt buộc khi trò chơi có nhiều cấp độ hoặc không hợp lệ đối với trò chơi này.",
                 ErrorCodeEnum.ValidationFailed);
 
         var umrRepo = _unitOfWork.Repository<UserGameResult>();

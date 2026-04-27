@@ -26,7 +26,7 @@ public class UpdateMapCommandHandler : IRequestHandler<UpdateMapCommand, Result>
     {
         var (isValid, userIdNullable) = await _currentUserService.IsUserValidAsync();
         if (!isValid || !userIdNullable.HasValue)
-            return Result.Failure("Yêu cầu xác thực. Vui lòng đăng nhập để cập nhật bản đồ.", ErrorCodeEnum.Unauthorized);
+            return Result.Failure("Yêu cầu xác thực. Vui lòng đăng nhập để cập nhật trò chơi.", ErrorCodeEnum.Unauthorized);
         var userId = userIdNullable.Value;
 
         var mapRepo = _unitOfWork.Repository<Game>();
@@ -35,12 +35,12 @@ public class UpdateMapCommandHandler : IRequestHandler<UpdateMapCommand, Result>
             .Include(m => m.GameTags)
             .FirstOrDefaultAsync(m => m.Id == command.GameId && !m.IsDeleted, cancellationToken);
         if (game == null)
-            return Result.Failure($"Không tìm thấy bản đồ có Id: {command.GameId}.", ErrorCodeEnum.NotFound);
+            return Result.Failure($"Không tìm thấy trò chơi có Id: {command.GameId}.", ErrorCodeEnum.NotFound);
 
         var roles = await _currentUserService.GetCurrentRolesAsync();
         bool isAdminOrMod = roles.Contains(RoleEnum.Admin) || roles.Contains(RoleEnum.Moderator);
         if (game.CreatedBy != userId && !isAdminOrMod)
-            return Result.Failure("Bạn không có quyền cập nhật bản đồ này.", ErrorCodeEnum.Forbidden);
+            return Result.Failure("Bạn không có quyền cập nhật trò chơi này.", ErrorCodeEnum.Forbidden);
 
         if (game.GameStatus == GameStatusEnum.Approved || game.GameStatus == GameStatusEnum.Published)
             return Result.Failure(
@@ -258,6 +258,6 @@ public class UpdateMapCommandHandler : IRequestHandler<UpdateMapCommand, Result>
         game.ContentVersion++;
         mapRepo.Update(game);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
-        return Result.Success("Bản đồ đã được cập nhật và chuyển về trạng thái Bản nháp.");
+        return Result.Success("Trò chơi đã được cập nhật và chuyển về trạng thái Bản nháp.");
     }
 }

@@ -305,7 +305,7 @@ public class CmsGameController : ControllerBase
     {
         var (input, formErr) = await MapJsonUploadFormReader.BuildCreateInputAsync(request, Request);
         if (formErr != null || input == null)
-            return BadRequest(Result<Guid>.Failure(formErr ?? "Đầu vào tệp bản đồ không hợp lệ.", ErrorCodeEnum.ValidationFailed));
+            return BadRequest(Result<Guid>.Failure(formErr ?? "Đầu vào tệp trò chơi không hợp lệ.", ErrorCodeEnum.ValidationFailed));
 
         var result = await _mediator.Send(new CreateMapFromJsonFileCommand(
             input,

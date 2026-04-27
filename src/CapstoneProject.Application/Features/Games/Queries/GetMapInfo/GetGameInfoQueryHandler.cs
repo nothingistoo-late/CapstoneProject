@@ -32,13 +32,13 @@ public class GetMapInfoQueryHandler : IRequestHandler<GetMapInfoQuery, Result<Ma
             .AsNoTracking()
             .FirstOrDefaultAsync(cancellationToken);
         if (game == null)
-            return Result<MapInfoDto>.Failure($"Không tìm thấy bản đồ có Id: {request.GameId}.", ErrorCodeEnum.NotFound);
+            return Result<MapInfoDto>.Failure($"Không tìm thấy trò chơi có Id: {request.GameId}.", ErrorCodeEnum.NotFound);
 
         if (game.IsDeleted)
         {
             var (isValid, userIdNullable) = await _currentUserService.IsUserValidAsync();
             if (!isValid || !userIdNullable.HasValue)
-                return Result<MapInfoDto>.Failure($"Không tìm thấy bản đồ có Id: {request.GameId}.", ErrorCodeEnum.NotFound);
+                return Result<MapInfoDto>.Failure($"Không tìm thấy trò chơi có Id: {request.GameId}.", ErrorCodeEnum.NotFound);
 
             var userId = userIdNullable.Value;
             var isAuthor = game.CreatedBy.HasValue && game.CreatedBy.Value == userId;
@@ -55,7 +55,7 @@ public class GetMapInfoQueryHandler : IRequestHandler<GetMapInfoQuery, Result<Ma
             }
 
             if (!isOwned)
-                return Result<MapInfoDto>.Failure($"Không tìm thấy bản đồ có Id: {request.GameId}.", ErrorCodeEnum.NotFound);
+                return Result<MapInfoDto>.Failure($"Không tìm thấy trò chơi có Id: {request.GameId}.", ErrorCodeEnum.NotFound);
         }
 
         var learnedTagNameMap = await _unitOfWork.Repository<Tag>().GetQueryable()
@@ -112,6 +112,6 @@ public class GetMapInfoQueryHandler : IRequestHandler<GetMapInfoQuery, Result<Ma
                 .ToList(),
             Levels = levelDtos
         };
-        return Result<MapInfoDto>.Success(dto, "Đã lấy thông tin bản đồ.");
+        return Result<MapInfoDto>.Success(dto, "Đã lấy thông tin trò chơi.");
     }
 }

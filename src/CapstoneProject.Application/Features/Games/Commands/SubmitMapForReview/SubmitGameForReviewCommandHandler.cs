@@ -25,17 +25,17 @@ public class SubmitMapForReviewCommandHandler : IRequestHandler<SubmitMapForRevi
     {
         var (isValid, userIdNullable) = await _currentUserService.IsUserValidAsync();
         if (!isValid || !userIdNullable.HasValue)
-            return Result.Failure("Yêu cầu xác thực. Vui lòng đăng nhập để gửi bản đồ để xem xét.", ErrorCodeEnum.Unauthorized);
+            return Result.Failure("Yêu cầu xác thực. Vui lòng đăng nhập để gửi trò chơi để xem xét.", ErrorCodeEnum.Unauthorized);
         var userId = userIdNullable.Value;
 
         var mapRepo = _unitOfWork.Repository<Game>();
         var game = await mapRepo.GetQueryable().FirstOrDefaultAsync(m => m.Id == command.GameId && !m.IsDeleted, cancellationToken);
         if (game == null)
-            return Result.Failure($"Không tìm thấy bản đồ có Id: {command.GameId}. Bản đồ có thể đã bị xóa hoặc không tồn tại.", ErrorCodeEnum.NotFound);
+            return Result.Failure($"Không tìm thấy trò chơi có Id: {command.GameId}. Trò chơi có thể đã bị xóa hoặc không tồn tại.", ErrorCodeEnum.NotFound);
         if (game.CreatedBy != userId)
-            return Result.Failure("Bạn chỉ có thể gửi bản đồ của riêng mình để xem xét. Bản đồ này được tạo bởi một người dùng khác.", ErrorCodeEnum.Forbidden);
+            return Result.Failure("Bạn chỉ có thể gửi trò chơi của riêng mình để xem xét. Trò chơi này được tạo bởi một người dùng khác.", ErrorCodeEnum.Forbidden);
         if (game.GameStatus != GameStatusEnum.Draft)
-            return Result.Failure($"Bản đồ không thể được gửi để xem xét. Trạng thái dự kiến: Bản nháp. Trạng thái hiện tại: {game.GameStatus}. Chỉ có thể gửi bản đồ dự thảo.", ErrorCodeEnum.InvalidOperation);
+            return Result.Failure($"Trò chơi không thể được gửi để xem xét. Trạng thái dự kiến: Bản nháp. Trạng thái hiện tại: {game.GameStatus}. Chỉ có thể gửi trò chơi dự thảo.", ErrorCodeEnum.InvalidOperation);
 
         var rootGameId = game.RootGameId ?? game.Id;
         if (!game.RootGameId.HasValue)
@@ -55,6 +55,6 @@ public class SubmitMapForReviewCommandHandler : IRequestHandler<SubmitMapForRevi
         game.UpdateEntity(userId);
         mapRepo.Update(game);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
-        return Result.Success("Bản đồ đã được gửi để xem xét thành công.");
+        return Result.Success("Trò chơi đã được gửi để xem xét thành công.");
     }
 }

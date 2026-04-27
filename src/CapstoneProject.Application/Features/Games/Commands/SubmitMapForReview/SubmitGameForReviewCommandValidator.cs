@@ -7,6 +7,6 @@ public class SubmitMapForReviewCommandValidator : AbstractValidator<SubmitMapFor
     public SubmitMapForReviewCommandValidator()
     {
         RuleFor(x => x.GameId)
-            .NotEmpty().WithMessage("Id bản đồ là bắt buộc.");
+            .NotEmpty().WithMessage("Id trò chơi là bắt buộc.");
     }
 }

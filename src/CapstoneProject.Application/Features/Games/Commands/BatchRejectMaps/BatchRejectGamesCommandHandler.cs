@@ -35,7 +35,7 @@ public class BatchRejectMapsCommandHandler : IRequestHandler<BatchRejectMapsComm
             return Result<BatchMapResultDto>.Failure("Yêu cầu xác thực. Vui lòng đăng nhập để thực hiện từ chối hàng loạt.", ErrorCodeEnum.Unauthorized);
         var roles = await _currentUserService.GetCurrentRolesAsync();
         if (!roles.Contains(RoleEnum.Admin) && !roles.Contains(RoleEnum.Moderator))
-            return Result<BatchMapResultDto>.Failure("Bạn không có quyền từ chối bản đồ. Chỉ Quản trị viên hoặc Người điều hành mới có thể thực hiện từ chối hàng loạt.", ErrorCodeEnum.Forbidden);
+            return Result<BatchMapResultDto>.Failure("Bạn không có quyền từ chối trò chơi. Chỉ Quản trị viên hoặc Người điều hành mới có thể thực hiện từ chối hàng loạt.", ErrorCodeEnum.Forbidden);
 
         var repo = _unitOfWork.Repository<Game>();
         var games = await repo.GetQueryable()
@@ -95,7 +95,7 @@ public class BatchRejectMapsCommandHandler : IRequestHandler<BatchRejectMapsComm
             NotFoundIds = notFoundIds,
             InvalidStatusIds = invalidStatusIds
         };
-        return Result<BatchMapResultDto>.Success(dto, $"Đã từ chối (các) bản đồ {dto.SuccessCount}.");
+        return Result<BatchMapResultDto>.Success(dto, $"Đã từ chối (các) trò chơi {dto.SuccessCount}.");
     }
 
     private static string? NormalizeNote(string? note)

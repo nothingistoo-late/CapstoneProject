@@ -78,7 +78,7 @@ public class GameLobbyHub : Hub
             var mapExists = await _mediator.Send(new MapExistsQuery(selectedGameId.Value));
             if (!mapExists.IsSuccess || mapExists.Data != true)
             {
-                await Clients.Caller.SendAsync("Error", mapExists.Message ?? "Bản đồ không được tìm thấy hoặc đã bị xóa.");
+                await Clients.Caller.SendAsync("Error", mapExists.Message ?? "Trò chơi không được tìm thấy hoặc đã bị xóa.");
                 return;
             }
         }
@@ -119,7 +119,7 @@ public class GameLobbyHub : Hub
             var canJoinSelectedMap = await EnsureUserOwnsPaidGame(selectedGameId, userId);
             if (!canJoinSelectedMap.Success)
             {
-                await Clients.Caller.SendAsync("Error", canJoinSelectedMap.ErrorMessage ?? "Khong the vao phong.");
+                await Clients.Caller.SendAsync("Error", canJoinSelectedMap.ErrorMessage ?? "Không thể vào phòng.");
                 return;
             }
         }
@@ -165,7 +165,7 @@ public class GameLobbyHub : Hub
             var canJoinSelectedMap = await EnsureUserOwnsPaidGame(selectedGameId, userId);
             if (!canJoinSelectedMap.Success)
             {
-                await Clients.Caller.SendAsync("Error", canJoinSelectedMap.ErrorMessage ?? "Khong the vao phong.");
+                await Clients.Caller.SendAsync("Error", canJoinSelectedMap.ErrorMessage ?? "Không thể vào phòng.");
                 return;
             }
         }
@@ -255,14 +255,14 @@ public class GameLobbyHub : Hub
             var mapExists = await _mediator.Send(new MapExistsQuery(selectedGameId));
             if (!mapExists.IsSuccess || mapExists.Data != true)
             {
-                await Clients.Caller.SendAsync("Error", mapExists.Message ?? "Bản đồ không được tìm thấy hoặc đã bị xóa. Chọn bản đồ khác.");
+                await Clients.Caller.SendAsync("Error", mapExists.Message ?? "Trò chơi không được tìm thấy hoặc đã bị xóa. Chọn trò chơi khác.");
                 return;
             }
             var playerIds = room.Players.Keys.ToList();
             var ownershipCheck = await EnsurePlayersCanPlayGame(selectedGameId, playerIds);
             if (!ownershipCheck.Success)
             {
-                await Clients.Caller.SendAsync("Error", ownershipCheck.ErrorMessage ?? "Tất cả người chơi trong phòng phải sở hữu bản đồ.");
+                await Clients.Caller.SendAsync("Error", ownershipCheck.ErrorMessage ?? "Tất cả người chơi trong phòng phải sở hữu trò chơi.");
                 return;
             }
         }
@@ -394,7 +394,7 @@ public class GameLobbyHub : Hub
             var mapExists = await _mediator.Send(new MapExistsQuery(gameId.Value));
             if (!mapExists.IsSuccess || mapExists.Data != true)
             {
-                await Clients.Caller.SendAsync("Error", mapExists.Message ?? "Bản đồ không được tìm thấy hoặc đã bị xóa.");
+                await Clients.Caller.SendAsync("Error", mapExists.Message ?? "Trò chơi không được tìm thấy hoặc đã bị xóa.");
                 return;
             }
             var roomForOwnership = _roomManager.GetRoomById(roomId);
@@ -406,14 +406,14 @@ public class GameLobbyHub : Hub
             var ownershipCheck = await EnsurePlayersCanPlayGame(gameId.Value, roomForOwnership.Players.Keys.ToList());
             if (!ownershipCheck.Success)
             {
-                await Clients.Caller.SendAsync("Error", ownershipCheck.ErrorMessage ?? "Tất cả người chơi trong phòng phải sở hữu bản đồ.");
+                await Clients.Caller.SendAsync("Error", ownershipCheck.ErrorMessage ?? "Tất cả người chơi trong phòng phải sở hữu trò chơi.");
                 return;
             }
         }
         var (success, errorMessage, room) = _roomManager.SetRoomMap(roomId, userId, gameId);
         if (!success || room == null)
         {
-            await Clients.Caller.SendAsync("Error", errorMessage ?? "Không thể thiết lập bản đồ.");
+            await Clients.Caller.SendAsync("Error", errorMessage ?? "Không thể thiết lập trò chơi.");
             return;
         }
 
@@ -459,7 +459,7 @@ public class GameLobbyHub : Hub
         var gameInstance = _roomManager.GetGameInstance(roomId);
         if (gameInstance == null || !gameInstance.GameId.HasValue)
         {
-            await Clients.Caller.SendAsync("Error", "No game for this game.");
+            await Clients.Caller.SendAsync("Error", "Phòng này chưa chọn trò chơi.");
             return;
         }
 
@@ -549,7 +549,7 @@ public class GameLobbyHub : Hub
             .AsNoTracking()
             .FirstOrDefaultAsync(g => g.Id == gameId);
         if (game == null || game.IsDeleted)
-            return (false, "Bản đồ không được tìm thấy hoặc đã bị xóa.");
+            return (false, "Trò chơi không được tìm thấy hoặc đã bị xóa.");
 
         var price = game.Price.GetValueOrDefault();
         if (price <= 0)
@@ -577,7 +577,7 @@ public class GameLobbyHub : Hub
         {
             if (game.CreatedBy == playerId || ownedUserIds.Contains(playerId))
                 continue;
-            return (false, "Tất cả người chơi trong phòng phải sở hữu bản đồ trước khi chơi.");
+            return (false, "Tất cả người chơi trong phòng phải sở hữu trò chơi trước khi chơi.");
         }
         return (true, null);
     }
@@ -588,7 +588,7 @@ public class GameLobbyHub : Hub
             .AsNoTracking()
             .FirstOrDefaultAsync(g => g.Id == gameId);
         if (game == null || game.IsDeleted)
-            return (false, "Khong the vao phong: tro choi da chon khong con ton tai.");
+            return (false, "Không thể vào phòng: trò chơi đã chọn không còn tồn tại.");
 
         if (game.CreatedBy == userId || game.Price.GetValueOrDefault() <= 0)
             return (true, null);
@@ -606,7 +606,7 @@ public class GameLobbyHub : Hub
         if (inMyGame)
             return (true, null);
 
-        return (false, "Khong the vao phong: ban chua so huu tro choi dang duoc chon.");
+        return (false, "Không thể vào phòng: bạn chưa sở hữu trò chơi đang được chọn.");
     }
 
     private async Task LeaveAllRoomsForUser(Guid userId)

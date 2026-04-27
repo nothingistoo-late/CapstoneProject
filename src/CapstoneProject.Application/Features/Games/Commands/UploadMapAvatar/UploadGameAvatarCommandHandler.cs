@@ -35,12 +35,12 @@ public class UploadMapAvatarCommandHandler : IRequestHandler<UploadMapAvatarComm
         var game = await _unitOfWork.Repository<Game>().GetQueryable()
             .FirstOrDefaultAsync(m => m.Id == request.GameId && !m.IsDeleted, cancellationToken);
         if (game == null)
-            return Result<string>.Failure("Bản đồ không được tìm thấy.", ErrorCodeEnum.NotFound);
+            return Result<string>.Failure("Trò chơi không được tìm thấy.", ErrorCodeEnum.NotFound);
 
         var roles = await _currentUserService.GetCurrentRolesAsync();
         var isAdminOrMod = roles.Contains(RoleEnum.Admin) || roles.Contains(RoleEnum.Moderator);
         if (game.CreatedBy != userId && !isAdminOrMod)
-            return Result<string>.Failure("Bạn không có quyền cập nhật hình đại diện của bản đồ này.", ErrorCodeEnum.Forbidden);
+            return Result<string>.Failure("Bạn không có quyền cập nhật hình đại diện của trò chơi này.", ErrorCodeEnum.Forbidden);
 
         var avatarUrl = await _cloudinaryService.UploadImageAsync(
             request.AvatarFile,
@@ -70,6 +70,6 @@ public class UploadMapAvatarCommandHandler : IRequestHandler<UploadMapAvatarComm
             }
         });
 
-        return Result<string>.Success(avatarUrl, "Đã cập nhật hình đại diện bản đồ.");
+        return Result<string>.Success(avatarUrl, "Đã cập nhật hình đại diện trò chơi.");
     }
 }

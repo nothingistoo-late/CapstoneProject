@@ -7,7 +7,7 @@ public class RejectMapCommandValidator : AbstractValidator<RejectMapCommand>
     public RejectMapCommandValidator()
     {
         RuleFor(x => x.GameId)
-            .NotEmpty().WithMessage("Id bản đồ là bắt buộc.");
+            .NotEmpty().WithMessage("Id trò chơi là bắt buộc.");
 
         RuleFor(x => x.RejectReason)
             .MaximumLength(1000)

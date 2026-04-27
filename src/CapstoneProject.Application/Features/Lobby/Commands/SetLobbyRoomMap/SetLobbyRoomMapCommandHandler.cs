@@ -37,7 +37,7 @@ public class SetLobbyRoomMapCommandHandler : IRequestHandler<SetLobbyRoomMapComm
         {
             var mapExists = await _mediator.Send(new MapExistsQuery(command.Request.GameId.Value), cancellationToken);
             if (!mapExists.IsSuccess || mapExists.Data != true)
-                return Result<LobbyRoomDetailResponse>.Failure(mapExists.Message ?? "Bản đồ không được tìm thấy hoặc đã bị xóa.", ErrorCodeEnum.NotFound);
+                return Result<LobbyRoomDetailResponse>.Failure(mapExists.Message ?? "Trò chơi không được tìm thấy hoặc đã bị xóa.", ErrorCodeEnum.NotFound);
 
             var roomToValidate = _roomManager.GetRoomById(command.RoomId);
             if (roomToValidate == null)
@@ -57,7 +57,7 @@ public class SetLobbyRoomMapCommandHandler : IRequestHandler<SetLobbyRoomMapComm
         if (!success || room == null)
         {
             var code = errorMessage?.Contains("not found", StringComparison.OrdinalIgnoreCase) == true ? ErrorCodeEnum.NotFound : ErrorCodeEnum.ValidationFailed;
-            return Result<LobbyRoomDetailResponse>.Failure(errorMessage ?? "Không thể thiết lập bản đồ.", code);
+            return Result<LobbyRoomDetailResponse>.Failure(errorMessage ?? "Không thể thiết lập trò chơi.", code);
         }
 
         var response = new LobbyRoomDetailResponse
@@ -72,7 +72,7 @@ public class SetLobbyRoomMapCommandHandler : IRequestHandler<SetLobbyRoomMapComm
             SelectedGameId = room.SelectedGameId,
             Players = room.Players.Values.Select(p => new LobbyPlayerDto { PlayerId = p.PlayerId, IsReady = p.IsReady, IsHost = p.IsHost }).ToList()
         };
-        return Result<LobbyRoomDetailResponse>.Success(response, "Bản đồ được cập nhật.");
+        return Result<LobbyRoomDetailResponse>.Success(response, "Trò chơi được cập nhật.");
     }
 
     private async Task<(bool Success, string? ErrorMessage)> EnsurePlayersCanPlayGame(
@@ -85,7 +85,7 @@ public class SetLobbyRoomMapCommandHandler : IRequestHandler<SetLobbyRoomMapComm
             .AsNoTracking()
             .FirstOrDefaultAsync(g => g.Id == gameId, cancellationToken);
         if (game == null || game.IsDeleted)
-            return (false, "Bản đồ không được tìm thấy hoặc đã bị xóa.");
+            return (false, "Trò chơi không được tìm thấy hoặc đã bị xóa.");
 
         var price = game.Price.GetValueOrDefault();
         if (price <= 0)
@@ -113,7 +113,7 @@ public class SetLobbyRoomMapCommandHandler : IRequestHandler<SetLobbyRoomMapComm
         {
             if (game.CreatedBy == playerId || ownedUserIds.Contains(playerId))
                 continue;
-            return (false, "Tất cả người chơi trong phòng phải sở hữu bản đồ trước khi chơi.");
+            return (false, "Tất cả người chơi trong phòng phải sở hữu trò chơi trước khi chơi.");
         }
 
         return (true, null);

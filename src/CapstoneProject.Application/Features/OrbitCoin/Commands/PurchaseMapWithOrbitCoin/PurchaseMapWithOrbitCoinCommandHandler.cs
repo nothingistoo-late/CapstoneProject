@@ -44,14 +44,14 @@ public class PurchaseMapWithOrbitCoinCommandHandler : IRequestHandler<PurchaseMa
             .AsNoTracking()
             .FirstOrDefaultAsync(m => m.Id == request.GameId && !m.IsDeleted, cancellationToken);
         if (game == null)
-            return Result.Failure("Bản đồ không được tìm thấy.", ErrorCodeEnum.NotFound);
+            return Result.Failure("Trò chơi không được tìm thấy.", ErrorCodeEnum.NotFound);
         if (game.Price == null || game.Price <= 0)
-            return Result.Failure("Bản đồ này miễn phí và không thể mua bằng OrbitCoin.", ErrorCodeEnum.InvalidOperation);
+            return Result.Failure("Trò chơi này miễn phí và không thể mua bằng OrbitCoin.", ErrorCodeEnum.InvalidOperation);
         var sellerUserId = game.CreatedBy ?? Guid.Empty;
         if (sellerUserId == Guid.Empty)
-            return Result.Failure("Bản đồ không có người tạo; không thể hoàn tất việc mua hàng.", ErrorCodeEnum.InvalidOperation);
+            return Result.Failure("Trò chơi không có người tạo; không thể hoàn tất việc mua hàng.", ErrorCodeEnum.InvalidOperation);
         if (sellerUserId == buyerUserId)
-            return Result.Failure("Bạn không thể mua bản đồ của riêng bạn.", ErrorCodeEnum.InvalidOperation);
+            return Result.Failure("Bạn không thể mua game của riêng bạn.", ErrorCodeEnum.InvalidOperation);
 
         var amount = game.Price.Value;
         // Escrow: deduct from buyer now, seller receives later when complaint window closes or complaint is resolved as reject.
@@ -163,7 +163,7 @@ public class PurchaseMapWithOrbitCoinCommandHandler : IRequestHandler<PurchaseMa
             }
         }
 
-        return Result.Success("Bản đồ được mua bằng OrbitCoin. Tiền đang được giữ ở escrow.");
+        return Result.Success("Game đã được mua bằng OrbitCoin. Tiền đang được giữ ở escrow.");
     }
 
     private async Task TryNotifyPaymentAsync(

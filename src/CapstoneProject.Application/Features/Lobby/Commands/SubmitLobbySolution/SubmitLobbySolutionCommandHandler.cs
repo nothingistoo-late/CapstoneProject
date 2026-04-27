@@ -39,7 +39,7 @@ public class SubmitLobbySolutionCommandHandler : IRequestHandler<SubmitLobbySolu
         if (room.Status != RoomStatusEnum.Playing)
             return Result<SubmitGameResponse>.Failure("Trò chơi không được tiến hành.", ErrorCodeEnum.ValidationFailed);
         if (!room.SelectedGameId.HasValue)
-            return Result<SubmitGameResponse>.Failure("Phòng chưa có bản đồ nào được chọn.", ErrorCodeEnum.ValidationFailed);
+            return Result<SubmitGameResponse>.Failure("Phòng chưa có trò chơi nào được chọn.", ErrorCodeEnum.ValidationFailed);
         if (!room.Players.ContainsKey(userId))
             return Result<SubmitGameResponse>.Failure("Bạn không ở trong phòng này.", ErrorCodeEnum.ValidationFailed);
 

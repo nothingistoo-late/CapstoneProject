@@ -100,7 +100,7 @@ public class GetHintsForMapQueryHandler : IRequestHandler<GetHintsForMapQuery, R
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         var remaining = Math.Max(0, monthlyQuota - (usage?.UsedCount ?? usedCount));
-        return Result<List<HintLevelDto>>.Success(hints, $"Đã lấy gợi ý cho bản đồ. Còn {remaining}/{monthlyQuota} lượt trong tháng.");
+        return Result<List<HintLevelDto>>.Success(hints, $"Đã lấy gợi ý cho trò chơi. Còn {remaining}/{monthlyQuota} lượt trong tháng.");
     }
 }
 

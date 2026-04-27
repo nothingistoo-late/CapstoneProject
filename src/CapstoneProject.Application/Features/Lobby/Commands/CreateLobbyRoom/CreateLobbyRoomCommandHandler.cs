@@ -34,7 +34,7 @@ public class CreateLobbyRoomCommandHandler : IRequestHandler<CreateLobbyRoomComm
         {
             var mapExists = await _mediator.Send(new MapExistsQuery(gameId.Value), cancellationToken);
             if (!mapExists.IsSuccess || mapExists.Data != true)
-                return Result<CreateLobbyRoomResponse>.Failure(mapExists.Message ?? "Bản đồ không được tìm thấy hoặc đã bị xóa.", ErrorCodeEnum.NotFound);
+                return Result<CreateLobbyRoomResponse>.Failure(mapExists.Message ?? "Trò chơi không được tìm thấy hoặc đã bị xóa.", ErrorCodeEnum.NotFound);
         }
 
         var userId = userIdNullable.Value;

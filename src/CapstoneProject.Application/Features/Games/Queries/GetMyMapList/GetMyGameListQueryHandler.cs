@@ -113,7 +113,7 @@ public class GetMyGameListQueryHandler : IRequestHandler<GetMyGameListQuery, Res
         }).ToList();
 
         var result = PaginationResult<MapListItemDto>.Success(list, pageNumber, pageSize, total, "Đã truy xuất thành công");
-        return Result<PaginationResult<MapListItemDto>>.Success(result, "Đã lấy danh sách bản đồ của bạn.");
+        return Result<PaginationResult<MapListItemDto>>.Success(result, "Đã lấy danh sách trò chơi của bạn.");
     }
 }
 

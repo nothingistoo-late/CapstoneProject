@@ -129,6 +129,6 @@ public class GetDeletedMapsQueryHandler : IRequestHandler<GetDeletedMapsQuery, R
         }).ToList();
 
         var result = PaginationResult<MapListItemDto>.Success(list, pageNumber, pageSize, total, "Đã truy xuất thành công");
-        return Result<PaginationResult<MapListItemDto>>.Success(result, "Đã lấy danh sách bản đồ đã xóa mềm.");
+        return Result<PaginationResult<MapListItemDto>>.Success(result, "Đã lấy danh sách trò chơi đã xóa mềm.");
     }
 }

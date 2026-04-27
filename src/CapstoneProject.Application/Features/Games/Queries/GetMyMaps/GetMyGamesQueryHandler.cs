@@ -55,7 +55,7 @@ public class GetMyGamesQueryHandler : IRequestHandler<GetMyGamesQuery, Result<Pa
         if (allOwnedIds.Count == 0)
         {
             var empty = PaginationResult<MapListItemDto>.Success(new List<MapListItemDto>(), 1, request.PageSize, 0, "Đã truy xuất thành công");
-            return Result<PaginationResult<MapListItemDto>>.Success(empty, "Đã lấy danh sách bản đồ của bạn.");
+            return Result<PaginationResult<MapListItemDto>>.Success(empty, "Đã lấy danh sách trò chơi của bạn.");
         }
 
         var ownedRootGameIds = await mapRepo.GetQueryable()
@@ -151,7 +151,7 @@ public class GetMyGamesQueryHandler : IRequestHandler<GetMyGamesQuery, Result<Pa
         }).ToList();
 
         var result = PaginationResult<MapListItemDto>.Success(list, pageNumber, pageSize, total, "Đã truy xuất thành công");
-        return Result<PaginationResult<MapListItemDto>>.Success(result, "Đã lấy danh sách bản đồ của bạn.");
+        return Result<PaginationResult<MapListItemDto>>.Success(result, "Đã lấy danh sách trò chơi của bạn.");
     }
 }
 

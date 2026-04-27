@@ -31,7 +31,7 @@ public class PublishMapCommandHandler : IRequestHandler<PublishMapCommand, Resul
     {
         var (isValid, userIdNullable) = await _currentUserService.IsUserValidAsync();
         if (!isValid || !userIdNullable.HasValue)
-            return Result.Failure("Yêu cầu xác thực. Vui lòng đăng nhập để xuất bản bản đồ.", ErrorCodeEnum.Unauthorized);
+            return Result.Failure("Yêu cầu xác thực. Vui lòng đăng nhập để xuất bản trò chơi.", ErrorCodeEnum.Unauthorized);
 
         var roles = await _currentUserService.GetCurrentRolesAsync();
         var isAdminOrModerator = roles.Contains(RoleEnum.Admin) || roles.Contains(RoleEnum.Moderator);
@@ -40,9 +40,9 @@ public class PublishMapCommandHandler : IRequestHandler<PublishMapCommand, Resul
         var mapRepo = _unitOfWork.Repository<Game>();
         var game = await mapRepo.GetQueryable().FirstOrDefaultAsync(m => m.Id == command.GameId && !m.IsDeleted, cancellationToken);
         if (game == null)
-            return Result.Failure($"Không tìm thấy bản đồ có Id: {command.GameId}. Bản đồ có thể đã bị xóa hoặc không tồn tại.", ErrorCodeEnum.NotFound);
+            return Result.Failure($"Không tìm thấy trò chơi có Id: {command.GameId}. Trò chơi có thể đã bị xóa hoặc không tồn tại.", ErrorCodeEnum.NotFound);
         if (game.GameStatus != GameStatusEnum.Approved)
-            return Result.Failure($"Bản đồ không thể được xuất bản. Trạng thái dự kiến: Đã phê duyệt. Trạng thái hiện tại: {game.GameStatus}. Chỉ những bản đồ được phê duyệt mới có thể được xuất bản.", ErrorCodeEnum.InvalidOperation);
+            return Result.Failure($"Trò chơi không thể được xuất bản. Trạng thái dự kiến: Đã phê duyệt. Trạng thái hiện tại: {game.GameStatus}. Chỉ những trò chơi được phê duyệt mới có thể được xuất bản.", ErrorCodeEnum.InvalidOperation);
 
         if (isAdminOrModerator)
         {
@@ -51,10 +51,10 @@ public class PublishMapCommandHandler : IRequestHandler<PublishMapCommand, Resul
         else if (isLearner)
         {
             if (game.CreatedBy != userIdNullable.Value)
-                return Result.Failure("Chỉ tác giả của bản đồ này mới có thể xuất bản nó.", ErrorCodeEnum.Forbidden);
+                return Result.Failure("Chỉ tác giả của trò chơi này mới có thể xuất bản nó.", ErrorCodeEnum.Forbidden);
         }
         else
-            return Result.Failure("Bạn không có quyền xuất bản bản đồ.", ErrorCodeEnum.Forbidden);
+            return Result.Failure("Bạn không có quyền xuất bản trò chơi.", ErrorCodeEnum.Forbidden);
 
         var rootGameId = game.RootGameId ?? game.Id;
         if (!game.RootGameId.HasValue)
@@ -162,6 +162,6 @@ public class PublishMapCommandHandler : IRequestHandler<PublishMapCommand, Resul
             }
         }
 
-        return Result.Success("Bản đồ được xuất bản thành công.");
+        return Result.Success("Trò chơi được xuất bản thành công.");
     }
 }

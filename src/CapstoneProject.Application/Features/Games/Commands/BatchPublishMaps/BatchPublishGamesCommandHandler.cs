@@ -29,7 +29,7 @@ public class BatchPublishMapsCommandHandler : IRequestHandler<BatchPublishMapsCo
             return Result<BatchMapResultDto>.Failure("Yêu cầu xác thực. Vui lòng đăng nhập để thực hiện xuất bản hàng loạt.", ErrorCodeEnum.Unauthorized);
         var roles = await _currentUserService.GetCurrentRolesAsync();
         if (!roles.Contains(RoleEnum.Admin) && !roles.Contains(RoleEnum.Moderator))
-            return Result<BatchMapResultDto>.Failure("Bạn không có quyền xuất bản bản đồ. Chỉ Quản trị viên hoặc Người điều hành mới có thể thực hiện xuất bản hàng loạt.", ErrorCodeEnum.Forbidden);
+            return Result<BatchMapResultDto>.Failure("Bạn không có quyền xuất bản trò chơi. Chỉ Quản trị viên hoặc Người điều hành mới có thể thực hiện xuất bản hàng loạt.", ErrorCodeEnum.Forbidden);
 
         var repo = _unitOfWork.Repository<Game>();
         var games = await repo.GetQueryable()
@@ -90,6 +90,6 @@ public class BatchPublishMapsCommandHandler : IRequestHandler<BatchPublishMapsCo
             NotFoundIds = notFoundIds,
             InvalidStatusIds = invalidStatusIds
         };
-        return Result<BatchMapResultDto>.Success(dto, $"Đã xuất bản {dto.SuccessCount} bản đồ.");
+        return Result<BatchMapResultDto>.Success(dto, $"Đã xuất bản {dto.SuccessCount} trò chơi.");
     }
 }

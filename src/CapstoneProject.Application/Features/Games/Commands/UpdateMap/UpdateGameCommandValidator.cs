@@ -7,7 +7,7 @@ public class UpdateMapCommandValidator : AbstractValidator<UpdateMapCommand>
 {
     public UpdateMapCommandValidator()
     {
-        RuleFor(x => x.GameId).NotEmpty().WithMessage("Id bản đồ là bắt buộc.");
+        RuleFor(x => x.GameId).NotEmpty().WithMessage("Id trò chơi là bắt buộc.");
         RuleFor(x => x.Request).NotNull().WithMessage("Request is required.");
         When(x => x.Request != null, () =>
         {

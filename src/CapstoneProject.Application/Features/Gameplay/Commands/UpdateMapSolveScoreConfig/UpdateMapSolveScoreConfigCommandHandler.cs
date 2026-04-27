@@ -29,13 +29,13 @@ public class UpdateGameSolveScoreConfigCommandHandler : IRequestHandler<UpdateGa
 
         var roles = await _currentUserService.GetCurrentRolesAsync();
         if (!roles.Contains(RoleEnum.Admin) && !roles.Contains(RoleEnum.Moderator))
-            return Result.Failure("Chỉ Quản trị viên/Người điều hành mới có thể cập nhật cấu hình điểm giải quyết bản đồ.", ErrorCodeEnum.Forbidden);
+            return Result.Failure("Chỉ Quản trị viên/Người điều hành mới có thể cập nhật cấu hình điểm giải quyết trò chơi.", ErrorCodeEnum.Forbidden);
 
         var repo = _unitOfWork.Repository<GameSolveScoreConfig>();
         var row = await repo.GetQueryable()
             .FirstOrDefaultAsync(x => x.ConfigKey == GameSolveScoreConfig.DefaultConfigKey, cancellationToken);
         if (row == null)
-            return Result.Failure("Không tìm thấy cấu hình điểm giải quyết bản đồ.", ErrorCodeEnum.NotFound);
+            return Result.Failure("Không tìm thấy cấu hình điểm giải quyết trò chơi.", ErrorCodeEnum.NotFound);
 
         row.BaseScore = request.BaseScore;
         row.TimeScore = request.TimeScore;
@@ -44,6 +44,6 @@ public class UpdateGameSolveScoreConfigCommandHandler : IRequestHandler<UpdateGa
         row.UpdateEntity(userId);
         repo.Update(row);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
-        return Result.Success("Đã cập nhật cấu hình điểm giải quyết bản đồ.");
+        return Result.Success("Đã cập nhật cấu hình điểm giải quyết trò chơi.");
     }
 }
