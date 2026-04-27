@@ -19,14 +19,14 @@ public class MapExistsQueryHandler : IRequestHandler<MapExistsQuery, Result<bool
     public async Task<Result<bool>> Handle(MapExistsQuery request, CancellationToken cancellationToken)
     {
         if (request.GameId == Guid.Empty)
-            return Result<bool>.Failure("Id bản đồ là bắt buộc.", ErrorCodeEnum.ValidationFailed);
+            return Result<bool>.Failure("Id trò chơi là bắt buộc.", ErrorCodeEnum.ValidationFailed);
 
         var exists = await _unitOfWork.Repository<Game>().GetQueryable()
             .AnyAsync(m => m.Id == request.GameId && !m.IsDeleted, cancellationToken);
 
         if (!exists)
-            return Result<bool>.Failure("Bản đồ không được tìm thấy hoặc đã bị xóa.", ErrorCodeEnum.NotFound);
+            return Result<bool>.Failure("Trò chơi không được tìm thấy hoặc đã bị xóa.", ErrorCodeEnum.NotFound);
 
-        return Result<bool>.Success(true, "Bản đồ tồn tại.");
+        return Result<bool>.Success(true, "Trò chơi tồn tại.");
     }
 }

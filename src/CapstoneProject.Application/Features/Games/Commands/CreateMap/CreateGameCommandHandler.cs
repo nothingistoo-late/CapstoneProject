@@ -31,7 +31,7 @@ public class CreateMapCommandHandler : IRequestHandler<CreateMapCommand, Result<
     {
         var (isValid, userIdNullable) = await _currentUserService.IsUserValidAsync();
         if (!isValid || !userIdNullable.HasValue)
-            return Result<Guid>.Failure("Yêu cầu xác thực. Vui lòng đăng nhập để tạo bản đồ.", ErrorCodeEnum.Unauthorized);
+            return Result<Guid>.Failure("Yêu cầu xác thực. Vui lòng đăng nhập để tạo trò chơi.", ErrorCodeEnum.Unauthorized);
         var userId = userIdNullable.Value;
 
         var req = command.Request;

@@ -25,7 +25,7 @@ public class ReportMapCommandHandler : IRequestHandler<ReportMapCommand, Result<
     {
         var (isValid, userIdNullable) = await _currentUserService.IsUserValidAsync();
         if (!isValid || !userIdNullable.HasValue)
-            return Result<Guid>.Failure("Yêu cầu xác thực. Vui lòng đăng nhập để báo cáo bản đồ.", ErrorCodeEnum.Unauthorized);
+            return Result<Guid>.Failure("Yêu cầu xác thực. Vui lòng đăng nhập để báo cáo trò chơi.", ErrorCodeEnum.Unauthorized);
         var userId = userIdNullable.Value;
         if (string.IsNullOrWhiteSpace(command.Reason))
             return Result<Guid>.Failure("Lý do báo cáo là bắt buộc. Vui lòng cung cấp lý do để báo cáo nội dung này.", ErrorCodeEnum.ValidationFailed);
@@ -34,9 +34,9 @@ public class ReportMapCommandHandler : IRequestHandler<ReportMapCommand, Result<
         var game = await mapRepo.GetQueryable()
             .FirstOrDefaultAsync(g => g.Id == command.GameId && !g.IsDeleted && g.Status == EntityStatusEnum.Active, cancellationToken);
         if (game == null)
-            return Result<Guid>.Failure($"Không tìm thấy bản đồ có Id: {command.GameId}. Bản đồ có thể đã bị xóa hoặc không tồn tại.", ErrorCodeEnum.NotFound);
+            return Result<Guid>.Failure($"Không tìm thấy trò chơi có Id: {command.GameId}. Trò chơi có thể đã bị xóa hoặc không tồn tại.", ErrorCodeEnum.NotFound);
         if (game.CreatedBy.HasValue && game.CreatedBy.Value == userId)
-            return Result<Guid>.Failure("Bạn không thể báo cáo bản đồ của riêng bạn.", ErrorCodeEnum.Forbidden);
+            return Result<Guid>.Failure("Bạn không thể báo cáo trò chơi của riêng bạn.", ErrorCodeEnum.Forbidden);
 
         // Only allow reporting games the user can actually play:
         // - Free games (Price null or <= 0)
@@ -52,7 +52,7 @@ public class ReportMapCommandHandler : IRequestHandler<ReportMapCommand, Result<
                                && p.PaymentStatus == PaymentStatusEnum.Completed,
                     cancellationToken);
             if (!hasPurchased)
-                return Result<Guid>.Failure("Bạn chỉ có thể báo cáo những bản đồ mà bạn có quyền truy cập (bản đồ miễn phí hoặc bản đồ bạn đã mua).", ErrorCodeEnum.Forbidden);
+                return Result<Guid>.Failure("Bạn chỉ có thể báo cáo những trò chơi mà bạn có quyền truy cập (trò chơi miễn phí hoặc trò chơi bạn đã mua).", ErrorCodeEnum.Forbidden);
         }
 
         var report = new GameReport

@@ -188,8 +188,8 @@ public class ComplaintWorkflowAutoTransitionJob
 
             await _notificationPersistenceService.CreateNotificationAsync(
                 NotificationTypeEnum.ComplaintStatusChanged,
-                "C?p nh?t tr?ng thái khi?u n?i t? ??ng",
-                $"Khi?u n?i \"{complaint.Subject}\" ?ã t? ??ng chuy?n t? {fromStatus} sang {toStatus}.",
+                "Cap nhat trang thai khieu nai tu dong",
+                $"Khieu nai \"{complaint.Subject}\" da tu dong chuyen tu {fromStatus} sang {toStatus}.",
                 new List<Guid> { complaint.UserId },
                 actorUserId,
                 payload,
@@ -385,8 +385,8 @@ public class ComplaintWorkflowAutoTransitionJob
 
             await _notificationPersistenceService.CreateNotificationAsync(
                 NotificationTypeEnum.PaymentSucceeded,
-                "Escrow ?ã ???c gi?i ngân",
-                $"Kho?n thanh toán {grossAmount:0.##} OrbitCoin ?ã ???c gi?i ngân cho ng??i bán.",
+                "Escrow da duoc giai ngan",
+                $"Khoan thanh toan {grossAmount:0.##} OrbitCoin da duoc giai ngan cho nguoi ban.",
                 new List<Guid> { buyerUserId },
                 sellerUserId,
                 payload,
@@ -395,8 +395,8 @@ public class ComplaintWorkflowAutoTransitionJob
 
             await _notificationPersistenceService.CreateNotificationAsync(
                 NotificationTypeEnum.MapPurchased,
-                "?ã nh?n ti?n t? escrow",
-                $"B?n ?ã nh?n {sellerReceive:0.##} OrbitCoin t? escrow cho giao d?ch bán game.",
+                "Da nhan tien tu escrow",
+                $"Ban da nhan {sellerReceive:0.##} OrbitCoin tu escrow cho giao dich ban tro choi.",
                 new List<Guid> { sellerUserId },
                 buyerUserId,
                 payload,

@@ -31,7 +31,7 @@ public class RateMapCommandHandler : IRequestHandler<RateMapCommand, Result>
     {
         var (isValid, userIdNullable) = await _currentUserService.IsUserValidAsync();
         if (!isValid || !userIdNullable.HasValue)
-            return Result.Failure("Yêu cầu xác thực. Vui lòng đăng nhập để đánh giá bản đồ.", ErrorCodeEnum.Unauthorized);
+            return Result.Failure("Yêu cầu xác thực. Vui lòng đăng nhập để đánh giá trò chơi.", ErrorCodeEnum.Unauthorized);
         var userId = userIdNullable.Value;
         if (command.Rating < 1 || command.Rating > 5)
             return Result.Failure("Đánh giá phải từ 1 đến 5 sao. Vui lòng cung cấp đánh giá hợp lệ.", ErrorCodeEnum.ValidationFailed);
@@ -40,9 +40,9 @@ public class RateMapCommandHandler : IRequestHandler<RateMapCommand, Result>
         var game = await mapRepo.GetQueryable()
             .FirstOrDefaultAsync(g => g.Id == command.GameId && !g.IsDeleted && g.Status == EntityStatusEnum.Active, cancellationToken);
         if (game == null)
-            return Result.Failure($"Không tìm thấy bản đồ có Id: {command.GameId}. Bản đồ có thể đã bị xóa hoặc không tồn tại.", ErrorCodeEnum.NotFound);
+            return Result.Failure($"Không tìm thấy trò chơi có Id: {command.GameId}. Trò chơi có thể đã bị xóa hoặc không tồn tại.", ErrorCodeEnum.NotFound);
         if (game.CreatedBy.HasValue && game.CreatedBy.Value == userId)
-            return Result.Failure("Bạn không thể xếp hạng bản đồ của riêng bạn.", ErrorCodeEnum.Forbidden);
+            return Result.Failure("Bạn không thể xếp hạng trò chơi của riêng bạn.", ErrorCodeEnum.Forbidden);
 
         // Only allow rating games the user can actually play:
         // - Free games (Price null or <= 0)
@@ -58,7 +58,7 @@ public class RateMapCommandHandler : IRequestHandler<RateMapCommand, Result>
                                && p.PaymentStatus == PaymentStatusEnum.Completed,
                     cancellationToken);
             if (!hasPurchased)
-                return Result.Failure("Bạn chỉ có thể xếp hạng bản đồ mà bạn có quyền truy cập (bản đồ miễn phí hoặc bản đồ bạn đã mua).", ErrorCodeEnum.Forbidden);
+                return Result.Failure("Bạn chỉ có thể xếp hạng trò chơi mà bạn có quyền truy cập (trò chơi miễn phí hoặc trò chơi bạn đã mua).", ErrorCodeEnum.Forbidden);
         }
 
         var repo = _unitOfWork.Repository<GameRating>();

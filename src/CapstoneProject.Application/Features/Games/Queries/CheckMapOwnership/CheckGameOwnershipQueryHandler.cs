@@ -23,7 +23,7 @@ public class CheckMapOwnershipQueryHandler : IRequestHandler<CheckMapOwnershipQu
     {
         var (isValid, userId) = await _currentUserService.IsUserValidAsync();
         if (!isValid || !userId.HasValue)
-            return Result<CheckMapOwnershipDto>.Failure("Yêu cầu xác thực. Vui lòng đăng nhập để kiểm tra quyền sở hữu bản đồ.", ErrorCodeEnum.Unauthorized);
+            return Result<CheckMapOwnershipDto>.Failure("Yêu cầu xác thực. Vui lòng đăng nhập để kiểm tra quyền sở hữu trò chơi.", ErrorCodeEnum.Unauthorized);
 
         var mapRepo = _unitOfWork.Repository<Game>();
         var game = await mapRepo.GetQueryable()
@@ -32,7 +32,7 @@ public class CheckMapOwnershipQueryHandler : IRequestHandler<CheckMapOwnershipQu
 
         var dto = new CheckMapOwnershipDto { MapExists = game != null };
         if (game == null)
-            return Result<CheckMapOwnershipDto>.Success(dto, "Đã kiểm tra quyền sở hữu bản đồ.");
+            return Result<CheckMapOwnershipDto>.Success(dto, "Đã kiểm tra quyền sở hữu trò chơi.");
 
         var rootGameId = game.RootGameId ?? game.Id;
         var lineGameIds = await mapRepo.GetQueryable()
@@ -72,6 +72,6 @@ public class CheckMapOwnershipQueryHandler : IRequestHandler<CheckMapOwnershipQu
         dto.IsAuthor = isAuthor;
         dto.IsPurchased = purchased;
         dto.PurchasedAt = purchasedAt;
-        return Result<CheckMapOwnershipDto>.Success(dto, "Đã kiểm tra quyền sở hữu bản đồ.");
+        return Result<CheckMapOwnershipDto>.Success(dto, "Đã kiểm tra quyền sở hữu trò chơi.");
     }
 }

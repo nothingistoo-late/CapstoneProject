@@ -32,7 +32,7 @@ public class GetHintsForMapQueryHandler : IRequestHandler<GetHintsForMapQuery, R
             })
             .ToListAsync(cancellationToken);
 
-        return Result<List<HintLevelDto>>.Success(hints, "Đã lấy gợi ý cho bản đồ.");
+        return Result<List<HintLevelDto>>.Success(hints, "Đã lấy gợi ý cho trò chơi.");
     }
 }
 

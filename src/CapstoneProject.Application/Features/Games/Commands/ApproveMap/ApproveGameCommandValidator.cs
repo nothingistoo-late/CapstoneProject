@@ -7,7 +7,7 @@ public class ApproveMapCommandValidator : AbstractValidator<ApproveMapCommand>
     public ApproveMapCommandValidator()
     {
         RuleFor(x => x.GameId)
-            .NotEmpty().WithMessage("Id bản đồ là bắt buộc.");
+            .NotEmpty().WithMessage("Id trò chơi là bắt buộc.");
 
         RuleFor(x => x.ReviewNote)
             .MaximumLength(1000)

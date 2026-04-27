@@ -40,10 +40,10 @@ public class CreateMapVersionFromApprovedCommandHandler : IRequestHandler<Create
             .FirstOrDefaultAsync(m => m.Id == command.SourceGameId && !m.IsDeleted, cancellationToken);
 
         if (source == null)
-            return Result<Guid>.Failure($"Không tìm thấy bản đồ có Id: {command.SourceGameId}.", ErrorCodeEnum.NotFound);
+            return Result<Guid>.Failure($"Không tìm thấy trò chơi có Id: {command.SourceGameId}.", ErrorCodeEnum.NotFound);
 
         if (source.CreatedBy != userId && !isAdminOrMod)
-            return Result<Guid>.Failure("Bạn không có quyền tạo version từ bản đồ này.", ErrorCodeEnum.Forbidden);
+            return Result<Guid>.Failure("Bạn không có quyền tạo version từ trò chơi này.", ErrorCodeEnum.Forbidden);
 
         if (source.GameStatus != GameStatusEnum.Approved && source.GameStatus != GameStatusEnum.Published)
             return Result<Guid>.Failure("Chỉ có thể tạo version mới từ game đã duyệt hoặc đã xuất bản.", ErrorCodeEnum.InvalidOperation);

@@ -35,14 +35,14 @@ public class RejectMapCommandHandler : IRequestHandler<RejectMapCommand, Result>
 
         var roles = await _currentUserService.GetCurrentRolesAsync();
         if (!roles.Contains(RoleEnum.Admin) && !roles.Contains(RoleEnum.Moderator))
-            return Result.Failure("Bạn không có quyền từ chối bản đồ. Chỉ Quản trị viên hoặc Người điều hành mới có thể thực hiện hành động này.", ErrorCodeEnum.Forbidden);
+            return Result.Failure("Bạn không có quyền từ chối trò chơi. Chỉ Quản trị viên hoặc Người điều hành mới có thể thực hiện hành động này.", ErrorCodeEnum.Forbidden);
 
         var mapRepo = _unitOfWork.Repository<Game>();
         var game = await mapRepo.GetQueryable().FirstOrDefaultAsync(m => m.Id == command.GameId && !m.IsDeleted, cancellationToken);
         if (game == null)
-            return Result.Failure($"Không tìm thấy bản đồ có Id: {command.GameId}. Bản đồ có thể đã bị xóa hoặc không tồn tại.", ErrorCodeEnum.NotFound);
+            return Result.Failure($"Không tìm thấy trò chơi có Id: {command.GameId}. Trò chơi có thể đã bị xóa hoặc không tồn tại.", ErrorCodeEnum.NotFound);
         if (game.GameStatus != GameStatusEnum.PendingReview)
-            return Result.Failure($"Bản đồ không thể bị từ chối. Trạng thái dự kiến: Đang chờ xem xét. Trạng thái hiện tại: {game.GameStatus}. Chỉ những bản đồ đang chờ xem xét mới có thể bị từ chối.", ErrorCodeEnum.InvalidOperation);
+            return Result.Failure($"Trò chơi không thể bị từ chối. Trạng thái dự kiến: Đang chờ xem xét. Trạng thái hiện tại: {game.GameStatus}. Chỉ những trò chơi đang chờ xem xét mới có thể bị từ chối.", ErrorCodeEnum.InvalidOperation);
 
         var normalizedRejectReason = NormalizeNote(command.RejectReason);
         game.GameStatus = GameStatusEnum.Rejected;
@@ -83,7 +83,7 @@ public class RejectMapCommandHandler : IRequestHandler<RejectMapCommand, Result>
             }
         }
 
-        return Result.Success("Bản đồ đã bị từ chối thành công.");
+        return Result.Success("Trò chơi đã bị từ chối thành công.");
     }
 
     private static string? NormalizeNote(string? note)

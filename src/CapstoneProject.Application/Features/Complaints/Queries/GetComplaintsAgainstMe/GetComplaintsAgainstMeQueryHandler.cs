@@ -30,7 +30,7 @@ public class GetComplaintsAgainstMeQueryHandler : IRequestHandler<GetComplaintsA
     {
         var (isValid, userIdNullable) = await _currentUserService.IsUserValidAsync();
         if (!isValid || !userIdNullable.HasValue)
-            return Result<PaginationResult<ComplaintListItemDto>>.Failure("Authentication required. Please log in to view complaints against your maps.", ErrorCodeEnum.Unauthorized);
+            return Result<PaginationResult<ComplaintListItemDto>>.Failure("Authentication required. Please log in to view complaints against your games.", ErrorCodeEnum.Unauthorized);
 
         var userId = userIdNullable.Value;
 
@@ -42,7 +42,7 @@ public class GetComplaintsAgainstMeQueryHandler : IRequestHandler<GetComplaintsA
         if (sellerGameIds.Count == 0)
         {
             var empty = PaginationResult<ComplaintListItemDto>.Success(new List<ComplaintListItemDto>(), 1, Math.Clamp(request.PageSize, 1, 100), 0);
-            return Result<PaginationResult<ComplaintListItemDto>>.Success(empty, "Retrieved complaints against your maps.");
+            return Result<PaginationResult<ComplaintListItemDto>>.Success(empty, "Retrieved complaints against your games.");
         }
 
         var sellerPaymentIds = await _unitOfWork.Repository<PaymentRecord>().GetQueryable()
@@ -114,6 +114,6 @@ public class GetComplaintsAgainstMeQueryHandler : IRequestHandler<GetComplaintsA
         }
 
         var paginated = PaginationResult<ComplaintListItemDto>.Success(list, pageNumber, pageSize, total);
-        return Result<PaginationResult<ComplaintListItemDto>>.Success(paginated, "Retrieved complaints against your maps.");
+        return Result<PaginationResult<ComplaintListItemDto>>.Success(paginated, "Retrieved complaints against your games.");
     }
 }

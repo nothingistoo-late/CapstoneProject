@@ -41,14 +41,14 @@ public class DuplicateMapAsNewCommandHandler : IRequestHandler<DuplicateMapAsNew
             .FirstOrDefaultAsync(m => m.Id == command.SourceGameId && !m.IsDeleted, cancellationToken);
 
         if (source == null)
-            return Result<Guid>.Failure($"Không tìm thấy bản đồ có Id: {command.SourceGameId}.", ErrorCodeEnum.NotFound);
+            return Result<Guid>.Failure($"Không tìm thấy trò chơi có Id: {command.SourceGameId}.", ErrorCodeEnum.NotFound);
 
         if (source.CreatedBy != userId && !isAdminOrMod)
-            return Result<Guid>.Failure("Bạn không được phép sao chép bản đồ này.", ErrorCodeEnum.Forbidden);
+            return Result<Guid>.Failure("Bạn không được phép sao chép trò chơi này.", ErrorCodeEnum.Forbidden);
 
         var details = source.GameDetails.Where(d => !d.IsDeleted).OrderBy(d => d.LevelOrder).ToList();
         if (details.Count == 0)
-            return Result<Guid>.Failure("Bản đồ nguồn không có cấp độ để sao chép.", ErrorCodeEnum.ValidationFailed);
+            return Result<Guid>.Failure("Trò chơi nguồn không có cấp độ để sao chép.", ErrorCodeEnum.ValidationFailed);
 
         var req = command.Request ?? new DuplicateMapAsNewRequest();
         var title = string.IsNullOrWhiteSpace(req.Title)

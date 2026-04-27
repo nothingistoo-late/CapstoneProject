@@ -28,7 +28,7 @@ public class GetGameRatingsQueryHandler : IRequestHandler<GetGameRatingsQuery, R
         var mapExists = await _unitOfWork.Repository<Game>().GetQueryable()
             .AnyAsync(m => m.Id == request.GameId && !m.IsDeleted, cancellationToken);
         if (!mapExists)
-            return Result<List<GameRatingDto>>.Failure($"Không tìm thấy bản đồ có Id: {request.GameId}.", ErrorCodeEnum.NotFound);
+            return Result<List<GameRatingDto>>.Failure($"Không tìm thấy trò chơi có Id: {request.GameId}.", ErrorCodeEnum.NotFound);
 
         var ratingRepo = _unitOfWork.Repository<GameRating>();
         var ratingsQuery = ratingRepo.GetQueryable()
@@ -75,7 +75,7 @@ public class GetGameRatingsQueryHandler : IRequestHandler<GetGameRatingsQuery, R
             IsAuthor = r.IsAuthor
         }).ToList();
 
-        return Result<List<GameRatingDto>>.Success(list, "Đã lấy danh sách đánh giá bản đồ.");
+        return Result<List<GameRatingDto>>.Success(list, "Đã lấy danh sách đánh giá trò chơi.");
     }
 }
 

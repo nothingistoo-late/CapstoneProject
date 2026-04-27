@@ -34,12 +34,12 @@ public class DeleteMapGalleryMediaCommandHandler : IRequestHandler<DeleteMapGall
         var game = await _unitOfWork.Repository<Game>().GetQueryable()
             .FirstOrDefaultAsync(m => m.Id == request.GameId && !m.IsDeleted, cancellationToken);
         if (game == null)
-            return Result.Failure("Bản đồ không được tìm thấy.", ErrorCodeEnum.NotFound);
+            return Result.Failure("Trò chơi không được tìm thấy.", ErrorCodeEnum.NotFound);
 
         var roles = await _currentUserService.GetCurrentRolesAsync();
         var isAdminOrMod = roles.Contains(RoleEnum.Admin) || roles.Contains(RoleEnum.Moderator);
         if (game.CreatedBy != userId && !isAdminOrMod)
-            return Result.Failure("Bạn không có quyền cập nhật bản đồ này.", ErrorCodeEnum.Forbidden);
+            return Result.Failure("Bạn không có quyền cập nhật trò chơi này.", ErrorCodeEnum.Forbidden);
 
         var media = await _unitOfWork.Repository<GameMedia>().GetQueryable()
             .FirstOrDefaultAsync(m => m.Id == request.MediaId && m.GameId == request.GameId, cancellationToken);

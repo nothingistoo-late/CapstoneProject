@@ -38,7 +38,7 @@ public class StartLobbyGameCommandHandler : IRequestHandler<StartLobbyGameComman
         {
             var mapExists = await _mediator.Send(new MapExistsQuery(selectedGameId), cancellationToken);
             if (!mapExists.IsSuccess || mapExists.Data != true)
-                return Result<StartGameResponse>.Failure(mapExists.Message ?? "Bản đồ không được tìm thấy hoặc đã bị xóa. Chọn bản đồ khác.", ErrorCodeEnum.NotFound);
+                return Result<StartGameResponse>.Failure(mapExists.Message ?? "Trò chơi không được tìm thấy hoặc đã bị xóa. Chọn trò chơi khác.", ErrorCodeEnum.NotFound);
 
             var playerIds = room.Players.Keys.ToList();
             var ownershipCheck = await EnsurePlayersCanPlayGame(selectedGameId, playerIds, cancellationToken);
@@ -76,7 +76,7 @@ public class StartLobbyGameCommandHandler : IRequestHandler<StartLobbyGameComman
             .AsNoTracking()
             .FirstOrDefaultAsync(g => g.Id == gameId, cancellationToken);
         if (game == null || game.IsDeleted)
-            return (false, "Bản đồ không được tìm thấy hoặc đã bị xóa.");
+            return (false, "Trò chơi không được tìm thấy hoặc đã bị xóa.");
 
         var price = game.Price.GetValueOrDefault();
         if (price <= 0)
@@ -104,7 +104,7 @@ public class StartLobbyGameCommandHandler : IRequestHandler<StartLobbyGameComman
         {
             if (game.CreatedBy == playerId || ownedUserIds.Contains(playerId))
                 continue;
-            return (false, "Tất cả người chơi trong phòng phải sở hữu bản đồ trước khi chơi.");
+            return (false, "Tất cả người chơi trong phòng phải sở hữu trò chơi trước khi chơi.");
         }
 
         return (true, null);

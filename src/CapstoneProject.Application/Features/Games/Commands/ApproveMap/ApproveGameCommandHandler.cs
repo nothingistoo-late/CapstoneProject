@@ -35,14 +35,14 @@ public class ApproveMapCommandHandler : IRequestHandler<ApproveMapCommand, Resul
 
         var roles = await _currentUserService.GetCurrentRolesAsync();
         if (!roles.Contains(RoleEnum.Admin) && !roles.Contains(RoleEnum.Moderator))
-            return Result.Failure("Bạn không có quyền phê duyệt bản đồ. Chỉ Quản trị viên hoặc Người điều hành mới có thể thực hiện hành động này.", ErrorCodeEnum.Forbidden);
+            return Result.Failure("Bạn không có quyền phê duyệt trò chơi. Chỉ Quản trị viên hoặc Người điều hành mới có thể thực hiện hành động này.", ErrorCodeEnum.Forbidden);
 
         var mapRepo = _unitOfWork.Repository<Game>();
         var game = await mapRepo.GetQueryable().FirstOrDefaultAsync(m => m.Id == command.GameId && !m.IsDeleted, cancellationToken);
         if (game == null)
-            return Result.Failure($"Không tìm thấy bản đồ có Id: {command.GameId}. Bản đồ có thể đã bị xóa hoặc không tồn tại.", ErrorCodeEnum.NotFound);
+            return Result.Failure($"Không tìm thấy trò chơi có Id: {command.GameId}. Trò chơi có thể đã bị xóa hoặc không tồn tại.", ErrorCodeEnum.NotFound);
         if (game.GameStatus != GameStatusEnum.PendingReview)
-            return Result.Failure($"Bản đồ không thể được phê duyệt. Trạng thái dự kiến: Đang chờ xem xét. Trạng thái hiện tại: {game.GameStatus}. Chỉ những bản đồ đang chờ xem xét mới có thể được phê duyệt.", ErrorCodeEnum.InvalidOperation);
+            return Result.Failure($"Trò chơi không thể được phê duyệt. Trạng thái dự kiến: Đang chờ xem xét. Trạng thái hiện tại: {game.GameStatus}. Chỉ những trò chơi đang chờ xem xét mới có thể được phê duyệt.", ErrorCodeEnum.InvalidOperation);
 
         var normalizedReviewNote = NormalizeNote(command.ReviewNote);
         game.GameStatus = GameStatusEnum.Approved;
@@ -83,7 +83,7 @@ public class ApproveMapCommandHandler : IRequestHandler<ApproveMapCommand, Resul
             }
         }
 
-        return Result.Success("Bản đồ đã được phê duyệt thành công.");
+        return Result.Success("Trò chơi đã được phê duyệt thành công.");
     }
 
     private static string? NormalizeNote(string? note)

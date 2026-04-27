@@ -27,14 +27,14 @@ public class GetGameSolveScoreConfigQueryHandler : IRequestHandler<GetGameSolveS
 
         var roles = await _currentUserService.GetCurrentRolesAsync();
         if (!roles.Contains(RoleEnum.Admin) && !roles.Contains(RoleEnum.Moderator))
-            return Result<GameSolveScoreConfigDto>.Failure("Chỉ Quản trị viên/Người điều hành mới có thể xem cấu hình điểm giải quyết bản đồ.", ErrorCodeEnum.Forbidden);
+            return Result<GameSolveScoreConfigDto>.Failure("Chỉ Quản trị viên/Người điều hành mới có thể xem cấu hình điểm giải quyết trò chơi.", ErrorCodeEnum.Forbidden);
 
         var row = await _unitOfWork.Repository<GameSolveScoreConfig>().GetQueryable()
             .AsNoTracking()
             .FirstOrDefaultAsync(x => x.ConfigKey == GameSolveScoreConfig.DefaultConfigKey, cancellationToken);
 
         if (row == null)
-            return Result<GameSolveScoreConfigDto>.Failure("Không tìm thấy cấu hình điểm giải quyết bản đồ.", ErrorCodeEnum.NotFound);
+            return Result<GameSolveScoreConfigDto>.Failure("Không tìm thấy cấu hình điểm giải quyết trò chơi.", ErrorCodeEnum.NotFound);
 
         return Result<GameSolveScoreConfigDto>.Success(new GameSolveScoreConfigDto
         {
@@ -43,7 +43,7 @@ public class GetGameSolveScoreConfigQueryHandler : IRequestHandler<GetGameSolveS
             TimeScore = row.TimeScore,
             StepsScore = row.StepsScore,
             BlocksScore = row.BlocksScore
-        }, "Đã lấy cấu hình điểm giải bản đồ.");
+        }, "Đã lấy cấu hình điểm giải trò chơi.");
     }
 }
 

@@ -37,12 +37,12 @@ public class AddMapGalleryMediaCommandHandler : IRequestHandler<AddMapGalleryMed
         var game = await _unitOfWork.Repository<Game>().GetQueryable()
             .FirstOrDefaultAsync(m => m.Id == request.GameId && !m.IsDeleted, cancellationToken);
         if (game == null)
-            return Result<List<GameMediaItemDto>>.Failure("Bản đồ không được tìm thấy.", ErrorCodeEnum.NotFound);
+            return Result<List<GameMediaItemDto>>.Failure("Trò chơi không được tìm thấy.", ErrorCodeEnum.NotFound);
 
         var roles = await _currentUserService.GetCurrentRolesAsync();
         var isAdminOrMod = roles.Contains(RoleEnum.Admin) || roles.Contains(RoleEnum.Moderator);
         if (game.CreatedBy != userId && !isAdminOrMod)
-            return Result<List<GameMediaItemDto>>.Failure("Bạn không có quyền cập nhật bản đồ này.", ErrorCodeEnum.Forbidden);
+            return Result<List<GameMediaItemDto>>.Failure("Bạn không có quyền cập nhật trò chơi này.", ErrorCodeEnum.Forbidden);
 
         var staged = await MapGalleryMediaHelper.StageGalleryMediaAsync(
             request.GameId,

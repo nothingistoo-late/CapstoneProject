@@ -30,7 +30,7 @@ public class GetMapByIdQueryHandler : IRequestHandler<GetMapByIdQuery, Result<Ga
             .AsNoTracking()
             .FirstOrDefaultAsync(cancellationToken);
         if (requestedMap == null)
-            return Result<GameDetailDto>.Failure($"Không tìm thấy bản đồ có Id: {request.GameId}.", ErrorCodeEnum.NotFound);
+            return Result<GameDetailDto>.Failure($"Không tìm thấy trò chơi có Id: {request.GameId}.", ErrorCodeEnum.NotFound);
 
         var rootGameId = requestedMap.RootGameId ?? requestedMap.Id;
         var resolvedGameId = requestedMap.Id;
@@ -58,13 +58,13 @@ public class GetMapByIdQueryHandler : IRequestHandler<GetMapByIdQuery, Result<Ga
             .AsNoTracking()
             .FirstOrDefaultAsync(cancellationToken);
         if (game == null)
-            return Result<GameDetailDto>.Failure($"Không tìm thấy bản đồ có Id: {request.GameId}.", ErrorCodeEnum.NotFound);
+            return Result<GameDetailDto>.Failure($"Không tìm thấy trò chơi có Id: {request.GameId}.", ErrorCodeEnum.NotFound);
 
         if (game.IsDeleted)
         {
             var (isValid, userIdNullable) = await _currentUserService.IsUserValidAsync();
             if (!isValid || !userIdNullable.HasValue)
-                return Result<GameDetailDto>.Failure($"Không tìm thấy bản đồ có Id: {request.GameId}.", ErrorCodeEnum.NotFound);
+                return Result<GameDetailDto>.Failure($"Không tìm thấy trò chơi có Id: {request.GameId}.", ErrorCodeEnum.NotFound);
 
             var userId = userIdNullable.Value;
             var isAuthor = game.CreatedBy.HasValue && game.CreatedBy.Value == userId;
@@ -81,7 +81,7 @@ public class GetMapByIdQueryHandler : IRequestHandler<GetMapByIdQuery, Result<Ga
             }
 
             if (!isOwned)
-                return Result<GameDetailDto>.Failure($"Không tìm thấy bản đồ có Id: {request.GameId}.", ErrorCodeEnum.NotFound);
+                return Result<GameDetailDto>.Failure($"Không tìm thấy trò chơi có Id: {request.GameId}.", ErrorCodeEnum.NotFound);
         }
 
         var learnedTagNameMap = await _unitOfWork.Repository<Tag>().GetQueryable()
@@ -155,7 +155,7 @@ public class GetMapByIdQueryHandler : IRequestHandler<GetMapByIdQuery, Result<Ga
                 SortOrder = x.SortOrder
             }).ToList()
         };
-        return Result<GameDetailDto>.Success(dto, "Đã lấy chi tiết bản đồ.");
+        return Result<GameDetailDto>.Success(dto, "Đã lấy chi tiết trò chơi.");
     }
 
     private async Task<bool> MeetsEditorialStarsAsync(Guid userId, Game game, CancellationToken cancellationToken)
