@@ -192,6 +192,33 @@ public class CmsGameController : ControllerBase
         return StatusCode(result.GetHttpStatusCode(), result);
     }
 
+    /// <summary>Get latest game version detail by ID (moderation).</summary>
+    /// <remarks>
+    /// Returns the newest version in the same game line (draft/pending included). Admin/Moderator only.
+    ///
+    /// **Route:** id (Guid, required): Game ID.
+    ///
+    /// **Query:** includeEditorialForUser (bool, optional).
+    ///
+    /// **METHOD and path:** GET /api/cms/games/{id}/latest
+    /// </remarks>
+    [HttpGet("{id:guid}/latest")]
+    [AuthorizeRoles(nameof(RoleEnum.Admin), nameof(RoleEnum.Moderator))]
+    [ProducesResponseType(typeof(Result<GameDetailDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(Result), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(Result), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(Result), StatusCodes.Status404NotFound)]
+    [SwaggerOperation(Summary = "Get latest game version", Description = "Returns latest version in the game line for moderation (draft/pending included).", OperationId = "Cms_GetLatestMapById", Tags = new[] { "CMS - Games" })]
+    public async Task<IActionResult> GetLatestMapById(Guid id, [FromQuery] bool includeEditorialForUser = false)
+    {
+        var result = await _mediator.Send(new GetMapByIdQuery(
+            id,
+            includeEditorialForUser,
+            IncludeInactive: true,
+            PreferLatestVersion: true));
+        return StatusCode(result.GetHttpStatusCode(), result);
+    }
+
     /// <summary>Táº¡o game má»›i tá»« game nguá»“n (game gá»‘c khÃ´ng Ä‘á»•i). Author cá»§a game hoáº·c Admin/Moderator.</summary>
     [HttpPost("{id:guid}/duplicate-as-new")]
     [AuthorizeRoles(nameof(RoleEnum.Admin), nameof(RoleEnum.Moderator))]

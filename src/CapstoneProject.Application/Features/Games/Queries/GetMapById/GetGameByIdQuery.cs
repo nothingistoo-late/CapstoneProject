@@ -7,4 +7,6 @@ namespace CapstoneProject.Application.Features.Games.Queries.GetMapById;
 public record GetMapByIdQuery(
     Guid GameId,
     bool IncludeEditorialForUser = false,
-    bool IncludeInactive = false) : IRequest<Result<GameDetailDto>>;
+    bool IncludeInactive = false,
+    bool PreferLatestVersion = false,
+    bool RequireOwnershipForUnpublished = false) : IRequest<Result<GameDetailDto>>;

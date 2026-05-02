@@ -34,7 +34,20 @@ public class GetMapByIdQueryHandler : IRequestHandler<GetMapByIdQuery, Result<Ga
 
         var rootGameId = requestedMap.RootGameId ?? requestedMap.Id;
         var resolvedGameId = requestedMap.Id;
-        if (requestedMap.IsDeleted || !requestedMap.IsActiveVersion)
+        if (request.PreferLatestVersion)
+        {
+            var latestGameId = await mapRepo.GetQueryable()
+                .Where(m => !m.IsDeleted
+                            && (request.IncludeInactive || m.Status == EntityStatusEnum.Active)
+                            && (m.RootGameId ?? m.Id) == rootGameId)
+                .OrderByDescending(m => m.ContentVersion)
+                .ThenByDescending(m => m.CreatedAt)
+                .Select(m => (Guid?)m.Id)
+                .FirstOrDefaultAsync(cancellationToken);
+            if (latestGameId.HasValue)
+                resolvedGameId = latestGameId.Value;
+        }
+        else if (requestedMap.IsDeleted || !requestedMap.IsActiveVersion)
         {
             var activeGameId = await mapRepo.GetQueryable()
                 .Where(m => !m.IsDeleted
@@ -59,6 +72,19 @@ public class GetMapByIdQueryHandler : IRequestHandler<GetMapByIdQuery, Result<Ga
             .FirstOrDefaultAsync(cancellationToken);
         if (game == null)
             return Result<GameDetailDto>.Failure($"Không tìm thấy trò chơi có Id: {request.GameId}.", ErrorCodeEnum.NotFound);
+
+        if (request.RequireOwnershipForUnpublished && !game.IsPublished)
+        {
+            var (isValid, userIdNullable) = await _currentUserService.IsUserValidAsync();
+            if (!isValid || !userIdNullable.HasValue)
+                return Result<GameDetailDto>.Failure("Yêu cầu xác thực.", ErrorCodeEnum.Unauthorized);
+
+            var roles = await _currentUserService.GetCurrentRolesAsync();
+            var isAdminOrMod = roles.Contains(RoleEnum.Admin) || roles.Contains(RoleEnum.Moderator);
+            var isAuthor = game.CreatedBy.HasValue && game.CreatedBy.Value == userIdNullable.Value;
+            if (!isAuthor && !isAdminOrMod)
+                return Result<GameDetailDto>.Failure("Bạn không có quyền xem phiên bản này.", ErrorCodeEnum.Forbidden);
+        }
 
         if (game.IsDeleted)
         {
