@@ -13,13 +13,6 @@ namespace CapstoneProject.Infrastructure.Services;
 public class ComplaintPolicyService : IComplaintPolicyService
 {
     private const string OtherCategoryKey = "Other";
-    private static readonly HashSet<string> RefundableCategories = new(StringComparer.OrdinalIgnoreCase)
-    {
-        "PaymentIssue",
-        "AccessIssue",
-        "GameplayScoringIssue",
-        "TrialIssue"
-    };
 
     private readonly IUnitOfWork _unitOfWork;
     private readonly CapstoneProjectDbContext _dbContext;
@@ -128,9 +121,6 @@ public class ComplaintPolicyService : IComplaintPolicyService
     {
         if (input.ComplaintId == Guid.Empty)
             return RefundFail("ComplaintId là bắt buộc.");
-
-        if (!RefundableCategories.Contains(input.CategoryKey))
-            return RefundFail("Danh mục khiếu nại này không hỗ trợ hoàn tiền.");
 
         var complaint = await _unitOfWork.Repository<Complaint>().GetQueryable()
             .AsNoTracking()
