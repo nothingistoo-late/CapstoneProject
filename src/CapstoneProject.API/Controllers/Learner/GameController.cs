@@ -239,6 +239,42 @@ public class LearnerGameController : ControllerBase
     }
 
     /// <summary>
+    /// Get latest game version detail by ID (including draft/pending)
+    /// </summary>
+    /// <remarks>
+    /// Returns the newest version in the same game line for playtest. Requires Bearer token.
+    ///
+    /// **Route:** id (Guid, required): Game ID (any version in the line).
+    ///
+    /// **Query:**
+    /// - includeEditorialForUser (bool, optional): Include editorial when user has enough stars.
+    ///
+    /// **METHOD and path:** GET /api/learner/games/{id}/latest
+    /// </remarks>
+    /// <response code="200">Returns message and data (latest game detail).</response>
+    /// <response code="401">Unauthorized</response>
+    /// <response code="403">Forbidden (not author)</response>
+    /// <response code="404">Game not found</response>
+    /// <response code="500">Internal server error</response>
+    [HttpGet("{id:guid}/latest")]
+    [AuthorizeRoles(nameof(RoleEnum.Learner), nameof(RoleEnum.Admin), nameof(RoleEnum.Moderator))]
+    [ProducesResponseType(typeof(Result<GameDetailDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(Result<GameDetailDto>), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(Result<GameDetailDto>), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(Result<GameDetailDto>), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(Result<GameDetailDto>), StatusCodes.Status500InternalServerError)]
+    [SwaggerOperation(Summary = "Chi tiết game phiên bản mới nhất", Description = "Returns latest version in the game line for playtest (draft/pending included).", OperationId = "Learner_GetLatestMapById", Tags = new[] { "Learner - Games" })]
+    public async Task<IActionResult> GetLatestMapById(Guid id, [FromQuery] bool includeEditorialForUser = false)
+    {
+        var result = await _mediator.Send(new GetMapByIdQuery(
+            id,
+            includeEditorialForUser,
+            PreferLatestVersion: true,
+            RequireOwnershipForUnpublished: true));
+        return StatusCode(result.GetHttpStatusCode(), result);
+    }
+
+    /// <summary>
     /// Get game info only (metadata, no GameDetail / hints)
     /// </summary>
     /// <remarks>
