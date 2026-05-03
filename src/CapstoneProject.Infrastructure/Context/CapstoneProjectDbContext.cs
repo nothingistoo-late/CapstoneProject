@@ -27,6 +27,7 @@ public class CapstoneProjectDbContext : IdentityDbContext<AppUser, AppRole, Guid
     public DbSet<Tag> Tags { get; set; }
     public DbSet<GameTag> GameTags { get; set; }
     public DbSet<GameMedia> GameMedias { get; set; }
+    public DbSet<GameReviewCriterionCatalog> GameReviewCriterionCatalogs { get; set; }
 
     // QuackOrbit: Gameplay & Progress
     public DbSet<Submission> Submissions { get; set; }

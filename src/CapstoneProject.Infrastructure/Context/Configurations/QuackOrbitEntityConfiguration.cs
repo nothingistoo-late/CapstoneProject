@@ -19,6 +19,7 @@ public static class QuackOrbitEntityConfiguration
         builder.Entity<Hint>(ConfigureHint);
         builder.Entity<Tag>(ConfigureTag);
         builder.Entity<GameTag>(ConfigureGameTag);
+        builder.Entity<GameReviewCriterionCatalog>(ConfigureGameReviewCriterionCatalog);
         builder.Entity<Submission>(ConfigureSubmission);
         builder.Entity<ExecutionsResult>(ConfigureExecutionsResult);
         builder.Entity<UserGameResult>(ConfigureUserGameResult);
@@ -303,6 +304,18 @@ public static class QuackOrbitEntityConfiguration
         e.Property(x => x.DisplayName).HasMaxLength(150);
         e.HasIndex(x => x.CategoryKey).IsUnique();
         e.HasIndex(x => new { x.IsEnabled, x.SortOrder });
+    }
+
+    static void ConfigureGameReviewCriterionCatalog(EntityTypeBuilder<GameReviewCriterionCatalog> e)
+    {
+        e.ToTable("GameReviewCriterionCatalogs");
+        e.Property(x => x.CriterionKey).HasMaxLength(120).IsRequired();
+        e.Property(x => x.SectionKey).HasMaxLength(80).IsRequired();
+        e.Property(x => x.SectionTitle).HasMaxLength(200).IsRequired();
+        e.Property(x => x.Label).HasMaxLength(500).IsRequired();
+        e.HasIndex(x => x.CriterionKey).IsUnique();
+        e.HasIndex(x => x.SortOrder);
+        e.HasIndex(x => new { x.SectionKey, x.SortOrder });
     }
 
     static void ConfigureComplaintPolicyRuleConfig(EntityTypeBuilder<ComplaintPolicyRuleConfig> e)

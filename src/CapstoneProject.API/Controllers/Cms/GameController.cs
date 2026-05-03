@@ -7,9 +7,12 @@ using CapstoneProject.Application.Features.Games.Commands.BatchApproveMaps;
 using CapstoneProject.Application.Features.Games.Commands.BatchPublishMaps;
 using CapstoneProject.Application.Features.Games.Commands.BatchRejectMaps;
 using CapstoneProject.Application.Features.Games.Commands.CreateMap;
+using CapstoneProject.Application.Features.Games.Commands.CreateGameReviewCriterion;
 using CapstoneProject.Application.Features.Games.Commands.CreateTag;
-using CapstoneProject.Application.Features.Games.Commands.DeleteMap;
+using CapstoneProject.Application.Features.Games.Commands.DeleteGameReviewCriterion;
+using CapstoneProject.Application.Features.Games.Commands.UpdateGameReviewCriterion;
 using CapstoneProject.Application.Features.Games.Commands.DuplicateMapAsNew;
+using CapstoneProject.Application.Features.Games.Commands.DeleteMap;
 using CapstoneProject.Application.Features.Games.Commands.DeleteTag;
 using CapstoneProject.Application.Features.Games.Commands.PublishMap;
 using CapstoneProject.Application.Features.Games.Commands.RejectMap;
@@ -25,6 +28,7 @@ using CapstoneProject.Application.Features.Games.Queries.GetDeletedMaps;
 using CapstoneProject.Application.Features.Games.Queries.GetLockedMaps;
 using CapstoneProject.Application.Features.Games.Queries.GetMaps;
 using CapstoneProject.Application.Features.Games.Queries.GetTags;
+using CapstoneProject.Application.Features.Games.Queries.GetGameReviewCriteria;
 using CapstoneProject.Application.Common.Enums;
 using System.Text.Json;
 using BatchMapResultDto = CapstoneProject.Application.Features.Games.Commands.BatchApproveMaps.BatchMapResultDto;
@@ -164,6 +168,56 @@ public class CmsGameController : ControllerBase
     public async Task<IActionResult> GetAllMaps([FromQuery] GetAllMapsForAdminQuery query)
     {
         var result = await _mediator.Send(query);
+        return StatusCode(result.GetHttpStatusCode(), result);
+    }
+
+    /// <summary>List game review checklist criteria (moderation).</summary>
+    [HttpGet("review-criteria")]
+    [AuthorizeRoles(nameof(RoleEnum.Admin), nameof(RoleEnum.Moderator))]
+    [ProducesResponseType(typeof(Result<List<GameReviewCriterionDto>>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(Result), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(Result), StatusCodes.Status403Forbidden)]
+    [SwaggerOperation(Summary = "Get game review criteria", OperationId = "Cms_GetGameReviewCriteria", Tags = new[] { "CMS - Games" })]
+    public async Task<IActionResult> GetGameReviewCriteria()
+    {
+        var result = await _mediator.Send(new GetGameReviewCriteriaQuery());
+        return StatusCode(result.GetHttpStatusCode(), result);
+    }
+
+    /// <summary>Create game review criterion (Admin only).</summary>
+    [HttpPost("review-criteria")]
+    [AuthorizeRoles(nameof(RoleEnum.Admin))]
+    [ProducesResponseType(typeof(Result<GameReviewCriterionDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(Result<GameReviewCriterionDto>), StatusCodes.Status400BadRequest)]
+    [SwaggerOperation(Summary = "Create game review criterion", OperationId = "Cms_CreateGameReviewCriterion", Tags = new[] { "CMS - Games" })]
+    public async Task<IActionResult> CreateGameReviewCriterion([FromBody] CreateGameReviewCriterionRequest request)
+    {
+        var result = await _mediator.Send(new CreateGameReviewCriterionCommand(request));
+        return StatusCode(result.GetHttpStatusCode(), result);
+    }
+
+    /// <summary>Update game review criterion (Admin only).</summary>
+    [HttpPut("review-criteria/{id:guid}")]
+    [AuthorizeRoles(nameof(RoleEnum.Admin))]
+    [ProducesResponseType(typeof(Result<GameReviewCriterionDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(Result<GameReviewCriterionDto>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(Result<GameReviewCriterionDto>), StatusCodes.Status404NotFound)]
+    [SwaggerOperation(Summary = "Update game review criterion", OperationId = "Cms_UpdateGameReviewCriterion", Tags = new[] { "CMS - Games" })]
+    public async Task<IActionResult> UpdateGameReviewCriterion(Guid id, [FromBody] UpdateGameReviewCriterionRequest request)
+    {
+        var result = await _mediator.Send(new UpdateGameReviewCriterionCommand(id, request));
+        return StatusCode(result.GetHttpStatusCode(), result);
+    }
+
+    /// <summary>Delete game review criterion (Admin only, soft delete).</summary>
+    [HttpDelete("review-criteria/{id:guid}")]
+    [AuthorizeRoles(nameof(RoleEnum.Admin))]
+    [ProducesResponseType(typeof(Result), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(Result), StatusCodes.Status404NotFound)]
+    [SwaggerOperation(Summary = "Delete game review criterion", OperationId = "Cms_DeleteGameReviewCriterion", Tags = new[] { "CMS - Games" })]
+    public async Task<IActionResult> DeleteGameReviewCriterion(Guid id)
+    {
+        var result = await _mediator.Send(new DeleteGameReviewCriterionCommand(id));
         return StatusCode(result.GetHttpStatusCode(), result);
     }
 
