@@ -23,16 +23,13 @@ public class GetComplaintsQueryHandler : IRequestHandler<GetComplaintsQuery, Res
 
     private readonly IUnitOfWork _unitOfWork;
     private readonly ICurrentUserService _currentUserService;
-    private readonly IComplaintContextResolver _complaintContextResolver;
 
     public GetComplaintsQueryHandler(
         IUnitOfWork unitOfWork,
-        ICurrentUserService currentUserService,
-        IComplaintContextResolver complaintContextResolver)
+        ICurrentUserService currentUserService)
     {
         _unitOfWork = unitOfWork;
         _currentUserService = currentUserService;
-        _complaintContextResolver = complaintContextResolver;
     }
 
     public async Task<Result<PaginationResult<ComplaintListItemDto>>> Handle(GetComplaintsQuery request, CancellationToken cancellationToken)
@@ -45,11 +42,17 @@ public class GetComplaintsQueryHandler : IRequestHandler<GetComplaintsQuery, Res
         if (!roles.Contains(RoleEnum.Admin) && !roles.Contains(RoleEnum.Moderator))
             return Result<PaginationResult<ComplaintListItemDto>>.Failure("You do not have permission to view complaints. Only Admin or Moderator can access this list.", ErrorCodeEnum.Forbidden);
 
-        var query = _unitOfWork.Repository<Complaint>().GetQueryable()
-            .Where(c => !c.IsDeleted);
+        var scopedQuery = ApplyScopeFilters(request);
 
-        var dateFrom = VietnamDateTime.ToDbDateTime(request.DateFrom);
-        var dateTo = VietnamDateTime.ToDbDateTime(request.DateTo);
+        var pendingInScope = await scopedQuery
+            .Where(c => !SolvedStatusGroup.Contains(c.ComplaintStatus))
+            .CountAsync(cancellationToken);
+        var solvedInScope = await scopedQuery
+            .Where(c => SolvedStatusGroup.Contains(c.ComplaintStatus))
+            .CountAsync(cancellationToken);
+        var totalInScope = pendingInScope + solvedInScope;
+
+        var query = scopedQuery;
 
         if (!string.IsNullOrWhiteSpace(request.StatusGroup))
         {
@@ -61,20 +64,6 @@ public class GetComplaintsQueryHandler : IRequestHandler<GetComplaintsQuery, Res
         }
         else if (request.Status.HasValue)
             query = query.Where(c => c.ComplaintStatus == request.Status.Value);
-        if (request.UserId.HasValue)
-            query = query.Where(c => c.UserId == request.UserId.Value);
-        if (dateFrom.HasValue)
-            query = query.Where(c => c.CreatedAt >= dateFrom.Value);
-        if (dateTo.HasValue)
-            query = query.Where(c => c.CreatedAt != null && c.CreatedAt.Value <= dateTo.Value);
-        if (!string.IsNullOrWhiteSpace(request.Keyword))
-        {
-            var keyword = request.Keyword.Trim();
-            query = query.Where(c =>
-                c.Subject.Contains(keyword) ||
-                c.Category.Contains(keyword) ||
-                c.Description.Contains(keyword));
-        }
 
         var total = await query.CountAsync(cancellationToken);
         var pageNumber = Math.Max(1, request.PageNumber);
@@ -107,12 +96,7 @@ public class GetComplaintsQueryHandler : IRequestHandler<GetComplaintsQuery, Res
                 ContextKey = complaint.ContextKey,
                 ContextDataJson = complaint.ContextDataJson,
                 OccurredAt = complaint.OccurredAt,
-                ContextResolved = await _complaintContextResolver.ResolveAsync(
-                    complaint.ContextType,
-                    complaint.ContextId,
-                    complaint.ContextDataJson,
-                    complaint.UserId,
-                    cancellationToken),
+                ContextResolved = null,
                 CreatedAt = complaint.CreatedAt,
                 ResolvedAt = complaint.ResolvedAt,
                 RefundProcessed = complaint.RefundProcessed,
@@ -123,8 +107,38 @@ public class GetComplaintsQueryHandler : IRequestHandler<GetComplaintsQuery, Res
         }
 
         var paginated = PaginationResult<ComplaintListItemDto>.Success(list, pageNumber, pageSize, total);
+        paginated.ComplaintScopeStats = new ComplaintListScopeStatsDto
+        {
+            TotalInScope = totalInScope,
+            PendingInScope = pendingInScope,
+            SolvedInScope = solvedInScope
+        };
         return Result<PaginationResult<ComplaintListItemDto>>.Success(paginated, "Đã lấy danh sách khiếu nại.");
     }
+
+    private IQueryable<Complaint> ApplyScopeFilters(GetComplaintsQuery request)
+    {
+        var query = _unitOfWork.Repository<Complaint>().GetQueryable()
+            .Where(c => !c.IsDeleted);
+
+        var dateFrom = VietnamDateTime.ToDbDateTime(request.DateFrom);
+        var dateTo = VietnamDateTime.ToDbDateTime(request.DateTo);
+
+        if (request.UserId.HasValue)
+            query = query.Where(c => c.UserId == request.UserId.Value);
+        if (dateFrom.HasValue)
+            query = query.Where(c => c.CreatedAt >= dateFrom.Value);
+        if (dateTo.HasValue)
+            query = query.Where(c => c.CreatedAt != null && c.CreatedAt.Value <= dateTo.Value);
+        if (!string.IsNullOrWhiteSpace(request.Keyword))
+        {
+            var keyword = request.Keyword.Trim();
+            query = query.Where(c =>
+                c.Subject.Contains(keyword) ||
+                c.Category.Contains(keyword) ||
+                c.Description.Contains(keyword));
+        }
+
+        return query;
+    }
 }
-
-

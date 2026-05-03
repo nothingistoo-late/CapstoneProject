@@ -21,6 +21,12 @@ public class PaginationResult<T>
     public bool HasNext => CurrentPage < TotalPages;
     [JsonPropertyName("items")]
     public IEnumerable<T> Items { get; set; } = new List<T>();
+
+    /// <summary>Optional; only populated by CMS complaints list for dashboard cards.</summary>
+    [JsonPropertyName("complaintScopeStats")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public ComplaintListScopeStatsDto? ComplaintScopeStats { get; set; }
+
     [JsonPropertyName("isSuccess")]
     public bool IsSuccess { get; set; } 
     [JsonPropertyName("message")]
