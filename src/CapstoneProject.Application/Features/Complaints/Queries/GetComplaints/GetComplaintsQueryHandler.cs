@@ -12,6 +12,15 @@ namespace CapstoneProject.Application.Features.Complaints.Queries.GetComplaints;
 
 public class GetComplaintsQueryHandler : IRequestHandler<GetComplaintsQuery, Result<PaginationResult<ComplaintListItemDto>>>
 {
+    /// <summary>Matches CMS "solved" chip (terminal / closed outcomes).</summary>
+    private static readonly ComplaintStatusEnum[] SolvedStatusGroup =
+    {
+        ComplaintStatusEnum.Resolved,
+        ComplaintStatusEnum.ResolvedRefund,
+        ComplaintStatusEnum.ResolvedReject,
+        ComplaintStatusEnum.Closed
+    };
+
     private readonly IUnitOfWork _unitOfWork;
     private readonly ICurrentUserService _currentUserService;
     private readonly IComplaintContextResolver _complaintContextResolver;
@@ -42,7 +51,15 @@ public class GetComplaintsQueryHandler : IRequestHandler<GetComplaintsQuery, Res
         var dateFrom = VietnamDateTime.ToDbDateTime(request.DateFrom);
         var dateTo = VietnamDateTime.ToDbDateTime(request.DateTo);
 
-        if (request.Status.HasValue)
+        if (!string.IsNullOrWhiteSpace(request.StatusGroup))
+        {
+            var g = request.StatusGroup.Trim();
+            if (string.Equals(g, "solved", StringComparison.OrdinalIgnoreCase))
+                query = query.Where(c => SolvedStatusGroup.Contains(c.ComplaintStatus));
+            else if (string.Equals(g, "pending", StringComparison.OrdinalIgnoreCase))
+                query = query.Where(c => !SolvedStatusGroup.Contains(c.ComplaintStatus));
+        }
+        else if (request.Status.HasValue)
             query = query.Where(c => c.ComplaintStatus == request.Status.Value);
         if (request.UserId.HasValue)
             query = query.Where(c => c.UserId == request.UserId.Value);

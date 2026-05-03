@@ -57,9 +57,9 @@ public class CmsComplaintController : ControllerBase
     [ProducesResponseType(typeof(Result), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(Result), StatusCodes.Status403Forbidden)]
     [SwaggerOperation(Summary = "Complaints list", Description = "Paginated list of complaints. Filters: status, userId, dateFrom, dateTo, keyword.", OperationId = "Cms_GetComplaints", Tags = new[] { "CMS - Complaints" })]
-    public async Task<IActionResult> GetComplaints([FromQuery] CapstoneProject.Domain.Enums.ComplaintStatusEnum? status, [FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 20, [FromQuery] Guid? userId = null, [FromQuery] DateTime? dateFrom = null, [FromQuery] DateTime? dateTo = null, [FromQuery] string? keyword = null)
+    public async Task<IActionResult> GetComplaints([FromQuery] CapstoneProject.Domain.Enums.ComplaintStatusEnum? status, [FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 20, [FromQuery] Guid? userId = null, [FromQuery] DateTime? dateFrom = null, [FromQuery] DateTime? dateTo = null, [FromQuery] string? keyword = null, [FromQuery] string? statusGroup = null)
     {
-        var result = await _mediator.Send(new GetComplaintsQuery(status, pageNumber, pageSize, userId, dateFrom, dateTo, keyword));
+        var result = await _mediator.Send(new GetComplaintsQuery(status, pageNumber, pageSize, userId, dateFrom, dateTo, keyword, statusGroup));
         return StatusCode(result.GetHttpStatusCode(), result);
     }
 

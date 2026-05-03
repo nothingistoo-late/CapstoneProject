@@ -12,7 +12,9 @@ public record GetComplaintsQuery(
     Guid? UserId = null,
     DateTime? DateFrom = null,
     DateTime? DateTo = null,
-    string? Keyword = null) : IRequest<Result<PaginationResult<ComplaintListItemDto>>>;
+    string? Keyword = null,
+    /// <summary>Optional CMS filter: "pending" (not terminal/solved) or "solved" (terminal outcomes). Ignores <see cref="Status"/> when set.</summary>
+    string? StatusGroup = null) : IRequest<Result<PaginationResult<ComplaintListItemDto>>>;
 
 public class ComplaintListItemDto
 {
