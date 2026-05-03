@@ -10,6 +10,7 @@ using CapstoneProject.Application.Commons.Interfaces;
 using CapstoneProject.Application.Features.Gameplay.Commands.ValidateSolution;
 using CapstoneProject.Application.Features.Lobby.Commands.SetLobbyRoomLock;
 using CapstoneProject.Application.Features.Lobby.Models;
+using CapstoneProject.Application.Features.Lobby.Queries.GetLobbyRooms;
 using CapstoneProject.Application.Features.Games.Queries.MapExists;
 using CapstoneProject.Domain.Entities;
 using CapstoneProject.Domain.Enums;
@@ -712,35 +713,53 @@ public class GameLobbyHub : Hub
         await Clients.Group(RoomGroup(roomId)).SendAsync("RoomChatMessage", message);
     }
 
-    private async Task SendLobbyRoomListToClient(string connectionId)
+    /// <summary>
+    /// Same enrichment as GET /api/learner/lobby/rooms (host display name, game title).
+    /// </summary>
+    private async Task<List<object>> BuildLobbyRoomListSignalRPayloadAsync(CancellationToken cancellationToken = default)
     {
-        var list = _roomManager.GetLobbyRooms().Select(r => new
+        var result = await _mediator.Send(new GetLobbyRoomsQuery(), cancellationToken);
+        if (result.IsSuccess && result.Data != null)
+        {
+            return result.Data.Select(r => (object)new
+            {
+                r.RoomId,
+                r.RoomCode,
+                r.HostId,
+                r.HostName,
+                r.CurrentPlayerCount,
+                r.MaxPlayers,
+                Status = r.Status.ToString(),
+                r.IsLocked,
+                r.SelectedGameId,
+                r.SelectedGameTitle
+            }).ToList();
+        }
+
+        return _roomManager.GetLobbyRooms().Select(r => (object)new
         {
             r.RoomId,
             r.RoomCode,
             r.HostId,
+            HostName = (string?)null,
             r.CurrentPlayerCount,
             r.MaxPlayers,
             Status = r.Status.ToString(),
             r.IsLocked,
-            r.SelectedGameId
+            r.SelectedGameId,
+            SelectedGameTitle = (string?)null
         }).ToList();
+    }
+
+    private async Task SendLobbyRoomListToClient(string connectionId)
+    {
+        var list = await BuildLobbyRoomListSignalRPayloadAsync(Context.ConnectionAborted);
         await Clients.Client(connectionId).SendAsync("LobbyRoomList", list);
     }
 
     private async Task BroadcastLobbyRoomList()
     {
-        var list = _roomManager.GetLobbyRooms().Select(r => new
-        {
-            r.RoomId,
-            r.RoomCode,
-            r.HostId,
-            r.CurrentPlayerCount,
-            r.MaxPlayers,
-            Status = r.Status.ToString(),
-            r.IsLocked,
-            r.SelectedGameId
-        }).ToList();
+        var list = await BuildLobbyRoomListSignalRPayloadAsync(Context.ConnectionAborted);
         await Clients.Group(LobbyGroupName).SendAsync("LobbyRoomList", list);
     }
 
