@@ -23,10 +23,16 @@ public class GetMapByIdQueryHandler : IRequestHandler<GetMapByIdQuery, Result<Ga
 
     public async Task<Result<GameDetailDto>> Handle(GetMapByIdQuery request, CancellationToken cancellationToken)
     {
+        var (isValid, userIdNullable) = await _currentUserService.IsUserValidAsync();
+        var userId = isValid && userIdNullable.HasValue ? userIdNullable.Value : (Guid?)null;
+        var allowInactiveForUser = userId.HasValue;
+
         var mapRepo = _unitOfWork.Repository<Game>();
         var requestedMap = await mapRepo.GetQueryable()
             .Where(m => m.Id == request.GameId
-                        && (request.IncludeInactive || m.Status == EntityStatusEnum.Active))
+                        && (request.IncludeInactive
+                            || m.Status == EntityStatusEnum.Active
+                            || (allowInactiveForUser && m.CreatedBy == userId)))
             .AsNoTracking()
             .FirstOrDefaultAsync(cancellationToken);
         if (requestedMap == null)
@@ -38,7 +44,9 @@ public class GetMapByIdQueryHandler : IRequestHandler<GetMapByIdQuery, Result<Ga
         {
             var latestGameId = await mapRepo.GetQueryable()
                 .Where(m => !m.IsDeleted
-                            && (request.IncludeInactive || m.Status == EntityStatusEnum.Active)
+                            && (request.IncludeInactive
+                                || m.Status == EntityStatusEnum.Active
+                                || (allowInactiveForUser && m.CreatedBy == userId))
                             && (m.RootGameId ?? m.Id) == rootGameId)
                 .OrderByDescending(m => m.ContentVersion)
                 .ThenByDescending(m => m.CreatedAt)
@@ -63,7 +71,9 @@ public class GetMapByIdQueryHandler : IRequestHandler<GetMapByIdQuery, Result<Ga
 
         var game = await mapRepo.GetQueryable()
             .Where(m => m.Id == resolvedGameId
-                        && (request.IncludeInactive || m.Status == EntityStatusEnum.Active))
+                        && (request.IncludeInactive
+                            || m.Status == EntityStatusEnum.Active
+                            || (allowInactiveForUser && m.CreatedBy == userId)))
             .Include(m => m.GameDetails).ThenInclude(d => d.Hints)
             .Include(m => m.GameMedias)
             .Include(m => m.GameTags).ThenInclude(mt => mt.Tag)
@@ -75,35 +85,34 @@ public class GetMapByIdQueryHandler : IRequestHandler<GetMapByIdQuery, Result<Ga
 
         if (request.RequireOwnershipForUnpublished && !game.IsPublished)
         {
-            var (isValid, userIdNullable) = await _currentUserService.IsUserValidAsync();
             if (!isValid || !userIdNullable.HasValue)
                 return Result<GameDetailDto>.Failure("Yêu cầu xác thực.", ErrorCodeEnum.Unauthorized);
 
             var roles = await _currentUserService.GetCurrentRolesAsync();
             var isAdminOrMod = roles.Contains(RoleEnum.Admin) || roles.Contains(RoleEnum.Moderator);
-            var isAuthor = game.CreatedBy.HasValue && game.CreatedBy.Value == userIdNullable.Value;
+            var currentUserId = userIdNullable.Value;
+            var isAuthor = game.CreatedBy.HasValue && game.CreatedBy.Value == currentUserId;
             if (!isAuthor && !isAdminOrMod)
                 return Result<GameDetailDto>.Failure("Bạn không có quyền xem phiên bản này.", ErrorCodeEnum.Forbidden);
         }
 
         if (game.IsDeleted)
         {
-            var (isValid, userIdNullable) = await _currentUserService.IsUserValidAsync();
             if (!isValid || !userIdNullable.HasValue)
                 return Result<GameDetailDto>.Failure($"Không tìm thấy trò chơi có Id: {request.GameId}.", ErrorCodeEnum.NotFound);
 
-            var userId = userIdNullable.Value;
-            var isAuthor = game.CreatedBy.HasValue && game.CreatedBy.Value == userId;
+            var currentUserId = userIdNullable.Value;
+            var isAuthor = game.CreatedBy.HasValue && game.CreatedBy.Value == currentUserId;
             var isOwned = isAuthor;
             if (!isOwned)
             {
                 var purchased = await _unitOfWork.Repository<PaymentRecord>().GetQueryable()
-                    .AnyAsync(p => !p.IsDeleted && p.UserId == userId && p.GameId == game.Id && p.PaymentStatus == PaymentStatusEnum.Completed, cancellationToken);
+                    .AnyAsync(p => !p.IsDeleted && p.UserId == currentUserId && p.GameId == game.Id && p.PaymentStatus == PaymentStatusEnum.Completed, cancellationToken);
                 if (purchased)
                     isOwned = true;
                 else
                     isOwned = await _unitOfWork.Repository<MyGame>().GetQueryable()
-                        .AnyAsync(mm => !mm.IsDeleted && mm.UserId == userId && mm.GameId == game.Id, cancellationToken);
+                        .AnyAsync(mm => !mm.IsDeleted && mm.UserId == currentUserId && mm.GameId == game.Id, cancellationToken);
             }
 
             if (!isOwned)
@@ -117,7 +126,6 @@ public class GetMapByIdQueryHandler : IRequestHandler<GetMapByIdQuery, Result<Ga
         bool showEditorial = false;
         if (request.IncludeEditorialForUser)
         {
-            var (isValid, userIdNullable) = await _currentUserService.IsUserValidAsync();
             if (isValid && userIdNullable.HasValue)
             {
                 showEditorial = await MeetsEditorialStarsAsync(
