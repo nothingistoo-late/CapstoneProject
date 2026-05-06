@@ -56,6 +56,12 @@ public class GetCmsRevenueOverviewQueryHandler : IRequestHandler<GetCmsRevenueOv
         var from = NormalizeTimestamp(request.From ?? now.AddDays(-30));
         var to = NormalizeTimestamp(request.To ?? now);
 
+        var exchangeRate = await _unitOfWork.Repository<ExchangeRate>().GetQueryable()
+            .Where(er => !er.IsDeleted && er.IsActive && er.FromCurrency == "OrbitCoin" && er.ToCurrency == "VND")
+            .OrderByDescending(er => er.CreatedAt ?? DateTime.MinValue)
+            .Select(er => (decimal?)er.Rate)
+            .FirstOrDefaultAsync(cancellationToken) ?? 1m;
+
         var query = _unitOfWork.Repository<PaymentRecord>()
             .GetQueryable()
             .Where(pr => !pr.IsDeleted
@@ -68,29 +74,41 @@ public class GetCmsRevenueOverviewQueryHandler : IRequestHandler<GetCmsRevenueOv
             .Select(pr => new
             {
                 PaidAt = pr.PaidAt!.Value,
-                AmountVnd = pr.AmountVnd ?? 0L
+                pr.Amount,
+                pr.AmountVnd,
+                IsPackage = pr.PackageId != null
             })
             .ToListAsync(cancellationToken);
 
-        var grossRevenue = data.Sum(x => x.AmountVnd);
-        var platformFee = (long)Math.Round(grossRevenue * PlatformFeeRate, MidpointRounding.AwayFromZero);
-        var creatorPayout = grossRevenue - platformFee;
+        var normalized = data.Select(x => new
+        {
+            x.PaidAt,
+            AmountVnd = x.AmountVnd ?? (long)Math.Round(x.Amount * exchangeRate, MidpointRounding.AwayFromZero),
+            x.IsPackage
+        }).ToList();
 
-        var trend = BuildTrend(data.Select(x => new RevenueRawRow(x.PaidAt, x.AmountVnd)).ToList(), request.GroupBy);
+        var grossRevenue = normalized.Sum(x => x.AmountVnd);
+        var gameRevenue = normalized.Where(x => !x.IsPackage).Sum(x => x.AmountVnd);
+        var packageRevenue = normalized.Where(x => x.IsPackage).Sum(x => x.AmountVnd);
+        var platformFee = (long)Math.Round(gameRevenue * PlatformFeeRate, MidpointRounding.AwayFromZero);
+        var creatorPayout = gameRevenue - platformFee;
+        var netPlatformRevenue = platformFee + packageRevenue;
+
+        var trend = BuildTrend(normalized.Select(x => new RevenueRawRow(x.PaidAt, x.AmountVnd, x.IsPackage)).ToList(), request.GroupBy);
         var result = new CmsRevenueOverviewDto
         {
             GrossRevenueVnd = grossRevenue,
             PlatformFeeVnd = platformFee,
             CreatorPayoutVnd = creatorPayout,
-            NetPlatformRevenueVnd = platformFee,
-            TotalTransactions = data.Count,
+            NetPlatformRevenueVnd = netPlatformRevenue,
+            TotalTransactions = normalized.Count,
             Trend = trend
         };
 
         return Result<CmsRevenueOverviewDto>.Success(result, "Đã lấy tổng quan doanh thu.");
     }
 
-    private sealed record RevenueRawRow(DateTime PaidAt, long AmountVnd);
+    private sealed record RevenueRawRow(DateTime PaidAt, long AmountVnd, bool IsPackage);
 
     private static DateTime NormalizeTimestamp(DateTime input)
         => input.Kind == DateTimeKind.Unspecified ? input : DateTime.SpecifyKind(input, DateTimeKind.Unspecified);
@@ -101,11 +119,11 @@ public class GetCmsRevenueOverviewQueryHandler : IRequestHandler<GetCmsRevenueOv
         {
             "year" => rows.GroupBy(r => r.PaidAt.Year)
                 .OrderBy(g => g.Key)
-                .Select(g => BuildPoint(g.Key.ToString(), g.Sum(x => x.AmountVnd), g.Count()))
+                .Select(g => BuildPoint(g.Key.ToString(), g.Sum(x => x.AmountVnd), g.Count(), g.Where(x => x.IsPackage).Sum(x => x.AmountVnd)))
                 .ToList(),
             "month" => rows.GroupBy(r => new { r.PaidAt.Year, r.PaidAt.Month })
                 .OrderBy(g => g.Key.Year).ThenBy(g => g.Key.Month)
-                .Select(g => BuildPoint($"{g.Key.Year}-{g.Key.Month:D2}", g.Sum(x => x.AmountVnd), g.Count()))
+                .Select(g => BuildPoint($"{g.Key.Year}-{g.Key.Month:D2}", g.Sum(x => x.AmountVnd), g.Count(), g.Where(x => x.IsPackage).Sum(x => x.AmountVnd)))
                 .ToList(),
             "week" => rows.GroupBy(r =>
                 {
@@ -115,24 +133,26 @@ public class GetCmsRevenueOverviewQueryHandler : IRequestHandler<GetCmsRevenueOv
                     return date.AddDays(-diff);
                 })
                 .OrderBy(g => g.Key)
-                .Select(g => BuildPoint(g.Key.ToString("yyyy-MM-dd"), g.Sum(x => x.AmountVnd), g.Count()))
+                .Select(g => BuildPoint(g.Key.ToString("yyyy-MM-dd"), g.Sum(x => x.AmountVnd), g.Count(), g.Where(x => x.IsPackage).Sum(x => x.AmountVnd)))
                 .ToList(),
             _ => rows.GroupBy(r => DateOnly.FromDateTime(r.PaidAt))
                 .OrderBy(g => g.Key)
-                .Select(g => BuildPoint(g.Key.ToString("yyyy-MM-dd"), g.Sum(x => x.AmountVnd), g.Count()))
+                .Select(g => BuildPoint(g.Key.ToString("yyyy-MM-dd"), g.Sum(x => x.AmountVnd), g.Count(), g.Where(x => x.IsPackage).Sum(x => x.AmountVnd)))
                 .ToList()
         };
     }
 
-    private static CmsRevenuePointDto BuildPoint(string period, long grossRevenue, int transactionCount)
+    private static CmsRevenuePointDto BuildPoint(string period, long grossRevenue, int transactionCount, long packageRevenue)
     {
-        var fee = (long)Math.Round(grossRevenue * PlatformFeeRate, MidpointRounding.AwayFromZero);
+        var gameRevenue = grossRevenue - packageRevenue;
+        var fee = (long)Math.Round(gameRevenue * PlatformFeeRate, MidpointRounding.AwayFromZero);
+        var netPlatformRevenue = fee + packageRevenue;
         return new CmsRevenuePointDto
         {
             Period = period,
             GrossRevenueVnd = grossRevenue,
             PlatformFeeVnd = fee,
-            NetPlatformRevenueVnd = fee,
+            NetPlatformRevenueVnd = netPlatformRevenue,
             TransactionCount = transactionCount
         };
     }

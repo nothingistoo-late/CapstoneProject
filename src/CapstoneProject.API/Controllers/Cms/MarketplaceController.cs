@@ -5,6 +5,7 @@ using CapstoneProject.Application.Features.Marketplace.Commands.DeletePackage;
 using CapstoneProject.Application.Features.Marketplace.Commands.UpdatePackage;
 using CapstoneProject.Application.Features.Marketplace.Queries.ExportCmsRevenueReport;
 using CapstoneProject.Application.Features.Marketplace.Queries.ExportCmsTransactionsReport;
+using CapstoneProject.Application.Features.Marketplace.Queries.GetCmsEscrowPendingTransactions;
 using CapstoneProject.Application.Features.Marketplace.Queries.GetCmsMarketplaceTransactions;
 using CapstoneProject.Application.Features.Marketplace.Queries.GetCmsOrbitCoinInsights;
 using CapstoneProject.Application.Features.Marketplace.Queries.GetCmsOrbitCoinTransactions;
@@ -237,6 +238,23 @@ public class CmsMarketplaceController : ControllerBase
         [FromQuery] string? search = null)
     {
         var result = await _mediator.Send(new GetCmsOrbitCoinTransactionsQuery(pageNumber, pageSize, from, to, transactionType, search));
+        return StatusCode(result.GetHttpStatusCode(), result);
+    }
+
+    [HttpGet("transactions/escrow/pending")]
+    [AuthorizeRoles(nameof(RoleEnum.Admin))]
+    [ProducesResponseType(typeof(Result<CmsEscrowPendingResultDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(Result), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(Result), StatusCodes.Status403Forbidden)]
+    [SwaggerOperation(Summary = "Danh sách escrow pending", Description = "Tr? v? các giao d?ch escrow ?ang ch? trong toàn h? th?ng.", OperationId = "Cms_GetPendingEscrowTransactions", Tags = new[] { "CMS - Marketplace" })]
+    public async Task<IActionResult> GetPendingEscrowTransactions(
+        [FromQuery] int pageNumber = 1,
+        [FromQuery] int pageSize = 20,
+        [FromQuery] DateTime? from = null,
+        [FromQuery] DateTime? to = null,
+        [FromQuery] string? search = null)
+    {
+        var result = await _mediator.Send(new GetCmsEscrowPendingTransactionsQuery(pageNumber, pageSize, from, to, search));
         return StatusCode(result.GetHttpStatusCode(), result);
     }
 

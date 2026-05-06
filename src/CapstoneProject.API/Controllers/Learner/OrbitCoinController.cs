@@ -61,9 +61,9 @@ public class LearnerOrbitCoinController : ControllerBase
     /// </remarks>
     [HttpGet("escrow/pending")]
     [AuthorizeRoles(nameof(RoleEnum.Learner), nameof(RoleEnum.Admin), nameof(RoleEnum.Moderator))]
-    [ProducesResponseType(typeof(Result<PaginationResult<EscrowTransactionDto>>), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(Result<PaginationResult<EscrowTransactionDto>>), StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(typeof(Result<PaginationResult<EscrowTransactionDto>>), StatusCodes.Status500InternalServerError)]
+    [ProducesResponseType(typeof(Result<EscrowPendingResultDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(Result<EscrowPendingResultDto>), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(Result<EscrowPendingResultDto>), StatusCodes.Status500InternalServerError)]
     [SwaggerOperation(Summary = "Danh sách giao dịch escrow đang chờ", Description = "Trả về các giao dịch escrow Pending cho game do user tạo.", OperationId = "Learner_GetPendingEscrowTransactions", Tags = new[] { "Learner - OrbitCoin" })]
     public async Task<IActionResult> GetPendingEscrowTransactions(
         [FromQuery] int pageNumber = 1,

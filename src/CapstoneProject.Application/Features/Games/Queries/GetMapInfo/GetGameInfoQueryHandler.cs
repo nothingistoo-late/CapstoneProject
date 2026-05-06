@@ -23,8 +23,13 @@ public class GetMapInfoQueryHandler : IRequestHandler<GetMapInfoQuery, Result<Ma
 
     public async Task<Result<MapInfoDto>> Handle(GetMapInfoQuery request, CancellationToken cancellationToken)
     {
+        var (isValid, userIdNullable) = await _currentUserService.IsUserValidAsync();
+        var userId = isValid && userIdNullable.HasValue ? userIdNullable.Value : (Guid?)null;
+
         var game = await _unitOfWork.Repository<Game>().GetQueryable()
-            .Where(m => m.Id == request.GameId && m.Status == EntityStatusEnum.Active)
+            .Where(m => m.Id == request.GameId
+                        && (m.Status == EntityStatusEnum.Active
+                            || (userId.HasValue && m.CreatedBy == userId)))
             .Include(m => m.GameDetails)
             .Include(m => m.GameMedias)
             .Include(m => m.GameTags).ThenInclude(mt => mt.Tag)
@@ -36,22 +41,21 @@ public class GetMapInfoQueryHandler : IRequestHandler<GetMapInfoQuery, Result<Ma
 
         if (game.IsDeleted)
         {
-            var (isValid, userIdNullable) = await _currentUserService.IsUserValidAsync();
             if (!isValid || !userIdNullable.HasValue)
                 return Result<MapInfoDto>.Failure($"Không tìm thấy trò chơi có Id: {request.GameId}.", ErrorCodeEnum.NotFound);
 
-            var userId = userIdNullable.Value;
-            var isAuthor = game.CreatedBy.HasValue && game.CreatedBy.Value == userId;
+            var currentUserId = userIdNullable.Value;
+            var isAuthor = game.CreatedBy.HasValue && game.CreatedBy.Value == currentUserId;
             var isOwned = isAuthor;
             if (!isOwned)
             {
                 var purchased = await _unitOfWork.Repository<PaymentRecord>().GetQueryable()
-                    .AnyAsync(p => !p.IsDeleted && p.UserId == userId && p.GameId == game.Id && p.PaymentStatus == PaymentStatusEnum.Completed, cancellationToken);
+                    .AnyAsync(p => !p.IsDeleted && p.UserId == currentUserId && p.GameId == game.Id && p.PaymentStatus == PaymentStatusEnum.Completed, cancellationToken);
                 if (purchased)
                     isOwned = true;
                 else
                     isOwned = await _unitOfWork.Repository<MyGame>().GetQueryable()
-                        .AnyAsync(mm => !mm.IsDeleted && mm.UserId == userId && mm.GameId == game.Id, cancellationToken);
+                        .AnyAsync(mm => !mm.IsDeleted && mm.UserId == currentUserId && mm.GameId == game.Id, cancellationToken);
             }
 
             if (!isOwned)
