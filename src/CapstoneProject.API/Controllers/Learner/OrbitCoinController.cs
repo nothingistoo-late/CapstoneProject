@@ -6,6 +6,7 @@ using CapstoneProject.Application.Features.OrbitCoin.Queries.GetWalletDashboardG
 using CapstoneProject.Application.Features.OrbitCoin.Queries.GetOrbitCoinBalance;
 using CapstoneProject.Application.Features.OrbitCoin.Queries.GetWalletDashboardSummary;
 using CapstoneProject.Application.Features.OrbitCoin.Queries.GetWalletDashboardTrend;
+using CapstoneProject.Application.Features.OrbitCoin.Queries.GetEscrowTransactions;
 using CapstoneProject.Application.Features.OrbitCoin.Queries.GetOrbitCoinTransactionHistory;
 using CapstoneProject.Application.Features.OrbitCoin.Queries.GetExchangeRate;
 using CapstoneProject.Domain.Enums;
@@ -45,6 +46,33 @@ public class LearnerOrbitCoinController : ControllerBase
     public async Task<IActionResult> GetBalance()
     {
         var result = await _mediator.Send(new GetOrbitCoinBalanceQuery());
+        return StatusCode(result.GetHttpStatusCode(), result);
+    }
+
+    /// <summary>
+    /// Get pending escrow transactions for games owned by the current user
+    /// </summary>
+    /// <remarks>
+    /// Trả về danh sách giao dịch escrow đang chờ (Pending) cho các game do user tạo. Hỗ trợ phân trang và lọc theo thời gian.
+    ///
+    /// **METHOD and path:** GET /api/learner/orbitcoin/escrow/pending
+    ///
+    /// **Query:** pageNumber, pageSize, from, to, search.
+    /// </remarks>
+    [HttpGet("escrow/pending")]
+    [AuthorizeRoles(nameof(RoleEnum.Learner), nameof(RoleEnum.Admin), nameof(RoleEnum.Moderator))]
+    [ProducesResponseType(typeof(Result<PaginationResult<EscrowTransactionDto>>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(Result<PaginationResult<EscrowTransactionDto>>), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(Result<PaginationResult<EscrowTransactionDto>>), StatusCodes.Status500InternalServerError)]
+    [SwaggerOperation(Summary = "Danh sách giao dịch escrow đang chờ", Description = "Trả về các giao dịch escrow Pending cho game do user tạo.", OperationId = "Learner_GetPendingEscrowTransactions", Tags = new[] { "Learner - OrbitCoin" })]
+    public async Task<IActionResult> GetPendingEscrowTransactions(
+        [FromQuery] int pageNumber = 1,
+        [FromQuery] int pageSize = 20,
+        [FromQuery] DateTime? from = null,
+        [FromQuery] DateTime? to = null,
+        [FromQuery] string? search = null)
+    {
+        var result = await _mediator.Send(new GetEscrowTransactionsQuery(pageNumber, pageSize, from, to, search));
         return StatusCode(result.GetHttpStatusCode(), result);
     }
 
