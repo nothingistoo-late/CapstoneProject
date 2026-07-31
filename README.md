@@ -176,6 +176,8 @@ dotnet restore ChemistrySubjectBe.sln
 - Dashboard có thể truy cập tại `/hangfire` trong Development
 
 ## Development Notes
+Live Link: https://quackorbit.vercel.app/
+Link github FE: https://github.com/vukt2004/SEP_FE
 
 - File log được tạo trong thư mục `Logs/`
 - CORS được cấu hình cho development ports (3000, 5173, 4200)
